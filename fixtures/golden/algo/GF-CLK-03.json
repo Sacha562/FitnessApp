@@ -1,0 +1,43 @@
+{
+    "id": "GF-CLK-03",
+    "module": "clock",
+    "description": "Elapsed hours C to A, A to TEST, now to A",
+    "input": {
+        "module": "clock@1.0.0",
+        "scope_key": "golden:GF-CLK-03",
+        "clock": {
+            "now": "2026-10-07T08:00:00.000Z",
+            "zone": "Europe/Amsterdam",
+            "local_date": "2026-10-07",
+            "iso_week": "2026-W41",
+            "tz_offset_min": 120
+        },
+        "payload": {
+            "elapsed_hours": [
+                [
+                    "2026-10-06T17:45:00Z",
+                    "2026-10-08T17:45:00Z"
+                ],
+                [
+                    "2026-10-08T17:45:00Z",
+                    "2026-10-11T11:00:00Z"
+                ],
+                [
+                    "2026-10-07T08:00:00Z",
+                    "2026-10-08T17:45:00Z"
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.0",
+    "expected": {
+        "outputs": {
+            "elapsed_hours": [
+                48,
+                65.25,
+                33.75
+            ]
+        },
+        "outputs_jcs_sha256": "551da1c27fc564123a9760f5988f86ec967377f0b1a3b50b5fbe94a9bed43fe8"
+    }
+}

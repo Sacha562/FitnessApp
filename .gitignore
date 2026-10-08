@@ -1,0 +1,15 @@
+# Gradle / build
+.gradle/
+build/
+.kotlin/
+captures/
+# Local configuration (sdk.dir, Supabase URL + publishable key)
+local.properties
+# Signing material never enters the repository
+*.jks
+*.keystore
+*.p12
+# IDE
+.idea/
+*.iml
+.DS_Store

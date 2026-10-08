@@ -1,0 +1,33 @@
+{
+    "id": "GF-CLK-05",
+    "module": "clock",
+    "description": "Ambiguous 02:30 on 2026-10-25 takes the earlier offset",
+    "input": {
+        "module": "clock@1.0.0",
+        "scope_key": "golden:GF-CLK-05",
+        "clock": {
+            "now": "2026-10-07T08:00:00.000Z",
+            "zone": "Europe/Amsterdam",
+            "local_date": "2026-10-07",
+            "iso_week": "2026-W41",
+            "tz_offset_min": 120
+        },
+        "payload": {
+            "at_local": [
+                [
+                    "2026-10-25",
+                    "02:30"
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.0",
+    "expected": {
+        "outputs": {
+            "at_local": [
+                "2026-10-25T00:30:00Z"
+            ]
+        },
+        "outputs_jcs_sha256": "bd5331f0f55d833787031c55034a715a42ed399ee09f2a30d12fc62c99a1bad4"
+    }
+}

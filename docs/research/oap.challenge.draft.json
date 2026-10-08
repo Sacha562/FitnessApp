@@ -1,0 +1,2191 @@
+{
+ "schema": "fitapp.challenge/1",
+ "id": "oap",
+ "version": "1.0.0",
+ "engine": ">=1.0.0 <2.0.0",
+ "title": {
+  "en": "One-arm pull-up",
+  "nl": "Van twaalf naar één"
+ },
+ "summary": {
+  "en": "Strict one-arm pull-up: heavy weighted pulling + parallel unilateral skill work; criteria-gated phases; 5-week blocks (4 build + 1 deload/test)."
+ },
+ "provenance": {
+  "source": "claude.ai artifact B56eCk6wQMfAgSXBTCwmpW, updated 2026-10-07",
+  "evidence": "threshold 65-75% BW and hang/hold gates are coach heuristics (Kavadlo, StrongFirst forum, Willoughby), not research",
+  "tagLegend": {
+   "A": "taken from artifact",
+   "P": "proposed by app design, needs user approval"
+  }
+ },
+ "challengeRules": {
+  "start": "dead_hang_full_extension",
+  "implement": [
+   "bar",
+   "fixed_handle"
+  ],
+  "forbidden": [
+   "free_hanging_ring",
+   "free_hand_contact",
+   "kip"
+  ],
+  "finish": "chin_over_bar",
+  "return": "controlled_to_full_extension",
+  "agreedWithOpponentOn": "2026-08-31"
+ },
+ "params": {
+  "grip": {
+   "type": "enum",
+   "values": [
+    "supinated",
+    "neutral",
+    "pronated"
+   ],
+   "default": "supinated",
+   "tag": "A"
+  },
+  "completionArms": {
+   "type": "enum",
+   "values": [
+    "any",
+    "both"
+   ],
+   "default": "any",
+   "tag": "P"
+  },
+  "thresholdRatio": {
+   "type": "number",
+   "default": 0.65,
+   "min": 0.55,
+   "max": 0.85,
+   "byGrip": {
+    "supinated": 0.65,
+    "neutral": 0.7,
+    "pronated": 0.75
+   },
+   "tag": "A",
+   "note": "neutral/pronated ratios unsourced interpolations"
+  },
+  "gate1GapKg": {
+   "type": "mass",
+   "default": 2.0,
+   "tag": "A",
+   "note": "0.65*70.7-2.0 = 43.96 ~ +44"
+  },
+  "testStrengthMode": {
+   "type": "enum",
+   "values": [
+    "3RM",
+    "1RM",
+    "both"
+   ],
+   "default": "3RM",
+   "tag": "A"
+  },
+  "e1rmMethod": {
+   "type": "enum",
+   "values": [
+    "multiplier3RM",
+    "personalCurve"
+   ],
+   "default": "multiplier3RM",
+   "tag": "A"
+  },
+  "m3": {
+   "type": "number",
+   "default": 1.1,
+   "min": 1.03,
+   "max": 1.14,
+   "tag": "A",
+   "note": "(BW+3RM)*1.10-BW"
+  },
+  "curveK0": {
+   "type": "number",
+   "default": 30,
+   "min": 20,
+   "max": 45,
+   "tag": "P"
+  },
+  "anchorLoad": {
+   "type": "mass",
+   "default": 20.0,
+   "tag": "A"
+  },
+  "anchorReps": {
+   "type": "int",
+   "default": 5,
+   "tag": "A"
+  },
+  "kgPerRep": {
+   "type": "mass",
+   "default": 2.17,
+   "tag": "A"
+  },
+  "anchorFraction": {
+   "type": "number",
+   "default": "onboard: (bw + anchorLoad) / (bw + e1rmAdded)",
+   "tag": "P",
+   "note": "(70.7+20)/(70.7+42.8)=0.799"
+  },
+  "negFraction": {
+   "type": "number",
+   "default": 1.05,
+   "tag": "A"
+  },
+  "negResetStep": {
+   "type": "mass",
+   "default": 2.5,
+   "tag": "A",
+   "note": "artifact: reset to 45 kg = 47.5-2.5"
+  },
+  "pinA0": {
+   "type": "pin",
+   "default": 40,
+   "tag": "A"
+  },
+  "pinC0": {
+   "type": "pin",
+   "default": 50,
+   "tag": "A"
+  },
+  "pinHold90_0": {
+   "type": "pin",
+   "default": 35,
+   "tag": "A"
+  },
+  "pinOffsetA": {
+   "type": "pin",
+   "default": 10,
+   "tag": "P",
+   "note": "pinA after test = weaker-arm least-assist pin + 10 lb"
+  },
+  "pinOffsetC": {
+   "type": "pin",
+   "default": 10,
+   "tag": "P",
+   "note": "pinC = pinA + 10 (matches 40/50)"
+  },
+  "pinOffsetHold90": {
+   "type": "pin",
+   "default": -5,
+   "tag": "P",
+   "note": "pinHold90 = pinA - 5 (matches 40/35)"
+  },
+  "gatePinDecreaseA": {
+   "type": "bool",
+   "default": true,
+   "tag": "P",
+   "note": "artifact: -5 lb every week unconditionally"
+  },
+  "minGymSessionsForWeek": {
+   "type": "int",
+   "default": 2,
+   "tag": "P"
+  },
+  "maxRecalcJumpKg": {
+   "type": "mass",
+   "default": 5.0,
+   "tag": "P"
+  },
+  "progressEps": {
+   "type": "object",
+   "default": {
+    "e1rmKg": 1.0,
+    "hangS": 2,
+    "topHoldS": 1,
+    "assistLb": 5
+   },
+   "tag": "P"
+  },
+  "injuryDays": {
+   "type": "int",
+   "default": 14,
+   "tag": "A"
+  },
+  "painFreeDaysToExit": {
+   "type": "int",
+   "default": 3,
+   "tag": "P"
+  },
+  "maxHeavyUnilateralPerWeek": {
+   "type": "int",
+   "default": 3,
+   "tag": "A"
+  },
+  "ladderCount": {
+   "type": "int",
+   "default": 3,
+   "tag": "P"
+  }
+ },
+ "equipment": {
+  "required": [
+   {
+    "id": "pullup_bar",
+    "note": "straight; Basic-Fit bar too narrow for archer/typewriter"
+   },
+   {
+    "id": "fixed_neutral_handle"
+   },
+   {
+    "id": "assisted_pullup_machine",
+    "calibration": {
+     "unit": "lb",
+     "step": 5,
+     "min": 0,
+     "offsetKg": 6.5,
+     "ratio": 1.0
+    }
+   },
+   {
+    "id": "dip_belt",
+    "owner": "user"
+   },
+   {
+    "id": "plates",
+    "roundingProfile": "belt"
+   },
+   {
+    "id": "cable_station"
+   },
+   {
+    "id": "dumbbells"
+   },
+   {
+    "id": "dip_station_neutral"
+   },
+   {
+    "id": "rower_erg"
+   }
+  ],
+  "optional": [
+   {
+    "id": "wide_bar",
+    "unlocks": [
+     "typewriter_pullup",
+     "archer_pullup"
+    ]
+   },
+   {
+    "id": "chalk"
+   },
+   {
+    "id": "home_bar_neutral_handles",
+    "note": ">=50% of daily hang must be on fixed bar/handle"
+   }
+  ]
+ },
+ "exercises": [
+  {
+   "id": "weighted_pullup",
+   "type": "weighted_bodyweight_reps",
+   "grip": "param",
+   "muscles": {
+    "lats": 1.0,
+    "biceps": 0.8,
+    "brachialis": 0.8,
+    "brachioradialis": 0.5,
+    "forearm_flexors": 0.5,
+    "mid_traps": 0.5,
+    "rear_delts": 0.3,
+    "core": 0.2
+   },
+   "flags": [
+    "gripSlipBeforeLast"
+   ]
+  },
+  {
+   "id": "weighted_negative_pullup",
+   "type": "eccentric_reps",
+   "grip": "param",
+   "muscles": {
+    "lats": 0.8,
+    "biceps": 0.8,
+    "brachialis": 0.8,
+    "forearm_flexors": 0.5
+   },
+   "tags": [
+    "eccentric",
+    "elbowStressHigh"
+   ],
+   "flags": [
+    "jerky"
+   ]
+  },
+  {
+   "id": "oap_assisted_machine",
+   "type": "assisted_bodyweight_reps",
+   "unilateral": true,
+   "grip": "param",
+   "muscles": {
+    "lats": 1.0,
+    "biceps": 0.8,
+    "brachialis": 0.8,
+    "forearm_flexors": 0.5,
+    "core_antirotation": 0.5
+   },
+   "tags": [
+    "unilateral",
+    "heavyUnilateral"
+   ],
+   "flags": [
+    "torsoRotation"
+   ]
+  },
+  {
+   "id": "oap_finger_assisted",
+   "type": "assisted_ordinal_reps",
+   "unilateral": true,
+   "assistScale": "fingers 4..1",
+   "muscles": {
+    "lats": 1.0,
+    "biceps": 0.8,
+    "brachialis": 0.8,
+    "forearm_flexors": 0.6,
+    "core_antirotation": 0.6
+   },
+   "tags": [
+    "unilateral",
+    "heavyUnilateral"
+   ]
+  },
+  {
+   "id": "oa_negative",
+   "type": "eccentric_reps",
+   "unilateral": true,
+   "grip": "param",
+   "muscles": {
+    "lats": 0.5,
+    "biceps": 0.5,
+    "brachialis": 0.5
+   },
+   "tags": [
+    "unilateral",
+    "eccentric",
+    "elbowStressHigh"
+   ]
+  },
+  {
+   "id": "oa_top_hold",
+   "type": "isometric_hold",
+   "unilateral": true,
+   "grip": "param",
+   "muscles": {
+    "biceps": 0.5,
+    "brachialis": 0.5,
+    "lats": 0.5,
+    "forearm_flexors": 0.5
+   },
+   "tags": [
+    "unilateral"
+   ]
+  },
+  {
+   "id": "oa_hold90_machine",
+   "type": "assisted_isometric_hold",
+   "unilateral": true,
+   "grip": "param",
+   "muscles": {
+    "biceps": 0.5,
+    "brachialis": 0.5,
+    "lats": 0.5
+   },
+   "tags": [
+    "unilateral"
+   ]
+  },
+  {
+   "id": "oa_hold_angle",
+   "type": "isometric_hold",
+   "unilateral": true,
+   "grip": "param",
+   "angles": [
+    "top",
+    "90",
+    "120"
+   ],
+   "muscles": {
+    "biceps": 0.5,
+    "brachialis": 0.5,
+    "lats": 0.5
+   },
+   "tags": [
+    "unilateral"
+   ]
+  },
+  {
+   "id": "oa_straight_arm_hold",
+   "type": "isometric_hold",
+   "unilateral": true,
+   "grip": "neutral",
+   "implement": "fixed_neutral_handle",
+   "muscles": {
+    "forearm_flexors": 0.5,
+    "lower_traps": 0.25,
+    "lats": 0.25
+   },
+   "tags": [
+    "unilateral"
+   ]
+  },
+  {
+   "id": "oa_scap_pull",
+   "type": "bodyweight_reps",
+   "unilateral": true,
+   "grip": "neutral",
+   "implement": "fixed_neutral_handle",
+   "muscles": {
+    "lower_traps": 0.5,
+    "lats": 0.25,
+    "forearm_flexors": 0.25
+   },
+   "tags": [
+    "unilateral"
+   ],
+   "flags": [
+    "torsoRotation"
+   ]
+  },
+  {
+   "id": "oa_dead_hang",
+   "type": "timed_hold",
+   "unilateral": true,
+   "grip": "neutral",
+   "implement": "fixed_neutral_handle",
+   "muscles": {
+    "forearm_flexors": 0.5
+   },
+   "tags": [
+    "unilateral"
+   ],
+   "clockStopsOn": "torsoRotation"
+  },
+  {
+   "id": "oap_attempt",
+   "type": "attempt",
+   "unilateral": true,
+   "grip": "param",
+   "records": "oa_rep",
+   "tags": [
+    "unilateral",
+    "heavyUnilateral"
+   ]
+  },
+  {
+   "id": "typewriter_pullup",
+   "type": "bodyweight_reps",
+   "requires": [
+    "wide_bar"
+   ],
+   "muscles": {
+    "lats": 1.0,
+    "biceps": 0.6
+   }
+  },
+  {
+   "id": "one_arm_plank",
+   "type": "timed_hold",
+   "unilateral": true,
+   "muscles": {
+    "core_antirotation": 1.0
+   },
+   "flags": [
+    "hipRotation"
+   ]
+  },
+  {
+   "id": "two_arm_dead_hang",
+   "type": "timed_hold",
+   "grip": [
+    "pronated",
+    "neutral"
+   ],
+   "muscles": {
+    "forearm_flexors": 0.5
+   }
+  },
+  {
+   "catalogRef": "dip_neutral"
+  },
+  {
+   "catalogRef": "barbell_row_pronated"
+  },
+  {
+   "catalogRef": "seated_cable_row_wide_pronated"
+  },
+  {
+   "catalogRef": "chest_supported_row_pronated"
+  },
+  {
+   "catalogRef": "reverse_wrist_curl_db"
+  },
+  {
+   "catalogRef": "db_pronation_supination"
+  },
+  {
+   "catalogRef": "face_pull_cable"
+  },
+  {
+   "catalogRef": "rower_erg"
+  },
+  {
+   "catalogRef": "scap_pull_bar"
+  },
+  {
+   "catalogRef": "pullup_bw"
+  }
+ ],
+ "substitutions": [
+  {
+   "from": "oap_assisted_machine",
+   "when": "reason == 'equipment_busy'",
+   "to": "oap_finger_assisted",
+   "note": "towel/finger fallback; log finger count, not grip height",
+   "progressionData": "excluded"
+  }
+ ],
+ "metrics": [
+  {
+   "id": "bw",
+   "type": "mass"
+  },
+  {
+   "id": "wpu_3rm_added",
+   "type": "mass",
+   "better": "higher"
+  },
+  {
+   "id": "wpu_1rm_added",
+   "type": "mass",
+   "better": "higher",
+   "note": "measured single only"
+  },
+  {
+   "id": "wpu_e1rm_added",
+   "type": "mass",
+   "better": "higher",
+   "derived": true
+  },
+  {
+   "id": "bw_max_reps",
+   "type": "int",
+   "better": "higher"
+  },
+  {
+   "id": "oa_hang_s",
+   "type": "duration",
+   "sides": "LR",
+   "better": "higher",
+   "protocol": "fixed neutral handle; clock stops when torso starts to rotate"
+  },
+  {
+   "id": "oa_top_hold_s",
+   "type": "duration",
+   "sides": "LR",
+   "better": "higher"
+  },
+  {
+   "id": "oa_least_assist_pin",
+   "type": "pin",
+   "sides": "LR",
+   "better": "lower",
+   "effectiveKg": "assistKg(x)"
+  },
+  {
+   "id": "oa_neg5_unassisted",
+   "type": "bool",
+   "sides": "LR",
+   "protocol": "5 s eccentric, no help, hand does not shift"
+  },
+  {
+   "id": "oa_one_finger_rep",
+   "type": "bool",
+   "sides": "LR"
+  },
+  {
+   "id": "oa_rep",
+   "type": "bool",
+   "sides": "LR",
+   "evidence": "video_optional"
+  }
+ ],
+ "state": {
+  "vars": {
+   "e1rmAdded": {
+    "type": "mass",
+    "init": "onboard.e1rmAdded"
+   },
+   "m3": {
+    "type": "number",
+    "init": "p.m3"
+   },
+   "curveK": {
+    "type": "number",
+    "init": "p.curveK0"
+   },
+   "kgPerRep": {
+    "type": "mass",
+    "init": "p.kgPerRep"
+   },
+   "wpuC": {
+    "type": "mass",
+    "init": "p.anchorLoad"
+   },
+   "wpuA": {
+    "type": "mass",
+    "init": "roundLoad(p.anchorLoad + 1 * p.kgPerRep, 'belt', 'nearest')"
+   },
+   "wpuB": {
+    "type": "mass",
+    "init": "onboard.wpuB ?? roundLoad(p.anchorLoad + 3 * p.kgPerRep, 'belt', 'nearest')"
+   },
+   "negB": {
+    "type": "mass",
+    "init": "roundLoad(p.negFraction * (bw + s.e1rmAdded) - bw, 'belt', 'down')"
+   },
+   "negReset": {
+    "type": "mass",
+    "init": "s.negB - p.negResetStep"
+   },
+   "pinA": {
+    "type": "pin",
+    "init": "p.pinA0"
+   },
+   "pinC": {
+    "type": "pin",
+    "init": "p.pinC0"
+   },
+   "pinHold90": {
+    "type": "pin",
+    "init": "p.pinHold90_0"
+   },
+   "fingerLevel": {
+    "type": "int",
+    "init": "4"
+   },
+   "plankS": {
+    "type": "duration",
+    "init": "20"
+   },
+   "oaHangS": {
+    "type": "duration",
+    "init": "10"
+   },
+   "bVariant": {
+    "type": "enum",
+    "values": [
+     "6x2",
+     "ladder123"
+    ],
+    "init": "'6x2'"
+   },
+   "cEasyStreak": {
+    "type": "int",
+    "init": "0"
+   },
+   "aFailStreak": {
+    "type": "int",
+    "init": "0"
+   },
+   "noProgressTests": {
+    "type": "int",
+    "init": "0"
+   },
+   "stallStage": {
+    "type": "int",
+    "init": "0"
+   },
+   "elbowTrace": {
+    "type": "bool",
+    "init": "false"
+   },
+   "injuryStart": {
+    "type": "date",
+    "init": "null"
+   },
+   "needsCleanSession": {
+    "type": "bool",
+    "init": "false"
+   },
+   "extraDeloadPending": {
+    "type": "bool",
+    "init": "false"
+   }
+  },
+  "snapshotVars": [
+   "wpuA",
+   "wpuB",
+   "wpuC",
+   "negB",
+   "negReset",
+   "pinA",
+   "pinC",
+   "pinHold90",
+   "fingerLevel",
+   "plankS",
+   "oaHangS"
+  ],
+  "snapshotOn": "block.started"
+ },
+ "structure": {
+  "weekStart": "MON",
+  "block": {
+   "weeks": 5,
+   "build": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "deload": [
+    5
+   ],
+   "testReplaces": {
+    "week": 5,
+    "template": "B"
+   }
+  },
+  "advance": {
+   "mode": "completionDriven",
+   "weekCounts": "week.gymSessionsDone >= p.minGymSessionsForWeek",
+   "else": "repeatWeekSameLoads"
+  },
+  "modes": {
+   "normal": {},
+   "deload": {
+    "sets": "max(1, ceil(sets / 2))",
+    "load": "same",
+    "holdSeconds": "same",
+    "habitScale": {
+     "daily_hang": 0.5
+    },
+    "tag": "A"
+   },
+   "test_pending": {
+    "inherits": "deload",
+    "tag": "P"
+   },
+   "extra_deload": {
+    "inherits": "deload",
+    "tag": "A"
+   },
+   "injury": {
+    "excludeTags": [
+     "unilateral",
+     "eccentric"
+    ],
+    "override": {
+     "weighted_pullup": {
+      "added": "0",
+      "rirMin": 3,
+      "sets": "max(1, ceil(sets / 2))"
+     }
+    },
+    "prehabSetsMultiplier": 2,
+    "disableHabits": [
+     "daily_hang"
+    ],
+    "tag": "A"
+   }
+  }
+ },
+ "phases": [
+  {
+   "id": 1,
+   "name": {
+    "nl": "Zwaar trekken en leren hangen"
+   },
+   "expectedWeeks": [
+    1,
+    10
+   ],
+   "templates": {
+    "A": "A1",
+    "B": "B1",
+    "C": "C1",
+    "TEST": "T1"
+   },
+   "exitGate": {
+    "source": "validTestDay",
+    "window": "sameTestDay",
+    "all": [
+     "t.wpu_e1rm_added >= p.thresholdRatio * t.bw - p.gate1GapKg",
+     "min(t.oa_hang_s.L, t.oa_hang_s.R) >= 20",
+     "t.oa_neg5_unassisted.L && t.oa_neg5_unassisted.R",
+     "min(t.oa_top_hold_s.L, t.oa_top_hold_s.R) >= 8"
+    ]
+   }
+  },
+  {
+   "id": 2,
+   "name": {
+    "nl": "Assistentie afbouwen"
+   },
+   "expectedWeeks": [
+    11,
+    25
+   ],
+   "templates": {
+    "A": "A2",
+    "B": "B1",
+    "C": "C2",
+    "TEST": "T2"
+   },
+   "exitGate": {
+    "source": "validTestDay",
+    "window": "sameTestDay",
+    "all": [
+     "t.wpu_e1rm_added >= p.thresholdRatio * t.bw",
+     "min(t.oa_top_hold_s.L, t.oa_top_hold_s.R) >= 15",
+     "t.oa_neg5_unassisted.L && t.oa_neg5_unassisted.R",
+     "t.oa_one_finger_rep.L && t.oa_one_finger_rep.R"
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "name": {
+    "nl": "Pogingen"
+   },
+   "expectedWeeks": [
+    26,
+    null
+   ],
+   "templates": {
+    "A": "A3",
+    "B": "B3",
+    "C": "C3",
+    "TEST": "T2"
+   },
+   "exitGate": {
+    "source": "validTestDayOrSessionAttempt",
+    "all": [
+     "p.completionArms == 'any' ? (t.oa_rep.L || t.oa_rep.R) : (t.oa_rep.L && t.oa_rep.R)"
+    ]
+   },
+   "onExit": "complete"
+  }
+ ],
+ "blocks": {
+  "warmup10": [
+   {
+    "exercise": "rower_erg",
+    "duration_s": 180
+   },
+   {
+    "exercise": "face_pull_cable",
+    "sets": 1,
+    "reps": 20
+   },
+   {
+    "exercise": "scap_pull_bar",
+    "sets": 1,
+    "reps": 10
+   },
+   {
+    "exercise": "pullup_bw",
+    "sets": 2,
+    "reps": "ramp",
+    "warmup": true
+   }
+  ],
+  "prehab5": [
+   {
+    "exercise": "reverse_wrist_curl_db",
+    "sets": 2,
+    "reps": 15,
+    "load": "light"
+   },
+   {
+    "exercise": "db_pronation_supination",
+    "sets": 2,
+    "reps": 10,
+    "perSide": true
+   },
+   {
+    "exercise": "face_pull_cable",
+    "sets": 2,
+    "reps": 15
+   }
+  ],
+  "attempts": [
+   {
+    "key": "att",
+    "exercise": "oap_attempt",
+    "sets": [
+     2,
+     3
+    ],
+    "perSide": true,
+    "rest_s": 180,
+    "position": "first"
+   }
+  ]
+ },
+ "templates": {
+  "C1": {
+   "name": {
+    "nl": "Sessie C: volume en techniek"
+   },
+   "kind": "gym",
+   "bookedMin": 90,
+   "tags": [
+    "unilateral"
+   ],
+   "items": [
+    {
+     "block": "warmup10"
+    },
+    {
+     "key": "oaa",
+     "exercise": "oap_assisted_machine",
+     "sets": 3,
+     "reps": 5,
+     "perSide": true,
+     "sideOrder": [
+      "L",
+      "R"
+     ],
+     "assistPin": "s.pinC",
+     "rirTarget": 2,
+     "rest_s": 120
+    },
+    {
+     "key": "wpu",
+     "exercise": "weighted_pullup",
+     "sets": 4,
+     "reps": 5,
+     "added": "s.wpuC",
+     "rest_s": 150,
+     "role": "anchor",
+     "stopSetOn": [
+      "gripSlipBeforeLast"
+     ]
+    },
+    {
+     "key": "scap",
+     "exercise": "oa_scap_pull",
+     "sets": 4,
+     "reps": 3,
+     "perSide": true,
+     "sideOrder": [
+      "L",
+      "R"
+     ],
+     "sideRule": "R.reps <= L.reps",
+     "stopSetOn": [
+      "torsoRotation"
+     ],
+     "rest_s": 90
+    },
+    {
+     "key": "hang",
+     "exercise": "oa_dead_hang",
+     "sets": 4,
+     "hold_s": "s.oaHangS",
+     "perSide": true,
+     "toFailure": false,
+     "rest_s": 60
+    },
+    {
+     "block": "prehab5"
+    }
+   ]
+  },
+  "A1": {
+   "name": {
+    "nl": "Sessie A: een arm zwaar"
+   },
+   "kind": "gym",
+   "bookedMin": 90,
+   "tags": [
+    "unilateral",
+    "heavyUnilateral"
+   ],
+   "items": [
+    {
+     "block": "warmup10"
+    },
+    {
+     "key": "oaa",
+     "exercise": "oap_assisted_machine",
+     "sets": 5,
+     "reps": 3,
+     "perSide": true,
+     "sideOrder": [
+      "L",
+      "R"
+     ],
+     "assistPin": "s.pinA",
+     "rest_s": 150,
+     "note": "fresh; this is the challenge movement"
+    },
+    {
+     "key": "cal",
+     "exercise": "oa_negative",
+     "sets": 1,
+     "reps": 1,
+     "perSide": true,
+     "ecc_s_target": 5,
+     "assist": "none",
+     "records": "oa_neg5_unassisted",
+     "validForGate": false,
+     "skipIf": "s.elbowTrace"
+    },
+    {
+     "key": "wpu",
+     "exercise": "weighted_pullup",
+     "sets": 4,
+     "reps": 4,
+     "added": "s.wpuA",
+     "rest_s": 180,
+     "chalk": true,
+     "stopSetOn": [
+      "gripSlipBeforeLast"
+     ]
+    },
+    {
+     "key": "top",
+     "exercise": "oa_top_hold",
+     "rounds": 3,
+     "attemptsPerRound": 4,
+     "perSide": true,
+     "assist": "none",
+     "rest_s": 90,
+     "logField": "hold_s"
+    },
+    {
+     "key": "h90",
+     "exercise": "oa_hold90_machine",
+     "sets": 3,
+     "hold_s": [
+      6,
+      8
+     ],
+     "perSide": true,
+     "assistPin": "s.pinHold90",
+     "rest_s": 90
+    },
+    {
+     "key": "sth",
+     "exercise": "oa_straight_arm_hold",
+     "sets": 3,
+     "hold_s": 6,
+     "perSide": true,
+     "rest_s": 90,
+     "replacesHabitToday": "daily_hang",
+     "position": "last_main"
+    },
+    {
+     "block": "prehab5"
+    }
+   ]
+  },
+  "B1": {
+   "name": {
+    "nl": "Sessie B: maximale kracht"
+   },
+   "kind": "gym",
+   "bookedMin": 90,
+   "tags": [],
+   "items": [
+    {
+     "block": "warmup10"
+    },
+    {
+     "key": "wpu",
+     "exercise": "weighted_pullup",
+     "added": "s.wpuB",
+     "rirTarget": 2,
+     "rest_s": 180,
+     "variantVar": "s.bVariant",
+     "variants": {
+      "6x2": {
+       "sets": 6,
+       "reps": 2
+      },
+      "ladder123": {
+       "ladders": "p.ladderCount",
+       "rungs": [
+        1,
+        2,
+        3
+       ],
+       "rest_s_between_rungs": 60,
+       "rest_s_between_ladders": 180,
+       "tag": "P"
+      }
+     }
+    },
+    {
+     "key": "neg",
+     "exercise": "weighted_negative_pullup",
+     "sets": 3,
+     "reps": 2,
+     "added": "s.negB",
+     "ecc_s_target": 5,
+     "rest_s": 180,
+     "skipIf": "s.elbowTrace"
+    },
+    {
+     "key": "row",
+     "exercise": {
+      "anyOf": [
+       "barbell_row_pronated",
+       "seated_cable_row_wide_pronated",
+       "chest_supported_row_pronated"
+      ],
+      "pick": "userPreference"
+     },
+     "sets": 4,
+     "reps": 8,
+     "rirTarget": 1,
+     "rest_s": 120,
+     "progression": "delegate:general.doubleProgression"
+    },
+    {
+     "key": "dip",
+     "exercise": "dip_neutral",
+     "sets": 3,
+     "reps": [
+      8,
+      10
+     ],
+     "rirTarget": 2,
+     "rest_s": 120,
+     "progression": "delegate:general.doubleProgression",
+     "bootstrap": "first session bodyweight; load from clean reps"
+    },
+    {
+     "key": "plank",
+     "exercise": "one_arm_plank",
+     "sets": 3,
+     "hold_s": "s.plankS",
+     "perSide": true,
+     "rest_s": 60,
+     "stopSetOn": [
+      "hipRotation"
+     ]
+    },
+    {
+     "block": "prehab5"
+    }
+   ]
+  },
+  "C2": {
+   "extends": "C1",
+   "tag": "P",
+   "replace": {
+    "oaa": {
+     "exercise": "s.pinC > 0 ? 'oap_assisted_machine' : 'oap_finger_assisted'",
+     "fingers": "min(4, s.fingerLevel + 1)"
+    }
+   }
+  },
+  "A2": {
+   "extends": "A1",
+   "tag": "P",
+   "replace": {
+    "oaa": {
+     "exercise": "s.pinA > 0 ? 'oap_assisted_machine' : 'oap_finger_assisted'",
+     "fingers": "s.fingerLevel"
+    },
+    "h90": {
+     "exercise": "oa_hold_angle",
+     "angles": [
+      "top",
+      "90",
+      "120"
+     ],
+     "sets": 2,
+     "hold_s": [
+      5,
+      8
+     ],
+     "perSide": true,
+     "rest_s": 90
+    },
+    "cal": {
+     "exercise": "oa_negative",
+     "sets": 2,
+     "reps": 1,
+     "perSide": true,
+     "ecc_s_target": 5,
+     "records": "oa_neg5_unassisted"
+    }
+   },
+   "add": [
+    {
+     "key": "tw",
+     "exercise": "typewriter_pullup",
+     "sets": 3,
+     "reps": 3,
+     "perSide": true,
+     "enabledIf": "has('wide_bar')"
+    }
+   ]
+  },
+  "A3": {
+   "extends": "A2",
+   "tag": "P",
+   "prepend": "attempts",
+   "override": {
+    "wpu": {
+     "sets": 2
+    }
+   }
+  },
+  "B3": {
+   "extends": "B1",
+   "tag": "P",
+   "prepend": "attempts",
+   "override": {
+    "wpu": {
+     "variant": "6x2",
+     "sets": 2
+    }
+   }
+  },
+  "C3": {
+   "extends": "C2",
+   "tag": "P",
+   "prepend": "attempts",
+   "override": {
+    "wpu": {
+     "sets": 2
+    }
+   }
+  },
+  "T1": {
+   "name": {
+    "nl": "Testdag"
+   },
+   "kind": "test",
+   "bookedMin": 120,
+   "items": [
+    {
+     "key": "bw",
+     "metric": "bw",
+     "protocol": "weigh-in before warm-up"
+    },
+    {
+     "block": "warmup10"
+    },
+    {
+     "key": "top",
+     "metric": "oa_top_hold_s",
+     "perSide": true,
+     "attempts": 3,
+     "rest_s": 120,
+     "record": "max"
+    },
+    {
+     "key": "assist",
+     "metric": "oa_least_assist_pin",
+     "perSide": true,
+     "protocol": "start s.pinA + 10 lb; each clean rep -> -5 lb; stop at first fail; max 5 attempts/arm; rest 180 s",
+     "record": "lowest clean"
+    },
+    {
+     "key": "str",
+     "metric": "p.testStrengthMode == '1RM' ? 'wpu_1rm_added' : 'wpu_3rm_added'",
+     "protocol": "ramp: 50%, 70%, 85% of target total x 1-3 reps; then attempts +2.5 kg; max 3 working attempts; rest 240 s",
+     "record": "heaviest clean"
+    },
+    {
+     "key": "neg",
+     "metric": "oa_neg5_unassisted",
+     "perSide": true,
+     "attempts": 1,
+     "skipIf": "s.elbowTrace"
+    },
+    {
+     "key": "hang",
+     "metric": "oa_hang_s",
+     "perSide": true,
+     "attempts": 1,
+     "rest_s": 180
+    },
+    {
+     "key": "max",
+     "metric": "bw_max_reps",
+     "attempts": 1,
+     "position": "last"
+    }
+   ],
+   "validity": "s.needsCleanSession == false && mode in ['deload', 'test_pending']"
+  },
+  "T2": {
+   "extends": "T1",
+   "tag": "P",
+   "add": [
+    {
+     "key": "finger",
+     "metric": "oa_one_finger_rep",
+     "perSide": true,
+     "attempts": 2,
+     "rest_s": 180
+    },
+    {
+     "key": "rep",
+     "metric": "oa_rep",
+     "perSide": true,
+     "attempts": 2,
+     "rest_s": 180,
+     "enabledIf": "phase >= 2"
+    }
+   ]
+  }
+ },
+ "habits": [
+  {
+   "id": "daily_hang",
+   "where": "home",
+   "rrule": "FREQ=DAILY",
+   "time": "17:15",
+   "skipIf": "todayHas('A')",
+   "prescription": {
+    "exercise": "two_arm_dead_hang",
+    "sets": [
+     4,
+     5
+    ],
+    "total_s": [
+     120,
+     180
+    ],
+    "grip": [
+     "pronated",
+     "neutral"
+    ],
+    "notGrip": "supinated",
+    "rules": [
+     ">=50% on fixed bar/handle",
+     "chalk",
+     "thumb around bar",
+     "stop 5-10 s before hand slips",
+     "no one-arm hanging"
+    ]
+   },
+   "deloadScale": 0.5,
+   "disabledInModes": [
+    "injury"
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "home_plank",
+   "where": "home",
+   "rrule": "FREQ=WEEKLY;BYDAY=TU,TH",
+   "time": "17:30",
+   "prescription": {
+    "key": "plank",
+    "exercise": "one_arm_plank",
+    "sets": 3,
+    "hold_s": "s.plankS",
+    "perSide": true,
+    "rest_s": 60
+   },
+   "tag": "A"
+  },
+  {
+   "id": "sleep_protein_check",
+   "rrule": "FREQ=DAILY",
+   "enabledIf": "s.stallStage >= 1",
+   "prescription": {
+    "checklist": [
+     "sleep >= 8 h",
+     "protein 1.6-2.0 g/kg (= round(1.6*bw) .. round(2.0*bw) g)"
+    ]
+   },
+   "tag": "A"
+  }
+ ],
+ "schedule": {
+  "templatesPerWeek": {
+   "build": [
+    "C",
+    "A",
+    "B"
+   ],
+   "deload": [
+    "C",
+    "A",
+    "TEST"
+   ]
+  },
+  "order": [
+   "C",
+   "A",
+   "B|TEST"
+  ],
+  "hard": [
+   {
+    "type": "minGapDays",
+    "between": "gym",
+    "days": 1
+   },
+   {
+    "type": "restDayBefore",
+    "template": "B|TEST",
+    "scope": "allTraining"
+   },
+   {
+    "type": "maxPerWeek",
+    "tag": "heavyUnilateral",
+    "n": "p.maxHeavyUnilateralPerWeek"
+   },
+   {
+    "type": "gymHours",
+    "ref": "gym.openingHours"
+   }
+  ],
+  "preferred": [
+   {
+    "template": "C",
+    "weekday": "WED",
+    "start": "19:45",
+    "durMin": 90
+   },
+   {
+    "template": "A",
+    "weekday": "FRI",
+    "start": "19:45",
+    "durMin": 90
+   },
+   {
+    "template": "B",
+    "weekday": "SUN",
+    "start": "11:00",
+    "durMin": 90
+   },
+   {
+    "template": "TEST",
+    "weekday": "SUN",
+    "start": "11:00",
+    "durMin": 120
+   }
+  ],
+  "testDay": {
+   "weekday": "SUN",
+   "postponeIf": "s.needsCleanSession",
+   "postponeTo": "firstWeekdayAfterCleanSession"
+  }
+ },
+ "calendar": {
+  "match": [
+   {
+    "template": "C",
+    "title": "(?i)sessie +c([^a-z]|$)|volume +en +techniek"
+   },
+   {
+    "template": "A",
+    "title": "(?i)sessie +a([^a-z]|$)|een +arm +zwaar"
+   },
+   {
+    "template": "B",
+    "title": "(?i)sessie +b([^a-z]|$)|maximale +kracht"
+   },
+   {
+    "template": "TEST",
+    "title": "(?i)testdag|(^|[^a-z])meten([^a-z]|$)"
+   }
+  ],
+  "requireAny": [
+   {
+    "title": "(?i)(^|[^a-z])gym([^a-z]|$)"
+   },
+   {
+    "location": "(?i)basic[- ]?fit"
+   }
+  ],
+  "exclude": [
+   {
+    "allDay": true
+   },
+   {
+    "calendarName": "(?i)todoist"
+   },
+   {
+    "status": "cancelled"
+   }
+  ],
+  "acceptScore": 0.6,
+  "writeBack": {
+   "enabled": "user.calendarWrite",
+   "title": "Gym — sessie {tpl} ({tplName})",
+   "location": "Basic-Fit Amersfoort Ierse Pond",
+   "description": "{exerciseLines}",
+   "marker": "fitapp:{enrollmentId}:{tpl}:{isoWeek}",
+   "markerPlacement": "last line of description"
+  },
+  "normalize": "NFKC, lowercase, strip diacritics (een==één), dashes->-"
+ },
+ "integration": {
+  "ownsMuscles": [
+   "lats",
+   "biceps",
+   "brachialis",
+   "brachioradialis",
+   "forearm_flexors",
+   "lower_traps",
+   "core_antirotation"
+  ],
+  "coverage": "computeFromExerciseCoefficients",
+  "protectedWindows": [
+   {
+    "before": "A",
+    "hours": 24,
+    "forbidMuscles": [
+     "biceps",
+     "brachialis",
+     "brachioradialis",
+     "forearm_flexors",
+     "lats"
+    ],
+    "maxRPE": 7
+   },
+   {
+    "before": "B|TEST",
+    "hours": 24,
+    "forbid": "allGymTraining"
+   },
+   {
+    "after": "B",
+    "hours": 24,
+    "forbidMuscles": [
+     "biceps",
+     "brachialis",
+     "forearm_flexors"
+    ],
+    "maxRPE": 8
+   }
+  ],
+  "addOnSlots": [
+   {
+    "template": "C",
+    "position": "end",
+    "maxMin": "bookedMin - estimatedMin - 5",
+    "allowPatterns": [
+     "squat",
+     "hinge_no_grip",
+     "lunge",
+     "knee_extension",
+     "knee_flexion",
+     "calf",
+     "push_horizontal",
+     "push_vertical"
+    ],
+    "forbidMuscles": "ownsMuscles",
+    "maxSets": 6,
+    "minRIR": 2
+   },
+   {
+    "template": "A",
+    "position": "end",
+    "maxMin": "bookedMin - estimatedMin - 5",
+    "allowPatterns": [
+     "squat",
+     "lunge",
+     "knee_extension",
+     "knee_flexion",
+     "calf",
+     "push_horizontal",
+     "push_vertical"
+    ],
+    "forbidMuscles": "ownsMuscles",
+    "maxSets": 4,
+    "minRIR": 2
+   },
+   {
+    "template": "B",
+    "position": "none"
+   }
+  ],
+  "generalSessions": {
+   "allowedOn": "daysNotBlockedByHardConstraints",
+   "neverOn": [
+    "dayBefore(B|TEST)"
+   ],
+   "forbidMuscles": "ownsMuscles"
+  }
+ },
+ "rules": [
+  {
+   "id": "safety.elbow.stop",
+   "stage": "safety",
+   "prio": 100,
+   "on": [
+    "pain.reported"
+   ],
+   "if": "event.kind in ['medial_elbow_ache', 'elbow_crease_pain_on_extension', 'ulnar_tingling']",
+   "then": [
+    {
+     "enterMode": "injury"
+    },
+    {
+     "set": "s.injuryStart",
+     "to": "today"
+    },
+    {
+     "set": "s.needsCleanSession",
+     "to": "true"
+    },
+    {
+     "notify": "stop",
+     "msg": "elbow_protocol"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "safety.elbow.trace",
+   "stage": "safety",
+   "prio": 95,
+   "on": [
+    "readiness.checked"
+   ],
+   "if": "true",
+   "then": [
+    {
+     "set": "s.elbowTrace",
+     "to": "event.elbowDiscomfort >= 1"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "safety.injury.exit",
+   "stage": "safety",
+   "prio": 90,
+   "on": [
+    "day.tick"
+   ],
+   "if": "mode == 'injury' && daysSince(s.injuryStart) >= p.injuryDays && daysSincePain() >= p.painFreeDaysToExit",
+   "then": [
+    {
+     "restoreSnapshot": "max(1, block.index - 2)"
+    },
+    {
+     "setMode": "normal"
+    },
+    {
+     "startNewBlock": true
+    },
+    {
+     "notify": "info",
+     "msg": "back_to_level_two_blocks_ago"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "safety.injury.extend",
+   "stage": "safety",
+   "prio": 89,
+   "on": [
+    "day.tick"
+   ],
+   "if": "mode == 'injury' && daysSince(s.injuryStart) >= p.injuryDays && daysSincePain() < p.painFreeDaysToExit",
+   "then": [
+    {
+     "set": "s.injuryStart",
+     "to": "today - p.injuryDays + 7"
+    },
+    {
+     "notify": "warn",
+     "msg": "pain_persists_consider_physio"
+    }
+   ],
+   "tag": "P"
+  },
+  {
+   "id": "data.test.recalc",
+   "stage": "data",
+   "prio": 80,
+   "on": [
+    "test.completed"
+   ],
+   "if": "test.valid",
+   "then": [
+    {
+     "call": "oapRecalcFromTest"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "guard.gripSlip",
+   "stage": "progression",
+   "prio": 60,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template in ['A', 'B', 'C'] && any(ex.wpu.gripSlipBeforeLast)",
+   "then": [
+    {
+     "lock": [
+      "s.wpuA",
+      "s.wpuB",
+      "s.wpuC"
+     ],
+     "kind": "noIncrease"
+    },
+    {
+     "notify": "info",
+     "msg": "grip_not_strength"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.B.wpu",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'B' && s.bVariant == '6x2' && valid('wpu') && count(ex.wpu.sets) >= 6 && all(ex.wpu.reps >= 2) && min(ex.wpu.rir) >= 2",
+   "then": [
+    {
+     "adjust": "s.wpuB",
+     "by": "2.5",
+     "round": [
+      "belt",
+      "nearest"
+     ]
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.B.neg.up",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'B' && valid('neg') && min(ex.neg.ecc_s) >= 8 && !any(ex.neg.jerky)",
+   "then": [
+    {
+     "adjust": "s.negB",
+     "by": "5",
+     "round": [
+      "belt",
+      "down"
+     ]
+    },
+    {
+     "adjust": "s.negReset",
+     "by": "5",
+     "round": [
+      "belt",
+      "down"
+     ]
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.B.neg.reset",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'B' && valid('neg') && (min(ex.neg.ecc_s) < 5 || any(ex.neg.jerky))",
+   "then": [
+    {
+     "set": "s.negB",
+     "to": "s.negReset"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.A.pin",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'A' && valid('oaa') && (!p.gatePinDecreaseA || all(ex.oaa.reps >= 3))",
+   "then": [
+    {
+     "set": "s.pinA",
+     "to": "max(0, s.pinA - 5)"
+    },
+    {
+     "set": "s.aFailStreak",
+     "to": "0"
+    }
+   ],
+   "tag": "A+P"
+  },
+  {
+   "id": "prog.A.pin.fail",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'A' && p.gatePinDecreaseA && valid('oaa') && any(ex.oaa.reps < 3)",
+   "then": [
+    {
+     "set": "s.aFailStreak",
+     "to": "s.aFailStreak + 1 >= 2 ? 0 : s.aFailStreak + 1"
+    },
+    {
+     "set": "s.pinA",
+     "to": "s.aFailStreak + 1 >= 2 ? s.pinA + 5 : s.pinA"
+    }
+   ],
+   "tag": "P"
+  },
+  {
+   "id": "prog.A.hold90",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'A' && valid('h90')",
+   "then": [
+    {
+     "set": "s.pinHold90",
+     "to": "any(ex.h90.hold_s < 6) ? s.pinHold90 + 5 : max(0, s.pinHold90 - 5)"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.C.pin",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template == 'C' && valid('oaa')",
+   "let": {
+    "easy": "all(ex.oaa.reps >= 5) && (min(ex.oaa.rir) >= 3 || reasonOn('oaa') == 'too_easy')"
+   },
+   "then": [
+    {
+     "set": "s.pinC",
+     "to": "easy && s.cEasyStreak + 1 >= 2 ? max(0, s.pinC - 5) : s.pinC"
+    },
+    {
+     "set": "s.cEasyStreak",
+     "to": "easy ? (s.cEasyStreak + 1 >= 2 ? 0 : s.cEasyStreak + 1) : 0"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.plank",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed",
+    "habit.completed"
+   ],
+   "if": "valid('plank') && count(ex.plank.sets) >= 6 && all(ex.plank.hold_s >= s.plankS) && !any(ex.plank.hipRotation) && s.plankS < 30",
+   "then": [
+    {
+     "set": "s.plankS",
+     "to": "30"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "prog.finger",
+   "stage": "progression",
+   "prio": 50,
+   "on": [
+    "session.completed"
+   ],
+   "if": "phase == 2 && sess.template == 'A' && s.pinA == 0 && valid('oaa') && all(ex.oaa.reps >= 3)",
+   "then": [
+    {
+     "set": "s.fingerLevel",
+     "to": "max(1, s.fingerLevel - 1)"
+    }
+   ],
+   "tag": "P"
+  },
+  {
+   "id": "struct.cleanSession",
+   "stage": "structural",
+   "prio": 40,
+   "on": [
+    "session.completed"
+   ],
+   "if": "sess.template in ['A', 'B', 'C'] && mode != 'injury' && !sess.painReported && sess.completionRatio >= 0.8",
+   "then": [
+    {
+     "set": "s.needsCleanSession",
+     "to": "false"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "struct.week.close",
+   "stage": "structural",
+   "prio": 30,
+   "on": [
+    "week.closed"
+   ],
+   "if": "mode != 'injury'",
+   "then": [
+    {
+     "if": "week.gymSessionsDone >= p.minGymSessionsForWeek",
+     "do": [
+      {
+       "advanceWeek": true
+      }
+     ],
+     "else": [
+      {
+       "repeatWeek": true
+      },
+      {
+       "set": "s.needsCleanSession",
+       "to": "true"
+      },
+      {
+       "notify": "info",
+       "msg": "missed_week_no_makeup"
+      }
+     ]
+    }
+   ],
+   "tag": "A+P"
+  },
+  {
+   "id": "struct.deload.enter",
+   "stage": "structural",
+   "prio": 30,
+   "on": [
+    "week.started"
+   ],
+   "if": "block.week == 5 && mode == 'normal'",
+   "then": [
+    {
+     "setMode": "deload"
+    },
+    {
+     "scheduleTest": "schedule.testDay"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "struct.test.postpone",
+   "stage": "structural",
+   "prio": 30,
+   "on": [
+    "test.due"
+   ],
+   "if": "s.needsCleanSession",
+   "then": [
+    {
+     "setMode": "test_pending"
+    },
+    {
+     "postponeTest": "schedule.testDay.postponeTo"
+    },
+    {
+     "notify": "info",
+     "msg": "test_postponed_until_clean_session"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "struct.stall",
+   "stage": "structural",
+   "prio": 20,
+   "on": [
+    "test.completed"
+   ],
+   "if": "test.valid && prevTest.exists",
+   "let": {
+    "progress": "t.wpu_e1rm_added - pt.wpu_e1rm_added >= p.progressEps.e1rmKg || min(t.oa_hang_s.L, t.oa_hang_s.R) - min(pt.oa_hang_s.L, pt.oa_hang_s.R) >= p.progressEps.hangS || min(t.oa_top_hold_s.L, t.oa_top_hold_s.R) - min(pt.oa_top_hold_s.L, pt.oa_top_hold_s.R) >= p.progressEps.topHoldS || max(pt.oa_least_assist_pin.L, pt.oa_least_assist_pin.R) - max(t.oa_least_assist_pin.L, t.oa_least_assist_pin.R) >= p.progressEps.assistLb"
+   },
+   "then": [
+    {
+     "set": "s.noProgressTests",
+     "to": "progress ? 0 : s.noProgressTests + 1"
+    },
+    {
+     "set": "s.stallStage",
+     "to": "progress ? 0 : (s.noProgressTests + 1 >= 2 && s.stallStage == 0 ? 1 : (s.noProgressTests + 1 >= 3 && s.stallStage == 1 ? 2 : s.stallStage))"
+    },
+    {
+     "set": "s.bVariant",
+     "to": "!progress && s.noProgressTests + 1 >= 3 && s.stallStage == 1 ? 'ladder123' : s.bVariant"
+    },
+    {
+     "set": "s.extraDeloadPending",
+     "to": "!progress && s.noProgressTests + 1 >= 3 && s.stallStage == 1"
+    }
+   ],
+   "tag": "A+P"
+  },
+  {
+   "id": "struct.phase.gate",
+   "stage": "structural",
+   "prio": 15,
+   "on": [
+    "test.completed",
+    "attempt.logged"
+   ],
+   "if": "phaseGatePasses(phase)",
+   "then": [
+    {
+     "advancePhase": true
+    },
+    {
+     "notify": "celebrate",
+     "msg": "phase_up"
+    }
+   ],
+   "tag": "A"
+  },
+  {
+   "id": "struct.block.next",
+   "stage": "structural",
+   "prio": 10,
+   "on": [
+    "test.completed"
+   ],
+   "if": "test.valid",
+   "then": [
+    {
+     "startNewBlock": true
+    },
+    {
+     "if": "s.extraDeloadPending",
+     "do": [
+      {
+       "insertWeek": "extra_deload"
+      },
+      {
+       "set": "s.extraDeloadPending",
+       "to": "false"
+      }
+     ]
+    }
+   ],
+   "tag": "A"
+  }
+ ],
+ "inSessionRules": [
+  {
+   "id": "upd.wpu.gripStop",
+   "item": "wpu",
+   "on": "set.logged",
+   "if": "set.gripSlipBeforeLast",
+   "then": "endSet; markNoIncrease",
+   "tag": "A"
+  },
+  {
+   "id": "upd.h90.fail",
+   "item": "h90",
+   "on": "set.logged",
+   "if": "set.hold_s < 6",
+   "then": "remainingSets.assistPin += 5",
+   "tag": "A"
+  },
+  {
+   "id": "upd.oaa.fail",
+   "item": "oaa",
+   "on": "set.logged",
+   "if": "set.reps <= set.targetReps - 2",
+   "then": "remainingSets.assistPin += 5",
+   "tag": "P"
+  },
+  {
+   "id": "upd.B.wpu.grind",
+   "item": "wpu",
+   "template": "B",
+   "on": "set.logged",
+   "if": "set.reps < set.targetReps || set.rir == 0",
+   "then": "remainingSets.added = roundLoad(added - 2.5, 'belt', 'down')",
+   "tag": "P"
+  },
+  {
+   "id": "upd.scap.sideCap",
+   "item": "scap",
+   "on": "set.logged",
+   "if": "set.side == 'L'",
+   "then": "nextSet(R).targetReps = min(targetReps, set.reps)",
+   "tag": "A"
+  }
+ ],
+ "onboarding": {
+  "steps": [
+   {
+    "id": "rules",
+    "fields": [
+     "p.grip",
+     "p.completionArms"
+    ]
+   },
+   {
+    "id": "equipment",
+    "fields": [
+     "equipment.assisted_pullup_machine.calibration",
+     "gym.plates",
+     "has('wide_bar')",
+     "has('dip_belt')"
+    ]
+   },
+   {
+    "id": "baseline",
+    "modes": [
+     "enterKnown",
+     "scheduleBaselineTest"
+    ],
+    "metrics": [
+     "bw",
+     "wpu_3rm_added|wpu_1rm_added",
+     "bw_max_reps",
+     "oa_hang_s",
+     "oa_top_hold_s",
+     "oa_least_assist_pin"
+    ]
+   },
+   {
+    "id": "importHistory",
+    "optional": true,
+    "fields": [
+     "pastTests[] (validForGate flag)",
+     "currentLoads",
+     "phase",
+     "block.index",
+     "block.week",
+     "mode",
+     "plannedTestDate"
+    ]
+   },
+   {
+    "id": "schedule",
+    "fields": [
+     "schedule.preferred",
+     "habits.time"
+    ]
+   },
+   {
+    "id": "review",
+    "shows": [
+     "first 2 weeks materialized",
+     "all P-tagged rules (accept/decline each)",
+     "warnings"
+    ]
+   }
+  ]
+ }
+}

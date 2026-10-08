@@ -1,0 +1,33 @@
+{
+    "id": "GF-CLK-06",
+    "module": "clock",
+    "description": "02:30 inside the 2027-03-28 spring gap moves forward to 03:30 CEST",
+    "input": {
+        "module": "clock@1.0.0",
+        "scope_key": "golden:GF-CLK-06",
+        "clock": {
+            "now": "2026-10-07T08:00:00.000Z",
+            "zone": "Europe/Amsterdam",
+            "local_date": "2026-10-07",
+            "iso_week": "2026-W41",
+            "tz_offset_min": 120
+        },
+        "payload": {
+            "at_local": [
+                [
+                    "2027-03-28",
+                    "02:30"
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.0",
+    "expected": {
+        "outputs": {
+            "at_local": [
+                "2027-03-28T01:30:00Z"
+            ]
+        },
+        "outputs_jcs_sha256": "82652f1c2cb7e3ea9e846448d40d3138d49b3ebe025218fb25058d01b02d34a6"
+    }
+}

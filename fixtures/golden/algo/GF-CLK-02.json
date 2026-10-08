@@ -1,0 +1,40 @@
+{
+    "id": "GF-CLK-02",
+    "module": "clock",
+    "description": "Local date, time and offset of the C session and the test day",
+    "input": {
+        "module": "clock@1.0.0",
+        "scope_key": "golden:GF-CLK-02",
+        "clock": {
+            "now": "2026-10-07T08:00:00.000Z",
+            "zone": "Europe/Amsterdam",
+            "local_date": "2026-10-07",
+            "iso_week": "2026-W41",
+            "tz_offset_min": 120
+        },
+        "payload": {
+            "local": [
+                "2026-10-06T17:45:00Z",
+                "2026-10-11T11:00:00Z"
+            ]
+        }
+    },
+    "params": "default-1.0.0",
+    "expected": {
+        "outputs": {
+            "local": [
+                {
+                    "local_date": "2026-10-06",
+                    "local_time": "19:45",
+                    "tz_offset_min": 120
+                },
+                {
+                    "local_date": "2026-10-11",
+                    "local_time": "13:00",
+                    "tz_offset_min": 120
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "ee46d0115cd8db7f961e98ed3f2b01de5073ebb63959447c5ebfa692b582489c"
+    }
+}
