@@ -106,8 +106,10 @@ object Loadables {
         val u = LoadModel.unitKg(s.unit, params)!!
         return s.values.map { v ->
             val per = Grid.kg(v * u)
+            // added = count x the rounded per-implement mass, so the stored pair satisfies the server check
+            // `added_kg = implement_count * load_per_implement_kg` exactly (DATA_MODEL 9.6.4).
             point(
-                ctx, LoadMode.EXTERNAL, added = Grid.kg(count * v * u), native = v, unit = s.unit,
+                ctx, LoadMode.EXTERNAL, added = Grid.kg(count * per), native = v, unit = s.unit,
                 implementCount = count, perImplementKg = per,
             )
         }

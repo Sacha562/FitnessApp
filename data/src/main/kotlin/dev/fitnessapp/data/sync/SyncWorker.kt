@@ -39,10 +39,12 @@ class SyncWorker(
 
 /** Enqueues the sync work of ANDROID.md 7.8 / 9.3; never syncs in the sandbox build (F27). */
 class SyncScheduler(
-    private val workManager: WorkManager,
+    /** Resolved on first use, so a disabled scheduler (sandbox, tests) never touches WorkManager. */
+    private val workManagerProvider: () -> WorkManager,
     private val config: SyncConfig,
     private val enabled: Boolean,
 ) {
+    private val workManager: WorkManager by lazy(workManagerProvider)
     private val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
     /** After a committed local write (debounced) or with zero delay for foreground / "Sync now". */

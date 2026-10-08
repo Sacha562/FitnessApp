@@ -65,6 +65,15 @@ class LoadablesTest {
     }
 
     @Test
+    fun `lb dumbbells keep added equal to count x per-hand kg`() {
+        val db = LoadScheme.Dumbbells("lb", listOf(25.0, 35.0))
+        val bench = ExerciseLoadAttrs(0.0, 0.0, Laterality.BILATERAL, listOf(LoadMode.EXTERNAL))
+        val w = Loadables.enumerate(db, Loadables.Context(bench, null), params)
+        w.map { it.perImplementKg } shouldBe listOf(11.34, 15.88)
+        w.map { it.addedKg } shouldBe listOf(22.68, 31.76) // not Grid.kg(2 x 35 x 0.4536) = 31.75
+    }
+
+    @Test
     fun `lb stack with one add-on per set`() {
         val stack = LoadScheme.Stack("lb", 10.0, 10.0, 100.0, listOf(5.0), 1.0, null)
         val w = Loadables.enumerate(stack, Loadables.Context(squat.copy(implementBaseKg = 0.0), null), params)
