@@ -36,6 +36,8 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D20 | Milestone M1 | **Split into M1a and M1b** (2026-10-08) with the same total scope: M1a makes real sessions loggable as early as possible, M1b completes history editing, export, the reliability screen and the remaining telemetry (PLAN.md 11). |
 | D21 | Engine modules in M1a | **LOAD-1 and BW-1 in full, REST-1 as its base policy** (2026-10-08). Set logging needs the single LOAD function (effective load, assist kg, loadable steps, plate breakdown) and the bodyweight snapshot, so `load` and `bodyweight` (ALGORITHMS B2, B3) move from M3 into M1a. The rest timer takes its durations from `rest` (B11) in a base form: warm-up rests, challenge item values, the user's `rest_pref_s`, the class table `rest.base` with the strength-heavy rule and the clamps. The outcome modifiers, the fatigue modifier (needs FAT-1), the between-sides and superset formulas that need TIME-1, the live readout and the adaptation follow in M3 as `rest@1.1.0`. |
 | D22 | Session start in M1a | **Empty session only** (2026-10-08). Until the challenge engine (M2) materializes challenge sessions, every session starts empty and exercises are added from the catalog; no "repeat a past session" or user template is added. |
+| D23 | Prefill within a session | **Today's change carries forward** (2026-10-08). When a set logged today differs from last time's set at the same index, the next set of that exercise is prefilled from today's previous set (`prefill_source = last_prev_index`); otherwise "last time" at the same index applies as before. Order: accepted adjustment, target, today's changed previous set, last time same index, last time previous index, default. Amends ALGORITHMS_PLANNING 19.7. |
+| D24 | OAP card types | **Eccentric (negative) and top-hold round cards ship with M2** (2026-10-08), with the challenge engine; until then OAP sessions stay on the chat workflow (D4). M1a covers external, dumbbell, stack, bodyweight, belt, assisted-pin, timed-hold and left/right cards. |
 
 ---
 
@@ -251,3 +253,5 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   pull-up on the machine offers no `torso_rotation` flag and its C1/A1 items lose `stopSetOn: torso_rotation` (the
   knee platform prevents rotation); the finger-assisted variant keeps the flag. `ui.reasonchips` offers the
   `torso_rotation` reason only when the exercise offers that flag (ALGORITHMS_PLANNING 19.2, UX 11.9, 19.3, GF-UX-07/14).
+- 2026-10-08 — M1a live-session decisions (user Q&A): D23 (a set changed today carries forward to the next set's
+  prefill; ALGORITHMS_PLANNING 19.7 updated) and D24 (eccentric and top-hold round cards move to M2).

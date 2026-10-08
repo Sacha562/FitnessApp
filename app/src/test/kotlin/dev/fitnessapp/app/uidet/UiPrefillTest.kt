@@ -41,15 +41,32 @@ class UiPrefillTest {
         )
         val adj = SetValues(LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 22.5, 4)
         val target = SetValues(LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 25.0, 3)
-        UiPrefill.prefill(slot, PrefillContext(adj, target, hist, default)).value.source shouldBe PrefillSource.ACCEPTED_ADJUSTMENT
-        UiPrefill.prefill(slot, PrefillContext(null, target, hist, default)).value.values.native shouldBe 25.0
-        val last = UiPrefill.prefill(slot, PrefillContext(null, null, hist, default)).value
+        UiPrefill.prefill(slot, PrefillContext(adj, target, hist, default = default)).value.source shouldBe PrefillSource.ACCEPTED_ADJUSTMENT
+        UiPrefill.prefill(slot, PrefillContext(null, target, hist, default = default)).value.values.native shouldBe 25.0
+        val last = UiPrefill.prefill(slot, PrefillContext(null, null, hist, default = default)).value
         last.source shouldBe PrefillSource.LAST_SAME_INDEX
         last.values shouldBe SetValues(LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 20.0, 4)
         val prev = UiPrefill.prefill(SetSlot(3, "both", LoadMode.BODYWEIGHT_PLUS_EXTERNAL), PrefillContext(history = hist, default = default)).value
         prev.source shouldBe PrefillSource.LAST_PREV_INDEX
         prev.values.reps shouldBe 4
         UiPrefill.prefill(slot, PrefillContext(default = default)).value.source shouldBe PrefillSource.DEFAULT
+    }
+
+    @Test
+    fun todayChangeCarriesForward() {
+        val m = LoadMode.EXTERNAL
+        val hist = listOf(
+            HistorySet("s1", Instant.parse("2026-10-01T18:00:00Z"), 1, "both", SetValues(m, 55.0, 8)),
+            HistorySet("s1", Instant.parse("2026-10-01T18:00:00Z"), 2, "both", SetValues(m, 55.0, 8)),
+        )
+        val slot = SetSlot(2, "both", m)
+        val changed = UiPrefill.prefill(slot, PrefillContext(history = hist, todayPrevious = SetValues(m, 60.0, 8), default = SetValues(m, 20.0, 8))).value
+        changed.values shouldBe SetValues(m, 60.0, 8)
+        changed.source shouldBe PrefillSource.LAST_PREV_INDEX
+        val same = UiPrefill.prefill(slot, PrefillContext(history = hist, todayPrevious = SetValues(m, 55.0, 8), default = SetValues(m, 20.0, 8))).value
+        same.source shouldBe PrefillSource.LAST_SAME_INDEX
+        // no history at all: today's previous set is the best guess
+        UiPrefill.prefill(slot, PrefillContext(todayPrevious = SetValues(m, 40.0, 10), default = SetValues(m, 20.0, 8))).value.values.native shouldBe 40.0
     }
 
     @Test

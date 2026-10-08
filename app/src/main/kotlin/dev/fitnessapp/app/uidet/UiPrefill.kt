@@ -54,6 +54,8 @@ data class PrefillContext(
     val acceptedAdjustment: SetValues? = null,
     val target: SetValues? = null,
     val history: List<HistorySet> = emptyList(),
+    /** Today's set k-1 of this exercise on the same side (D23), if logged. */
+    val todayPrevious: SetValues? = null,
     val default: SetValues,
     /** The item has the side rule "right <= left" (C69); [leftLoggedReps] is today's left set of the pair. */
     val sideRule: Boolean = false,
@@ -131,10 +133,14 @@ object UiPrefill {
         val history = lastExposure(slot, ctx.history)
         val same = history.firstOrNull { it.setIndex == slot.setIndex }?.values
         val prev = history.filter { it.setIndex < slot.setIndex }.maxByOrNull { it.setIndex }?.values
+        // D23: a set changed today (it differs from last time's set at its index) carries forward.
+        val lastAtPrevIndex = history.firstOrNull { it.setIndex == slot.setIndex - 1 }?.values
+        val todayChanged = ctx.todayPrevious?.takeIf { it.loadMode == slot.loadMode && it != lastAtPrevIndex }
 
         val chain: List<Pair<PrefillSource, SetValues?>> = listOf(
             PrefillSource.ACCEPTED_ADJUSTMENT to ctx.acceptedAdjustment?.takeIf { it.loadMode == slot.loadMode },
             PrefillSource.ENGINE_TARGET to ctx.target?.takeIf { it.loadMode == slot.loadMode },
+            PrefillSource.LAST_PREV_INDEX to todayChanged,
             PrefillSource.LAST_SAME_INDEX to same,
             PrefillSource.LAST_PREV_INDEX to prev,
             PrefillSource.DEFAULT to ctx.default,
@@ -172,6 +178,7 @@ object UiPrefill {
             put("accepted_adjustment", json(ctx.acceptedAdjustment))
             put("target", json(ctx.target))
             put("last", buildJsonArray { history.forEach { add(json(it.values)) } })
+            put("today_previous", json(ctx.todayPrevious))
             put("default", json(ctx.default))
             put("side_rule", ctx.sideRule)
             put("left_logged_reps", ctx.leftLoggedReps?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)

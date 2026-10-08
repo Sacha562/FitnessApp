@@ -97,6 +97,7 @@ class SessionRepository(
     fun observeRecent(limit: Int): Flow<List<WorkoutSessionEntity>> = db.sessions().observeRecent(limit)
 
     suspend fun session(id: String): WorkoutSessionEntity? = db.sessions().get(id)
+    suspend fun observeActiveOnce(): WorkoutSessionEntity? = db.sessions().active()
     suspend fun sets(sessionId: String): List<SetLogEntity> = db.setLogs().bySession(sessionId)
     suspend fun exercises(sessionId: String): List<SessionExerciseEntity> = db.sessionExercises().bySession(sessionId)
 

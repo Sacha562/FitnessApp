@@ -2922,7 +2922,9 @@ the last actual values of the same exercise and set index, the equipment load sc
 **Output.** Displayed values, stepper steps, the snapped value, a deviation flag with direction.
 
 ```
-prefill(field) = first non-null(acceptedAdjustment[k], target[k], lastActual[k], lastActual[k−1], default)
+prefill(field) = first non-null(acceptedAdjustment[k], target[k], todayChanged[k−1], lastActual[k], lastActual[k−1], default)
+   // D23: todayChanged[k−1] = today's set k−1 of this exercise when it differs from lastActual[k−1] (or no
+   // lastActual[k−1] exists); logged as last_prev_index
    // a challenge in-session rule (D14, C46) rewrites target[k] of the remaining sets itself ("Rule: … · Undo");
    // an Undo restores the previous targets; general suggestions arrive only as an accepted adjustment (D10, C16)
 lastActual: only sets of the same exercise in the same load mode (bodyweight, weighted, assisted, ...); no prefill

@@ -1,32 +1,31 @@
 package dev.fitnessapp.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import dev.fitnessapp.algo.EngineVersion
-import dev.fitnessapp.app.ui.home.BuildInfo
-import dev.fitnessapp.app.ui.home.HomeScreen
-import dev.fitnessapp.app.ui.home.HomeViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import dev.fitnessapp.app.nav.Routes
+import dev.fitnessapp.app.ui.AppRoot
 import dev.fitnessapp.app.ui.theme.FitnessTheme
 
 class MainActivity : ComponentActivity() {
+    /** The internal route of the last notification tap (ANDROID.md 7.4); consumed by [AppRoot]. */
+    private val route = MutableStateFlow<Routes.Target?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        route.value = intent?.getStringExtra("route")?.let(Routes::parse)
         val container = (application as FitnessApplication).container
-        val build = BuildInfo(BuildConfig.VERSION_NAME, EngineVersion.ENGINE_VERSION)
         setContent {
-            FitnessTheme {
-                val vm: HomeViewModel = viewModel(factory = viewModelFactory { initializer { HomeViewModel(container) } })
-                val state by vm.state.collectAsStateWithLifecycle()
-                HomeScreen(state, build, onSignIn = vm::signIn, onCheck = vm::checkConnection, onSignOut = vm::signOut)
-            }
+            FitnessTheme { AppRoot(container, route) }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra("route")?.let { route.value = Routes.parse(it) }
     }
 }
