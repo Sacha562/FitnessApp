@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: design complete, no code yet. Next step: milestone M0.*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08 (see the M0 log in `README.md`). Next step: milestone M1.*
 
 ---
 
@@ -466,7 +466,7 @@ bias), then roughly every mesocycle (5 weeks) or after a test day.
 
 Each milestone ends with something you can use. Sizes are rough, in Claude Code working sessions.
 
-### M0 — Foundations (1–2 sessions)
+### M0 — Foundations (1–2 sessions) — done 2026-10-08
 
 - Install Temurin JDK 21 and Android SDK command-line tools; you accept the SDK licenses and pair the
   phone over Wi-Fi (`docs/ANDROID.md` has the exact commands).
@@ -477,19 +477,54 @@ Each milestone ends with something you can use. Sizes are rough, in Claude Code 
   add `fitness` to the exposed schemas; probe verifies.
 - **Done when**: an empty app installs on your phone, signs in with your existing account, and a test
   row round-trips to Supabase; `gradlew :algo:test` runs green.
+- **Result**: all done-when checks passed. Deviations, each recorded in `docs/DECISIONS.md` (changelog
+  2026-10-08): the JDK is a portable Temurin zip and the Android SDK lives in `C:\Users\sivuc\Android\Sdk`
+  (Windows packaging of the Claude app); compileSdk 37 with targetSdk 36; `profiles` and `gyms` moved
+  into M0 (migration 006) so the first sign-in proves the write path; `pg_jsonschema` installed
+  (migration 007); the full params set 1.0.0 (621 keys) is seeded already; later migrations shifted by two.
 
-### M1 — Gym logger you can use (3–5 sessions)
+### M1 — Gym logger you can use (3–5 sessions, split into M1a and M1b, D20)
 
-- Curated catalog (~150 exercises, EN/NL names, coefficients, validator in CI), equipment checklist,
-  muscle map.
-- Start/finish session; add/remove/reorder/skip exercises; current-set card with RIR-chip logging;
-  reason chips; left/right pairs; timed holds with lead-in; assisted pins and dip-belt loads; warm-up
-  block; session summary with sRPE and joint pain; history with edit.
-- Rest timer with all reliability measures, tested on your phone (Doze + screen off + app killed).
-- Offline outbox sync, JSON export, telemetry events.
-- Prefill = "last time" (no recommendations yet).
+M1 is split so that real sessions can be logged as early as possible; the total scope is unchanged.
+
+#### M1a — Log real sessions
+
+- **Catalog**: about 150 curated exercises with English and Dutch names and muscle coefficients, every
+  slug the OAP definition references (C38), the CAT-1 validator in CI, and the bundled catalog JSON that
+  `seedgen` turns into migration 009. You approve a summary page (exercises, equipment, main muscles)
+  before it is seeded (D19).
+- **Database**: migrations 008-015 (catalog, user configuration, challenge core, snapshots, sessions and
+  sets, challenge events and calendar, telemetry, caches and exports), each shown to you, applied through
+  the MCP and verified with the DATA_MODEL section 17 checklist and two-user RLS tests.
+- **Phone storage and sync**: the Room v1 schema (ANDROID section 8), the outbox with push, pull and
+  last-writer-wins merge, the sync worker, the sync status line and the manual "Re-push all data" action
+  (D17). The M0 profile write moves onto the outbox.
+- **Equipment and onboarding**: the Basic-Fit equipment checklist with assisted-machine calibration and
+  your dip belt, the disclaimer, and the permission and reliability setup for your OnePlus (notifications,
+  exact alarms, battery-optimisation exemption, OxygenOS background settings).
+- **Live session**: start and finish a session; add, remove, reorder, skip and "do later"; the current-set
+  card with RIR-chip logging (D9) and the reason chips (`ui.reasonchips`); left/right pairs; timed holds
+  with lead-in; assisted pins and dip-belt loads; the warm-up block (its interval countdown runs in the
+  app, ANDROID OI-27); prefill from the full `ui.prefill` module with "last time" as its source (D18).
+- **Rest timer** with every reliability measure (foreground service, `setAlarmClock`, countdown
+  notification with an Android 16 Live Update), tested on your phone with Doze, the screen off and the
+  app killed.
+- **Session summary** with session effort (sRPE) and joint pain.
 - **Done when**: you log a full real session (any type) without signal and it appears in Supabase
   afterwards; the rest timer fires on time with the screen off.
+
+#### M1b — Complete the logger
+
+- History with editing of past sessions and sets.
+- Exercises tab: the catalog list, exercise detail and the five-state preferences (stored now, used by
+  the selection modules in M3).
+- The monthly JSON export (`.json.gz`) and its reminder.
+- The Reliability screen with alarm-latency statistics, and the remaining telemetry events of the
+  DATA_MODEL 9.8.1 registry.
+- The `fitness_review` views (migration 017), so the first algorithm review can start after 4-6 weeks of
+  logs.
+- **Done when**: you can correct a past session, export your data, and the review views return your
+  logged sessions.
 
 ### M2 — Challenge engine + your OAP program (4–6 sessions)
 
@@ -512,7 +547,7 @@ Each milestone ends with something you can use. Sizes are rough, in Claude Code 
   prescription with double progression, warm-ups, rest durations, reason semantics, in-session
   suggestions, stall handling.
 - Set/rep preferences and the warning engine (warn-only).
-- Exercise preferences (5-state), eligibility gate, selection, ordering, substitution, time
+- Exercise preferences (5-state, captured in M1b) feeding the eligibility gate, selection, ordering, substitution, time
   fitting — for a session type you choose manually.
 - **Done when**: a manually chosen legs or push session gets loadable prescriptions that land within
   ±1 RIR of target most of the time after 3 exposures.
@@ -609,17 +644,17 @@ everything else and its constants need real data.
 
 ---
 
-## 15. Open items (decide later, not blocking M0)
+## 15. Open items
 
-- Exact phone model and Android version (Live Update availability, OEM-specific settings screens).
-- Application id `dev.fitnessapp` (cannot change later without reinstalling; confirm before the first
-  install in M0).
+Settled at M0: the phone is a OnePlus CPH2747 on Android 16 (API 36), so Live Updates are available and
+the OnePlus battery guidance applies; the application id `dev.fitnessapp` is confirmed and installed;
+`pg_jsonschema` is installed.
+
 - Basic-Fit equipment details (done via the in-app checklist in M1).
 - Running frequency and priority (setting; default low).
 - Muscle goals (set in onboarding, D6).
 - Approve/decline each OAP `P` rule (M2 setup).
 - Whether the Todoist tasks are completed or deleted at cutover, and when.
-- Installing `pg_jsonschema` in the shared project (asked at M0).
 - Health Connect, widget, GitHub Actions + Obtainium (M6).
 - Adding your friend as a user (allowlist row + onboarding pass).
 

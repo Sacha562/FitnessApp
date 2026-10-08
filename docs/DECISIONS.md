@@ -15,7 +15,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | ID | Topic | Decision |
 |----|-------|----------|
 | D1 | Stack | **Native Kotlin + Jetpack Compose (Material 3).** Claude installs Temurin JDK 21 and the Android SDK command-line tools (no Android Studio). The user accepts the SDK license and enables wireless debugging on the phone once. Algorithms live in a pure Kotlin JVM module. |
-| D2 | Phone | **Xiaomi / OnePlus / Oppo class device** (most aggressive background killers). The rest timer and session service must use every reliability measure: foreground service, `setAlarmClock`, battery-optimisation exemption, autostart guidance, on-device Doze test. Exact model and Android version still to be confirmed (affects Android 16 Live Updates). |
+| D2 | Phone | **Xiaomi / OnePlus / Oppo class device** (most aggressive background killers). The rest timer and session service must use every reliability measure: foreground service, `setAlarmClock`, battery-optimisation exemption, autostart guidance, on-device Doze test. Confirmed at M0 (2026-10-08): **OnePlus CPH2747, Android 16 (API 36)**, so Android 16 Live Updates are available and the OnePlus (OxygenOS) battery guidance applies. |
 | D3 | Users | **Allowlist with only the user for now, built generically.** No hardcoded OAP logic, no sex/age-specific defaults that silently assume a young male, onboarding works for any user. Adding a friend later = one allowlist row. The other 5 accounts in the shared chess project are blocked by RLS. |
 | D4 | OAP source of truth | **The app takes over.** At cutover the current OAP state is imported (phase, block, week, loads, pins, test history with validity flags). The app's rule engine recalculates loads after each session and test day. The Todoist session tasks are retired (only after explicit user confirmation at cutover), the artifact is frozen as a reference document, and the home habits (daily hang, plank) become in-app reminders. Until cutover the existing chat workflow continues unchanged. |
 | D5 | Extra (non-challenge) training | **Separate legs/push sessions are allowed on challenge gap days.** The "≥1 rest day between gym sessions" rule applies only to sessions that load pull / grip / elbow flexors. Never a gym session the day before session B or a test day. Never heavy grip or elbow-flexor work in protected windows. Optional add-on blocks at the end of C (~35 min free) and A (~20 min free). Default maximum gym visits per week: 4 (setting). |
@@ -30,6 +30,10 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D14 | In-session challenge rules | **Auto-apply with Undo.** Challenge in-session rules (e.g. session A first-set pin calibration ±5 lb, 90° hold failure → +5 lb, B grind → −2.5 kg) change the remaining sets immediately; the set card shows "Rule: … · Undo". General (non-challenge) in-session changes remain one-tap suggestions (D10). See C46. |
 | D15 | Day before session A | **Allowed freely.** A general legs/push session may be planned on any gap day including the day before A; no whole-body (systemic) penalty term in v1. The 24 h protected window before A (no lats / elbow flexors / forearms) still applies (C12). See C50. |
 | D16 | Android Auto Backup | **Off.** Supabase sync and the monthly JSON export are the backups; avoids restoring a stale local database that conflicts with sync. |
+| D17 | Server data recovery | **Manual "Re-push all data"** (2026-10-08). A Sync status action re-queues every local row of every pushed table in dependency order; the user triggers it. Automatic detection of an emptied server is deferred. Closes ANDROID OI-25 and DATA_MODEL open issue 12. |
+| D18 | Set prefill | **The full `ui.prefill` module ships in M1** (2026-10-08), implemented to ALGORITHMS_PLANNING §19 with "last time" as its only source (right side capped at the left, hold steps, no prefill across load modes); M3 adds the `rx` targets as a second source. Amends the build order of C73 / ALGORITHMS_PLANNING. |
+| D19 | Catalog review | **Summary review before seeding** (2026-10-08). Claude authors the ~150-exercise catalog from the specs and free-exercise-db; the CAT-1 validator must pass; the user approves a summary page (exercises, equipment, main muscles per exercise) before migration 009 is applied. Coefficients are not reviewed line by line. |
+| D20 | Milestone M1 | **Split into M1a and M1b** (2026-10-08) with the same total scope: M1a makes real sessions loggable as early as possible, M1b completes history editing, export, the reliability screen and the remaining telemetry (PLAN.md 11). |
 
 ---
 
@@ -226,3 +230,7 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   `sse.detrain_cap` = 0.1625 ln so the cap is exactly the 15 % of C27; `today.reason_codes` gains
   `NOTHING_TO_TRAIN` and `NO_ELIGIBLE_EXERCISE` (ALGORITHMS_PLANNING §0.6). Generation notes and the
   remaining flagged items: `docs/research/params-1.0.0-notes.md`.
+- 2026-10-08 — M1 planning decisions (user Q&A after M0): D17 manual re-push, D18 full `ui.prefill` in M1,
+  D19 catalog summary review before seeding, D20 M1 split into M1a / M1b. D2 updated with the confirmed
+  phone (OnePlus CPH2747, Android 16). PLAN.md, ALGORITHMS_PLANNING build order, ANDROID OI-25 and
+  DATA_MODEL open issue 12 updated accordingly.

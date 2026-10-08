@@ -3931,9 +3931,9 @@ planner's enumeration (one pass gives every "today = type" optimum). Target: < 1
 (§17.8), `InjuryFilterTest` (§18.3), `TodayCardComposerTest` … `PrefillTest` (§19), and the golden suites
 `W41GoldenTest`, `DstW43GoldenTest`, `SelectionGoldenTest`, `PersonaInvariantTest` (§20.2), `ReplayGoldenTest`.
 
-**Build order (milestones of the critique's MVP; C73).** M1 (logger): `catalog` (seed + validator in CI),
-`ui.reasonchips`. M2: `calendar.classify`, `safety`, `time` (challenge add-on capacity). M3: `pref`, `elig`, `select`,
-`order`, `substitute`, `injury`, `ui.prefill`. M4: `setcredit`, `readiness`, `targets`, `runs`, `allocator`, `weekplan`, `today`, `rotate`,
+**Build order (milestones of the critique's MVP; C73, D18).** M1 (logger): `catalog` (seed + validator in CI),
+`ui.reasonchips`, `ui.prefill` (D18: "last time" as the only source; M3 adds the `rx` targets). M2: `calendar.classify`, `safety`, `time` (challenge add-on capacity). M3: `pref`, `elig`, `select`,
+`order`, `substitute`, `injury`, the `rx` source of `ui.prefill`. M4: `setcredit`, `readiness`, `targets`, `runs`, `allocator`, `weekplan`, `today`, `rotate`,
 `ui.todaycard`, `ui.prompts`, `ui.volumebars`, `ui.warndisplay`, `ui.progress`. M5: `tuner`, `sim`, `replay`.
 
 **Reproducing §21.** The numbers of §21 and §22 came from Python reference prototypes written for this specification
