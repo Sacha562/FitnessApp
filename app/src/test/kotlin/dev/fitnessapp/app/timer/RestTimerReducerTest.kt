@@ -116,6 +116,17 @@ class RestTimerReducerTest {
         dead.timer!!.ended_by shouldBe "elapsed_while_dead"
         val recovered = dead.effects.filterIsInstance<RestEffect.Event>().single()
         recovered.type shouldBe "rest_recovered"
+        dead.effects.none { it is RestEffect.Alert } shouldBe true // missed by 70 s: no catch-up vibration
+    }
+
+    @Test
+    fun `end alarm landing in a cold process still alerts`() {
+        val t = start()
+        val late = t.start_elapsed_ms + (t.end_wall_ms - t.start_wall_ms) + 400 // reconcile ran 400 ms after the end
+        val tr = RestTimerReducer.reconcile(t, t.end_wall_ms + 400, late, t.boot_count, cfg)
+        tr.timer!!.state shouldBe "overtime"
+        tr.effects.any { it is RestEffect.Alert } shouldBe true
+        tr.effects.filterIsInstance<RestEffect.ScheduleOvertime>().single().atWallMs shouldBe t.end_wall_ms + cfg.overtimeReminderS * 1000L
     }
 
     @Test

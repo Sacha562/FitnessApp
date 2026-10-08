@@ -16,7 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,7 +70,7 @@ fun AppRoot(c: AppContainer, route: MutableStateFlow<Routes.Target?>) {
 
 @Composable
 private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlow<Routes.Target?>) {
-    val backStack = remember { mutableStateListOf<AppKey>(AppKey.Main) }
+    val backStack = rememberSaveable(saver = BackStackSaver) { mutableStateListOf<AppKey>(AppKey.Main) }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     val pending by route.collectAsState()
 
@@ -81,7 +83,10 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         val active = c.sessionRepository.observeActiveOnce()
         when (pending) {
             Routes.Target.DataSync -> push(AppKey.DataSync)
-            Routes.Target.CurrentSession, null -> if (active != null) push(AppKey.LiveSession(active.id))
+            Routes.Target.CurrentSession, null -> active?.let { a ->
+                val key = AppKey.LiveSession(a.id)
+                if (pending != null || key !in backStack) push(key)
+            }
             Routes.Target.Today -> {}
         }
         route.value = null
@@ -129,3 +134,8 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         },
     )
 }
+
+private val BackStackSaver = listSaver<SnapshotStateList<AppKey>, String>(
+    save = { stack -> stack.map(AppKey::encode) },
+    restore = { saved -> mutableStateListOf<AppKey>().apply { addAll(saved.mapNotNull(AppKey::decode).ifEmpty { listOf(AppKey.Main) }) } },
+)

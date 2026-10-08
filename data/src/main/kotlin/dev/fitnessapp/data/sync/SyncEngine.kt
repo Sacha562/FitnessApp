@@ -73,6 +73,10 @@ class SyncEngine(
     suspend fun run(trigger: String): RunOutcome {
         val uid = remote.userId()
         if (uid == null) {
+            if (remote.authRefreshPending()) {
+                _state.value = SyncState.Offline
+                return RunOutcome.RETRY
+            }
             _state.value = SyncState.NeedsSignIn
             return RunOutcome.STOPPED
         }

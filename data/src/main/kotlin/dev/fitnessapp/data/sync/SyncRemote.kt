@@ -2,6 +2,7 @@ package dev.fitnessapp.data.sync
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
@@ -20,6 +21,9 @@ class SyncRemoteException(val failure: SyncFailure, cause: Throwable? = null) : 
 interface SyncRemote {
     /** The signed-in user id, or null. */
     fun userId(): String?
+
+    /** True while the session exists but its refresh is failing (offline with an expired token): retry, don't stop. */
+    fun authRefreshPending(): Boolean = false
 
     /** Mutable tables: merge-duplicates upsert; returns the representation (`id, client_updated_at, device_id, server_updated_at`). */
     suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject>
@@ -46,6 +50,8 @@ interface SyncRemote {
 
 class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
     override fun userId(): String? = client.auth.currentUserOrNull()?.id
+
+    override fun authRefreshPending(): Boolean = client.auth.sessionStatus.value is SessionStatus.RefreshFailure
 
     override suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject> = call {
         client.from(table).upsert(JsonArray(rows)) {

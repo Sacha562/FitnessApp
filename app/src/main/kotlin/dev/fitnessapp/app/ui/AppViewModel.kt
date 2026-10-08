@@ -33,12 +33,15 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     init {
         viewModelScope.launch {
             runCatching { c.supabase.auth.awaitInitialization() }
+            // Offline with an expired token the auth client reports no user while its refresh fails; the
+            // remembered account keeps the app usable (offline-first) until an explicit sign-out.
             val user = c.supabase.auth.currentUserOrNull()
-            if (user == null) {
+            if (user != null) c.account.remember(user.id, user.email)
+            if (c.account.userId() == null) {
                 _state.update { it.copy(gate = Gate.SIGNED_OUT) }
                 return@launch
             }
-            _state.update { it.copy(email = user.email) }
+            _state.update { it.copy(email = user?.email ?: c.account.email()) }
             val profile = c.profiles.get()
             if (profile?.onboarding_completed_at != null) _state.update { it.copy(gate = Gate.READY) } else check()
         }
@@ -53,6 +56,7 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
                     this.email = email.trim()
                     this.password = password
                 }
+                c.supabase.auth.currentUserOrNull()?.let { u -> c.account.remember(u.id, u.email) }
                 _state.update { it.copy(email = email.trim()) }
                 check()
             } catch (e: Exception) {
@@ -107,6 +111,7 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
         viewModelScope.launch {
             if (!canSignOut()) return@launch
             runCatching { c.supabase.auth.signOut() }
+            c.account.forget()
             _state.value = AppState(gate = Gate.SIGNED_OUT)
         }
     }

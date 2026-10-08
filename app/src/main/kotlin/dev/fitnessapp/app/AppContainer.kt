@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import androidx.work.WorkManager
 import dev.fitnessapp.algo.core.clock.Clock
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.data.account.AccountStore
 import dev.fitnessapp.app.notify.NotificationPresenter
 import dev.fitnessapp.app.platform.DeviceState
 import dev.fitnessapp.app.platform.Haptics
@@ -54,13 +55,14 @@ class AppContainer(private val context: Context) {
 
     val device: DeviceState = DeviceState(context)
     val deviceIdentity: DeviceIdentity = DeviceIdentity(context)
+    val account: AccountStore = AccountStore(context)
     val ids = UuidV7Generator({ clock.now().toEpochMilli() })
     private val zone: () -> ZoneId = { ZoneId.of("Europe/Amsterdam") }
 
     val db: FitnessDatabase by lazy { FitnessDatabase.open(context, clock.now().toEpochMilli()) }
     val outbox: OutboxWriter by lazy { OutboxWriter(db) }
     val writeContext: WriteContext by lazy {
-        WriteContext(deviceIdentity, BuildConfig.VERSION_NAME.take(40), clock, zone, ids) { supabase.auth.currentUserOrNull()?.id }
+        WriteContext(deviceIdentity, BuildConfig.VERSION_NAME.take(40), clock, zone, ids) { supabase.auth.currentUserOrNull()?.id ?: account.userId() }
     }
     val telemetry: TelemetryWriter by lazy { TelemetryWriter(db, outbox, writeContext, EventRegistry.bundled()) }
 
@@ -100,7 +102,7 @@ class AppContainer(private val context: Context) {
 
     /** Platform events without a domain write (`fgs_*`, permission and reliability events). */
     suspend fun fgsEvent(type: String, payload: Map<String, Any?>) {
-        if (supabase.auth.currentUserOrNull() == null) return
+        if (writeContext.userId() == null) return
         db.withTransaction {
             telemetry.write(
                 EventDraft(

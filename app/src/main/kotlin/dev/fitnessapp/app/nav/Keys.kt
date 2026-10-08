@@ -8,6 +8,28 @@ sealed interface AppKey {
     data object DataSync : AppKey
     data object Equipment : AppKey
     data object Reliability : AppKey
+
+    companion object {
+        /** Saved-state form of a key, so the back stack survives recreation and process death. */
+        fun encode(k: AppKey): String = when (k) {
+            Main -> "main"
+            is LiveSession -> "live:" + k.sessionId
+            is Summary -> "summary:" + k.sessionId
+            DataSync -> "data_sync"
+            Equipment -> "equipment"
+            Reliability -> "reliability"
+        }
+
+        fun decode(s: String): AppKey? = when {
+            s == "main" -> Main
+            s.startsWith("live:") -> LiveSession(s.removePrefix("live:"))
+            s.startsWith("summary:") -> Summary(s.removePrefix("summary:"))
+            s == "data_sync" -> DataSync
+            s == "equipment" -> Equipment
+            s == "reliability" -> Reliability
+            else -> null
+        }
+    }
 }
 
 /** Top-level tabs of M1a; Week, Exercises and Challenges arrive with their milestones. */

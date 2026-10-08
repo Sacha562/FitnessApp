@@ -123,6 +123,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: () -> Unit,
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
             }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon })
             if (ui.banner == "pain") Banner("Pain noted. The exercise ended. If it hurts, stop and get it checked; this app does not give medical advice.", vm::dismissBanner)
+            if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", vm::dismissBanner)
             ExerciseList(ui, Modifier.weight(0.38f), onFocus = vm::focus, onAdd = { sheet = Sheet.Add })
             HorizontalDivider()
             Column(Modifier.weight(0.62f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {

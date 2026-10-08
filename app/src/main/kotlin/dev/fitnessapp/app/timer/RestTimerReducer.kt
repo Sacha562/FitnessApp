@@ -36,6 +36,7 @@ data class TimerConfig(
     val minLeftAfterAdjustS: Int = 5,
     val minTimerS: Int = 10,
     val overtimeReminderS: Int = 60,
+    val catchUpAlertMaxS: Int = 60,
 )
 
 /** The rest card's display (UX 19.8). */
@@ -231,14 +232,15 @@ object RestTimerReducer {
         return when {
             t.state == RUNNING && r > 0 -> Transition(t, listOf(RestEffect.ScheduleEnd(t.id, t.end_wall_ms), RestEffect.NotifyResting))
             t.state == RUNNING -> {
+                // The end alarm can arrive in a cold process after reconcile already ran: a short miss still alerts.
                 val next = t.copy(state = OVERTIME, ended_by = "elapsed_while_dead")
-                Transition(
-                    next,
-                    listOf(
-                        RestEffect.Persist(next), RestEffect.NotifyOvertime,
-                        RestEffect.Event("rest_recovered", mapOf("timer_id" to JsonPrimitive(t.id), "missed_by_ms" to JsonPrimitive(-r))),
-                    ),
-                )
+                val reminderAt = t.end_wall_ms + cfg.overtimeReminderS * 1000L
+                val effects = mutableListOf<RestEffect>(RestEffect.Persist(next))
+                if (-r <= cfg.catchUpAlertMaxS * 1000L) effects += RestEffect.Alert
+                effects += RestEffect.NotifyOvertime
+                if (cfg.overtimeReminderS > 0 && reminderAt > nowWall) effects += RestEffect.ScheduleOvertime(t.id, reminderAt)
+                effects += RestEffect.Event("rest_recovered", mapOf("timer_id" to JsonPrimitive(t.id), "missed_by_ms" to JsonPrimitive(-r)))
+                Transition(next, effects)
             }
             t.state == OVERTIME && !t.overtime_reminder_sent && t.end_wall_ms + cfg.overtimeReminderS * 1000L > nowWall ->
                 Transition(t, listOf(RestEffect.ScheduleOvertime(t.id, t.end_wall_ms + cfg.overtimeReminderS * 1000L), RestEffect.NotifyOvertime))

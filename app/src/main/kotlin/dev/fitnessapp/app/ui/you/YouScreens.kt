@@ -81,7 +81,7 @@ fun YouRoute(
         NavRow("Rest timer reliability", "Permissions, phone settings, alarm test", onReliability)
         NavRow("Log bodyweight", "Used for pull-ups, dips and assisted machines", { weighIn = true })
         SectionLabel("Account")
-        Text("Signed in as " + (c.supabase.auth.currentUserOrNull()?.email?.let(::mask) ?: "—"), style = MaterialTheme.typography.bodyMedium)
+        Text("Signed in as " + ((c.supabase.auth.currentUserOrNull()?.email ?: c.account.email())?.let(::mask) ?: "—"), style = MaterialTheme.typography.bodyMedium)
         OutlinedButton(onClick = {
             scope.launch { if (appVm.canSignOut()) appVm.signOut() else signOutBlocked = true }
         }, modifier = Modifier.padding(top = 8.dp)) { Text("Sign out") }

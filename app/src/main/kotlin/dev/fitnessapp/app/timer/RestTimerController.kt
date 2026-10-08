@@ -40,7 +40,7 @@ class RestTimerController(
     val timerConfig = TimerConfig(
         adjustStepS = config.timerAdjustStepS, longPressStepS = config.timerLongPressStepS,
         minLeftAfterAdjustS = config.timerMinLeftAfterAdjustS, minTimerS = config.timerMinTimerS,
-        overtimeReminderS = config.timerOvertimeReminderS,
+        overtimeReminderS = config.timerOvertimeReminderS, catchUpAlertMaxS = config.timerCatchUpAlertMaxS,
     )
 
     fun observe(sessionId: String): Flow<RestTimerEntity?> = db.restTimers().observeLatest(sessionId)

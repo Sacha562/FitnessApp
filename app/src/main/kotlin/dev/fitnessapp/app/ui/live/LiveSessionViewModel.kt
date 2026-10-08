@@ -121,7 +121,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     val ui: StateFlow<LiveUi> = _ui
     private val params get() = c.params.fork()
     private var focusOverride: String? = null
-    private val historyCache = mutableMapOf<String, List<HistorySet>>()
+    private val historyCache = java.util.concurrent.ConcurrentHashMap<String, List<HistorySet>>()
+
+    /** The slot being written (double-tap guard): no card is shown until Room emits that set. */
+    private data class PendingLog(val seId: String, val setIndex: Int, val side: String)
+
+    @Volatile private var pendingLog: PendingLog? = null
 
     init {
         viewModelScope.launch {
@@ -155,7 +160,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         if (focus != focusOverride) focusOverride = null
         val item = items.firstOrNull { it.se.id == focus }
         val old = _ui.value.card
-        val card = item?.let { buildCard(it, snap.sets, old) }
+        pendingLog?.let { p ->
+            if (snap.sets.any { it.session_exercise_id == p.seId && it.set_index == p.setIndex && it.side == p.side }) pendingLog = null
+        }
+        val card = if (pendingLog != null) null else item?.let { buildCard(it, snap.sets, old) }
         val activeRest = snap.rest?.takeIf { it.state != "ended" }
         _ui.update {
             it.copy(
@@ -378,12 +386,30 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val card = u.card ?: return
         val s = u.session ?: return
         if (card.isHold && card.holdS == null) return
-        _ui.update { it.copy(card = null) } // double-tap guard: the next card is rebuilt from Room
-        viewModelScope.launch {
+        if (pendingLog != null) return
+        // Double-tap guard: the next card is rebuilt from Room once the set is there (rebuild clears it).
+        pendingLog = PendingLog(card.item.se.id, card.setIndex, card.side)
+        _ui.update { it.copy(card = null) }
+        // The app scope: leaving the screen right after the tap must not cancel the write or the rest alarm.
+        c.appScope.launch {
+            try {
+                commitLog(u, card, rir, feltReserveS, feltLowerBound, control)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                pendingLog = null
+                _ui.update { it.copy(banner = "log_failed") }
+                viewModelScope.launch { last?.let { rebuild(it) } }
+            }
+        }
+    }
+
+    private suspend fun commitLog(u: LiveUi, card: Card, rir: Int?, feltReserveS: Double?, feltLowerBound: Boolean, control: String) {
+        run {
             val now = System.currentTimeMillis()
             val all = last?.sets.orEmpty()
             val prevCompleted = all.maxOfOrNull { it.completed_at }
-            val estDuration = (card.reps ?: 0) * 3.0 + 5.0 // TIME-1 seed: 3 s per rep + 5 s per set (C19)
+            val pv = params
+            val estDuration = (card.reps ?: 0) * pv.double("time.tempo_s") + pv.double("time.per_set_s") // TIME-1 seed (C19)
             val holdStart = if (card.isHold && card.holdPhase == HoldPhase.RESULT) card.holdPhaseStart else null
             val rest = c.restTimer.onNextSetLogged(sessionId, prevCompleted, now, card.firstTouchAt, holdStart, estDuration)
             val p = card.point
@@ -454,7 +480,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun undoLast() {
         val l = _ui.value.lastLogged ?: return
         _ui.update { it.copy(lastLogged = null) }
-        viewModelScope.launch {
+        c.appScope.launch {
             c.restTimer.cancelForUndo(sessionId, l.at)
             c.sessionRepository.undoSet(l.setId)
             historyCache.clear()

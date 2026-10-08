@@ -1545,7 +1545,8 @@ if t == null: return
 r = remainingMs(now)
 if t.state == running and r > 0:  rescheduleEnd(t.end_wall); repost notification         # idempotent (same PendingIntent)
 if t.state == running and r <= 0: state = overtime, ended_by = elapsed_while_dead, latency unknown
-                                  event rest_recovered{missed_by_ms = −r}; repost overtime notification; no catch-up vibration if −r > 60 s
+                                  event rest_recovered{missed_by_ms = −r}; repost overtime notification; catch-up alert (12.4)
+                                  only if −r <= timer.catchUpAlertMaxS*1000; schedule the overtime reminder if still ahead
 if t.state == overtime and !overtime_reminder_sent and end_wall + overtimeReminderS*1000 > now: reschedule reminder
 ```
 
@@ -2497,6 +2498,7 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 | `timer.minTimerS` | 10 s | 0–30 | assumption | — | Yes: share of very short between-sides rests |
 | `timer.prewarnS` | 10 s (UI in the foreground only, C54) | 0–30 | expert-opinion | ux/tech-stack research | Yes: user feedback; overtime when foreground |
 | `timer.overtimeReminderS` | 60 s (0 = off) | 0, 30–300 | expert-opinion | ux research REMIND_S | Yes: overtime distribution with screen off |
+| `timer.catchUpAlertMaxS` | 60 s | 0–120 | assumption | 12.6 (an end alarm delivered to a cold process after reconcile already ran) | Yes: `rest_recovered.missed_by_ms` distribution |
 | `timer.vibrationWaveformMs` | [0, 300, 150, 300, 150, 600] | each 0–1000 ms | expert-opinion | ux research | Yes: proxy "overtime > 30 s with screen off" (missed alerts) |
 | `timer.exactIdleMinSamples` | 30 alarms | 10–100 | assumption (value confirmed by C54) | C28 needs logged p95 | Yes |
 | `timer.exactIdleP95MaxMs` | 2000 ms | fixed | canonical | C28 | No |

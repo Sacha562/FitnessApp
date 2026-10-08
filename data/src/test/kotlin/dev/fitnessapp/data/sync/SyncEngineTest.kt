@@ -80,6 +80,19 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `an expired token that cannot refresh offline retries instead of stopping`() = blocking {
+        writeSession(session("s9"))
+        remote.signedIn = false
+        remote.refreshPending = true
+        engine.run("test") shouldBe RunOutcome.RETRY
+        engine.state.value shouldBe SyncState.Offline
+        db.outbox().pendingCount("workout_sessions", "s9") shouldBe 1
+        remote.refreshPending = false
+        engine.run("test") shouldBe RunOutcome.STOPPED
+        engine.state.value shouldBe SyncState.NeedsSignIn
+    }
+
+    @Test
     fun `pushes children after parents and clears the outbox`() = blocking {
         db.withTransaction {
             val b = block("b1", "s1")
@@ -171,6 +184,11 @@ class SyncEngineTest {
 
     /** In-memory PostgREST with the LWW trigger and injectable failures. */
     private class FakeRemote(private val uid: String) : SyncRemote {
+        var signedIn = true
+        var refreshPending = false
+
+        override fun authRefreshPending() = refreshPending
+
         private val tables = sortedMapOf<String, java.util.TreeMap<String, JsonObject>>()
         private var tick = 0
         val pushLog = mutableListOf<String>()
@@ -189,7 +207,7 @@ class SyncEngineTest {
             rows(t)[obj["id"]!!.jsonPrimitive.content] = JsonObject(obj + ("server_updated_at" to JsonPrimitive(stamp())))
         }
 
-        override fun userId() = uid
+        override fun userId() = uid.takeIf { signedIn }
 
         private fun check(t: String, rows: List<JsonObject>) {
             failTable[t]?.let { throw SyncRemoteException(it) }
