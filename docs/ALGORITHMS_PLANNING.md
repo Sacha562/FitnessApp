@@ -2100,7 +2100,13 @@ wrist_flexors_grip .5, anti_rotation .5, delt_posterior .25, traps_lower .25; ho
 `bike_erg` (Bicycling_Stationary).
 
 Counts: quads 14, hinge 10, glutes/hip 9, calves 5, chest 15, shoulders 14, back 24, arms 19, forearms/prehab 11, core 11,
-OAP 13, warm-up 2 → 147 (plus the habit hang). V9 holds for every group at the default Basic-Fit inventory as long as
+OAP 13, warm-up 2 → 147 (plus the habit hang). **Seed as released (catalog 1.0.0, user review 2026-10-08, DECISIONS changelog):** 158 rows. The bundled
+`catalog-1.0.0.json` is authoritative; differences from the plan above: grip-specific pull coefficients (supinated:
+biceps brachii 0.75; neutral: brachialis and brachioradialis 0.75; grip in the English names); the assisted machine split
+into `assisted_pullup_machine`, `assisted_neutral_pullup_machine` and `assisted_chinup_machine`; added
+`side_lying_hip_abduction` (V9 abductors), `decline_bench_barbell`, `decline_db_press`, `decline_smith_press`,
+`leg_press_high_wide`, `cable_lateral_raise_two_arm`, `active_hang_bar`, `one_arm_dead_hang_bar`; `back_extension_45`
+credits erectors 1.0 (V9 lower back); `one_arm_plank` uses load mode `external`; `flags_offered` per row (C74). V9 holds for every group at the default Basic-Fit inventory as long as
 the checklist confirms the stations; a missing station (for example no hip-thrust machine) only removes options.
 
 ### 10.9 Custom exercises
@@ -2121,7 +2127,7 @@ credited volume is high but never progresses).
 |---|---|
 | `validatorRejectsUnknownRegion` | `forearm_flexor` (typo) → V2 error |
 | `aliasRewritten` | challenge draft key `mid_traps` → `traps_mid` |
-| `groupMaxNotSum` | chin-up biceps = max(0.5, 0.5, 0.25) = 0.5 |
+| `groupMaxNotSum` | overhand pull-up biceps = max(0.5, 0.5, 0.5) = 0.5, not the sum 1.5 |
 | `seedCoverage` | V9 for all 18 groups at the default inventory |
 | `substituteExists` | V10 for every non-skill row |
 | `derivedTags` | `db_shrug` → `grip_heavy`; `barbell_curl` → `elbow_flexor_heavy`, `supinated_curl`; `lat_pulldown_wide` → `pull_heavy`; `ohp_barbell` → `axial_heavy`, `overhead_press_heavy` |
@@ -2746,8 +2752,8 @@ delts" scores higher; the card keeps the engine's primary and never re-sorts); `
 ### 19.2 `ui.reasonchips` (UI-05)
 
 **Inputs.** The deviation direction from `ui.prefill` (easier, harder, skip, session end) or a swap from the
-exercise menu without a skip (substitute), whether the exercise is a
-unilateral hang or pull, the active pain flags, the exercise's defer count. **Output.** An ordered chip list (at most
+exercise menu without a skip (substitute), whether the exercise offers the `torso_rotation` flag (catalog
+`flags_offered` or the challenge item, C74), the active pain flags, the exercise's defer count. **Output.** An ordered chip list (at most
 `MAX_VISIBLE` visible plus "More"), the routing action for the chosen code. Codes are the DATA_MODEL `reason_codes`
 vocabulary and each list holds exactly the codes whose `ui_contexts` contain that context (C38); their semantics
 belong to REASON-1 (C16; `too_tired` has the same effect as `feeling_bad`, C57). Choosing `torso_rotation` or
@@ -2755,7 +2761,7 @@ belong to REASON-1 (C16; `too_tired` has the same effect as `feeling_bad`, C57).
 
 ```
 easier:      [too_easy, feeling_good, other]
-harder:      [too_hard, feeling_bad, too_tired, pain, grip_failure, torso_rotation (unilateral hang/pull only),
+harder:      [too_hard, feeling_bad, too_tired, pain, grip_failure, torso_rotation (only when the exercise offers that flag),
               technique_breakdown, no_time, occupied, other]
 skip:        [no_time, occupied, pain, feeling_bad, too_tired, equipment_missing, other]   // one tap completes the skip
 session end: [no_time, pain, other]
@@ -2770,8 +2776,9 @@ other → optional free text (never required, never copied into telemetry)
 Constants (§23.19): `MAX_VISIBLE 6`, `MAX_DEFERS 2`. Logged (DATA_MODEL §9.8.1 events `reason_selected`,
 `exercise_skipped`, `exercise_deferred`, `swap_sheet_shown`, `exercise_swapped`, `pain_reported`): code, chip position,
 untouched-chip rate, defers, defer-to-done versus defer-to-skip, swap rank, pain location and severity. Tests:
-`harderOrderUnilateral`
-(torso_rotation present), `harderOrderBilateral` (absent), `skipOneTap`, `occupiedDeferThenSwap`, `painRoutesToSafety`,
+`harderOrderRotationFlag`
+(torso_rotation present when the flag is offered), `harderOrderNoRotationFlag` (absent, also for the assisted one-arm
+pull-up on the machine, whose knee platform prevents rotation), `skipOneTap`, `occupiedDeferThenSwap`, `painRoutesToSafety`,
 `substituteContext` (a menu swap shows exactly [occupied, equipment_missing]).
 
 ### 19.3 `ui.prompts` (UI-07, F15)
@@ -3931,8 +3938,9 @@ planner's enumeration (one pass gives every "today = type" optimum). Target: < 1
 (§17.8), `InjuryFilterTest` (§18.3), `TodayCardComposerTest` … `PrefillTest` (§19), and the golden suites
 `W41GoldenTest`, `DstW43GoldenTest`, `SelectionGoldenTest`, `PersonaInvariantTest` (§20.2), `ReplayGoldenTest`.
 
-**Build order (milestones of the critique's MVP; C73, D18).** M1 (logger): `catalog` (seed + validator in CI),
-`ui.reasonchips`, `ui.prefill` (D18: "last time" as the only source; M3 adds the `rx` targets). M2: `calendar.classify`, `safety`, `time` (challenge add-on capacity). M3: `pref`, `elig`, `select`,
+**Build order (milestones of the critique's MVP; C73, D18, D21).** M1 (logger): `catalog` (seed + validator in CI),
+`ui.reasonchips`, `ui.prefill` (D18: "last time" as the only source; M3 adds the `rx` targets), and from
+ALGORITHMS.md `load`, `bodyweight` and the base policy of `rest` (D21). M2: `calendar.classify`, `safety`, `time` (challenge add-on capacity). M3: `pref`, `elig`, `select`,
 `order`, `substitute`, `injury`, the `rx` source of `ui.prefill`. M4: `setcredit`, `readiness`, `targets`, `runs`, `allocator`, `weekplan`, `today`, `rotate`,
 `ui.todaycard`, `ui.prompts`, `ui.volumebars`, `ui.warndisplay`, `ui.progress`. M5: `tuner`, `sim`, `replay`.
 

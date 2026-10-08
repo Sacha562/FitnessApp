@@ -34,6 +34,8 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D18 | Set prefill | **The full `ui.prefill` module ships in M1** (2026-10-08), implemented to ALGORITHMS_PLANNING §19 with "last time" as its only source (right side capped at the left, hold steps, no prefill across load modes); M3 adds the `rx` targets as a second source. Amends the build order of C73 / ALGORITHMS_PLANNING. |
 | D19 | Catalog review | **Summary review before seeding** (2026-10-08). Claude authors the ~150-exercise catalog from the specs and free-exercise-db; the CAT-1 validator must pass; the user approves a summary page (exercises, equipment, main muscles per exercise) before migration 009 is applied. Coefficients are not reviewed line by line. |
 | D20 | Milestone M1 | **Split into M1a and M1b** (2026-10-08) with the same total scope: M1a makes real sessions loggable as early as possible, M1b completes history editing, export, the reliability screen and the remaining telemetry (PLAN.md 11). |
+| D21 | Engine modules in M1a | **LOAD-1 and BW-1 in full, REST-1 as its base policy** (2026-10-08). Set logging needs the single LOAD function (effective load, assist kg, loadable steps, plate breakdown) and the bodyweight snapshot, so `load` and `bodyweight` (ALGORITHMS B2, B3) move from M3 into M1a. The rest timer takes its durations from `rest` (B11) in a base form: warm-up rests, challenge item values, the user's `rest_pref_s`, the class table `rest.base` with the strength-heavy rule and the clamps. The outcome modifiers, the fatigue modifier (needs FAT-1), the between-sides and superset formulas that need TIME-1, the live readout and the adaptation follow in M3 as `rest@1.1.0`. |
+| D22 | Session start in M1a | **Empty session only** (2026-10-08). Until the challenge engine (M2) materializes challenge sessions, every session starts empty and exercises are added from the catalog; no "repeat a past session" or user template is added. |
 
 ---
 
@@ -159,6 +161,7 @@ for the topic; other documents reference it instead of restating it.
 | C71 | Challenge in-session limits | The once-per-item-per-session limit applies only to in-session rules that change load or reps; `capTarget` and notify-only rules may act after every set (e.g. `ins.scap.matchLeft`). |
 | C72 | Platform/telemetry details | Rest pre-warning only while the app UI is visible (ANDROID §12.4). `instance_key` is the full 64-hex key (DATA_MODEL §9.7.3). The access check is a read probe, not an RPC. The telemetry payload string pattern allows `/` (marker slot keys). `fgs_started.fgs_type` includes `none` (untyped service below API 34). |
 | C73 | Milestone placement | Catalog seed + validator and `ui.reasonchips` ship in M1 (logger); `rotate` ships in M4 (planning). |
+| C74 | Catalog flags | `exercises.flags_offered text[]` (subset of E6) holds the set flags the logger offers for an exercise (UX 11.9 "catalog flags"); challenge items may add flags through the definition overlay. Added 2026-10-08 in migration 008 because DATA_MODEL 9.2.1 had no column for it. |
 
 ---
 
@@ -234,3 +237,17 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   D19 catalog summary review before seeding, D20 M1 split into M1a / M1b. D2 updated with the confirmed
   phone (OnePlus CPH2747, Android 16). PLAN.md, ALGORITHMS_PLANNING build order, ANDROID OI-25 and
   DATA_MODEL open issue 12 updated accordingly.
+- 2026-10-08 — M1a build decisions (user Q&A): D21 (LOAD-1 and BW-1 in full and REST-1 as its base policy
+  move into M1a), D22 (empty session only until M2). Migrations 008 and 010-015 are reviewed by the user as one
+  batch; 009 follows the catalog summary approval (D19). Docker Desktop is installed on the dev machine, so the
+  two-user RLS tests that need a second allowlisted user run on a local Supabase stack (DATA_MODEL open issue 14
+  resolved). ALGORITHMS build order, ALGORITHMS_PLANNING build order and DATA_MODEL open issue 14 updated.
+  C74 added (catalog column `flags_offered`); DATA_MODEL 9.2.1 updated.
+- 2026-10-08 — Catalog 1.0.0 review (D19, user comments on the summary page and Q&A): grip-specific coefficients for
+  the pull-up family, the assisted machine split into three grips, decline presses, leg press feet high and wide,
+  cross-cable lateral raise, active hang and a general one-arm dead hang added; hang exercises keep forearms 0.5 (the
+  hold factor stays the tuning knob). ALGORITHMS_PLANNING 10.8 records the released seed (158 rows).
+- 2026-10-08 — OAP definition v1 (unpublished draft) corrected on the user's instruction: the assisted one-arm
+  pull-up on the machine offers no `torso_rotation` flag and its C1/A1 items lose `stopSetOn: torso_rotation` (the
+  knee platform prevents rotation); the finger-assisted variant keeps the flag. `ui.reasonchips` offers the
+  `torso_rotation` reason only when the exercise offers that flag (ALGORITHMS_PLANNING 19.2, UX 11.9, 19.3, GF-UX-07/14).

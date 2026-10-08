@@ -2844,6 +2844,9 @@ already follows the resolution.
 fatigue -> rcm -> rircal -> sse -> hold -> reason -> rx -> warmup -> rest -> autoreg -> stall -> warnings.
 Each step lands with its golden fixtures from Part D before the next starts. RULE mode needs only
 pass-through plus shadow, so M2 (challenge engine) can ship before M3 using `rx` in RULE-only form.
+D21 moves `load` and `bodyweight` (complete) and the base policy of `rest` (warm-up rests, challenge values,
+user preference, class table with the strength-heavy rule, clamps; registered as `rest@1.0.0`) into M1a; the
+remaining `rest` parts ship in M3 as `rest@1.1.0`.
 
 **Test classes** (`algo/src/test/kotlin/dev/fitnessapp/algo/...`): `CanonNumberTest`, `JcsConformanceTest`,
 `GridRoundingTest`, `DoubleRunTest`, `ShuffleInvarianceTest`, `ParamsCoverageTest`, `ParamsDocSyncTest`,

@@ -809,8 +809,8 @@ C 50, 90-degree hold 35 lb (unchanged); C hang target floor(0.67 x 16) = 10 s; d
 ### 9.2 Phase-1 templates (A, with today's imported values)
 
 **C1, volume and technique** (90 min booked; tags pull-, grip-, elbow-flexor-heavy, unilateral):
-assisted one-arm pull-up 3 x 5 per arm, pin 50 lb (about 29.2 kg help), RIR 2, rest 2 min, stop the
-set when the torso rotates; weighted pull-ups 4 x 5 at +20 kg, rest 2.5 min, stop when the grip slips
+assisted one-arm pull-up 3 x 5 per arm, pin 50 lb (about 29.2 kg help), RIR 2, rest 2 min (the earlier "stop
+the set when the torso rotates" was dropped 2026-10-08: the knee platform prevents rotation); weighted pull-ups 4 x 5 at +20 kg, rest 2.5 min, stop when the grip slips
 (the anchor); one-arm scapular pulls 4 x 3 per arm on the neutral handle, left first, right matches
 left, rest 90 s; one-arm dead hang 4 x 10 s per arm on the neutral handle, not to failure, the time
 counts until the torso rotates, rest 60 s; prevention.

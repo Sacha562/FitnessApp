@@ -1859,7 +1859,7 @@ Flags offered depend on the exercise (catalog `flags` or challenge exercise `fla
 | Flag | Stored code (E6, C38) | Shown for | Effect owner |
 |---|---|---|---|
 | Grip slipped before the last rep | `grip_slip_before_last` | weighted pull-up and other grip-limited pulls | `challenge.eca` (`prog.gripSlip.lock`: no increase this time; in-session `ins.wpu.gripStop`: "end the set" info line) |
-| Torso rotated | `torso_rotation` | one-arm hang, scap pulls, assisted one-arm work | challenge rules (`ins.rotationStop` info line) and `hold` |
+| Torso rotated | `torso_rotation` | one-arm hangs, scap pulls, finger-assisted one-arm pulls (not the assisted machine: the knee platform prevents rotation) | challenge rules (`ins.rotationStop` info line) and `hold` |
 | Jerky lowering | `jerky` | negatives | challenge (`prog.B.neg.reset`) |
 | Hips rotated | `hip_rotation` | one-arm plank | challenge (`prog.plank`; `ins.plank.hipStop` info line) |
 | Hand shifted | `hand_shift` | one-arm negative | challenge (the negative is not controlled, for example on test day: `oa_neg5_unassisted` = no) |
@@ -3583,7 +3583,7 @@ exactly the codes whose DATA_MODEL `ui_contexts` contain that context, C38):
 | Context (`ui_contexts` value) | Order (owner) | Visible | Required |
 |---|---|---|---|
 | `easier` (deviation `UP`: more load or reps than the target, or RIR at least target + 2) | `too_easy`, `feeling_good`, `other` | all | no |
-| `harder` (deviation `DOWN`: less load or reps, hold short, or RIR at most target - 2) | `too_hard`, `feeling_bad`, `too_tired`, `pain`, `grip_failure`, `torso_rotation` (unilateral hangs and pulls only), `technique_breakdown`, `no_time`, `occupied`, `other` | first `max_visible`, rest behind "More" | no |
+| `harder` (deviation `DOWN`: less load or reps, hold short, or RIR at most target - 2) | `too_hard`, `feeling_bad`, `too_tired`, `pain`, `grip_failure`, `torso_rotation` (only when the exercise offers that flag, C74), `technique_breakdown`, `no_time`, `occupied`, `other` | first `max_visible`, rest behind "More" | no |
 | `skip` (Skip sheet, 16.4) | `no_time`, `occupied`, `pain`, `feeling_bad`, `too_tired`, `equipment_missing`, `other` | all | yes, exactly one tap |
 | `session_end` (Finish sheet, 16.13) | `no_time` (preselected), `pain`, `other` | all | no |
 | `substitute` (swap from the exercise menu without a skip, 16.5; owner context adopted by C69) | `occupied`, `equipment_missing` | all | no |
@@ -5147,7 +5147,7 @@ REST_SOFT, Thu CHALLENGE (with a legs add-on), Fri RECOMMENDED, Sat REST_HARD, S
 **GF-UX-07 Unilateral side cap (assisted one-arm, Session A).** Target 3 reps/arm at pin 40 lb, target
 RIR 1, side rule right <= left. Left logged 2 reps at RIR 0: left deviation `DOWN` (reps 2 < 3), post-log
 RIR delta 1 (no RIR deviation), chips `too_hard, feeling_bad, too_tired, pain, grip_failure,
-torso_rotation` visible (the `harder` order of ALGORITHMS_PLANNING section 19.2). Right prefill 2 reps,
+technique_breakdown` visible (the machine row offers no `torso_rotation` flag, C74) (the `harder` order of ALGORITHMS_PLANNING section 19.2). Right prefill 2 reps,
 `side_cap_applied = true`, hint "Right ≤ left: 2 clean reps".
 If the user raises the right side to 3: deviation field `side_rule` (UP), advisory line "Right above
 left (program rule: right ≤ left)", logging not blocked.
@@ -5308,7 +5308,8 @@ skip line (ALGORITHMS_PLANNING section 19.4).
 | Exercise (flags offered) | Context | Visible | Behind "More" |
 |---|---|---|---|
 | weighted pull-up (two arms, `grip_slip_before_last`) | harder | too_hard, feeling_bad, too_tired, pain, grip_failure, technique_breakdown | no_time, occupied, other |
-| assisted one-arm pull-up (unilateral pull, `torso_rotation`) | harder | too_hard, feeling_bad, too_tired, pain, grip_failure, torso_rotation | technique_breakdown, no_time, occupied, other |
+| finger-assisted one-arm pull-up (unilateral pull, `torso_rotation`) | harder | too_hard, feeling_bad, too_tired, pain, grip_failure, torso_rotation | technique_breakdown, no_time, occupied, other |
+| assisted one-arm pull-up on the machine (no flag offered) | harder | too_hard, feeling_bad, too_tired, pain, grip_failure, technique_breakdown | no_time, occupied, other |
 | leg press (none) | harder | too_hard, feeling_bad, too_tired, pain, grip_failure, technique_breakdown | no_time, occupied, other |
 | any | easier | too_easy, feeling_good, other | |
 | any | skip (sheet) | no_time, occupied, pain, feeling_bad, too_tired, equipment_missing, other | |

@@ -2,6 +2,7 @@ package dev.fitnessapp.sim
 
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
+import dev.fitnessapp.sim.seedgen.CatalogSeedGen
 import dev.fitnessapp.sim.seedgen.SeedGen
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -26,8 +27,21 @@ fun main(args: Array<String>) {
                 println("wrote ${out.path} (${sql.length} chars)")
             }
         }
+        "seedgen-catalog" -> {
+            val version = args.getOrElse(1) { "1.0.0" }
+            val result = CatalogSeedGen.generate(
+                File("algo/src/main/resources/fitness"), listOf(File("docs/challenges/oap.challenge.v1.json")), version,
+            )
+            for ((name, sql) in result.parts) {
+                val out = File("supabase/migrations/pending/$name.sql")
+                out.writeText(sql, Charsets.UTF_8)
+                println("wrote ${out.path} (${sql.length} chars)")
+            }
+            println("catalog $version: ${result.exercises} exercises, ${result.stimulus} stimulus rows, " +
+                "${result.ratios} transfer ratios, jcs_sha256 ${result.jcsSha256}")
+        }
         else -> {
-            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version]")
+            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version] | sim seedgen-catalog [catalog-version]")
             exitProcess(2)
         }
     }
