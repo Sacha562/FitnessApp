@@ -41,7 +41,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | F2 | Exposing the schema | The **user** adds `fitness` under Dashboard → Data API → Exposed schemas, keeping `public` and `graphql_public` (current value verified by probe: `public, graphql_public`). Claude never runs `supabase config push`, `supabase db push`, `migration repair`, or `alter role authenticator set pgrst.db_schemas` on this shared project. Verification afterwards with the PGRST106 probe. |
 | F3 | Migrations | SQL files in `supabase/migrations/` (names prefixed `fitness_`), every object schema-qualified, applied through the Supabase MCP `apply_migration` **after the user has seen each migration**. `get_advisors` (security + performance) after each one; zero new fitness findings expected. `supabase db dump --schema fitness --data-only` before every migration once data exists. |
 | F4 | Free plan | The project is on the Free plan (no backups, read-only above 500 MB, pause after 7 quiet days). Mitigation: the phone database is the source of truth, monthly in-app JSON export, size guard view, chess usage keeps the project awake. |
-| F5 | Optional extension | Install `pg_jsonschema` in the `extensions` schema for structural validation of challenge definitions (low risk; ask once at M0 before installing). |
+| F5 | Optional extension | Install `pg_jsonschema` in the `extensions` schema for structural validation of challenge definitions. **Approved by the user 2026-10-08**: installed by migration `fitness_007_jsonschema_extension` (M0); the CHECK on `challenge_definitions` follows in `fitness_018_jsonschema_constraint` (M2). |
 | F6 | Running | Calendar events classified as runs (`hardlopen`, `run`, `duurloop`, …) count as leg fatigue only (no hypertrophy credit) plus timing penalties. Running priority setting default `low`. Health Connect (runs, weight, sleep) is a later milestone. |
 | F7 | Equipment | First-run equipment checklist with Basic-Fit defaults (all editable): plates, dumbbell list, stack steps, Smith bar weight unknown → ask, assisted machine `{unit lb, step 5, offsetKg 6.5, ratio 1.0}`, own dip belt and belt plates. `requires_station` on every exercise. |
 | F8 | Deloads | General training deloads in the same week as the active challenge's deload/test week (sets ×0.5, load kept, RIR +2), plus reactive triggers. Without an active challenge: reactive only. |
@@ -206,3 +206,18 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
 - 2026-10-07 — After the detailed spec pass: user decisions D13–D16 (fourth Q&A round), D8 wording
   corrected, F11 revised, defaults F21–F27, cross-document resolutions C37–C65.
 - 2026-10-07 — After the reconcile + verification pass: C52 amended (J in tie order), C66–C73 added.
+- 2026-10-08 — M0 build decisions (user Q&A): (1) F5 approved, `pg_jsonschema` installed at M0.
+  (2) `profiles` and `gyms` pulled forward into M0 as migration `fitness_006_profiles_gyms` so the first
+  sign-in proves the write path; with the new `fitness_007_jsonschema_extension`, the later migrations
+  shift by two (catalog 008/009 … review views 017, jsonschema constraint 018); DATA_MODEL 13.2,
+  CHALLENGE_ENGINE and OAP_CHALLENGE updated. (3) The full `default-params-1.0.0.json` is authored at M0
+  and seeded by migration 005 as planned. (4) JDK 21 is the portable Temurin zip in
+  `%LOCALAPPDATA%\Programs\Temurin-21` (the quiet MSI needs admin rights; ANDROID 3.2 option A fails
+  non-elevated), registered for Gradle via `org.gradle.java.installations.paths` in the user-level
+  `~/.gradle/gradle.properties`. (5) Versions at scaffold: Gradle 9.8.1, AGP 9.4.1, Kotlin 2.4.21,
+  KSP 2.3.12, Roborazzi 1.76.0 (others as ANDROID 3.8).
+- 2026-10-08 — Params 1.0.0 authoring decisions (user Q&A): params gain a `regex` value type for the
+  calendar lexicons (ALGORITHMS A8.2); times of day are stored as minutes after local midnight;
+  `sse.detrain_cap` = 0.1625 ln so the cap is exactly the 15 % of C27; `today.reason_codes` gains
+  `NOTHING_TO_TRAIN` and `NO_ELIGIBLE_EXERCISE` (ALGORITHMS_PLANNING §0.6). Generation notes and the
+  remaining flagged items: `docs/research/params-1.0.0-notes.md`.

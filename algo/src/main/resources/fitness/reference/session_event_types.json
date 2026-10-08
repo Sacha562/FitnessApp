@@ -1,0 +1,2152 @@
+{
+  "table": "fitness.session_event_types",
+  "rows": [
+    {
+      "event_type": "action_undone",
+      "category": "logging",
+      "payload_keys": [
+        "undone_event_type",
+        "undone_event_id",
+        "ms_since"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 10
+    },
+    {
+      "event_type": "allowlist_rejected",
+      "category": "system",
+      "payload_keys": [],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 20
+    },
+    {
+      "event_type": "app_crash",
+      "category": "system",
+      "payload_keys": [
+        "exception_class",
+        "stack_sha256",
+        "top_frame",
+        "crashed_at",
+        "crash_app_version"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 8.3, 20.2 (summarised at the next start)",
+      "active": true,
+      "sort": 30
+    },
+    {
+      "event_type": "app_opened",
+      "category": "system",
+      "payload_keys": [
+        "cold_start"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 40
+    },
+    {
+      "event_type": "app_startup_failed",
+      "category": "system",
+      "payload_keys": [
+        "step",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 7.7",
+      "active": true,
+      "sort": 50
+    },
+    {
+      "event_type": "battery_optimization_status",
+      "category": "system",
+      "payload_keys": [
+        "ignoring"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 7.7 (onboarding and each app start)",
+      "active": true,
+      "sort": 60
+    },
+    {
+      "event_type": "block_addon_skipped",
+      "category": "lifecycle",
+      "payload_keys": [
+        "block_id",
+        "reason_code",
+        "exercises_skipped"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 70
+    },
+    {
+      "event_type": "block_finished",
+      "category": "lifecycle",
+      "payload_keys": [
+        "block_id",
+        "block_kind",
+        "origin",
+        "status"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 80
+    },
+    {
+      "event_type": "block_started",
+      "category": "lifecycle",
+      "payload_keys": [
+        "block_id",
+        "block_kind",
+        "origin",
+        "status"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 90
+    },
+    {
+      "event_type": "calendar_classified",
+      "category": "calendar",
+      "payload_keys": [
+        "instance_key",
+        "kind",
+        "slot",
+        "type",
+        "score",
+        "features",
+        "classifier_version",
+        "method"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 16.4 (C20)",
+      "active": true,
+      "sort": 100
+    },
+    {
+      "event_type": "calendar_conflict_resolved",
+      "category": "calendar",
+      "payload_keys": [
+        "instance_key",
+        "choice"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7 (C36)",
+      "active": true,
+      "sort": 110
+    },
+    {
+      "event_type": "calendar_correction",
+      "category": "calendar",
+      "payload_keys": [
+        "instance_key",
+        "from",
+        "to",
+        "scope"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7",
+      "active": true,
+      "sort": 120
+    },
+    {
+      "event_type": "calendar_event_adopted",
+      "category": "calendar",
+      "payload_keys": [
+        "slot",
+        "instance_key"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7",
+      "active": true,
+      "sort": 130
+    },
+    {
+      "event_type": "calendar_event_written",
+      "category": "calendar",
+      "payload_keys": [
+        "op",
+        "kind",
+        "instance_key",
+        "marker_key",
+        "cause",
+        "provider_rows"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 16.7-16.8, UX 20.7 (executed ops only)",
+      "active": true,
+      "sort": 140
+    },
+    {
+      "event_type": "calendar_link_changed",
+      "category": "calendar",
+      "payload_keys": [
+        "from_instance_key",
+        "to_instance_key",
+        "method"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7 (C35)",
+      "active": true,
+      "sort": 150
+    },
+    {
+      "event_type": "calendar_selection_saved",
+      "category": "calendar",
+      "payload_keys": [
+        "count_selected",
+        "primary_selected"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7",
+      "active": true,
+      "sort": 160
+    },
+    {
+      "event_type": "calendar_unavailable",
+      "category": "calendar",
+      "payload_keys": [
+        "reason"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7, ANDROID 16.2",
+      "active": true,
+      "sort": 170
+    },
+    {
+      "event_type": "calendar_write_failed",
+      "category": "calendar",
+      "payload_keys": [
+        "op",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.7, ANDROID 16.7 (refused or failed ops)",
+      "active": true,
+      "sort": 180
+    },
+    {
+      "event_type": "catalog_filter_changed",
+      "category": "system",
+      "payload_keys": [
+        "filter",
+        "value"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 190
+    },
+    {
+      "event_type": "catalog_searched",
+      "category": "system",
+      "payload_keys": [
+        "query_length",
+        "results"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 200
+    },
+    {
+      "event_type": "celebration_shown",
+      "category": "challenge",
+      "payload_keys": [
+        "kind",
+        "phase",
+        "criterion_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 210
+    },
+    {
+      "event_type": "challenge_abandon_dialog_shown",
+      "category": "challenge",
+      "payload_keys": [
+        "gap_days"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 220
+    },
+    {
+      "event_type": "challenge_cutover_confirmed",
+      "category": "challenge",
+      "payload_keys": [
+        "definition_id",
+        "version",
+        "sha256"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10 (D4)",
+      "active": true,
+      "sort": 230
+    },
+    {
+      "event_type": "challenge_pause_sheet_shown",
+      "category": "challenge",
+      "payload_keys": [
+        "gap_days"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 240
+    },
+    {
+      "event_type": "challenge_proposal_decided",
+      "category": "challenge",
+      "payload_keys": [
+        "proposal_id",
+        "decision",
+        "previous"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10 (D8, C48)",
+      "active": true,
+      "sort": 250
+    },
+    {
+      "event_type": "challenge_proposal_viewed",
+      "category": "challenge",
+      "payload_keys": [
+        "proposal_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 260
+    },
+    {
+      "event_type": "challenge_resume_sheet_shown",
+      "category": "challenge",
+      "payload_keys": [
+        "gap_days"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 270
+    },
+    {
+      "event_type": "challenge_rule_applied",
+      "category": "challenge",
+      "payload_keys": [
+        "rule_id",
+        "rule_tag",
+        "proposal_id",
+        "session_exercise_id",
+        "field",
+        "from",
+        "to",
+        "sets_affected"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 11.10 (D14, C46: applied automatically, \"Rule: ... · Undo\")",
+      "active": true,
+      "sort": 280
+    },
+    {
+      "event_type": "challenge_rule_undone",
+      "category": "challenge",
+      "payload_keys": [
+        "rule_id",
+        "session_exercise_id",
+        "reason_code",
+        "ms_since"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 11.10 (C46: logged as an override with reason)",
+      "active": true,
+      "sort": 290
+    },
+    {
+      "event_type": "challenge_rule_viewed",
+      "category": "challenge",
+      "payload_keys": [
+        "rule_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 300
+    },
+    {
+      "event_type": "challenge_setup_step",
+      "category": "challenge",
+      "payload_keys": [
+        "step",
+        "step_key",
+        "duration_ms",
+        "action"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 310
+    },
+    {
+      "event_type": "deviation_shown",
+      "category": "logging",
+      "payload_keys": [
+        "context",
+        "direction",
+        "fields",
+        "codes_shown",
+        "visible_count"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 320
+    },
+    {
+      "event_type": "disclaimer_acknowledged",
+      "category": "config",
+      "payload_keys": [
+        "version"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8 (C33)",
+      "active": true,
+      "sort": 330
+    },
+    {
+      "event_type": "engine_error",
+      "category": "system",
+      "payload_keys": [
+        "module_id",
+        "module_version",
+        "inputs_hash",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 340
+    },
+    {
+      "event_type": "equipment_calibration_changed",
+      "category": "config",
+      "payload_keys": [
+        "gym_equipment_id",
+        "from_scheme",
+        "to_scheme",
+        "from_rev",
+        "to_rev"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8, 9.3.3",
+      "active": true,
+      "sort": 350
+    },
+    {
+      "event_type": "equipment_changed",
+      "category": "config",
+      "payload_keys": [
+        "key",
+        "from",
+        "to"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 360
+    },
+    {
+      "event_type": "equipment_confirmed",
+      "category": "config",
+      "payload_keys": [
+        "profile_version",
+        "changed_from_default"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8 (F7)",
+      "active": true,
+      "sort": 370
+    },
+    {
+      "event_type": "exact_alarm_status",
+      "category": "system",
+      "payload_keys": [
+        "allowed"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 7.7 (onboarding and each app start)",
+      "active": true,
+      "sort": 380
+    },
+    {
+      "event_type": "exercise_added",
+      "category": "logging",
+      "payload_keys": [
+        "exercise_id",
+        "source",
+        "position",
+        "block_kind",
+        "rule_override"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 390
+    },
+    {
+      "event_type": "exercise_alternatives_opened",
+      "category": "system",
+      "payload_keys": [
+        "exercise_id",
+        "count"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 400
+    },
+    {
+      "event_type": "exercise_custom_created",
+      "category": "config",
+      "payload_keys": [
+        "exercise_id",
+        "pattern",
+        "equipment",
+        "coefficients_edited"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 410
+    },
+    {
+      "event_type": "exercise_deferred",
+      "category": "logging",
+      "payload_keys": [
+        "defer_count",
+        "from_position",
+        "to_position"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 420
+    },
+    {
+      "event_type": "exercise_ended",
+      "category": "logging",
+      "payload_keys": [
+        "sets_done",
+        "sets_planned",
+        "reason_code"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 430
+    },
+    {
+      "event_type": "exercise_focused",
+      "category": "lifecycle",
+      "payload_keys": [
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 440
+    },
+    {
+      "event_type": "exercise_opened",
+      "category": "system",
+      "payload_keys": [
+        "exercise_id",
+        "from"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 450
+    },
+    {
+      "event_type": "exercise_removed",
+      "category": "logging",
+      "payload_keys": [
+        "exercise_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 460
+    },
+    {
+      "event_type": "exercise_reordered",
+      "category": "logging",
+      "payload_keys": [
+        "from_position",
+        "to_position",
+        "via",
+        "left_program_order"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 470
+    },
+    {
+      "event_type": "exercise_skipped",
+      "category": "logging",
+      "payload_keys": [
+        "reason_code",
+        "chip_position",
+        "sets_done"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 480
+    },
+    {
+      "event_type": "exercise_swapped",
+      "category": "logging",
+      "payload_keys": [
+        "from_exercise_id",
+        "to_exercise_id",
+        "rank",
+        "similarity",
+        "via",
+        "reason_code"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 490
+    },
+    {
+      "event_type": "export_completed",
+      "category": "export",
+      "payload_keys": [
+        "export_id",
+        "kind",
+        "rows",
+        "bytes",
+        "from",
+        "to",
+        "notes_included"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.12, ANDROID 20.4",
+      "active": true,
+      "sort": 500
+    },
+    {
+      "event_type": "fgs_restart_failed",
+      "category": "system",
+      "payload_keys": [
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 11.3",
+      "active": true,
+      "sort": 510
+    },
+    {
+      "event_type": "fgs_started",
+      "category": "system",
+      "payload_keys": [
+        "fgs_type",
+        "sdk_int"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 11.2",
+      "active": true,
+      "sort": 520
+    },
+    {
+      "event_type": "fgs_stopped",
+      "category": "system",
+      "payload_keys": [
+        "reason"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 11.3",
+      "active": true,
+      "sort": 530
+    },
+    {
+      "event_type": "flag_toggled",
+      "category": "logging",
+      "payload_keys": [
+        "flag",
+        "on"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 540
+    },
+    {
+      "event_type": "focus_mode_toggled",
+      "category": "rest",
+      "payload_keys": [
+        "on"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6",
+      "active": true,
+      "sort": 550
+    },
+    {
+      "event_type": "goal_changed",
+      "category": "config",
+      "payload_keys": [
+        "group",
+        "from",
+        "to",
+        "focus_from",
+        "focus_to",
+        "via",
+        "preset_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 560
+    },
+    {
+      "event_type": "habit_toggled",
+      "category": "logging",
+      "payload_keys": [
+        "habit_id",
+        "done",
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 570
+    },
+    {
+      "event_type": "history_session_opened",
+      "category": "system",
+      "payload_keys": [
+        "days_ago"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 580
+    },
+    {
+      "event_type": "hold_corrected",
+      "category": "logging",
+      "payload_keys": [
+        "timer_s",
+        "logged_s",
+        "delta_s"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 590
+    },
+    {
+      "event_type": "hold_count_aloud_toggled",
+      "category": "logging",
+      "payload_keys": [
+        "on"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 600
+    },
+    {
+      "event_type": "hold_ecc_pacing_started",
+      "category": "logging",
+      "payload_keys": [
+        "lead_in_s"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 610
+    },
+    {
+      "event_type": "hold_interrupted",
+      "category": "logging",
+      "payload_keys": [
+        "ms_since_go"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 620
+    },
+    {
+      "event_type": "hold_lead_in_cancelled",
+      "category": "logging",
+      "payload_keys": [
+        "ms_into_lead_in"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 630
+    },
+    {
+      "event_type": "hold_started",
+      "category": "logging",
+      "payload_keys": [
+        "mode",
+        "side",
+        "target_s",
+        "lead_in_s"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 640
+    },
+    {
+      "event_type": "hold_stopped",
+      "category": "logging",
+      "payload_keys": [
+        "elapsed_s",
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 650
+    },
+    {
+      "event_type": "keypad_used",
+      "category": "logging",
+      "payload_keys": [
+        "field",
+        "typed",
+        "snapped_to",
+        "changed"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 660
+    },
+    {
+      "event_type": "log_double_tap_dropped",
+      "category": "logging",
+      "payload_keys": [
+        "control",
+        "gap_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 670
+    },
+    {
+      "event_type": "notification_action",
+      "category": "system",
+      "payload_keys": [
+        "notification_id",
+        "channel",
+        "action"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 17",
+      "active": true,
+      "sort": 680
+    },
+    {
+      "event_type": "notification_dismissed",
+      "category": "system",
+      "payload_keys": [
+        "notification_id",
+        "channel",
+        "latency_ms",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 13.3, 17",
+      "active": true,
+      "sort": 690
+    },
+    {
+      "event_type": "notification_opened",
+      "category": "system",
+      "payload_keys": [
+        "notification_id",
+        "channel",
+        "latency_ms",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 13.3, 17",
+      "active": true,
+      "sort": 700
+    },
+    {
+      "event_type": "notification_posted",
+      "category": "system",
+      "payload_keys": [
+        "notification_id",
+        "channel",
+        "latency_ms",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 13.3, 17",
+      "active": true,
+      "sort": 710
+    },
+    {
+      "event_type": "notification_promotion_state",
+      "category": "system",
+      "payload_keys": [
+        "can_post_promoted",
+        "flag_promoted"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 13.4",
+      "active": true,
+      "sort": 720
+    },
+    {
+      "event_type": "oem_settings_confirmed",
+      "category": "system",
+      "payload_keys": [
+        "maker",
+        "intent_ok"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 730
+    },
+    {
+      "event_type": "oem_settings_opened",
+      "category": "system",
+      "payload_keys": [
+        "maker",
+        "intent_ok"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 740
+    },
+    {
+      "event_type": "onboarding_step_completed",
+      "category": "config",
+      "payload_keys": [
+        "step",
+        "duration_ms",
+        "skipped",
+        "fields_set"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 750
+    },
+    {
+      "event_type": "override_applied",
+      "category": "logging",
+      "payload_keys": [
+        "field",
+        "from",
+        "to",
+        "reason_code"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3 (\"Add a set\", C63, and other exercise-level prescription changes)",
+      "active": true,
+      "sort": 760
+    },
+    {
+      "event_type": "pain_reported",
+      "category": "logging",
+      "payload_keys": [
+        "wellness_log_id",
+        "body_region",
+        "side",
+        "severity",
+        "pain_score",
+        "symptom_codes",
+        "context"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 770
+    },
+    {
+      "event_type": "pain_retracted",
+      "category": "logging",
+      "payload_keys": [
+        "wellness_log_id",
+        "ms_since"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 780
+    },
+    {
+      "event_type": "params_activated",
+      "category": "config",
+      "payload_keys": [
+        "params_hash",
+        "params_version",
+        "session_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 790
+    },
+    {
+      "event_type": "params_override_rejected",
+      "category": "config",
+      "payload_keys": [
+        "param_key",
+        "user_algo_param_id",
+        "params_version",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ALGORITHMS A8.4 (a user_algo_params value outside its ParamSpec bounds; the default stays active)",
+      "active": true,
+      "sort": 800
+    },
+    {
+      "event_type": "params_rejected",
+      "category": "config",
+      "payload_keys": [
+        "params_version",
+        "kind",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8, ALGORITHMS A8.2",
+      "active": true,
+      "sort": 810
+    },
+    {
+      "event_type": "permission_requested",
+      "category": "system",
+      "payload_keys": [
+        "permission"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 820
+    },
+    {
+      "event_type": "permission_result",
+      "category": "system",
+      "payload_keys": [
+        "permission",
+        "granted",
+        "can_ask_again"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9 (result of a request)",
+      "active": true,
+      "sort": 830
+    },
+    {
+      "event_type": "permission_state",
+      "category": "system",
+      "payload_keys": [
+        "permission",
+        "granted"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 15.5 (snapshot at each app start)",
+      "active": true,
+      "sort": 840
+    },
+    {
+      "event_type": "plan_it_tapped",
+      "category": "week",
+      "payload_keys": [
+        "date",
+        "type",
+        "recommendation_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 850
+    },
+    {
+      "event_type": "platform_config_logged",
+      "category": "config",
+      "payload_keys": [
+        "platform_config_hash",
+        "values"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 7.7, 25 (C54: whenever the PlatformConfig set changes)",
+      "active": true,
+      "sort": 860
+    },
+    {
+      "event_type": "pr_detected",
+      "category": "logging",
+      "payload_keys": [
+        "exercise_id",
+        "kind",
+        "side",
+        "value",
+        "previous"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 870
+    },
+    {
+      "event_type": "preference_changed",
+      "category": "config",
+      "payload_keys": [
+        "exercise_id",
+        "from",
+        "to",
+        "surface"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8 (C26)",
+      "active": true,
+      "sort": 880
+    },
+    {
+      "event_type": "progress_axis_toggled",
+      "category": "system",
+      "payload_keys": [
+        "axis"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 890
+    },
+    {
+      "event_type": "progress_point_opened",
+      "category": "system",
+      "payload_keys": [
+        "set_id",
+        "kind"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 900
+    },
+    {
+      "event_type": "progress_viewed",
+      "category": "system",
+      "payload_keys": [
+        "exercise_id",
+        "metric",
+        "axis",
+        "range"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 910
+    },
+    {
+      "event_type": "prompt_answered",
+      "category": "prompt",
+      "payload_keys": [
+        "prompt",
+        "group",
+        "value_code",
+        "latency_ms",
+        "wellness_log_id",
+        "observation_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 920
+    },
+    {
+      "event_type": "prompt_shown",
+      "category": "prompt",
+      "payload_keys": [
+        "prompt",
+        "group",
+        "phase",
+        "position",
+        "budget_used",
+        "reduced"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 930
+    },
+    {
+      "event_type": "prompt_skipped",
+      "category": "prompt",
+      "payload_keys": [
+        "prompt",
+        "group",
+        "cause"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 940
+    },
+    {
+      "event_type": "reason_selected",
+      "category": "logging",
+      "payload_keys": [
+        "reason_code",
+        "context",
+        "chip_position",
+        "via_more"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 950
+    },
+    {
+      "event_type": "recalc_report_shown",
+      "category": "lifecycle",
+      "payload_keys": [
+        "lines",
+        "test_valid"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 960
+    },
+    {
+      "event_type": "reminder_scheduled",
+      "category": "system",
+      "payload_keys": [
+        "kind",
+        "count",
+        "horizon_h"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 17",
+      "active": true,
+      "sort": 970
+    },
+    {
+      "event_type": "rep_preference_changed",
+      "category": "config",
+      "payload_keys": [
+        "scope",
+        "exercise_id",
+        "field",
+        "from",
+        "to",
+        "warning_rule_ids"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 980
+    },
+    {
+      "event_type": "rest_adjusted",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "delta_s",
+        "new_end_wall_ms",
+        "capped",
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6, ANDROID 12.3",
+      "active": true,
+      "sort": 990
+    },
+    {
+      "event_type": "rest_alarm_failed",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6",
+      "active": true,
+      "sort": 1000
+    },
+    {
+      "event_type": "rest_alarm_fired",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "scheduled_end_wall_ms",
+        "fired_wall_ms",
+        "latency_ms",
+        "alarm_mode",
+        "app_state",
+        "screen_interactive",
+        "device_idle",
+        "power_save",
+        "battery_opt_exempt",
+        "standby_bucket",
+        "fgs_type",
+        "sdk_int",
+        "manufacturer",
+        "build_display",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.7",
+      "active": true,
+      "sort": 1010
+    },
+    {
+      "event_type": "rest_alarm_stale",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.3",
+      "active": true,
+      "sort": 1020
+    },
+    {
+      "event_type": "rest_ended",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "end_reason",
+        "planned_s",
+        "adjust_s",
+        "actual_s",
+        "rest_source",
+        "prev_completed_at",
+        "rest_end_at",
+        "first_touch_at",
+        "skip_at",
+        "completed_at"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6, ANDROID 12.3",
+      "active": true,
+      "sort": 1030
+    },
+    {
+      "event_type": "rest_overtime_reminder",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "overtime_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.7",
+      "active": true,
+      "sort": 1040
+    },
+    {
+      "event_type": "rest_prewarn",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6 (only while the app UI is visible, C72, ANDROID 12.4)",
+      "active": true,
+      "sort": 1050
+    },
+    {
+      "event_type": "rest_recovered",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "missed_by_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.6",
+      "active": true,
+      "sort": 1060
+    },
+    {
+      "event_type": "rest_skipped",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "remaining_ms",
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6, ANDROID 12.3",
+      "active": true,
+      "sort": 1070
+    },
+    {
+      "event_type": "rest_started",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "set_id",
+        "planned_s",
+        "purpose",
+        "duration_source",
+        "alarm_mode"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.6, ANDROID 12.3",
+      "active": true,
+      "sort": 1080
+    },
+    {
+      "event_type": "rest_tone_skipped",
+      "category": "rest",
+      "payload_keys": [
+        "timer_id",
+        "reason"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.7",
+      "active": true,
+      "sort": 1090
+    },
+    {
+      "event_type": "rule_override",
+      "category": "logging",
+      "payload_keys": [
+        "rule_id",
+        "enrollment_id",
+        "action",
+        "exercise_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3 (an action a hard rule forbids)",
+      "active": true,
+      "sort": 1100
+    },
+    {
+      "event_type": "safety_acknowledged",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "entity"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1110
+    },
+    {
+      "event_type": "screen_viewed",
+      "category": "system",
+      "payload_keys": [
+        "iso_week_offset",
+        "tab_reselected"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 1120
+    },
+    {
+      "event_type": "session_abandon_undone",
+      "category": "lifecycle",
+      "payload_keys": [
+        "ms_since"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1130
+    },
+    {
+      "event_type": "session_abandoned",
+      "category": "lifecycle",
+      "payload_keys": [
+        "working_sets_done",
+        "reason_code"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1140
+    },
+    {
+      "event_type": "session_deleted",
+      "category": "lifecycle",
+      "payload_keys": [
+        "working_sets",
+        "kind"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1150
+    },
+    {
+      "event_type": "session_finished",
+      "category": "lifecycle",
+      "payload_keys": [
+        "duration_s",
+        "working_sets_done",
+        "working_sets_planned",
+        "exercises_not_done",
+        "not_done_reason_codes",
+        "outbox_depth"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1160
+    },
+    {
+      "event_type": "session_idle_prompted",
+      "category": "lifecycle",
+      "payload_keys": [
+        "idle_min",
+        "action"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 11.5",
+      "active": true,
+      "sort": 1170
+    },
+    {
+      "event_type": "session_minimised",
+      "category": "lifecycle",
+      "payload_keys": [
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1180
+    },
+    {
+      "event_type": "session_overrun_shown",
+      "category": "lifecycle",
+      "payload_keys": [
+        "elapsed_min",
+        "remaining_est_min",
+        "budget_min"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2 (more than 10 min over budget, C63)",
+      "active": true,
+      "sort": 1190
+    },
+    {
+      "event_type": "session_reopened",
+      "category": "lifecycle",
+      "payload_keys": [
+        "ms_since_abandon"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1200
+    },
+    {
+      "event_type": "session_restored",
+      "category": "lifecycle",
+      "payload_keys": [
+        "rest_state",
+        "ms_since_last_event"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1210
+    },
+    {
+      "event_type": "session_resumed",
+      "category": "lifecycle",
+      "payload_keys": [
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1220
+    },
+    {
+      "event_type": "session_started",
+      "category": "lifecycle",
+      "payload_keys": [
+        "kind",
+        "template_source",
+        "challenge_slot",
+        "families",
+        "budget_min",
+        "budget_source",
+        "started_from",
+        "plan_recommendation_id",
+        "enrollment_mode",
+        "params_hash",
+        "engine_version",
+        "catalog_version"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1230
+    },
+    {
+      "event_type": "session_summary_shown",
+      "category": "lifecycle",
+      "payload_keys": [
+        "prs",
+        "next_changes_count",
+        "pipeline_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.2",
+      "active": true,
+      "sort": 1240
+    },
+    {
+      "event_type": "session_trimmed",
+      "category": "week",
+      "payload_keys": [
+        "block_id",
+        "budget_min",
+        "trimmed",
+        "core_does_not_fit"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1250
+    },
+    {
+      "event_type": "set_added_later",
+      "category": "logging",
+      "payload_keys": [
+        "set_id",
+        "hours_after_session"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 1260
+    },
+    {
+      "event_type": "set_deleted",
+      "category": "logging",
+      "payload_keys": [
+        "set_id",
+        "surface"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 1270
+    },
+    {
+      "event_type": "set_edited",
+      "category": "logging",
+      "payload_keys": [
+        "set_id",
+        "field",
+        "from",
+        "to",
+        "surface",
+        "ms_since_logged"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3 (one event per changed field)",
+      "active": true,
+      "sort": 1280
+    },
+    {
+      "event_type": "set_logged",
+      "category": "logging",
+      "payload_keys": [
+        "set_id",
+        "session_exercise_id",
+        "set_index",
+        "side",
+        "set_kind",
+        "round_index",
+        "attempt_index",
+        "prefill_source",
+        "side_cap_applied",
+        "deviation_direction",
+        "deviation_fields",
+        "input_method",
+        "taps",
+        "snapped",
+        "log_control",
+        "chip_value",
+        "ms_from_card_shown",
+        "ms_from_rest_end",
+        "first_touch_at",
+        "completed_at"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 1290
+    },
+    {
+      "event_type": "set_undone",
+      "category": "logging",
+      "payload_keys": [
+        "set_id",
+        "ms_since_logged"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 1300
+    },
+    {
+      "event_type": "settings_changed",
+      "category": "config",
+      "payload_keys": [
+        "key",
+        "from",
+        "to"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.8",
+      "active": true,
+      "sort": 1310
+    },
+    {
+      "event_type": "signin_failed",
+      "category": "system",
+      "payload_keys": [
+        "error_class"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9",
+      "active": true,
+      "sort": 1320
+    },
+    {
+      "event_type": "suggestion_applied",
+      "category": "autoreg",
+      "payload_keys": [
+        "recommendation_id",
+        "latency_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1330
+    },
+    {
+      "event_type": "suggestion_kept",
+      "category": "autoreg",
+      "payload_keys": [
+        "implicit"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1340
+    },
+    {
+      "event_type": "suggestion_shown",
+      "category": "autoreg",
+      "payload_keys": [
+        "trigger",
+        "deltas",
+        "proposed",
+        "recommendation_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5 (AUTO-1 on general items, C16; readiness \"Worse\" card)",
+      "active": true,
+      "sort": 1350
+    },
+    {
+      "event_type": "swap_sheet_shown",
+      "category": "logging",
+      "payload_keys": [
+        "from_exercise_id",
+        "candidates",
+        "trigger_reason"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3",
+      "active": true,
+      "sort": 1360
+    },
+    {
+      "event_type": "sync_conflict",
+      "category": "sync",
+      "payload_keys": [
+        "table",
+        "row_id",
+        "local_tuple",
+        "server_tuple",
+        "winner"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by 11.4, ANDROID 9.8",
+      "active": true,
+      "sort": 1370
+    },
+    {
+      "event_type": "sync_dead_letter",
+      "category": "sync",
+      "payload_keys": [
+        "table",
+        "row_id",
+        "http_status",
+        "pg_code",
+        "pgrst_code",
+        "attempts"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by 11.8",
+      "active": true,
+      "sort": 1380
+    },
+    {
+      "event_type": "sync_error",
+      "category": "sync",
+      "payload_keys": [
+        "table",
+        "row_id",
+        "rows",
+        "error_class",
+        "http_status",
+        "pg_code",
+        "pgrst_code",
+        "attempts"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by 11.8, ANDROID 9.8",
+      "active": true,
+      "sort": 1390
+    },
+    {
+      "event_type": "sync_now_tapped",
+      "category": "sync",
+      "payload_keys": [
+        "outbox_depth"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.12",
+      "active": true,
+      "sort": 1400
+    },
+    {
+      "event_type": "sync_run",
+      "category": "sync",
+      "payload_keys": [
+        "trigger",
+        "pushed",
+        "pulled",
+        "pushed_by_table",
+        "pulled_by_table",
+        "duration_ms",
+        "outbox_before",
+        "outbox_after",
+        "oldest_outbox_age_s",
+        "errors",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 9.8",
+      "active": true,
+      "sort": 1410
+    },
+    {
+      "event_type": "template_picked",
+      "category": "today",
+      "payload_keys": [
+        "kind",
+        "slot_or_type",
+        "rank"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1420
+    },
+    {
+      "event_type": "test_step_completed",
+      "category": "challenge",
+      "payload_keys": [
+        "step",
+        "step_key",
+        "duration_ms",
+        "skipped"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 1430
+    },
+    {
+      "event_type": "test_submitted",
+      "category": "challenge",
+      "payload_keys": [
+        "valid",
+        "steps_completed",
+        "steps_skipped"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 1440
+    },
+    {
+      "event_type": "test_validity_shown",
+      "category": "challenge",
+      "payload_keys": [
+        "valid",
+        "reason_code"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.10",
+      "active": true,
+      "sort": 1450
+    },
+    {
+      "event_type": "tick_catchup",
+      "category": "system",
+      "payload_keys": [
+        "enrollment_id",
+        "from_date",
+        "to_date",
+        "ticks"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by CHALLENGE_ENGINE 4.6 (synthesis after a gap)",
+      "active": true,
+      "sort": 1460
+    },
+    {
+      "event_type": "time_budget_selected",
+      "category": "week",
+      "payload_keys": [
+        "minutes",
+        "source",
+        "trimmed_count",
+        "core_does_not_fit"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1470
+    },
+    {
+      "event_type": "timer_selftest",
+      "category": "system",
+      "payload_keys": [
+        "latency_ms",
+        "felt",
+        "screen_off",
+        "alarm_mode",
+        "passed",
+        "platform_config_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.9, ANDROID 15.4",
+      "active": true,
+      "sort": 1480
+    },
+    {
+      "event_type": "today_action",
+      "category": "today",
+      "payload_keys": [
+        "action",
+        "rank",
+        "latency_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1490
+    },
+    {
+      "event_type": "today_card_shown",
+      "category": "today",
+      "payload_keys": [
+        "state",
+        "verdict",
+        "variant",
+        "options",
+        "chips",
+        "confidence",
+        "primary_option_id",
+        "calendar_instance_keys",
+        "unknown_codes",
+        "inputs_hash"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1500
+    },
+    {
+      "event_type": "trace_exported",
+      "category": "today",
+      "payload_keys": [
+        "via"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1510
+    },
+    {
+      "event_type": "volume_row_opened",
+      "category": "week",
+      "payload_keys": [
+        "group",
+        "state"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1520
+    },
+    {
+      "event_type": "warmup_item_done",
+      "category": "logging",
+      "payload_keys": [
+        "item_key",
+        "block_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.3 (warm-ups are logged with Done, C63)",
+      "active": true,
+      "sort": 1530
+    },
+    {
+      "event_type": "warning_dismissed",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "entity",
+        "magnitude"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1540
+    },
+    {
+      "event_type": "warning_shown",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "severity",
+        "entity",
+        "magnitude",
+        "surface"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1550
+    },
+    {
+      "event_type": "warning_use_mine_toggled",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "entity",
+        "on"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5 (\"Use mine anyway\")",
+      "active": true,
+      "sort": 1560
+    },
+    {
+      "event_type": "warning_use_suggested",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "entity",
+        "field",
+        "from",
+        "to"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5 (\"Use suggested\", D10)",
+      "active": true,
+      "sort": 1570
+    },
+    {
+      "event_type": "warning_why_opened",
+      "category": "warning",
+      "payload_keys": [
+        "rule_id",
+        "entity"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.5",
+      "active": true,
+      "sort": 1580
+    },
+    {
+      "event_type": "week_day_opened",
+      "category": "week",
+      "payload_keys": [
+        "date",
+        "row_kind"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1590
+    },
+    {
+      "event_type": "weekplan_shown",
+      "category": "week",
+      "payload_keys": [
+        "iso_week",
+        "iso_week_offset",
+        "days",
+        "volume_rows"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4",
+      "active": true,
+      "sort": 1600
+    },
+    {
+      "event_type": "why_opened",
+      "category": "today",
+      "payload_keys": [
+        "subject_kind",
+        "subject_id",
+        "codes"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 20.4 (any screen; screen is the envelope column)",
+      "active": true,
+      "sort": 1610
+    }
+  ]
+}

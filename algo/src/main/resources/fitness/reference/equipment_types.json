@@ -1,0 +1,593 @@
+{
+  "table": "fitness.equipment_types",
+  "rows": [
+    {
+      "key": "pullup_bar",
+      "category": "station",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Pull-up bar",
+      "label_nl": "Optrekstang",
+      "active": true,
+      "sort": 10
+    },
+    {
+      "key": "fixed_neutral_handle",
+      "category": "station",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Fixed neutral handle",
+      "label_nl": "Vaste neutrale handgreep",
+      "active": true,
+      "sort": 20
+    },
+    {
+      "key": "assisted_pullup_machine",
+      "category": "station",
+      "default_scheme_type": "pin_assist",
+      "default_load_scheme": {
+        "type": "pin_assist",
+        "unit": "lb",
+        "step": 5,
+        "min": 0,
+        "max": null,
+        "offset_kg": 6.5,
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Assisted pull-up machine",
+      "label_nl": "Ondersteunde optrekmachine",
+      "active": true,
+      "sort": 30
+    },
+    {
+      "key": "dip_station",
+      "category": "station",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Dip station",
+      "label_nl": "Dipstation",
+      "active": true,
+      "sort": 40
+    },
+    {
+      "key": "dip_belt",
+      "category": "accessory",
+      "default_scheme_type": "belt",
+      "default_load_scheme": {
+        "type": "belt",
+        "unit": "kg",
+        "plates": [],
+        "max_kg": 60,
+        "max_items": 4,
+        "dumbbells_on_belt": true
+      },
+      "portable": true,
+      "label_en": "Dip belt",
+      "label_nl": "Dipgordel",
+      "active": true,
+      "sort": 50
+    },
+    {
+      "key": "barbell",
+      "category": "implement",
+      "default_scheme_type": "plates",
+      "default_load_scheme": {
+        "type": "plates",
+        "unit": "kg",
+        "bar_kg": 20,
+        "plates": [
+          {
+            "kg": 25,
+            "count": 4
+          },
+          {
+            "kg": 20,
+            "count": 4
+          },
+          {
+            "kg": 15,
+            "count": 4
+          },
+          {
+            "kg": 10,
+            "count": 4
+          },
+          {
+            "kg": 5,
+            "count": 4
+          },
+          {
+            "kg": 2.5,
+            "count": 4
+          },
+          {
+            "kg": 1.25,
+            "count": 4
+          }
+        ]
+      },
+      "portable": false,
+      "label_en": "Barbell",
+      "label_nl": "Halter (lange stang)",
+      "active": true,
+      "sort": 60
+    },
+    {
+      "key": "smith_machine",
+      "category": "station",
+      "default_scheme_type": "plates",
+      "default_load_scheme": {
+        "type": "plates",
+        "unit": "kg",
+        "bar_kg": null,
+        "plates": [
+          {
+            "kg": 25,
+            "count": 4
+          },
+          {
+            "kg": 20,
+            "count": 4
+          },
+          {
+            "kg": 15,
+            "count": 4
+          },
+          {
+            "kg": 10,
+            "count": 4
+          },
+          {
+            "kg": 5,
+            "count": 4
+          },
+          {
+            "kg": 2.5,
+            "count": 4
+          },
+          {
+            "kg": 1.25,
+            "count": 4
+          }
+        ]
+      },
+      "portable": false,
+      "label_en": "Smith machine",
+      "label_nl": "Smithmachine",
+      "active": true,
+      "sort": 70
+    },
+    {
+      "key": "dumbbells",
+      "category": "implement",
+      "default_scheme_type": "dumbbells",
+      "default_load_scheme": {
+        "type": "dumbbells",
+        "unit": "kg",
+        "values": [],
+        "per": "hand"
+      },
+      "portable": false,
+      "label_en": "Dumbbells",
+      "label_nl": "Dumbbells",
+      "active": true,
+      "sort": 80
+    },
+    {
+      "key": "adjustable_bench",
+      "category": "station",
+      "default_scheme_type": null,
+      "default_load_scheme": null,
+      "portable": false,
+      "label_en": "Adjustable bench",
+      "label_nl": "Verstelbare bank",
+      "active": true,
+      "sort": 90
+    },
+    {
+      "key": "cable_station",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Cable station",
+      "label_nl": "Kabelstation",
+      "active": true,
+      "sort": 100
+    },
+    {
+      "key": "lat_pulldown",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Lat pulldown",
+      "label_nl": "Lat pulldown",
+      "active": true,
+      "sort": 110
+    },
+    {
+      "key": "seated_cable_row",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Seated cable row",
+      "label_nl": "Zittend kabelroeien",
+      "active": true,
+      "sort": 120
+    },
+    {
+      "key": "chest_supported_row",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Chest-supported row",
+      "label_nl": "Roeimachine met borststeun",
+      "active": true,
+      "sort": 130
+    },
+    {
+      "key": "chest_press_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Chest press machine",
+      "label_nl": "Chest press machine",
+      "active": true,
+      "sort": 140
+    },
+    {
+      "key": "pec_deck",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Pec deck",
+      "label_nl": "Pec deck",
+      "active": true,
+      "sort": 150
+    },
+    {
+      "key": "shoulder_press_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Shoulder press machine",
+      "label_nl": "Schouderpers machine",
+      "active": true,
+      "sort": 160
+    },
+    {
+      "key": "lateral_raise_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Lateral raise machine",
+      "label_nl": "Lateral raise machine",
+      "active": true,
+      "sort": 170
+    },
+    {
+      "key": "leg_press",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Leg press",
+      "label_nl": "Beenpers",
+      "active": true,
+      "sort": 180
+    },
+    {
+      "key": "hack_squat",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Hack squat",
+      "label_nl": "Hack squat",
+      "active": true,
+      "sort": 190
+    },
+    {
+      "key": "leg_extension",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Leg extension",
+      "label_nl": "Beenstrekker",
+      "active": true,
+      "sort": 200
+    },
+    {
+      "key": "leg_curl_seated",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Seated leg curl",
+      "label_nl": "Zittende beencurl",
+      "active": true,
+      "sort": 210
+    },
+    {
+      "key": "leg_curl_lying",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Lying leg curl",
+      "label_nl": "Liggende beencurl",
+      "active": true,
+      "sort": 220
+    },
+    {
+      "key": "hip_thrust_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Hip thrust machine",
+      "label_nl": "Hip thrust machine",
+      "active": true,
+      "sort": 230
+    },
+    {
+      "key": "hip_abduction",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Hip abduction machine",
+      "label_nl": "Abductiemachine",
+      "active": true,
+      "sort": 240
+    },
+    {
+      "key": "hip_adduction",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Hip adduction machine",
+      "label_nl": "Adductiemachine",
+      "active": true,
+      "sort": 250
+    },
+    {
+      "key": "calf_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Calf machine",
+      "label_nl": "Kuitmachine",
+      "active": true,
+      "sort": 260
+    },
+    {
+      "key": "back_extension",
+      "category": "station",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Back extension bench",
+      "label_nl": "Rugstrekbank",
+      "active": true,
+      "sort": 270
+    },
+    {
+      "key": "rower_erg",
+      "category": "cardio",
+      "default_scheme_type": null,
+      "default_load_scheme": null,
+      "portable": false,
+      "label_en": "Rowing machine",
+      "label_nl": "Roeimachine (cardio)",
+      "active": true,
+      "sort": 280
+    },
+    {
+      "key": "wide_bar",
+      "category": "implement",
+      "default_scheme_type": null,
+      "default_load_scheme": null,
+      "portable": false,
+      "label_en": "Wide grip bar (optional)",
+      "label_nl": "Brede stang (optioneel)",
+      "active": true,
+      "sort": 290
+    },
+    {
+      "key": "rings",
+      "category": "implement",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Rings (optional)",
+      "label_nl": "Ringen (optioneel)",
+      "active": true,
+      "sort": 300
+    },
+    {
+      "key": "chalk",
+      "category": "accessory",
+      "default_scheme_type": null,
+      "default_load_scheme": null,
+      "portable": true,
+      "label_en": "Chalk",
+      "label_nl": "Krijt",
+      "active": true,
+      "sort": 310
+    },
+    {
+      "key": "home_bar",
+      "category": "home",
+      "default_scheme_type": "bodyweight",
+      "default_load_scheme": {
+        "type": "bodyweight"
+      },
+      "portable": false,
+      "label_en": "Home pull-up bar",
+      "label_nl": "Optrekstang thuis",
+      "active": true,
+      "sort": 320
+    }
+  ]
+}

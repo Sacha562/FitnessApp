@@ -666,33 +666,33 @@ These domains are canonical for every stored code (C38): challenge definitions, 
 | 9 | `session_event_types` | fitness | REF | NONE | Seed | 004, 005 | Reviews only |
 | 10 | `algorithm_versions` | fitness | REF | REF-PULL | Seed per release | 004, 005 | Every snapshot |
 | 11 | `algo_params` | fitness | REF | REF-PULL | Seed per release | 004, 005 | Params resolver |
-| 12 | `catalog_releases` | fitness | REF | REF-PULL | Seed per release | 006, 007 | catalog |
-| 13 | `exercises` | fitness | MIX | MIX | Seed + user custom | 006, 007 | catalog, elig, select, rx, load |
-| 14 | `exercise_stimulus` | fitness | MIX | MIX | Seed + user custom | 006, 007 | catalog, setcredit |
-| 15 | `exercise_transfer_ratios` | fitness | REF | REF-PULL | Seed | 006, 007 | substitute |
-| 16 | `profiles` | fitness | USER | LWW | Mutable | 008 | Settings |
-| 17 | `gyms` | fitness | USER | LWW | Mutable | 008 | weekplan, calendar.classify |
-| 18 | `gym_equipment` | fitness | USER | LWW | Mutable | 008 | load, elig, ui.prefill |
-| 19 | `rep_preferences` | fitness | USER | LWW | Mutable | 008 | rx, select, warnings |
-| 20 | `muscle_goals` | fitness | USER | LWW | Mutable | 008 | targets, elig |
-| 21 | `user_exercise_prefs` | fitness | USER | LWW | Mutable | 008 | pref, elig |
-| 22 | `user_algo_params` | fitness | USER-RO | SRV-PULL | Server-written | 008 | Params resolver, tuner |
-| 23 | `challenge_definitions` | fitness | MIX (read-only v1) | DEF-PULL | Immutable when published | 009, 014 | challenge.* |
-| 24 | `challenge_enrollments` | fitness | USER | LWW-REV | Cached fold | 009 | challenge.enrollment |
-| 25 | `params_snapshots` | fitness | APPEND | APPEND | Insert-only | 010 | Replay |
-| 26 | `recommendations` | fitness | APPEND | APPEND | Insert-only | 010 | Every engine module |
-| 27 | `workout_sessions` | fitness | USER | LWW | Mutable | 011 | Session flow |
-| 28 | `session_blocks` | fitness | USER | LWW | Mutable | 011 | C34 blocks |
-| 29 | `session_exercises` | fitness | USER | LWW | Mutable | 011 | Session flow |
-| 30 | `set_logs` | fitness | USER | LWW | Mutable | 011 | Logger; all estimators |
-| 31 | `wellness_logs` | fitness | USER | LWW | Mutable | 011 | safety, readiness, ui.prompts |
-| 32 | `metric_observations` | fitness | USER | LWW | Mutable | 011 | bodyweight, challenge gates |
-| 33 | `challenge_events` | fitness | APPEND | APPEND | Insert-only | 012 | challenge.enrollment fold |
-| 34 | `challenge_rule_events` | fitness | APPEND | APPEND | Insert-only | 012 | challenge.eca audit |
-| 35 | `calendar_events` | fitness | USER | LWW | Mutable | 012 | calendar.classify, challenge.calendar |
-| 36 | `session_events` | fitness | APPEND | APPEND | Insert-only | 013 | UI-12 telemetry |
-| 37 | `exercise_model_state` | fitness | CACHE | LWW | Rebuildable | 013 | Estimator caches |
-| 38 | `exports` | fitness | APPEND | APPEND | Insert-only | 013 | F4 export log |
+| 12 | `catalog_releases` | fitness | REF | REF-PULL | Seed per release | 008, 009 | catalog |
+| 13 | `exercises` | fitness | MIX | MIX | Seed + user custom | 008, 009 | catalog, elig, select, rx, load |
+| 14 | `exercise_stimulus` | fitness | MIX | MIX | Seed + user custom | 008, 009 | catalog, setcredit |
+| 15 | `exercise_transfer_ratios` | fitness | REF | REF-PULL | Seed | 008, 009 | substitute |
+| 16 | `profiles` | fitness | USER | LWW | Mutable | 006 | Settings |
+| 17 | `gyms` | fitness | USER | LWW | Mutable | 006 | weekplan, calendar.classify |
+| 18 | `gym_equipment` | fitness | USER | LWW | Mutable | 010 | load, elig, ui.prefill |
+| 19 | `rep_preferences` | fitness | USER | LWW | Mutable | 010 | rx, select, warnings |
+| 20 | `muscle_goals` | fitness | USER | LWW | Mutable | 010 | targets, elig |
+| 21 | `user_exercise_prefs` | fitness | USER | LWW | Mutable | 010 | pref, elig |
+| 22 | `user_algo_params` | fitness | USER-RO | SRV-PULL | Server-written | 010 | Params resolver, tuner |
+| 23 | `challenge_definitions` | fitness | MIX (read-only v1) | DEF-PULL | Immutable when published | 011, 016, 018 | challenge.* |
+| 24 | `challenge_enrollments` | fitness | USER | LWW-REV | Cached fold | 011 | challenge.enrollment |
+| 25 | `params_snapshots` | fitness | APPEND | APPEND | Insert-only | 012 | Replay |
+| 26 | `recommendations` | fitness | APPEND | APPEND | Insert-only | 012 | Every engine module |
+| 27 | `workout_sessions` | fitness | USER | LWW | Mutable | 013 | Session flow |
+| 28 | `session_blocks` | fitness | USER | LWW | Mutable | 013 | C34 blocks |
+| 29 | `session_exercises` | fitness | USER | LWW | Mutable | 013 | Session flow |
+| 30 | `set_logs` | fitness | USER | LWW | Mutable | 013 | Logger; all estimators |
+| 31 | `wellness_logs` | fitness | USER | LWW | Mutable | 013 | safety, readiness, ui.prompts |
+| 32 | `metric_observations` | fitness | USER | LWW | Mutable | 013 | bodyweight, challenge gates |
+| 33 | `challenge_events` | fitness | APPEND | APPEND | Insert-only | 014 | challenge.enrollment fold |
+| 34 | `challenge_rule_events` | fitness | APPEND | APPEND | Insert-only | 014 | challenge.eca audit |
+| 35 | `calendar_events` | fitness | USER | LWW | Mutable | 014 | calendar.classify, challenge.calendar |
+| 36 | `session_events` | fitness | APPEND | APPEND | Insert-only | 015 | UI-12 telemetry |
+| 37 | `exercise_model_state` | fitness | CACHE | LWW | Rebuildable | 015 | Estimator caches |
+| 38 | `exports` | fitness | APPEND | APPEND | Insert-only | 015 | F4 export log |
 
 Unless stated otherwise, every USER/CACHE table has the S-MUT columns, the `a_sync` trigger, the USER policy template (7.8), `index (user_id, server_updated_at)` and `unique (id, user_id)`. Every APPEND table has the S-APP columns, the `a_append` trigger, the APPEND template and `index (user_id, server_updated_at)`. Every REF table has the S-REF columns, the `a_touch` trigger and the REF template. These are not repeated in each table below.
 
@@ -1217,7 +1217,7 @@ Immutable, versioned challenge definitions (CDS v1). v1 contains only global row
 | `schema_version` | text | not null | | `^fitapp\.challenge/[0-9]+$` | `fitapp.challenge/1`. |
 | `engine_range` | text | not null | | | For example `>=1.0.0 <2.0.0`. |
 | `title_en` / `title_nl` | text | not null / null | | | |
-| `definition` | jsonb | not null | | object; optional `extensions.jsonb_matches_schema(...)` CHECK (F5, migration 016) | The full CDS JSON (authored in the repo). |
+| `definition` | jsonb | not null | | object; optional `extensions.jsonb_matches_schema(...)` CHECK (F5, migration 018) | The full CDS JSON (authored in the repo). |
 | `jcs_sha256` | text | not null | | E51 | RFC 8785 JCS SHA-256, computed by the authoring tool and recomputed by the app; this is the hash stored in snapshots (C24). |
 | `server_checksum` | text | not null | | E51 | Set by trigger (7.6) from `definition::text`; detects tampering. Never compared with `jcs_sha256`. |
 | `supersedes_id` | uuid | null | | FK `challenge_definitions(id)` | Previous version. |
@@ -2354,20 +2354,22 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 002 | `fitness_002_private_helpers` | M0 | `fitness_private.allowed_users`; `is_allowed()`; trigger functions `tg_sync_row`, `tg_append_only`, `tg_touch_reference`, `tg_enrollment_rev`, `tg_challenge_definition_guard`, `tg_check_exercise_visible`, `tg_check_symptom_codes`; all `revoke ... from public`; `grant execute on is_allowed() to authenticated, service_role`. | No fitness function with a `PUBLIC` ACL entry; all have `search_path=""`. |
 | 003 | `fitness_003_allowlist_owner` (data) | M0 | `insert into fitness_private.allowed_users (user_id, role, note) values ('<owner uuid>', 'owner', 'owner') on conflict do nothing`. The UUID is resolved beforehand by a read-only lookup; no email in the file. | Exactly one owner row. |
 | 004 | `fitness_004_reference_tables` | M0 | REF tables: `muscle_groups`, `muscle_regions`, `reason_codes`, `metric_defs`, `body_regions`, `symptom_codes`, `equipment_types`, `session_event_types`, `algo_params`, `algorithm_versions`, `catalog_releases`; RLS, grants, `a_touch` triggers. | RLS on; `authenticated` has only `SELECT`. |
-| 005 | `fitness_005_reference_seed` (data) | M0 | 19 groups (18 + inactive `neck`), 35 regions (34 + inactive `neck`, C44), 13 reason codes, 16 metric defs (9.1.4), body regions, symptom codes, equipment types, the 9.8.1 event-type registry (C39), `algo_params` 1.0.0 (from `algo/src/main/resources/fitness/params/default-params-1.0.0.json`, C40; status `active`), 51 `algorithm_versions` rows at 1.0.0 with `constants_hash`. | Row counts; `params_hash` recomputed by the seed generator matches. |
-| 006 | `fitness_006_catalog_tables` | M1 | `exercises`, `exercise_stimulus`, `exercise_transfer_ratios`; MIX policies; visibility trigger on `exercise_stimulus`. | MIX policy test (global readable, own writable, others invisible). |
-| 007 | `fitness_007_catalog_seed` (data) | M1 | `catalog_releases` 1.0.0; ~150 curated exercises, stimulus coefficients (C10 levels), transfer ratios. Generated from `catalog/catalog-1.0.0.json` (the same file the APK bundles). The seed contains every slug a published challenge definition references (C38); for `oap.challenge.v1.json` that union is 29 slugs: the 15 catalog slugs reached through `catalogRef` (`chinup_weighted`, `neutral_grip_pullup_weighted`, `pullup_weighted` and `chinup_bw`, `neutral_grip_pullup_bw`, `pullup_bw` through the grip map of the definition keys `weighted_pullup` and `pullup_bw`; `dip_neutral`, `barbell_row_pronated`, `seated_cable_row_wide_pronated`, `chest_supported_row_pronated`, `reverse_wrist_curl_db`, `db_pronation_supination`, `face_pull_cable`, `rower_erg`, `scap_pull_bar`) and the 14 challenge-local entries seeded as global rows under their definition key (`weighted_negative_pullup`, `oap_assisted_machine`, `oap_finger_assisted`, `oa_negative`, `oa_top_hold`, `oa_hold90_machine`, `oa_hold_angle`, `oa_straight_arm_hold`, `oa_scap_pull`, `oa_dead_hang`, `oap_attempt`, `typewriter_pullup`, `one_arm_plank`, `two_arm_dead_hang`). A definition key that resolves through `catalogRef` is not itself a slug (9.2.1): `weighted_pullup` has no catalog row, and the key `pullup_bw` only happens to equal the slug of its pronated variant. | CAT-1 validator passes in CI before the file is generated; counts equal `catalog_releases`; the seed generator fails if a slug referenced by a published definition is missing. |
-| 008 | `fitness_008_user_config` | M1 | `profiles`, `gyms`, `gym_equipment`, `rep_preferences`, `muscle_goals`, `user_exercise_prefs`, `user_algo_params`; USER / USER-RO templates. | Two-user RLS test (17.6). |
-| 009 | `fitness_009_challenge_core` | M1 | `challenge_definitions` (guard trigger), `challenge_enrollments` (rev trigger). | Immutability test; rev-trigger test. |
-| 010 | `fitness_010_snapshots` | M1 | `params_snapshots`, `recommendations`. | Append-only test (no update for `authenticated`). |
-| 011 | `fitness_011_sessions_sets` | M1 | `workout_sessions`, `session_blocks`, `session_exercises`, `set_logs`, `wellness_logs`, `metric_observations`, all composite FKs and checks. | Composite-FK cross-user test; effective-load and load-mode checks. |
-| 012 | `fitness_012_challenge_events_calendar` | M1 | `challenge_events`, `challenge_rule_events`, `calendar_events`. | Dedupe-key idempotency; ignored-row title check. |
-| 013 | `fitness_013_telemetry_cache_exports` | M1 | `session_events`, `exercise_model_state`, `exports`. | Payload size checks. |
-| 014 | `fitness_014_oap_definition_v1` (data) | M2 | Insert the OAP definition 1.0.0 (id UUIDv5 `challenge_definition:oap@1.0.0` = `b2afe9c6-816e-51a4-9cdb-8a529fd54615`) as `published`, with `jcs_sha256` from the authoring tool; `on conflict (id) do nothing`; then assert the stored `jcs_sha256` equals the file's. Written only after the CHALLENGE spec is final and the definition passes the CDS validator with the section 8 domains (C38; open issue 3, resolved). | Guard trigger set `server_checksum`; an `update` of `definition` fails with `55000`. |
-| 015 | `fitness_015_review_views` | M1 (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
-| 016 | `fitness_016_jsonschema` (optional) | M0 if the user approves F5 | `create extension if not exists pg_jsonschema with schema extensions`; `alter table fitness.challenge_definitions add constraint challenge_definitions_schema_ck check (extensions.jsonb_matches_schema('<CDS v1 JSON Schema>'::json, definition))`. | Advisors; a malformed definition insert fails. |
+| 005 | `fitness_005_reference_seed` (data; applied 2026-10-08 as `_part1` reference rows and `_part2`-`_part7` params chunks, because one MCP call cannot carry the 133 KB params set: the chunks build a `draft` row that the last part activates after key-count and hash checks) | M0 | 19 groups (18 + inactive `neck`), 35 regions (34 + inactive `neck`, C44), 13 reason codes, 16 metric defs (9.1.4), body regions, symptom codes, equipment types, the 9.8.1 event-type registry (C39), `algo_params` 1.0.0 (from `algo/src/main/resources/fitness/params/default-params-1.0.0.json`, C40; status `active`), 51 `algorithm_versions` rows at 1.0.0 with `constants_hash`. | Row counts; `params_hash` recomputed by the seed generator matches. |
+| 006 | `fitness_006_profiles_gyms` | M0 | `profiles`, `gyms` (9.3.1, 9.3.2); USER template. Pulled forward from the user-config migration (2026-10-08) so that M0 proves the write path: the app upserts the owner's profile on first login. | Two-user RLS test for both tables; LWW trigger test on `profiles`. |
+| 007 | `fitness_007_jsonschema_extension` | M0 (user approved F5 on 2026-10-08) | `create extension if not exists pg_jsonschema with schema extensions`. The CHECK that uses it ships in 018. | `list_extensions` shows `pg_jsonschema`; advisors. |
+| 008 | `fitness_008_catalog_tables` | M1 | `exercises`, `exercise_stimulus`, `exercise_transfer_ratios`; MIX policies; visibility trigger on `exercise_stimulus`. | MIX policy test (global readable, own writable, others invisible). |
+| 009 | `fitness_009_catalog_seed` (data) | M1 | `catalog_releases` 1.0.0; ~150 curated exercises, stimulus coefficients (C10 levels), transfer ratios. Generated from `catalog/catalog-1.0.0.json` (the same file the APK bundles). The seed contains every slug a published challenge definition references (C38); for `oap.challenge.v1.json` that union is 29 slugs: the 15 catalog slugs reached through `catalogRef` (`chinup_weighted`, `neutral_grip_pullup_weighted`, `pullup_weighted` and `chinup_bw`, `neutral_grip_pullup_bw`, `pullup_bw` through the grip map of the definition keys `weighted_pullup` and `pullup_bw`; `dip_neutral`, `barbell_row_pronated`, `seated_cable_row_wide_pronated`, `chest_supported_row_pronated`, `reverse_wrist_curl_db`, `db_pronation_supination`, `face_pull_cable`, `rower_erg`, `scap_pull_bar`) and the 14 challenge-local entries seeded as global rows under their definition key (`weighted_negative_pullup`, `oap_assisted_machine`, `oap_finger_assisted`, `oa_negative`, `oa_top_hold`, `oa_hold90_machine`, `oa_hold_angle`, `oa_straight_arm_hold`, `oa_scap_pull`, `oa_dead_hang`, `oap_attempt`, `typewriter_pullup`, `one_arm_plank`, `two_arm_dead_hang`). A definition key that resolves through `catalogRef` is not itself a slug (9.2.1): `weighted_pullup` has no catalog row, and the key `pullup_bw` only happens to equal the slug of its pronated variant. | CAT-1 validator passes in CI before the file is generated; counts equal `catalog_releases`; the seed generator fails if a slug referenced by a published definition is missing. |
+| 010 | `fitness_010_user_config` | M1 | `gym_equipment`, `rep_preferences`, `muscle_goals`, `user_exercise_prefs`, `user_algo_params`; USER / USER-RO templates. | Two-user RLS test (17.6). |
+| 011 | `fitness_011_challenge_core` | M1 | `challenge_definitions` (guard trigger), `challenge_enrollments` (rev trigger). | Immutability test; rev-trigger test. |
+| 012 | `fitness_012_snapshots` | M1 | `params_snapshots`, `recommendations`. | Append-only test (no update for `authenticated`). |
+| 013 | `fitness_013_sessions_sets` | M1 | `workout_sessions`, `session_blocks`, `session_exercises`, `set_logs`, `wellness_logs`, `metric_observations`, all composite FKs and checks. | Composite-FK cross-user test; effective-load and load-mode checks. |
+| 014 | `fitness_014_challenge_events_calendar` | M1 | `challenge_events`, `challenge_rule_events`, `calendar_events`. | Dedupe-key idempotency; ignored-row title check. |
+| 015 | `fitness_015_telemetry_cache_exports` | M1 | `session_events`, `exercise_model_state`, `exports`. | Payload size checks. |
+| 016 | `fitness_016_oap_definition_v1` (data) | M2 | Insert the OAP definition 1.0.0 (id UUIDv5 `challenge_definition:oap@1.0.0` = `b2afe9c6-816e-51a4-9cdb-8a529fd54615`) as `published`, with `jcs_sha256` from the authoring tool; `on conflict (id) do nothing`; then assert the stored `jcs_sha256` equals the file's. Written only after the CHALLENGE spec is final and the definition passes the CDS validator with the section 8 domains (C38; open issue 3, resolved). | Guard trigger set `server_checksum`; an `update` of `definition` fails with `55000`. |
+| 017 | `fitness_017_review_views` | M1 (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
+| 018 | `fitness_018_jsonschema_constraint` (optional) | M2 | `alter table fitness.challenge_definitions add constraint challenge_definitions_schema_ck check (extensions.jsonb_matches_schema('<CDS v1 JSON Schema>'::json, definition))` (the extension itself is installed by 007). | Advisors; a malformed definition insert fails. |
 
-The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 017 with the same process.
+The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 
 ### 13.3 Seed generation
 
@@ -3390,7 +3392,7 @@ The replay run itself reads `inputs`, `outputs` and the params map for the selec
 
 ### 14.24 Maintenance rules for the views
 
-- All views live in migration 015 and later view migrations; the same SQL is never copied into review notes. Review queries that are reused are stored as files in `supabase/review/queries/` (21) with a `:owner_id` placeholder.
+- All views live in migration 017 and later view migrations; the same SQL is never copied into review notes. Review queries that are reused are stored as files in `supabase/review/queries/` (21) with a `:owner_id` placeholder.
 - A view migration is required when (a) a 10.2 key changes, (b) a source column is renamed or dropped, or (c) a snapshot kind whose 10.2 keys have no v1 view (for example `estimation.hold`, `stall.weekly`, `safety.state`) needs a reusable review view (C58). Views are dropped in reverse creation order and recreated in catalogue order (14.3).
 - Every view migration runs the verification checklist (section 17), including 17.4 item V (all views `security_invoker = true`, no grants) and the sentinel tests of 19.9.
 
@@ -3655,7 +3657,7 @@ Every migration (13.2) is followed by this checklist. Claude Code runs it, recor
 
 1. The user has read the migration file and approved it in chat (F3; DECISIONS section 5, action 4).
 2. If real data exists: a fresh in-app full export (15.5) and an L4 dump (15.4) were made today.
-3. `v_db_size_summary` (once migration 015 exists; before that `select pg_database_size(current_database())`) is below the warn level (15.2).
+3. `v_db_size_summary` (once migration 017 exists; before that `select pg_database_size(current_database())`) is below the warn level (15.2).
 4. The PGRST106 probe (17.5) has been run and its result recorded as the "before" state.
 5. `list_migrations` has been read; the latest version and the count are recorded (2026-10-07: 55 chess rows, latest `20261005083742`).
 6. Static checks on the file (scripted, 21): every `create`/`alter`/`grant`/`revoke`/`insert` names a schema-qualified object; no object in `public`; no `alter default privileges` (fitness never uses default privileges); no trigger on `auth.users`; no `alter role`; no `create extension` except in migration 016 after the user approved F5; every `create function` is followed by `revoke all on function ... from public`; every `create table` in `fitness` has `enable row level security` and explicit grants in the same file.
@@ -3791,7 +3793,7 @@ where table_schema = 'fitness_review' and grantee <> 'postgres';
 | Default privileges | `select count(*) from pg_default_acl d left join pg_namespace n on n.oid = d.defaclnamespace where d.defaclnamespace = 0 or n.nspname like 'fitness%'` | 0 |
 | Cron jobs | `select count(*) from cron.job where jobname ilike '%fitness%'` | 0 |
 | Migration history | `list_migrations` | Previous rows unchanged, one new `fitness_NNN_*` row |
-| Extensions | `list_extensions` | Unchanged, except `pg_jsonschema` after migration 016 |
+| Extensions | `list_extensions` | Unchanged, except `pg_jsonschema` after migration 007 |
 
 ### 17.5 PGRST106 and anon probes (C25, F2)
 
@@ -3842,7 +3844,7 @@ Pass: the block ends with the exception message `FITNESS_DB_TESTS_PASSED <n> (<e
 
 ### 17.8 Data migrations
 
-For seed migrations (005, 007, 014): row counts per table equal the counts the seed generator printed; `algo_params.params_hash`, `catalog_releases.jcs_sha256` and `challenge_definitions.jcs_sha256` equal the generator's values; re-running the migration changes no `updated_at` (the `is distinct from` guard, 7.10); for 014, `server_checksum` is set and an `update` of `definition` fails with `55000`.
+For seed migrations (005, 009, 016): row counts per table equal the counts the seed generator printed; `algo_params.params_hash`, `catalog_releases.jcs_sha256` and `challenge_definitions.jcs_sha256` equal the generator's values; re-running the migration changes no `updated_at` (the `is distinct from` guard, 7.10); for 014, `server_checksum` is set and an `update` of `definition` fails with `55000`.
 
 ### 17.9 App smoke test
 
@@ -4326,7 +4328,7 @@ data/src/main/kotlin/dev/fitnessapp/data/validate/  # one validator per entity, 
 data/src/main/kotlin/dev/fitnessapp/data/privacy/   # TelemetryPayloadValidator, CalendarFeatureValidator
 ```
 
-**Order of work.** M0: migrations 001-005, then 17.1-17.5, then the user exposes the schema, then the P1-P3 probes again. M1: 006-013, the full section 17 checklist after each, `fitness_db_tests.sql` from 008 on, then 015 (views) with the sentinel tests. M2: 014 once the final OAP definition passes the CDS validator with the section 8 domains (C38). The Room v1 schema follows ANDROID.md section 8 (C40); migration 005 seeds the 9.8.1 registry (C39) and migration 013 creates `exports` with `json_gz` (C40). Before UI or platform code emits telemetry, check open issue 27 so that only registry names are used.
+**Order of work.** M0: migrations 001-007, then 17.1-17.5, then the user exposes the schema, then the P1-P3 probes again. M1: 008-015, the full section 17 checklist after each, `fitness_db_tests.sql` from 006 on, then 017 (views) with the sentinel tests. M2: 016 once the final OAP definition passes the CDS validator with the section 8 domains (C38). The Room v1 schema follows ANDROID.md section 8 (C40); migration 005 seeds the 9.8.1 registry (C39) and migration 015 creates `exports` with `json_gz` (C40). Before UI or platform code emits telemetry, check open issue 27 so that only registry names are used.
 
 **Test names.** SQL: `RLS-01..23`, `L-01..18`, `FK-01..10`, `CK-01..17`, `V-01..08` inside `fitness_db_tests.sql`. Kotlin: `UuidV5FixtureTest`, `UuidV7FixtureTest`, `RealWeekFixtureValidatorTest`, `LoadCalibrationFixtureTest`, `LwwComparatorParityTest`, `PullOverlapTest`, `DstFixtureLocalDateTest`, `ExportFormatDeterminismTest`, `TelemetryPayloadPrivacyTest`, `CalendarPrivacyTest`, `ServerReadOnlyErrorTest`, `NoUnfilteredWriteTest`, `RoomMigrationTest`, `DtoSchemaDriftTest` (DTO fields versus `snapshots/fitness.types.ts`).
 

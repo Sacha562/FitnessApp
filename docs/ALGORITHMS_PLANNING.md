@@ -299,6 +299,11 @@ visits, time budget), `GENERAL` 3. Codes are a versioned enum (`today.reason_cod
 | `PAST_DAY` | GENERAL | weekplan | — | "Past" |
 | `NOT_NEEDED` | GENERAL | weekplan | — | "Targets on track without an extra visit" |
 | `ADDON` | GENERAL | weekplan, today | family, slot, minutes | "{family} add-on after {slot} (~{minutes} min)" |
+| `NO_ELIGIBLE_EXERCISE` | GENERAL | allocator | group | "No suitable exercise for {group} today" |
+| `NOTHING_TO_TRAIN` | GENERAL | allocator, today | — | "Nothing worth training in this slot" |
+
+The last two codes were added on 2026-10-08 (params 1.0.0 authoring found that §7.4 emits them but this table did
+not list them).
 
 ---
 

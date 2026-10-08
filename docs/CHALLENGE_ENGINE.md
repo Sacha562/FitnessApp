@@ -495,7 +495,7 @@ The structural schema is a JSON Schema (draft 2020-12) document, `cds.v1.schema.
 (2) CI, and (3) the optional server-side CHECK constraint
 `extensions.jsonb_matches_schema('<schema>'::json, definition)` on
 `fitness.challenge_definitions.definition`, if the user approves installing `pg_jsonschema` (F5,
-migration `fitness_016_jsonschema`). The client validator is authoritative; the server check is a
+migration `fitness_018_jsonschema_constraint`). The client validator is authoritative; the server check is a
 second line of defence. Expression strings are typed as `string` at this stage.
 
 ### 2.6 Validation stages
@@ -1107,7 +1107,7 @@ the imported loads, because the true block-1 start loads are not part of the imp
 
 | Key | Default | Bounds | Grade | Tunable | Note |
 |---|---|---|---|---|---|
-| `challenge.enrollment.week_close_local_time` | 04:00 | 00:00-06:00 | engineering-fact | no | Grace for sessions finishing after midnight. |
+| `challenge.enrollment.week_close_local_time` | 04:00 (stored as 240 min after local midnight, ALGORITHMS A8.2) | 00:00-06:00 | engineering-fact | no | Grace for sessions finishing after midnight. |
 | `challenge.enrollment.max_block_weeks` | 10 | 6-10 | engineering-fact | no | Matches the DATA_MODEL check on `block_week`. |
 | `challenge.enrollment.absence_prompt_days` | 14 | 7-28 | expert-opinion | yes | Tuned by how often the prompt is accepted versus dismissed (`prompt_answered` / `prompt_skipped` in `session_events`). |
 | `challenge.enrollment.snapshot_cache_blocks` | 12 | 4-50 | engineering-fact | no | Older snapshots rebuilt by refold. |

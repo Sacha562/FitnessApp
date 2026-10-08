@@ -1,0 +1,84 @@
+{
+  "table": "fitness.symptom_codes",
+  "rows": [
+    {
+      "code": "medial_elbow_ache_after",
+      "body_region_codes": [
+        "elbow_medial"
+      ],
+      "label_en": "Ache on the inner elbow afterwards",
+      "label_nl": "Zeurende pijn binnenkant elleboog achteraf",
+      "active": true,
+      "sort": 10
+    },
+    {
+      "code": "elbow_crease_pain_on_extension",
+      "body_region_codes": [
+        "elbow_anterior"
+      ],
+      "label_en": "Pain in the elbow crease when straightening",
+      "label_nl": "Pijn in de elleboogplooi bij strekken",
+      "active": true,
+      "sort": 20
+    },
+    {
+      "code": "ulnar_tingling",
+      "body_region_codes": [
+        "elbow_medial",
+        "hand_fingers"
+      ],
+      "label_en": "Tingling in the ring and little finger",
+      "label_nl": "Tintelingen in ring- en pink",
+      "active": true,
+      "sort": 30
+    },
+    {
+      "code": "sharp_pain_during",
+      "body_region_codes": [],
+      "label_en": "Sharp pain during the set",
+      "label_nl": "Scherpe pijn tijdens de set",
+      "active": true,
+      "sort": 40
+    },
+    {
+      "code": "dull_ache_during",
+      "body_region_codes": [],
+      "label_en": "Dull ache during the set",
+      "label_nl": "Doffe pijn tijdens de set",
+      "active": true,
+      "sort": 50
+    },
+    {
+      "code": "ache_after",
+      "body_region_codes": [],
+      "label_en": "Ache afterwards",
+      "label_nl": "Pijn achteraf",
+      "active": true,
+      "sort": 60
+    },
+    {
+      "code": "stiffness",
+      "body_region_codes": [],
+      "label_en": "Stiffness",
+      "label_nl": "Stijfheid",
+      "active": true,
+      "sort": 70
+    },
+    {
+      "code": "swelling",
+      "body_region_codes": [],
+      "label_en": "Swelling",
+      "label_nl": "Zwelling",
+      "active": true,
+      "sort": 80
+    },
+    {
+      "code": "other",
+      "body_region_codes": [],
+      "label_en": "Other",
+      "label_nl": "Anders",
+      "active": true,
+      "sort": 90
+    }
+  ]
+}

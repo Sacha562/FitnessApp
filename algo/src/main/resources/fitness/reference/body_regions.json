@@ -1,0 +1,142 @@
+{
+  "table": "fitness.body_regions",
+  "rows": [
+    {
+      "code": "elbow_medial",
+      "joint_keys": [
+        "elbow_medial"
+      ],
+      "side_applicable": true,
+      "label_en": "Elbow, inner side",
+      "label_nl": "Elleboog, binnenkant",
+      "active": true,
+      "sort": 10
+    },
+    {
+      "code": "elbow_lateral",
+      "joint_keys": [
+        "elbow_lateral"
+      ],
+      "side_applicable": true,
+      "label_en": "Elbow, outer side",
+      "label_nl": "Elleboog, buitenkant",
+      "active": true,
+      "sort": 20
+    },
+    {
+      "code": "elbow_anterior",
+      "joint_keys": [
+        "elbow_medial",
+        "elbow_lateral"
+      ],
+      "side_applicable": true,
+      "label_en": "Elbow crease",
+      "label_nl": "Elleboogplooi",
+      "active": true,
+      "sort": 30
+    },
+    {
+      "code": "shoulder",
+      "joint_keys": [
+        "shoulder_ant",
+        "shoulder_overhead"
+      ],
+      "side_applicable": true,
+      "label_en": "Shoulder",
+      "label_nl": "Schouder",
+      "active": true,
+      "sort": 40
+    },
+    {
+      "code": "wrist",
+      "joint_keys": [
+        "wrist"
+      ],
+      "side_applicable": true,
+      "label_en": "Wrist",
+      "label_nl": "Pols",
+      "active": true,
+      "sort": 50
+    },
+    {
+      "code": "hand_fingers",
+      "joint_keys": [
+        "wrist"
+      ],
+      "side_applicable": true,
+      "label_en": "Hand and fingers",
+      "label_nl": "Hand en vingers",
+      "active": true,
+      "sort": 60
+    },
+    {
+      "code": "neck",
+      "joint_keys": [],
+      "side_applicable": false,
+      "label_en": "Neck",
+      "label_nl": "Nek",
+      "active": true,
+      "sort": 70
+    },
+    {
+      "code": "upper_back",
+      "joint_keys": [],
+      "side_applicable": false,
+      "label_en": "Upper back",
+      "label_nl": "Bovenrug",
+      "active": true,
+      "sort": 80
+    },
+    {
+      "code": "lower_back",
+      "joint_keys": [
+        "lumbar"
+      ],
+      "side_applicable": false,
+      "label_en": "Lower back",
+      "label_nl": "Onderrug",
+      "active": true,
+      "sort": 90
+    },
+    {
+      "code": "hip",
+      "joint_keys": [
+        "hip"
+      ],
+      "side_applicable": true,
+      "label_en": "Hip",
+      "label_nl": "Heup",
+      "active": true,
+      "sort": 100
+    },
+    {
+      "code": "knee",
+      "joint_keys": [
+        "knee"
+      ],
+      "side_applicable": true,
+      "label_en": "Knee",
+      "label_nl": "Knie",
+      "active": true,
+      "sort": 110
+    },
+    {
+      "code": "ankle_foot",
+      "joint_keys": [],
+      "side_applicable": true,
+      "label_en": "Ankle and foot",
+      "label_nl": "Enkel en voet",
+      "active": true,
+      "sort": 120
+    },
+    {
+      "code": "other",
+      "joint_keys": [],
+      "side_applicable": true,
+      "label_en": "Other",
+      "label_nl": "Anders",
+      "active": true,
+      "sort": 130
+    }
+  ]
+}

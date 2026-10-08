@@ -1,0 +1,367 @@
+{
+  "table": "fitness.muscle_regions",
+  "rows": [
+    {
+      "id": "chest_clavicular",
+      "group_id": "chest",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Upper chest (clavicular)",
+      "label_nl": "Bovenborst",
+      "active": true,
+      "sort": 10
+    },
+    {
+      "id": "chest_sternal",
+      "group_id": "chest",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Mid/lower chest (sternal)",
+      "label_nl": "Midden/onderborst",
+      "active": true,
+      "sort": 20
+    },
+    {
+      "id": "delt_anterior",
+      "group_id": "front_delts",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Anterior deltoid",
+      "label_nl": "Voorste deltaspier",
+      "active": true,
+      "sort": 30
+    },
+    {
+      "id": "delt_lateral",
+      "group_id": "side_delts",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Lateral deltoid",
+      "label_nl": "Zijdelingse deltaspier",
+      "active": true,
+      "sort": 40
+    },
+    {
+      "id": "delt_posterior",
+      "group_id": "rear_delts",
+      "is_prehab_only": false,
+      "aliases": [
+        "rear_delts"
+      ],
+      "label_en": "Posterior deltoid",
+      "label_nl": "Achterste deltaspier",
+      "active": true,
+      "sort": 50
+    },
+    {
+      "id": "lats",
+      "group_id": "lats",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Latissimus dorsi",
+      "label_nl": "Latissimus dorsi",
+      "active": true,
+      "sort": 60
+    },
+    {
+      "id": "traps_mid",
+      "group_id": "upper_back",
+      "is_prehab_only": false,
+      "aliases": [
+        "mid_traps"
+      ],
+      "label_en": "Middle trapezius",
+      "label_nl": "Middelste trapezius",
+      "active": true,
+      "sort": 70
+    },
+    {
+      "id": "traps_lower",
+      "group_id": "upper_back",
+      "is_prehab_only": false,
+      "aliases": [
+        "lower_traps"
+      ],
+      "label_en": "Lower trapezius",
+      "label_nl": "Onderste trapezius",
+      "active": true,
+      "sort": 80
+    },
+    {
+      "id": "rhomboids",
+      "group_id": "upper_back",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Rhomboids",
+      "label_nl": "Rhomboideus",
+      "active": true,
+      "sort": 90
+    },
+    {
+      "id": "traps_upper",
+      "group_id": "upper_traps",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Upper trapezius",
+      "label_nl": "Bovenste trapezius",
+      "active": true,
+      "sort": 100
+    },
+    {
+      "id": "biceps_brachii",
+      "group_id": "biceps",
+      "is_prehab_only": false,
+      "aliases": [
+        "biceps"
+      ],
+      "label_en": "Biceps brachii",
+      "label_nl": "Biceps brachii",
+      "active": true,
+      "sort": 110
+    },
+    {
+      "id": "brachialis",
+      "group_id": "biceps",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Brachialis",
+      "label_nl": "Brachialis",
+      "active": true,
+      "sort": 120
+    },
+    {
+      "id": "brachioradialis",
+      "group_id": "biceps",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Brachioradialis",
+      "label_nl": "Brachioradialis",
+      "active": true,
+      "sort": 130
+    },
+    {
+      "id": "triceps_long",
+      "group_id": "triceps",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Triceps long head",
+      "label_nl": "Triceps lange kop",
+      "active": true,
+      "sort": 140
+    },
+    {
+      "id": "triceps_lat_med",
+      "group_id": "triceps",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Triceps lateral and medial heads",
+      "label_nl": "Triceps laterale en mediale kop",
+      "active": true,
+      "sort": 150
+    },
+    {
+      "id": "wrist_flexors_grip",
+      "group_id": "forearms",
+      "is_prehab_only": false,
+      "aliases": [
+        "forearm_flexors"
+      ],
+      "label_en": "Wrist flexors and grip",
+      "label_nl": "Polsbuigers en grip",
+      "active": true,
+      "sort": 160
+    },
+    {
+      "id": "wrist_extensors",
+      "group_id": "forearms",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Wrist extensors",
+      "label_nl": "Polsstrekkers",
+      "active": true,
+      "sort": 170
+    },
+    {
+      "id": "pronators_supinators",
+      "group_id": "forearms",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Pronators and supinators",
+      "label_nl": "Pronatoren en supinatoren",
+      "active": true,
+      "sort": 180
+    },
+    {
+      "id": "rectus_abdominis",
+      "group_id": "abs",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Rectus abdominis",
+      "label_nl": "Rechte buikspier",
+      "active": true,
+      "sort": 190
+    },
+    {
+      "id": "obliques",
+      "group_id": "abs",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Obliques",
+      "label_nl": "Schuine buikspieren",
+      "active": true,
+      "sort": 200
+    },
+    {
+      "id": "anti_rotation",
+      "group_id": "abs",
+      "is_prehab_only": false,
+      "aliases": [
+        "core_antirotation"
+      ],
+      "label_en": "Anti-rotation core",
+      "label_nl": "Anti-rotatie romp",
+      "active": true,
+      "sort": 210
+    },
+    {
+      "id": "erectors",
+      "group_id": "lower_back",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Spinal erectors",
+      "label_nl": "Rugstrekkers",
+      "active": true,
+      "sort": 220
+    },
+    {
+      "id": "glute_max",
+      "group_id": "glutes",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Gluteus maximus",
+      "label_nl": "Grote bilspier",
+      "active": true,
+      "sort": 230
+    },
+    {
+      "id": "glute_med_min",
+      "group_id": "abductors",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Gluteus medius and minimus",
+      "label_nl": "Middelste en kleine bilspier",
+      "active": true,
+      "sort": 240
+    },
+    {
+      "id": "adductors",
+      "group_id": "adductors",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Adductors",
+      "label_nl": "Adductoren",
+      "active": true,
+      "sort": 250
+    },
+    {
+      "id": "vasti",
+      "group_id": "quads",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Vasti",
+      "label_nl": "Vasti",
+      "active": true,
+      "sort": 260
+    },
+    {
+      "id": "rectus_femoris",
+      "group_id": "quads",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Rectus femoris",
+      "label_nl": "Rectus femoris",
+      "active": true,
+      "sort": 270
+    },
+    {
+      "id": "hams_biarticular",
+      "group_id": "hamstrings",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Hamstrings (biarticular)",
+      "label_nl": "Hamstrings (tweegewrichts)",
+      "active": true,
+      "sort": 280
+    },
+    {
+      "id": "bf_short_head",
+      "group_id": "hamstrings",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Biceps femoris short head",
+      "label_nl": "Biceps femoris korte kop",
+      "active": true,
+      "sort": 290
+    },
+    {
+      "id": "gastrocnemius",
+      "group_id": "calves",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Gastrocnemius",
+      "label_nl": "Gastrocnemius",
+      "active": true,
+      "sort": 300
+    },
+    {
+      "id": "soleus",
+      "group_id": "calves",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Soleus",
+      "label_nl": "Soleus",
+      "active": true,
+      "sort": 310
+    },
+    {
+      "id": "rotator_cuff_er",
+      "group_id": null,
+      "is_prehab_only": true,
+      "aliases": [],
+      "label_en": "Rotator cuff (external rotators)",
+      "label_nl": "Rotator cuff (exorotatoren)",
+      "active": true,
+      "sort": 320
+    },
+    {
+      "id": "serratus_anterior",
+      "group_id": null,
+      "is_prehab_only": true,
+      "aliases": [],
+      "label_en": "Serratus anterior",
+      "label_nl": "Serratus anterior",
+      "active": true,
+      "sort": 330
+    },
+    {
+      "id": "tibialis_anterior",
+      "group_id": null,
+      "is_prehab_only": true,
+      "aliases": [],
+      "label_en": "Tibialis anterior",
+      "label_nl": "Tibialis anterior",
+      "active": true,
+      "sort": 340
+    },
+    {
+      "id": "neck",
+      "group_id": "neck",
+      "is_prehab_only": false,
+      "aliases": [],
+      "label_en": "Neck",
+      "label_nl": "Nek",
+      "active": false,
+      "sort": 350
+    }
+  ]
+}

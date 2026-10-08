@@ -1,0 +1,173 @@
+{
+  "table": "fitness.reason_codes",
+  "rows": [
+    {
+      "code": "too_easy",
+      "label_en": "Too easy",
+      "label_nl": "Te makkelijk",
+      "ui_contexts": [
+        "easier"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 10
+    },
+    {
+      "code": "too_hard",
+      "label_en": "Too hard",
+      "label_nl": "Te zwaar",
+      "ui_contexts": [
+        "harder"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 20
+    },
+    {
+      "code": "feeling_good",
+      "label_en": "Feeling good",
+      "label_nl": "Voel me goed",
+      "ui_contexts": [
+        "easier"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 30
+    },
+    {
+      "code": "feeling_bad",
+      "label_en": "Feeling bad",
+      "label_nl": "Voel me slecht",
+      "ui_contexts": [
+        "harder",
+        "skip"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 40
+    },
+    {
+      "code": "too_tired",
+      "label_en": "Too tired",
+      "label_nl": "Te moe",
+      "ui_contexts": [
+        "harder",
+        "skip"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 50
+    },
+    {
+      "code": "no_time",
+      "label_en": "No time",
+      "label_nl": "Geen tijd",
+      "ui_contexts": [
+        "harder",
+        "skip",
+        "session_end"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 60
+    },
+    {
+      "code": "occupied",
+      "label_en": "Occupied",
+      "label_nl": "Bezet",
+      "ui_contexts": [
+        "harder",
+        "skip",
+        "substitute"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 70
+    },
+    {
+      "code": "equipment_missing",
+      "label_en": "Equipment missing",
+      "label_nl": "Materiaal ontbreekt",
+      "ui_contexts": [
+        "skip",
+        "substitute"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 80
+    },
+    {
+      "code": "pain",
+      "label_en": "Pain",
+      "label_nl": "Pijn",
+      "ui_contexts": [
+        "harder",
+        "skip",
+        "session_end"
+      ],
+      "is_safety": true,
+      "implies_flag": null,
+      "active": true,
+      "sort": 90
+    },
+    {
+      "code": "grip_failure",
+      "label_en": "Grip failed",
+      "label_nl": "Grip gaf op",
+      "ui_contexts": [
+        "harder"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 100
+    },
+    {
+      "code": "torso_rotation",
+      "label_en": "Torso rotation",
+      "label_nl": "Romp draaide",
+      "ui_contexts": [
+        "harder"
+      ],
+      "is_safety": false,
+      "implies_flag": "torso_rotation",
+      "active": true,
+      "sort": 110
+    },
+    {
+      "code": "technique_breakdown",
+      "label_en": "Technique broke down",
+      "label_nl": "Techniek brak af",
+      "ui_contexts": [
+        "harder"
+      ],
+      "is_safety": false,
+      "implies_flag": "technique_breakdown",
+      "active": true,
+      "sort": 120
+    },
+    {
+      "code": "other",
+      "label_en": "Other",
+      "label_nl": "Anders",
+      "ui_contexts": [
+        "easier",
+        "harder",
+        "skip",
+        "session_end"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 130
+    }
+  ]
+}

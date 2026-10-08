@@ -2,6 +2,7 @@ package dev.fitnessapp.sim
 
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
+import dev.fitnessapp.sim.seedgen.SeedGen
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -17,8 +18,16 @@ fun main(args: Array<String>) {
     when (args.firstOrNull()) {
         "version" -> println("engine ${EngineVersion.ENGINE_VERSION}")
         "golden" -> exitProcess(golden(File(args.getOrElse(1) { "fixtures/golden/algo" })))
+        "seedgen" -> {
+            val parts = SeedGen.generate(File("algo/src/main/resources/fitness"), args.getOrElse(1) { "1.0.0" })
+            for ((name, sql) in parts) {
+                val out = File("supabase/migrations/pending/$name.sql")
+                out.writeText(sql, Charsets.UTF_8)
+                println("wrote ${out.path} (${sql.length} chars)")
+            }
+        }
         else -> {
-            println("usage: sim version | sim golden [fixtures-dir]")
+            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version]")
             exitProcess(2)
         }
     }

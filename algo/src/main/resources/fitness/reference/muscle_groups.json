@@ -1,0 +1,226 @@
+{
+  "table": "fitness.muscle_groups",
+  "rows": [
+    {
+      "id": "chest",
+      "family": "push",
+      "label_en": "Chest",
+      "label_nl": "Borst",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 10
+    },
+    {
+      "id": "front_delts",
+      "family": "push",
+      "label_en": "Front delts",
+      "label_nl": "Voorste schouders",
+      "aliases": [
+        "front_delt"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 20
+    },
+    {
+      "id": "side_delts",
+      "family": "push",
+      "label_en": "Side delts",
+      "label_nl": "Zijschouders",
+      "aliases": [
+        "side_delt"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 30
+    },
+    {
+      "id": "triceps",
+      "family": "push",
+      "label_en": "Triceps",
+      "label_nl": "Triceps",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 40
+    },
+    {
+      "id": "lats",
+      "family": "pull",
+      "label_en": "Lats",
+      "label_nl": "Brede rugspier",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 50
+    },
+    {
+      "id": "upper_back",
+      "family": "pull",
+      "label_en": "Upper back",
+      "label_nl": "Bovenrug",
+      "aliases": [
+        "mid_back"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 60
+    },
+    {
+      "id": "rear_delts",
+      "family": "pull",
+      "label_en": "Rear delts",
+      "label_nl": "Achterste schouders",
+      "aliases": [
+        "rear_delt"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 70
+    },
+    {
+      "id": "biceps",
+      "family": "pull",
+      "label_en": "Biceps (elbow flexors)",
+      "label_nl": "Biceps (elleboogbuigers)",
+      "aliases": [
+        "elbow_flexors"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 80
+    },
+    {
+      "id": "forearms",
+      "family": "pull",
+      "label_en": "Forearms and grip",
+      "label_nl": "Onderarmen en grip",
+      "aliases": [
+        "grip"
+      ],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 90
+    },
+    {
+      "id": "upper_traps",
+      "family": "pull",
+      "label_en": "Upper traps",
+      "label_nl": "Bovenste trapezius",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 100
+    },
+    {
+      "id": "abs",
+      "family": "core",
+      "label_en": "Abs",
+      "label_nl": "Buikspieren",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 110
+    },
+    {
+      "id": "lower_back",
+      "family": "core",
+      "label_en": "Lower back",
+      "label_nl": "Onderrug",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 120
+    },
+    {
+      "id": "glutes",
+      "family": "legs",
+      "label_en": "Glutes",
+      "label_nl": "Bilspieren",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 130
+    },
+    {
+      "id": "abductors",
+      "family": "legs",
+      "label_en": "Abductors",
+      "label_nl": "Abductoren",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 140
+    },
+    {
+      "id": "adductors",
+      "family": "legs",
+      "label_en": "Adductors",
+      "label_nl": "Adductoren",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 150
+    },
+    {
+      "id": "quads",
+      "family": "legs",
+      "label_en": "Quads",
+      "label_nl": "Quadriceps",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 160
+    },
+    {
+      "id": "hamstrings",
+      "family": "legs",
+      "label_en": "Hamstrings",
+      "label_nl": "Hamstrings",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 170
+    },
+    {
+      "id": "calves",
+      "family": "legs",
+      "label_en": "Calves",
+      "label_nl": "Kuiten",
+      "aliases": [],
+      "is_optional": false,
+      "svg_region_ids": [],
+      "active": true,
+      "sort": 180
+    },
+    {
+      "id": "neck",
+      "family": "other",
+      "label_en": "Neck",
+      "label_nl": "Nek",
+      "aliases": [],
+      "is_optional": true,
+      "svg_region_ids": [],
+      "active": false,
+      "sort": 190
+    }
+  ]
+}

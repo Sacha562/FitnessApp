@@ -414,8 +414,11 @@ into `fitness.algo_params` by migration 005:
   params.
 - Allowed value types: number, integer, boolean, string enum, array of numbers, array of enum strings,
   object whose values are numbers or arrays of numbers (for class tables such as `rcm.k0` and for tiers
-  such as `warmup.tier_high = {"fracs": [...], "reps": [...]}`). Every number must be exactly
-  representable as a short decimal (at most 10 significant digits).
+  such as `warmup.tier_high = {"fracs": [...], "reps": [...]}`), and `regex` (a string that must
+  compile as a Java regular expression, at most 512 characters; the entry carries `"type": "regex"`; used
+  for the calendar lexicons `calendar.classify.lex.*`, user decision 2026-10-08). Every number must be
+  exactly representable as a short decimal (at most 10 significant digits). Times of day are integers in
+  minutes after local midnight (0..1439, unit `min after local midnight`), never "HH:MM" strings.
 - Each module declares `ParamSpec(key, type, unit, min, max, enumValues)`. At load time the
   `ParamsValidator` (pure, in `:algo`; called by the loader in `:data` and `:sim`) checks: every declared
   key is present, no undeclared key exists, types match, `min <= value <= max` (element-wise for tables).
@@ -2218,7 +2221,7 @@ test attempts, ranking and de-dup, examples).
 | `sse.sg0` | 0.005 | 0.001..0.02 | ln per week | expert-opinion | load_prescription | cold-start trend error |
 | `sse.grace_days` | 21 | 7..42 | days | moderate | C27; Bosquet 2013 (no meaningful loss up to 28 days) | first-exposure residual after gaps (M1 by gap) |
 | `sse.detrain_per_week` | 0.0075 | 0..0.03 | ln per week | expert-opinion | C27 | first-exposure residual after gaps > 21 days |
-| `sse.detrain_cap` | 0.15 | 0.05..0.4 | ln | expert-opinion | C27 | same |
+| `sse.detrain_cap` | 0.1625 | 0.05..0.4 | ln | expert-opinion | C27 (cap 15 %: ln(1/0.85); 2026-10-08) | same |
 | `sse.detrain_var_per_week` | 0.0004 | 0..0.004 | ln^2 per week | expert-opinion | load_prescription (0.02^2) | M2 coverage after gaps |
 | `sse.sigma_q_base_le12` | 1.0 | 0.3..3 | reps | moderate | Halperin 2022; Refalo 2024 | M2 by rep bucket |
 | `sse.sigma_q_base_le20` | 1.5 | 0.5..4 | reps | moderate | Halperin 2022 (worse above 12) | M2 by rep bucket |
@@ -2375,11 +2378,11 @@ test attempts, ranking and de-dup, examples).
 | `reason.recovery_events` | 3 | 2..10 | events | expert-opinion | load_prescription | prompt usefulness (answers) |
 | `reason.recovery_days` | 14 | 7..28 | days | expert-opinion | load_prescription | same |
 | `reason.pain_stop_score` | 4 | 1..10 | score 0-10 | expert-opinion | C64 (stop threshold 4; chips Mild 2 / Moderate 5 / Sharp 8); load_prescription | Decision (C64) |
-| `reason.pain_followup_exposures` | 2 | 1..6 | exposures | expert-opinion | load_prescription | same |
-| `reason.pain_load_cut` | 0.10 | 0.05..0.3 | ratio | expert-opinion | load_prescription | same |
-| `reason.pain_min_q` | 3 | 1..5 | RIR | expert-opinion | load_prescription | same |
-| `reason.pain_repeat_events` | 2 | 2..5 | events | expert-opinion | load_prescription; app_benchmarks (14-day pain flag) | same |
-| `reason.pain_repeat_days` | 14 | 7..42 | days | expert-opinion | same | same |
+| `reason.pain_followup_exposures` | 2 | 1..6 | exposures | expert-opinion | load_prescription | pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats) |
+| `reason.pain_load_cut` | 0.10 | 0.05..0.3 | ratio | expert-opinion | load_prescription | pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats) |
+| `reason.pain_min_q` | 3 | 1..5 | RIR | expert-opinion | load_prescription | pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats) |
+| `reason.pain_repeat_events` | 2 | 2..5 | events | expert-opinion | load_prescription; app_benchmarks (14-day pain flag) | pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats) |
+| `reason.pain_repeat_days` | 14 | 7..42 | days | expert-opinion | same | pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats) |
 | `reason.busy_frac` | 0.5 | 0.2..0.9 | share | expert-opinion | load_prescription | substitution acceptance |
 | `reason.busy_visits` | 4 | 2..12 | visits | expert-opinion | load_prescription | same |
 | `reason.busy_slot_hours` | 1 | 0..3 | h | expert-opinion | this document | same |
