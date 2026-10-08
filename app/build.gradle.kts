@@ -13,8 +13,8 @@ val localProps = Properties().apply {
 fun localProp(key: String): String = localProps.getProperty(key) ?: ""
 
 // Release signing lives in the user-level %USERPROFILE%/.gradle/gradle.properties (ANDROID.md 5.4).
-val storeFile = providers.gradleProperty("FITNESS_RELEASE_STORE_FILE").orNull
-val signingReady = storeFile != null &&
+val releaseStorePath = providers.gradleProperty("FITNESS_RELEASE_STORE_FILE").orNull
+val signingReady = releaseStorePath != null &&
     providers.gradleProperty("FITNESS_RELEASE_STORE_PASSWORD").isPresent &&
     providers.gradleProperty("FITNESS_RELEASE_KEY_ALIAS").isPresent &&
     providers.gradleProperty("FITNESS_RELEASE_KEY_PASSWORD").isPresent
@@ -47,7 +47,7 @@ android {
     signingConfigs {
         create("release") {
             if (signingReady) {
-                this.storeFile = file(storeFile!!)
+                storeFile = file(releaseStorePath!!)
                 storePassword = providers.gradleProperty("FITNESS_RELEASE_STORE_PASSWORD").get()
                 keyAlias = providers.gradleProperty("FITNESS_RELEASE_KEY_ALIAS").get()
                 keyPassword = providers.gradleProperty("FITNESS_RELEASE_KEY_PASSWORD").get()
