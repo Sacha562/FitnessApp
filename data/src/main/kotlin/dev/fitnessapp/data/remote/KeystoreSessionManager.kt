@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.jan.supabase.auth.SessionManager
+import io.github.jan.supabase.auth.exception.NoSessionFoundException
 import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.flow.first
 import java.security.KeyStore
@@ -31,8 +32,9 @@ class KeystoreSessionManager(private val context: Context) : SessionManager {
         context.sessionStore.edit { it[SESSION] = Base64.encodeToString(blob, Base64.NO_WRAP) }
     }
 
-    override suspend fun loadSession(): UserSession? {
-        val stored = context.sessionStore.data.first()[SESSION] ?: return null
+    /** Throws [NoSessionFoundException] when nothing usable is stored (supabase-kt 3.x contract). */
+    override suspend fun loadSession(): UserSession {
+        val stored = context.sessionStore.data.first()[SESSION] ?: throw NoSessionFoundException()
         return try {
             val blob = Base64.decode(stored, Base64.NO_WRAP)
             val cipher = Cipher.getInstance(TRANSFORMATION).apply {
@@ -42,7 +44,7 @@ class KeystoreSessionManager(private val context: Context) : SessionManager {
             FitnessJson.decodeFromString(UserSession.serializer(), String(plain, Charsets.UTF_8))
         } catch (e: Exception) {
             deleteSession()
-            null
+            throw NoSessionFoundException()
         }
     }
 

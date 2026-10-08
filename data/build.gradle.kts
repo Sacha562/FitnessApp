@@ -9,7 +9,7 @@ android {
 dependencies {
     api(project(":algo"))
 
-    implementation(platform(libs.supabase.bom))
+    api(platform(libs.supabase.bom))
     api(libs.supabase.auth)
     api(libs.supabase.postgrest)
     implementation(libs.ktor.client.okhttp)

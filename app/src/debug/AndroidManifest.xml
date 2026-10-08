@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <!-- Debug menu: determinism self-test (ANDROID.md 6.3 item 4). Started by Claude over adb:
-             adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action selftest -->
+        <!-- Debug menu: determinism self-test (ANDROID.md 6.3 item 4), started over adb with the
+             string extra action=selftest (see DebugActivity). -->
         <activity
             android:name="dev.fitnessapp.app.debug.DebugActivity"
             android:exported="true" />

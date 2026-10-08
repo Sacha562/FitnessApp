@@ -59,7 +59,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | F20 | Rest-timer alert | Vibration waveform always; optional tone that ducks music; keep-screen-on during session default ON (toggle). |
 | F21 | Auto Backup | Off (D16): `android:allowBackup="false"` / data-extraction rules exclude everything. |
 | F22 | Application id | `dev.fitnessapp` (sandbox flavour `dev.fitnessapp.sandbox`). Changing it later means a new app and a data-wiping migration, so confirm before the first install. |
-| F23 | SDK levels | `minSdk 26`, `compileSdk = targetSdk = 36`; revisit when the phone's Android version is known. |
+| F23 | SDK levels | `minSdk 26`, `compileSdk 37`, `targetSdk 36` (amended 2026-10-08: current AndroidX libraries require compileSdk 37; the target stays 36 so Android 17 runtime behaviour changes do not apply yet); revisit targetSdk when the phone's Android version is known. |
 | F24 | Local DB encryption | No SQLCipher in v1 (relies on Android file-based encryption). |
 | F25 | Calendar titles written by the app | Challenge events use the definition's title template (Dutch for OAP, matching the existing events, e.g. "Gym — sessie C (volume en techniek)"); general sessions use English labels; descriptions in English. |
 | F26 | Review-param approval | After a review, the user approves the proposed `user_algo_params` change list as a batch (each change listed with its reason); nothing is written without that approval. |
@@ -215,7 +215,12 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   `%LOCALAPPDATA%\Programs\Temurin-21` (the quiet MSI needs admin rights; ANDROID 3.2 option A fails
   non-elevated), registered for Gradle via `org.gradle.java.installations.paths` in the user-level
   `~/.gradle/gradle.properties`. (5) Versions at scaffold: Gradle 9.8.1, AGP 9.4.1, Kotlin 2.4.21,
-  KSP 2.3.12, Roborazzi 1.76.0 (others as ANDROID 3.8).
+  KSP 2.3.12, Roborazzi 1.76.0 (others as ANDROID 3.8). (6) The Android SDK root is
+  `C:\Users\sivuc\Android\Sdk`, not `%LOCALAPPDATA%\Android\Sdk` (ANDROID 3.4): the Claude desktop app is an
+  MSIX-packaged app, so new folders its tools create under `AppData\Local` are redirected into the app's
+  private `Packages\Claude_…\LocalCache` and are invisible to the user's own terminal. Toolchain folders
+  that the user must also use live outside `AppData`. (7) F23 amended (user Q&A): compileSdk 37 with targetSdk 36,
+  because Compose BOM 2026.09.00 and core-ktx 1.19.1 require compileSdk 37.
 - 2026-10-08 — Params 1.0.0 authoring decisions (user Q&A): params gain a `regex` value type for the
   calendar lexicons (ALGORITHMS A8.2); times of day are stored as minutes after local midnight;
   `sse.detrain_cap` = 0.1625 ln so the cap is exactly the 15 % of C27; `today.reason_codes` gains
