@@ -2543,6 +2543,7 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 | `sync.fkRetryAttempts` | 5 | 1–10 | assumption | — | Yes: `23503` frequency |
 | `sync.schemaDriftRetryMin` | 60 min | 15–1440 | assumption | DATA_MODEL §11.8 ("retry hourly") | Yes: time from a migration to the first successful push |
 | `sync.unreachableBannerH` | 24 h | 6–72 | assumption | F4 pause risk | Yes |
+| `sync.pendingLongH` | 24 h | 6–72 | assumption | UX 7.1 "Pending long": an outbox entry waiting this long while online is shown; younger entries are not (each sync run queues its own `sync_run` event) | Yes |
 
 ### 25.5 Hold timer and session display (registered from UX, C54)
 

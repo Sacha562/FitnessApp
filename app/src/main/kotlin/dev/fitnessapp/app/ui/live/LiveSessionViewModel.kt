@@ -39,6 +39,7 @@ import dev.fitnessapp.data.repo.LogSetCommand
 import dev.fitnessapp.data.repo.PlannedValues
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import dev.fitnessapp.data.sync.SyncState
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -135,7 +136,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 c.sessionRepository.observeExercises(sessionId),
                 c.sessionRepository.observeSets(sessionId),
                 c.restTimer.observe(sessionId),
-                c.sync.observePending(),
+                // Header cloud-off icon only while offline with changes (UX 7.1, 11.x).
+                c.sync.observePending().combine(c.sync.state) { n, st -> if (st is SyncState.Offline) n else 0 },
             ) { s, exs, sets, rest, pending -> Snapshot(s, exs, sets, rest, pending) }.collect { rebuild(it) }
         }
     }

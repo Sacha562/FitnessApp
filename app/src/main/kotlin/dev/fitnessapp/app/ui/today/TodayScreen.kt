@@ -42,6 +42,7 @@ import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.theme.AdvisoryAmber
 import dev.fitnessapp.data.db.Scaled
+import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -61,7 +62,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
     val active by c.sessionRepository.observeActive().collectAsState(initial = null)
     val recent by c.sessionRepository.observeRecent(8).collectAsState(initial = emptyList())
     val latestBw by c.bodyweight.observeLatest().collectAsState(initial = null)
-    val pending by c.sync.observePending().collectAsState(initial = 0)
+    val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
     val sync by c.sync.state.collectAsState()
     val profile by remember { c.profiles.observe() }.collectAsState(initial = null)
@@ -77,7 +78,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
         Text(today.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH)), style = MaterialTheme.typography.labelLarge)
         Text(profile?.display_name?.let { "Hi $it" } ?: "Today", style = MaterialTheme.typography.headlineMedium)
 
-        StatusRow(c, pending, dead, sync, onOpenSync)
+        StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
 
         val a = active
         if (a != null) {
@@ -147,7 +148,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
 
 /** One status line at most (ANDROID.md 7.9): reliability problems first, then sync. */
 @Composable
-private fun StatusRow(c: AppContainer, pending: Int, dead: Int, sync: SyncState, onOpenSync: () -> Unit) {
+private fun StatusRow(c: AppContainer, pending: PendingStatus, dead: Int, sync: SyncState, onOpenSync: () -> Unit) {
     val context = LocalContext.current
     val problems = buildList {
         if (!c.device.notificationsAllowed()) add("Notifications are off: the rest alarm cannot show")
@@ -162,8 +163,7 @@ private fun StatusRow(c: AppContainer, pending: Int, dead: Int, sync: SyncState,
         sync is SyncState.SchemaDrift -> "Server update needed"
         sync is SyncState.ServerReadOnly -> "Server storage is full (read-only). Your data is safe on this phone."
         sync is SyncState.Unreachable -> "Server unreachable, the project may be paused"
-        pending > 0 -> "$pending changes waiting to upload"
-        else -> null
+        else -> pendingLine(pending)
     }
     val line = problems.firstOrNull() ?: syncText ?: return
     Row(
@@ -173,6 +173,13 @@ private fun StatusRow(c: AppContainer, pending: Int, dead: Int, sync: SyncState,
         Icon(if (problems.isNotEmpty() || dead > 0) Icons.Filled.Warning else Icons.Filled.CloudOff, null, tint = AdvisoryAmber)
         Text(line, style = MaterialTheme.typography.bodyMedium)
     }
+}
+
+/** UX 7.1 wording; null when nothing is worth showing. */
+fun pendingLine(p: PendingStatus): String? = when (p) {
+    PendingStatus.None -> null
+    is PendingStatus.Offline -> "Offline. ${p.count} changes are saved on this phone and will upload automatically."
+    is PendingStatus.Long -> "Upload is retrying. Oldest change waiting: ${p.oldestAgeH} h."
 }
 
 @Composable

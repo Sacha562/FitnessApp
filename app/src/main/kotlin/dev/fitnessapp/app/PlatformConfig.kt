@@ -69,6 +69,7 @@ data class PlatformConfig(
             "sync.fkRetryAttempts" to JsonPrimitive(sync.fkRetryAttempts),
             "sync.schemaDriftRetryMin" to JsonPrimitive(sync.schemaDriftRetryMin),
             "sync.unreachableBannerH" to JsonPrimitive(sync.unreachableBannerH),
+            "sync.pendingLongH" to JsonPrimitive(sync.pendingLongH),
         ),
     )
 

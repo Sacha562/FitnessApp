@@ -11,4 +11,6 @@ data class SyncConfig(
     val fkRetryAttempts: Int = 5,
     val schemaDriftRetryMin: Int = 60,
     val unreachableBannerH: Int = 24,
+    /** UX 7.1 "Pending long": an outbox entry waiting this long while online is shown. */
+    val pendingLongH: Int = 24,
 )

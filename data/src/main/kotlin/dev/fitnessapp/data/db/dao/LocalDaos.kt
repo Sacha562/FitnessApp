@@ -50,6 +50,9 @@ interface OutboxDao {
     @Query("SELECT MIN(enqueued_at_ms) FROM outbox")
     suspend fun oldestEnqueuedAt(): Long?
 
+    @Query("SELECT MIN(enqueued_at_ms) FROM outbox")
+    fun observeOldestEnqueuedAt(): Flow<Long?>
+
     @Query("SELECT MIN(next_attempt_at_ms) FROM outbox")
     suspend fun nextAttemptAt(): Long?
 }

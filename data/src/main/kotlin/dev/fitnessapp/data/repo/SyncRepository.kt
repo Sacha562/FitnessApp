@@ -11,6 +11,7 @@ import dev.fitnessapp.data.sync.SyncState
 import dev.fitnessapp.data.sync.syncTables
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 
 /** Sync status for the UI (ANDROID.md 9.7) and the user actions of You > Data and sync. */
 class SyncRepository(
@@ -22,6 +23,9 @@ class SyncRepository(
 ) {
     val state: StateFlow<SyncState> get() = engine.state
     fun observePending(): Flow<Int> = db.outbox().observeDepth()
+
+    /** Outbox depth and oldest entry, for [dev.fitnessapp.data.sync.PendingStatus]. */
+    fun observeOutbox(): Flow<Pair<Int, Long?>> = combine(db.outbox().observeDepth(), db.outbox().observeOldestEnqueuedAt()) { n, oldest -> n to oldest }
     fun observeDeadLetters(): Flow<Int> = db.deadLetters().observeCount()
 
     fun syncNow() = scheduler.request(trigger = "manual", immediate = true)

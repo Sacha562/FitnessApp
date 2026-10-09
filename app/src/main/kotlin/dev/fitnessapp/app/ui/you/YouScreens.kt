@@ -52,6 +52,8 @@ import dev.fitnessapp.app.ui.equipment.EquipmentContent
 import dev.fitnessapp.app.ui.equipment.EquipmentViewModel
 import dev.fitnessapp.app.ui.reliability.ReliabilityContent
 import dev.fitnessapp.app.ui.today.WeighInDialog
+import dev.fitnessapp.app.ui.today.pendingLine
+import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
@@ -69,14 +71,21 @@ fun YouRoute(
     onReliability: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val pending by c.sync.observePending().collectAsState(initial = 0)
+    val syncState by c.sync.state.collectAsState()
+    val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
+    val pending = PendingStatus.of(syncState, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync)
     var weighIn by remember { mutableStateOf(false) }
     var signOutBlocked by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
         Text("You", style = MaterialTheme.typography.headlineMedium)
         SectionLabel("Settings")
-        NavRow("Data and sync", if (pending + dead == 0) "Everything uploaded" else "$pending waiting · $dead failed", onDataSync)
+        NavRow("Data and sync", when {
+            dead > 0 -> "$dead could not be uploaded"
+            pending is PendingStatus.Offline -> "Offline · ${pending.count} saved on this phone"
+            pending is PendingStatus.Long -> "Upload retrying · oldest ${pending.oldestAgeH} h"
+            else -> "Everything uploaded"
+        }, onDataSync)
         NavRow("Equipment", "Your gym, plates, dumbbells, machines, dip belt", onEquipment)
         NavRow("Rest timer reliability", "Permissions, phone settings, alarm test", onReliability)
         NavRow("Log bodyweight", "Used for pull-ups, dips and assisted machines", { weighIn = true })
@@ -135,13 +144,17 @@ private fun SubScreen(title: String, onBack: () -> Unit, bottom: (@Composable ()
 fun DataSyncRoute(c: AppContainer, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val state by c.sync.state.collectAsState()
-    val pending by c.sync.observePending().collectAsState(initial = 0)
+    val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
+    val pending = PendingStatus.of(state, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync)
     var confirmRepush by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     SubScreen("Data and sync", onBack) {
         Text(describe(state), style = MaterialTheme.typography.titleMedium)
-        Text("$pending changes waiting to upload · $dead could not be uploaded", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            (pendingLine(pending) ?: "All changes uploaded") + if (dead > 0) " · $dead could not be uploaded" else "",
+            style = MaterialTheme.typography.bodyMedium,
+        )
         Text("Everything is saved on this phone first and uploaded when there is a connection.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = { c.sync.syncNow() }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Sync now") }
         if (dead > 0) OutlinedButton(onClick = { scope.launch { c.sync.retryDeadLetters() } }, modifier = Modifier.fillMaxWidth()) { Text("Retry failed uploads") }
