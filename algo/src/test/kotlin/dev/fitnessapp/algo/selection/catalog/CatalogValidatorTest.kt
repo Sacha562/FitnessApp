@@ -21,7 +21,7 @@ class CatalogValidatorTest {
         requireNotNull(javaClass.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     private val taxonomy = Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"))
-    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.0.json"))
+    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.1.json"))
     private val catalog = Catalog(doc, taxonomy)
     private val stations: Set<String> = Json.parseToJsonElement(resource("reference/equipment_types.json"))
         .jsonObject.getValue("rows").jsonArray.map { it.jsonObject.getValue("key").jsonPrimitive.content }.toSet()
@@ -51,7 +51,21 @@ class CatalogValidatorTest {
         refs.size shouldBe 15
         val report = CatalogValidator.validate(catalog, stations, challengeLocalSlugs = local, requiredSlugs = local + refs)
         report.issues.map { it.toString() }.shouldBeEmpty()
-        doc.catalogVersion shouldBe "1.0.0"
+        doc.catalogVersion shouldBe "1.0.1"
+    }
+
+    @Test
+    fun `every externally loaded machine exercise names a loadable station`() {
+        // Catalog 1.0.1: without one, LOAD-1 finds no stack and the set card has nothing to offer.
+        val loadable = setOf("stack", "plates", "pin_assist")
+        val schemes = Json.parseToJsonElement(resource("reference/equipment_types.json")).jsonObject.getValue("rows").jsonArray
+            .map { it.jsonObject }
+            .associate { it.getValue("key").jsonPrimitive.content to (it["default_scheme_type"] as? JsonPrimitive)?.content }
+        val missing = doc.exercises
+            .filter { "machine" in it.equipment && it.loadMode == "external" && it.measure == "reps" }
+            .filter { e -> e.requiresStation.none { schemes[it] in loadable } }
+            .map { it.slug }
+        missing.shouldBeEmpty()
     }
 
     @Test

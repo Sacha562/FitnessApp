@@ -347,6 +347,63 @@
       "sort": 170
     },
     {
+      "key": "preacher_curl_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Preacher curl machine",
+      "label_nl": "Preacher curl machine",
+      "active": true,
+      "sort": 172
+    },
+    {
+      "key": "triceps_extension_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Triceps extension machine",
+      "label_nl": "Tricepsmachine",
+      "active": true,
+      "sort": 174
+    },
+    {
+      "key": "dip_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Dip machine",
+      "label_nl": "Dipmachine",
+      "active": true,
+      "sort": 176
+    },
+    {
       "key": "leg_press",
       "category": "station",
       "default_scheme_type": "stack",
@@ -516,6 +573,25 @@
       "label_nl": "Kuitmachine",
       "active": true,
       "sort": 260
+    },
+    {
+      "key": "ab_crunch_machine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": null,
+        "step": null,
+        "max": null,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Ab crunch machine",
+      "label_nl": "Buikspiermachine",
+      "active": true,
+      "sort": 265
     },
     {
       "key": "back_extension",

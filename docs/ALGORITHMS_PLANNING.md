@@ -2109,6 +2109,13 @@ into `assisted_pullup_machine`, `assisted_neutral_pullup_machine` and `assisted_
 credits erectors 1.0 (V9 lower back); `one_arm_plank` uses load mode `external`; `flags_offered` per row (C74). V9 holds for every group at the default Basic-Fit inventory as long as
 the checklist confirms the stations; a missing station (for example no hip-thrust machine) only removes options.
 
+**Catalog 1.0.1 (2026-10-09, user decision, migration 020).** `machine_crunch`, `preacher_curl_machine`,
+`triceps_extension_machine` and `dip_machine` had no loadable station (the first three none at all, the dip machine
+only the bodyweight `dip_station`), so LOAD-1 found no stack values. Four `stack` stations were added
+(`ab_crunch_machine`, `preacher_curl_machine`, `triceps_extension_machine`, `dip_machine`) and the four rows now
+require them. `catalog-1.0.1.json` is the bundled file; a CAT-1 test requires a loadable station for every externally
+loaded machine exercise. The app adds rows for new equipment types from the saved checklist at start-up (unconfirmed).
+
 ### 10.9 Custom exercises
 
 `new = copy(prototype[pattern][equipmentClass])` with `prototype_exercise_id` set; the user may edit coefficients

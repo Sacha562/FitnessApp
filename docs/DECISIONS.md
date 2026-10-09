@@ -265,3 +265,9 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   default barbell (used without checklist rows) also treats plates as unlimited. Params-only release: no module or
   engine version change (ALGORITHMS A7). Seeded by migration `fitness_019_algo_params_1_0_1`, which supersedes
   1.0.0. ALGORITHMS A8.1, B2.4, Part C and DATA_MODEL 9.1.10, 9.3.3, 13.2 updated.
+- 2026-10-09 — Catalog 1.0.1 (user Q&A after the first gym test: the ab crunch machine showed "no loadable values"):
+  stack stations `ab_crunch_machine`, `preacher_curl_machine`, `triceps_extension_machine` and `dip_machine` are added
+  and the four machine exercises require them (the dip machine previously required only the bodyweight dip station).
+  Chosen over an app-side generic stack so each machine keeps its own calibration. Existing checklists gain the new
+  rows at app start, built from the saved stack settings and left unconfirmed. Migration
+  `fitness_020_catalog_1_0_1`; ALGORITHMS_PLANNING 10.8 and DATA_MODEL 13.2 updated.

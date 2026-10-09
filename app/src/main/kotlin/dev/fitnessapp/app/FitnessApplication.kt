@@ -10,6 +10,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import dev.fitnessapp.app.notify.Channels
+import dev.fitnessapp.app.ui.equipment.EquipmentUpgrade
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.sync.SyncWorker
 import kotlinx.coroutines.launch
@@ -47,6 +48,7 @@ class FitnessApplication : Application(), Configuration.Provider {
         container.appScope.launch {
             runCatching { container.restTimer.reconcile() }
             runCatching { reportCrashes() }
+            runCatching { EquipmentUpgrade.addMissingTypes(container.equipment) }
         }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {

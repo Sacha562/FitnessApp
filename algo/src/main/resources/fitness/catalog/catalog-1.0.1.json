@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.0.1",
   "exercises": [
     {
       "slug": "ab_wheel_rollout",
@@ -2903,7 +2903,7 @@
         "machine"
       ],
       "requires_station": [
-        "dip_station"
+        "dip_machine"
       ],
       "load_mode": "external",
       "allowed_load_modes": [
@@ -5051,7 +5051,9 @@
       "equipment": [
         "machine"
       ],
-      "requires_station": [],
+      "requires_station": [
+        "ab_crunch_machine"
+      ],
       "load_mode": "external",
       "allowed_load_modes": [
         "external"
@@ -6599,7 +6601,9 @@
       "equipment": [
         "machine"
       ],
-      "requires_station": [],
+      "requires_station": [
+        "preacher_curl_machine"
+      ],
       "load_mode": "external",
       "allowed_load_modes": [
         "external"
@@ -8924,7 +8928,9 @@
       "equipment": [
         "machine"
       ],
-      "requires_station": [],
+      "requires_station": [
+        "triceps_extension_machine"
+      ],
       "load_mode": "external",
       "allowed_load_modes": [
         "external"

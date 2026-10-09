@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
             }
         }
         "seedgen-catalog" -> {
-            val version = args.getOrElse(1) { "1.0.0" }
+            val version = args.getOrElse(1) { "1.0.1" }
             val result = CatalogSeedGen.generate(
                 File("algo/src/main/resources/fitness"), listOf(File("docs/challenges/oap.challenge.v1.json")), version,
             )
