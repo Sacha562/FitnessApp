@@ -42,8 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.fitnessapp.app.AppContainer
-import dev.fitnessapp.app.timer.AlarmGateway
-import dev.fitnessapp.app.timer.TimerSelfTest
+import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.theme.AdvisoryAmber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -198,9 +197,10 @@ fun ReliabilityContent(c: AppContainer) {
 private fun SelfTestCard(c: AppContainer) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var result by remember { mutableStateOf(TimerSelfTest.result(context)) }
+    var result by remember { mutableStateOf(c.selfTests.result()) }
     var running by remember { mutableStateOf(false) }
     var answered by remember { mutableStateOf(false) }
+    var blocked by remember { mutableStateOf(false) }
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val r = result
@@ -208,6 +208,7 @@ private fun SelfTestCard(c: AppContainer) {
             StatusTitle("Test the rest alarm", latency != null && latency <= c.platformConfig.timerExactIdleP95MaxMs)
             Text("Start, then lock your phone and put it away. It should vibrate in 20 seconds.", style = MaterialTheme.typography.bodyMedium)
             if (running) Text("Waiting for the alarm…", style = MaterialTheme.typography.bodyMedium)
+            if (blocked) Text("Finish your session first, then run the test.", style = MaterialTheme.typography.bodyMedium)
             if (latency != null) {
                 Text(
                     if (latency <= 2000) "The alarm was on time (${latency} ms)." else "The alarm was ${latency / 1000} s late. Check the phone-maker settings above.",
@@ -236,14 +237,21 @@ private fun SelfTestCard(c: AppContainer) {
             Button(onClick = {
                 running = true
                 answered = false
+                blocked = false
                 scope.launch {
-                    val mode = c.profiles.get()?.rest_alarm_mode ?: "alarm_clock"
-                    TimerSelfTest.start(context, AlarmGateway(context), c.device, System.currentTimeMillis(), mode)
-                    result = TimerSelfTest.result(context)
+                    // Never runs beside a real session: the test timer and service would interfere with it.
+                    val end = if (c.sessionRepository.observeActiveOnce() == null) c.restTimer.startSelfTest() else null
+                    if (end == null) {
+                        blocked = true
+                        running = false
+                        return@launch
+                    }
+                    SessionService.startSelfTest(context, end) // user action while the activity is resumed (ANDROID.md 11.3)
+                    result = c.selfTests.result()
                     repeat(60) {
                         delay(1000)
-                        val now = TimerSelfTest.result(context)
-                        if (now?.firedAt != null) {
+                        val now = c.selfTests.result()
+                        if (now?.firedAt != null || !c.restTimer.selfTestRunning()) {
                             result = now
                             running = false
                             return@launch

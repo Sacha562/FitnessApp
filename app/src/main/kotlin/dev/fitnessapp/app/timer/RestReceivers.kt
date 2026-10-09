@@ -13,10 +13,6 @@ class RestAlarmReceiver : BroadcastReceiver() {
         val app = context.applicationContext as FitnessApplication
         val c = app.container
         val timerId = intent.getStringExtra(EXTRA_TIMER_ID) ?: return
-        if (timerId == TimerSelfTest.TIMER_ID) {
-            TimerSelfTest.onFired(context, fired, c.haptics, c.device, c.notifications, c.platformConfig.timerVibrationWaveformMs)
-            return
-        }
         val pending = goAsync()
         c.appScope.launch {
             try {

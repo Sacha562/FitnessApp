@@ -10,6 +10,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import dev.fitnessapp.app.FitnessApplication
 import dev.fitnessapp.app.notify.Channels
+import dev.fitnessapp.app.timer.TimerSelfTest
 import kotlinx.coroutines.launch
 
 /** C28 type selection (ANDROID.md 11.2). */
@@ -38,14 +39,16 @@ class SessionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val c = (application as FitnessApplication).container
-        val notification = c.notifications.session()
+        val testEnd = intent?.getLongExtra(EXTRA_SELF_TEST_END, 0L) ?: 0L
+        val notification = if (testEnd > 0) c.notifications.resting(testEnd, TimerSelfTest.TEXT) else c.notifications.session()
         val type = FgsType.forSdk(Build.VERSION.SDK_INT, c.device.activityRecognitionGranted())
         try {
             if (type == null) startForeground(Channels.ID_SESSION, notification)
             else ServiceCompat.startForeground(this, Channels.ID_SESSION, notification, type)
             c.appScope.launch {
                 c.fgsEvent("fgs_started", mapOf("fgs_type" to FgsType.code(Build.VERSION.SDK_INT, c.device.activityRecognitionGranted()), "sdk_int" to Build.VERSION.SDK_INT))
-                if (c.sessionRepository.observeActiveOnce() == null) stopSelf() else c.restTimer.reconcile()
+                val active = c.sessionRepository.observeActiveOnce() != null || c.restTimer.selfTestRunning()
+                if (active) c.restTimer.reconcile() else stopSelf()
             }
         } catch (e: Exception) {
             c.appScope.launch { c.fgsEvent("fgs_restart_failed", mapOf("error_class" to (e::class.simpleName ?: "unknown"))) }
@@ -55,8 +58,15 @@ class SessionService : Service() {
     }
 
     companion object {
+        private const val EXTRA_SELF_TEST_END = "self_test_end"
+
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, SessionService::class.java))
+        }
+
+        /** Test mode for the rest-alarm self-test (UX 8.6 step 7): runs while the self-test timer does. */
+        fun startSelfTest(context: Context, endWall: Long) {
+            ContextCompat.startForegroundService(context, Intent(context, SessionService::class.java).putExtra(EXTRA_SELF_TEST_END, endWall))
         }
 
         fun stop(context: Context) {

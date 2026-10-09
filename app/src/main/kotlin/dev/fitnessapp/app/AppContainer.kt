@@ -10,7 +10,9 @@ import dev.fitnessapp.app.notify.NotificationPresenter
 import dev.fitnessapp.app.platform.DeviceState
 import dev.fitnessapp.app.platform.Haptics
 import dev.fitnessapp.app.timer.AlarmGateway
+import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.timer.RestTimerController
+import dev.fitnessapp.app.timer.SelfTestStore
 import dev.fitnessapp.app.uidet.ReasonVocabulary
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.device.DeviceIdentity
@@ -93,11 +95,17 @@ class AppContainer(private val context: Context) {
 
     val notifications: NotificationPresenter by lazy { NotificationPresenter(context) }
     val haptics: Haptics by lazy { Haptics(context) }
+    val selfTests: SelfTestStore by lazy { SelfTestStore(context) }
     val restTimer: RestTimerController by lazy {
         RestTimerController(
             db, AlarmGateway(context), notifications, haptics, device, telemetry, profiles, ids,
-            { clock.now().toEpochMilli() }, platformConfig, syncScheduler,
-        )
+            { clock.now().toEpochMilli() }, platformConfig, syncScheduler, selfTests,
+        ) {
+            if (sessionRepository.observeActiveOnce() == null) {
+                SessionService.stop(context)
+                notifications.cancelSession()
+            }
+        }
     }
 
     /** Platform events without a domain write (`fgs_*`, permission and reliability events). */

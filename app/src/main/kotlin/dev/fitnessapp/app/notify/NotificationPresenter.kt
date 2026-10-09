@@ -64,16 +64,14 @@ class NotificationPresenter(private val context: Context) {
         .setRequestPromotedOngoing(true) // Android 16 Live Update (ignored below API 36)
 
     /** Between sets: count-up from the session start. */
-    fun session(): Notification {
-        val t = text
+    fun session(t: SessionNotificationText = text): Notification {
         return base().setContentTitle(t.sessionTitle).setContentText(t.currentLine)
             .setUsesChronometer(true).setWhen(if (t.sessionStartWall > 0) t.sessionStartWall else System.currentTimeMillis())
             .setShowWhen(true).build()
     }
 
     /** Resting: countdown to the rest end with -15 s, Skip, +15 s. */
-    fun resting(endWall: Long): Notification {
-        val t = text
+    fun resting(endWall: Long, t: SessionNotificationText = text): Notification {
         return base().setContentTitle("Rest · next: " + t.nextTitle).setContentText(t.nextLoad)
             .setUsesChronometer(true).setChronometerCountDown(true).setWhen(endWall).setShowWhen(true)
             .addAction(action(Channels.RC_MINUS_15, RestActionReceiver.MINUS_15, "-15 s"))
@@ -83,8 +81,7 @@ class NotificationPresenter(private val context: Context) {
     }
 
     /** Overtime: count-up from the rest end, Skip only. */
-    fun overtime(endWall: Long): Notification {
-        val t = text
+    fun overtime(endWall: Long, t: SessionNotificationText = text): Notification {
         return base().setContentTitle("Rest over · " + t.nextTitle).setContentText(t.nextLoad)
             .setUsesChronometer(true).setWhen(endWall).setShowWhen(true)
             .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, "Skip"))
@@ -94,8 +91,7 @@ class NotificationPresenter(private val context: Context) {
     fun postSession(n: Notification) = notify(Channels.ID_SESSION, n)
 
     /** Heads-up at rest end (`N-REST-DONE`), cancelled when the next set is logged. */
-    fun postRestDone() {
-        val t = text
+    fun postRestDone(t: SessionNotificationText = text) {
         val n = NotificationCompat.Builder(context, Channels.REST_DONE)
             .setSmallIcon(R.drawable.ic_stat_session)
             .setContentTitle("Rest over")

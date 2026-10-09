@@ -35,6 +35,9 @@ class RestTimerController(
     private val nowWall: () -> Long,
     private val config: PlatformConfig,
     private val scheduler: SyncScheduler,
+    private val selfTests: SelfTestStore,
+    /** Stops the test-mode session service and its notification when no real session is active. */
+    private val onSelfTestEnded: suspend () -> Unit,
 ) {
     private val mutex = Mutex()
     val timerConfig = TimerConfig(
@@ -64,6 +67,30 @@ class RestTimerController(
         apply(tr)
         tr.timer?.id
     }
+
+    /**
+     * Starts the 20 s self-test rest (UX 8.6 step 7) through the production timer path; returns its planned
+     * end, or null while another rest is running.
+     */
+    suspend fun startSelfTest(): Long? = mutex.withLock {
+        if (db.restTimers().active() != null) return@withLock null
+        notifications.cancelRestDone()
+        val now = nowWall()
+        val mode = profiles.get()?.rest_alarm_mode ?: "alarm_clock"
+        val tr = RestTimerReducer.start(
+            RestTimerReducer.Start(
+                ids.next(), TimerSelfTest.SESSION_ID, "", "", "none", now, device.elapsedRealtime(), device.bootCount(),
+                TimerSelfTest.DURATION_S, TimerSelfTest.DURATION_S, "rest", "self_test", mode,
+            ),
+            timerConfig,
+        )
+        apply(tr)
+        val t = tr.timer?.let { db.restTimers().get(it.id) } ?: return@withLock null
+        selfTests.started(t.end_wall_ms, t.alarm_mode)
+        t.end_wall_ms
+    }
+
+    suspend fun selfTestRunning(): Boolean = db.restTimers().active()?.let(::isSelfTest) ?: false
 
     suspend fun adjust(deltaS: Int, via: String) = mutex.withLock {
         db.restTimers().active()?.let { apply(RestTimerReducer.adjust(it, deltaS, via, nowWall(), timerConfig)) }
@@ -105,6 +132,11 @@ class RestTimerController(
     }
 
     suspend fun onEndAlarm(timerId: String, firedWall: Long, appState: String) = mutex.withLock {
+        val own = db.restTimers().get(timerId)
+        if (own != null && isSelfTest(own)) {
+            if (own.state == RestTimerReducer.RUNNING) finishSelfTest(own, firedWall, alert = true)
+            return@withLock
+        }
         val t = db.restTimers().active()
         val tr = RestTimerReducer.onEndAlarm(t, timerId, firedWall, timerConfig)
         apply(tr)
@@ -120,7 +152,37 @@ class RestTimerController(
 
     /** Process start, service start, boot and update (ANDROID.md 12.6). */
     suspend fun reconcile() = mutex.withLock {
-        db.restTimers().active()?.let { apply(RestTimerReducer.reconcile(it, nowWall(), device.elapsedRealtime(), device.bootCount(), timerConfig)) }
+        val t = db.restTimers().active() ?: return@withLock
+        val now = nowWall()
+        val remaining = RestTimerReducer.remainingMs(t, now, device.elapsedRealtime(), device.bootCount())
+        if (isSelfTest(t) && remaining <= 0) {
+            // The test is over: record the late delivery; alert only within the catch-up window, like a real rest.
+            if (t.state == RestTimerReducer.RUNNING) finishSelfTest(t, now, alert = -remaining <= timerConfig.catchUpAlertMaxS * 1000L)
+            else endSelfTest(t)
+            return@withLock
+        }
+        apply(RestTimerReducer.reconcile(t, now, device.elapsedRealtime(), device.bootCount(), timerConfig))
+    }
+
+    private fun isSelfTest(t: RestTimerEntity) = t.session_id == TimerSelfTest.SESSION_ID
+
+    private suspend fun finishSelfTest(t: RestTimerEntity, firedWall: Long, alert: Boolean) {
+        db.restTimers().upsert(
+            t.copy(state = RestTimerReducer.ENDED, ended_by = "elapsed", fired_wall_ms = firedWall, latency_ms = firedWall - t.end_wall_ms),
+        )
+        alarms.cancel(t.id)
+        selfTests.fired(firedWall, !device.screenInteractive())
+        if (alert) {
+            haptics.alarm(config.timerVibrationWaveformMs)
+            notifications.postRestDone(TimerSelfTest.TEXT)
+        }
+        onSelfTestEnded()
+    }
+
+    private suspend fun endSelfTest(t: RestTimerEntity) {
+        if (t.state != RestTimerReducer.ENDED) db.restTimers().upsert(t.copy(state = RestTimerReducer.ENDED, ended_by = t.ended_by ?: "elapsed"))
+        alarms.cancel(t.id)
+        onSelfTestEnded()
     }
 
     private suspend fun apply(tr: Transition) {
@@ -140,12 +202,13 @@ class RestTimerController(
                 }
                 is RestEffect.ScheduleOvertime -> timer?.let { alarms.scheduleOvertime(e.timerId, e.atWallMs, it.alarm_mode, device.canScheduleExactAlarms()) }
                 is RestEffect.CancelAlarms -> alarms.cancel(e.timerId)
-                RestEffect.NotifyResting -> timer?.let { notifications.postSession(notifications.resting(it.end_wall_ms)) }
-                RestEffect.NotifyOvertime -> timer?.let { notifications.postSession(notifications.overtime(it.end_wall_ms)) }
-                RestEffect.NotifySession -> notifications.postSession(notifications.session())
+                RestEffect.NotifyResting -> timer?.let { notifications.postSession(notifications.resting(it.end_wall_ms, textFor(it))) }
+                RestEffect.NotifyOvertime -> timer?.let { notifications.postSession(notifications.overtime(it.end_wall_ms, textFor(it))) }
+                // A skipped self-test has no session to return to.
+                RestEffect.NotifySession -> if (timer?.let(::isSelfTest) == true) onSelfTestEnded() else notifications.postSession(notifications.session())
                 RestEffect.Alert -> {
                     haptics.alarm(config.timerVibrationWaveformMs)
-                    notifications.postRestDone()
+                    notifications.postRestDone(timer?.let(::textFor) ?: notifications.text)
                 }
                 RestEffect.ReminderBuzz -> haptics.buzz()
                 is RestEffect.Event -> timer?.let { event(it, e.type, e.payload) } ?: eventNoTimer(e)
@@ -153,7 +216,11 @@ class RestTimerController(
         }
     }
 
+    private fun textFor(t: RestTimerEntity) = if (isSelfTest(t)) TimerSelfTest.TEXT else notifications.text
+
+    /** Self-test timers emit no rest events: their only record is `timer_selftest`. */
     private suspend fun event(t: RestTimerEntity, type: String, payload: Map<String, kotlinx.serialization.json.JsonElement>) {
+        if (isSelfTest(t)) return
         db.withTransaction {
             telemetry.write(EventDraft(type = type, sessionId = t.session_id, entityType = "set", entityId = t.set_log_id, payload = payload))
         }
