@@ -260,5 +260,8 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   instead of a separate Yes / No / Not sure question, the machine stack step is entered in kg or lb (default 10 lb,
   stored as a `stack` scheme with `unit` lb), and the assisted machine has no name field. Belt plates are
   unlimited per size too: the checklist writes `count` = `max_items`, so only `max_kg` and `max_items` limit a belt
-  load, and LOAD-1 already picks the fewest plates. The algorithm already supports lb stacks (ALGORITHMS B2.4); the `load.default_plate_inventory` param (counts 4, used only without
-  checklist rows) is unchanged. UX 8.7 and DATA_MODEL 9.3.3 updated.
+  load, and LOAD-1 already picks the fewest plates. The algorithm already supports lb stacks (ALGORITHMS B2.4). UX 8.7 and DATA_MODEL 9.3.3 updated.
+- 2026-10-09 — Params 1.0.1 (user approval): `load.default_plate_inventory` counts 4 -> 20 per size, so the
+  default barbell (used without checklist rows) also treats plates as unlimited. Params-only release: no module or
+  engine version change (ALGORITHMS A7). Seeded by migration `fitness_019_algo_params_1_0_1`, which supersedes
+  1.0.0. ALGORITHMS A8.1, B2.4, Part C and DATA_MODEL 9.1.10, 9.3.3, 13.2 updated.

@@ -383,7 +383,7 @@ prior state plus this session's sets).
 ### A8.1 File
 
 One JSON file per params version, bundled at
-`algo/src/main/resources/fitness/params/default-params-1.0.0.json` (C40; ANDROID.md 4 and 7.6) and seeded
+`algo/src/main/resources/fitness/params/default-params-<version>.json` (currently 1.0.1; C40; ANDROID.md 4 and 7.6) and seeded
 into `fitness.algo_params` by migration 005:
 
 ```json
@@ -707,7 +707,7 @@ Every set is sorted ascending by `w_sys`, de-duplicated on the KG grid with tole
 
 | `scheme_type` | Native value shown | `added_kg` / `assist_kg` | Enumeration |
 |---------------|-------------------|--------------------------|-------------|
-| `plates` (barbell) | total including the bar, e.g. "60 kg" | `added_kg = bar_kg + 2 * sum(pairs)`, `implement_base_kg = 0` | pairs per plate size `p_i` = `floor(count_i / 2)`; all totals `bar_kg + 2 * sum(j_i * p_i)` with `0 <= j_i <= pairs_i`. Default inventory while unconfirmed: bar 20, plates 25/20/15/10/5/2.5/1.25 x 4 each (`load.default_plate_inventory`, unverified, F7) |
+| `plates` (barbell) | total including the bar, e.g. "60 kg" | `added_kg = bar_kg + 2 * sum(pairs)`, `implement_base_kg = 0` | pairs per plate size `p_i` = `floor(count_i / 2)`; all totals `bar_kg + 2 * sum(j_i * p_i)` with `0 <= j_i <= pairs_i`. Default inventory while unconfirmed: bar 20, plates 25/20/15/10/5/2.5/1.25 x 20 each (unlimited, params 1.0.1) (`load.default_plate_inventory`, unverified, F7) |
 | `plates` (Smith, plate-loaded leg press) | plates only | `added_kg = 2 * sum(pairs)`, `implement_base_kg` = Smith bar or sled mass | as above without the bar; if `implement_base_kg` is unknown (null; F7 asks), `w_sys` is undefined and RX-1 uses DOUBLE on the native value (B9.6) |
 | `belt` | added kg, e.g. "BW + 22.5 kg" | `added_kg` = sum of the chosen plates (plus a dumbbell) | all multisets of the belt inventory with at most `max_items` items and sum <= `max_kg`; if `dumbbells_on_belt`, also `d + s` for each dumbbell value `d` and multiset `s` with at most `max_items - 1` items. Defaults `max_kg` 60, `max_items` 4 (expert-opinion, editable in the checklist) |
 | `dumbbells` | per hand, e.g. "22.5 kg" | `added_kg = implement_count * v` | the inventory list `values`; `implement_count` = 2 for bilateral lifts, 1 for each unilateral or alternating side row (B2.6) |
@@ -2157,7 +2157,7 @@ test attempts, ranking and de-dup, examples).
 |-----|---------|--------|------|----------|--------|----------|
 | `load.lb_kg` | 0.45359237 | fixed | kg/lb | engineering-fact | international pound definition | not tunable |
 | `load.epsilon_kg` | 0.005 | 0.001..0.01 | kg | engineering-fact | half of the KG grid | not tunable |
-| `load.default_plate_inventory` | `{"bar_kg": 20, "25": 4, "20": 4, "15": 4, "10": 4, "5": 4, "2.5": 4, "1.25": 4}` | counts 0..20 | kg, count | expert-opinion (unverified gym inventory) | load_prescription LOAD-1; F7 checklist overrides | the equipment checklist (user); `equipment_calibration_changed` events (DATA_MODEL 9.8.1) |
+| `load.default_plate_inventory` | `{"bar_kg": 20, "25": 20, "20": 20, "15": 20, "10": 20, "5": 20, "2.5": 20, "1.25": 20}` (params 1.0.1: gym plates unlimited, F7; 1.0.0 had 4) | counts 0..20 | kg, count | expert-opinion (unverified gym inventory) | load_prescription LOAD-1; F7 checklist overrides | the equipment checklist (user); `equipment_calibration_changed` events (DATA_MODEL 9.8.1) |
 | `load.belt_max_kg_default` | 60 | 20..100 | kg | expert-opinion | challenge research (P) | user checklist |
 | `load.belt_max_items_default` | 4 | 1..8 | plates | expert-opinion | load_prescription LOAD-1 | user checklist |
 | `load.pin_max_unknown_native` | 100 | 50..300 | lb | expert-opinion | this document (used until the checklist asks the machine maximum) | user checklist |

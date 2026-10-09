@@ -16,11 +16,11 @@ import java.math.BigDecimal
 
 /**
  * Structural checks of the bundled params file (ALGORITHMS.md A8.1-A8.3) until the per-module ParamSpecs
- * and ParamsCoverageTest exist (M2/M3). The pinned hash is the one migration 005 stored on the server; a
+ * and ParamsCoverageTest exist (M2/M3). The pinned hash is the one migration 019 stored on the server (1.0.1); a
  * changed file must come with a new params version and a new data migration.
  */
 class ParamsFileTest {
-    private val text = requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.0.json")) {
+    private val text = requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.1.json")) {
         "bundled params file missing"
     }.readText(Charsets.UTF_8)
     private val doc = Json.parseToJsonElement(text).jsonObject
@@ -28,7 +28,7 @@ class ParamsFileTest {
 
     @Test
     fun `version, key format and module prefixes`() {
-        doc.getValue("params_version").jsonPrimitive.content shouldBe "1.0.0"
+        doc.getValue("params_version").jsonPrimitive.content shouldBe "1.0.1"
         val keyPattern = Regex("^[a-z]+(\\.[a-z0-9_]+)+$")
         params.keys.forEach { key ->
             require(keyPattern.matches(key)) { "bad key $key" }
@@ -59,7 +59,7 @@ class ParamsFileTest {
     @Test
     fun `params hash equals the seeded server value`() {
         ParamsHashes.hash(ParamsHashes.values(params)) shouldBe
-            "5ab49a059881c9a3ddc300cad46586907079e38d14a4239ce5ba26ff3d0777fd"
+            "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469"
         ParamsHashes.slices(ParamsHashes.values(params)).keys shouldBe
             ModuleRegistry.entries.map { it.ref.id.value }.toSet()
     }

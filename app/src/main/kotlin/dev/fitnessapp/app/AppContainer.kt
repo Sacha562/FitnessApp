@@ -68,9 +68,9 @@ class AppContainer(private val context: Context) {
     }
     val telemetry: TelemetryWriter by lazy { TelemetryWriter(db, outbox, writeContext, EventRegistry.bundled()) }
 
-    /** The bundled params 1.0.0 (A8.4); server params and user overrides arrive with later milestones. */
+    /** The bundled params 1.0.1 (A8.4); server params and user overrides arrive with later milestones. */
     val params: ParamView by lazy {
-        ParamView.fromParamsFile(resource("/fitness/params/default-params-1.0.0.json"))
+        ParamView.fromParamsFile(resource("/fitness/params/default-params-1.0.1.json"))
     }
     val reasons: ReasonVocabulary by lazy { ReasonVocabulary.parse(resource("/fitness/reference/reason_codes.json")) }
 

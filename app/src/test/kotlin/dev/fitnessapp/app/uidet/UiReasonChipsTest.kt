@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 /** ALGORITHMS_PLANNING 19.2 tests and UX GF-UX-14. */
 class UiReasonChipsTest {
-    private val params = ParamView.fromParamsFile(resource("/fitness/params/default-params-1.0.0.json"))
+    private val params = ParamView.fromParamsFile(resource("/fitness/params/default-params-1.0.1.json"))
     private val vocab = ReasonVocabulary.parse(resource("/fitness/reference/reason_codes.json"))
 
     private fun codes(set: ChipSet) = set.visible.map { it.code } to set.more.map { it.code }

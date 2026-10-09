@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
         "version" -> println("engine ${EngineVersion.ENGINE_VERSION}")
         "golden" -> exitProcess(golden(File(args.getOrElse(1) { "fixtures/golden/algo" })))
         "seedgen" -> {
-            val parts = SeedGen.generate(File("algo/src/main/resources/fitness"), args.getOrElse(1) { "1.0.0" })
+            val parts = SeedGen.generate(File("algo/src/main/resources/fitness"), args.getOrElse(1) { "1.0.1" })
             for ((name, sql) in parts) {
                 val out = File("supabase/migrations/pending/$name.sql")
                 out.writeText(sql, Charsets.UTF_8)

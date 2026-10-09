@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 /** F7 checklist (2026-10-09): every written scheme parses, and the engine enumerates it as the user expects. */
 class ChecklistSchemeTest {
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.0.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.1.json")).readText(Charsets.UTF_8),
     )
     private val types = EquipmentRepository.parseTypes(
         requireNotNull(javaClass.getResource("/fitness/reference/equipment_types.json")).readText(Charsets.UTF_8),

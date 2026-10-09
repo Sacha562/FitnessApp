@@ -4,7 +4,7 @@ import dev.fitnessapp.algo.core.params.ParamView
 
 /** The bundled defaults (params 1.0.0) as a fresh [ParamView] per call. */
 object TestParams {
-    val text: String = requireNotNull(TestParams::class.java.getResource("/fitness/params/default-params-1.0.0.json")) {
+    val text: String = requireNotNull(TestParams::class.java.getResource("/fitness/params/default-params-1.0.1.json")) {
         "bundled params file missing"
     }.readText(Charsets.UTF_8)
 

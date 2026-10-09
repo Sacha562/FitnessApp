@@ -20,7 +20,8 @@ class RoundingDirectionTest {
         Rounding.nearest(bar, 61.25, params).addedKg shouldBe 60.0 // exact tie -> easier
         Rounding.nearest(bar, 61.3, params).addedKg shouldBe 62.5
         Rounding.easierOrEqual(bar, 5.0, params).addedKg shouldBe 20.0 // none below -> easiest
-        Rounding.harderOrEqual(bar, 999.0, params).addedKg shouldBe 335.0
+        Rounding.harderOrEqual(bar, 999.0, params).addedKg shouldBe 1000.0
+        Rounding.harderOrEqual(bar, 9999.0, params).addedKg shouldBe 1595.0 // none above -> hardest
         Rounding.nextHarder(bar, 60.0, params)!!.addedKg shouldBe 62.5
         Rounding.nextEasier(bar, 60.0, params)!!.addedKg shouldBe 57.5
         Rounding.nextEasier(bar, 20.0, params) shouldBe null

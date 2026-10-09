@@ -950,7 +950,7 @@ Entry spec, one per key:
 }
 ```
 
-The content of the 1.0.0 params set is defined by the ALGORITHMS documents; migration 005 inserts it from the repo file `algo/src/main/resources/fitness/params/default-params-1.0.0.json` (C40; the same file is bundled in the APK as the offline fallback). Keys follow C41 (E53). Platform constants (timers, notifications, reminders, sync backoff) are not in this file and not in `params_hash`; they live in `PlatformConfig` (C54). Activation: the app uses the newest `active` version whose range admits its `ENGINE_VERSION`, pins it at session start and never switches mid-session.
+Params 1.0.1 (migration 019, 2026-10-09) supersedes 1.0.0: only `load.default_plate_inventory` changed (counts 4 -> 20, F7). The content of the 1.0.0 params set is defined by the ALGORITHMS documents; migration 005 inserts it from the repo file `algo/src/main/resources/fitness/params/default-params-1.0.0.json` (C40; the same file is bundled in the APK as the offline fallback). Keys follow C41 (E53). Platform constants (timers, notifications, reminders, sync backoff) are not in this file and not in `params_hash`; they live in `PlatformConfig` (C54). Activation: the app uses the newest `active` version whose range admits its `ENGINE_VERSION`, pins it at session start and never switches mid-session.
 
 #### 9.1.11 `fitness.catalog_releases`
 
@@ -1126,7 +1126,7 @@ Load scheme shapes (validated by the `load` module and, optionally, by `pg_jsons
 
 | type | Shape | Example / defaults |
 |------|-------|--------------------|
-| `plates` | `{type, unit:"kg", bar_kg, plates:[{kg, count}]}` (`count` = total plates owned; pairs are formed by the loader) | Barbell 20 kg, plates 25/20/15/10/5/2.5/1.25 x 4 (LOAD-1 default, unverified). The F7 checklist writes `count` 20 per size: gym plates are treated as unlimited |
+| `plates` | `{type, unit:"kg", bar_kg, plates:[{kg, count}]}` (`count` = total plates owned; pairs are formed by the loader) | Barbell 20 kg, plates 25/20/15/10/5/2.5/1.25 x 20, i.e. unlimited (LOAD-1 default, params 1.0.1). The F7 checklist writes `count` 20 per size: gym plates are treated as unlimited |
 | `belt` | `{type, unit:"kg", plates:[{kg, count}], max_kg, max_items, dumbbells_on_belt}` | User's own belt plates (unknown, checklist); `max_kg 60`, `max_items 4` (**expert-opinion**, tunable by the user) |
 | `dumbbells` | `{type, unit, values:[...], per:"hand"}` | Values from the checklist |
 | `stack` | `{type, unit:"kg"\|"lb"\|"level", start, step, max, add_on_steps:[...], ratio, level_kg?}` | F7 checklist default `unit lb, step 10`, `max` the kg cap converted to lb and floored to the step. `ratio 1.0` unless calibrated. `level_kg` (optional, only for `unit = "level"`): kg per level. Without it a level stack is ordinal: DOUBLE mode on the level, excluded from SSE-1 (C43). |
@@ -2366,6 +2366,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 013 | `fitness_013_sessions_sets` | M1 | `workout_sessions`, `session_blocks`, `session_exercises`, `set_logs`, `wellness_logs`, `metric_observations`, all composite FKs and checks. | Composite-FK cross-user test; effective-load and load-mode checks. |
 | 014 | `fitness_014_challenge_events_calendar` | M1 | `challenge_events`, `challenge_rule_events`, `calendar_events`. | Dedupe-key idempotency; ignored-row title check. |
 | 015 | `fitness_015_telemetry_cache_exports` | M1 | `session_events`, `exercise_model_state`, `exports`. | Payload size checks. |
+| 019 | `fitness_019_algo_params_1_0_1` (data; applied 2026-10-09, numbered after the reserved 016-018) | M1a | `algo_params` 1.0.1 = 1.0.0 with `load.default_plate_inventory` counts 20 (F7); 1.0.0 set to `superseded`. | Key count 621; only that key differs from 1.0.0; `params_hash` pinned in ParamsFileTest. |
 | 016 | `fitness_016_oap_definition_v1` (data) | M2 | Insert the OAP definition 1.0.0 (id UUIDv5 `challenge_definition:oap@1.0.0` = `b2afe9c6-816e-51a4-9cdb-8a529fd54615`) as `published`, with `jcs_sha256` from the authoring tool; `on conflict (id) do nothing`; then assert the stored `jcs_sha256` equals the file's. Written only after the CHALLENGE spec is final and the definition passes the CDS validator with the section 8 domains (C38; open issue 3, resolved). | Guard trigger set `server_checksum`; an `update` of `definition` fails with `55000`. |
 | 017 | `fitness_017_review_views` | M1 (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
 | 018 | `fitness_018_jsonschema_constraint` (optional) | M2 | `alter table fitness.challenge_definitions add constraint challenge_definitions_schema_ck check (extensions.jsonb_matches_schema('<CDS v1 JSON Schema>'::json, definition))` (the extension itself is installed by 007). | Advisors; a malformed definition insert fails. |

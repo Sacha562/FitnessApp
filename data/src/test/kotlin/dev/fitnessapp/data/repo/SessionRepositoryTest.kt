@@ -43,7 +43,7 @@ class SessionRepositoryTest {
     private lateinit var bodyweight: BodyweightRepository
     private val catalog = CatalogRepository.bundled()
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.0.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.1.json")).readText(Charsets.UTF_8),
     )
     private var now = 1_791_482_280_000L
 

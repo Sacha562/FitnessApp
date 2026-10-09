@@ -12,11 +12,11 @@ class LoadablesTest {
     private val ctx = Loadables.Context(pull, bwKg = 70.7)
 
     @Test
-    fun `default barbell covers 20 to 335 kg in 2_5 kg steps`() {
+    fun `default barbell covers 20 to 1595 kg in 2_5 kg steps`() {
         val w = Loadables.enumerate(LoadScheme.defaultBarbell(params), Loadables.Context(squat, null), params)
-        w.size shouldBe 127
+        w.size shouldBe 631 // unlimited plates (F7): 20 per size, 10 pairs
         w.first().wSys shouldBe 20.0
-        w.last().wSys shouldBe 335.0
+        w.last().wSys shouldBe 1595.0
         w.first { it.addedKg == 60.0 }.plateBreakdown shouldBe listOf(20.0)
         w.first { it.addedKg == 62.5 }.plateBreakdown shouldBe listOf(20.0, 1.25)
         w.zipWithNext().all { (a, b) -> b.addedKg - a.addedKg == 2.5 } shouldBe true
