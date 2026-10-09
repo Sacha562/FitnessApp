@@ -1126,10 +1126,10 @@ Load scheme shapes (validated by the `load` module and, optionally, by `pg_jsons
 
 | type | Shape | Example / defaults |
 |------|-------|--------------------|
-| `plates` | `{type, unit:"kg", bar_kg, plates:[{kg, count}]}` (`count` = total plates owned; pairs are formed by the loader) | Barbell 20 kg, plates 25/20/15/10/5/2.5/1.25 x 4 (LOAD-1 default, unverified) |
+| `plates` | `{type, unit:"kg", bar_kg, plates:[{kg, count}]}` (`count` = total plates owned; pairs are formed by the loader) | Barbell 20 kg, plates 25/20/15/10/5/2.5/1.25 x 4 (LOAD-1 default, unverified). The F7 checklist writes `count` 20 per size: gym plates are treated as unlimited |
 | `belt` | `{type, unit:"kg", plates:[{kg, count}], max_kg, max_items, dumbbells_on_belt}` | User's own belt plates (unknown, checklist); `max_kg 60`, `max_items 4` (**expert-opinion**, tunable by the user) |
 | `dumbbells` | `{type, unit, values:[...], per:"hand"}` | Values from the checklist |
-| `stack` | `{type, unit:"kg"\|"lb"\|"level", start, step, max, add_on_steps:[...], ratio, level_kg?}` | `ratio 1.0` unless calibrated. `level_kg` (optional, only for `unit = "level"`): kg per level. Without it a level stack is ordinal: DOUBLE mode on the level, excluded from SSE-1 (C43). |
+| `stack` | `{type, unit:"kg"\|"lb"\|"level", start, step, max, add_on_steps:[...], ratio, level_kg?}` | F7 checklist default `unit lb, step 10`, `max` the kg cap converted to lb and floored to the step. `ratio 1.0` unless calibrated. `level_kg` (optional, only for `unit = "level"`): kg per level. Without it a level stack is ordinal: DOUBLE mode on the level, excluded from SSE-1 (C43). |
 | `pin_assist` | `{type, unit:"lb", step, min, max, offset_kg, ratio}` | C2/F7: `{unit lb, step 5, min 0, max null, offset_kg 6.5, ratio 1.0}`; `max` asked at the checklist |
 | `bodyweight` | `{type}` | |
 | `fixed` | `{type, unit:"kg", kg}` | Fixed implements |

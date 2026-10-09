@@ -871,11 +871,10 @@ is editable; unknown values are asked, never guessed silently.
 | [x] Dip station   [x] Cable station |
 | [x] Leg press     [x] Leg extension |
 | ...                    Show all   > |
-| PLATES  25 20 15 10 5 2.5           |
-|   1.25 kg?  [Yes] [No] [Not sure]   |
+| PLATES  25 20 15 10 5 2.5    Edit > |
 | DUMBBELLS 2-10 by 2, 12.5-40 by 2.5 |
 |                              Edit > |
-| MACHINE STACKS  5 kg steps   Edit > |
+| MACHINE STACKS  [kg] [lb]  step 10  |
 | SMITH BAR  Ask me the first time  > |
 | YOUR OWN  [x] Dip belt  [x] Chalk   |
 |           Belt plates             > |
@@ -887,13 +886,13 @@ is editable; unknown values are asked, never guessed silently.
 |---|---|---|---|
 | Gym | Basic-Fit Amersfoort Ierse Pond, hours Mon-Fri 07:00-22:30, Sat-Sun 09:00-16:00 | engineering-fact (Basic-Fit site) | Hours feed the gym-hours constraint of `challenge.plan` |
 | Stations | Common Basic-Fit stations ticked | unverified (machine list not verifiable online) | User unticks missing ones; "narrow bar: no archer / typewriter" noted |
-| Gym plates | 25, 20, 15, 10, 5, 2.5 kg; 1.25 kg asked | unverified | "Not sure" = treated as absent (safer rounding) |
+| Gym plates | 25, 20, 15, 10, 5, 2.5 kg | unverified | One editable list of sizes; the user adds 1.25 kg if the gym has it. Plates are assumed unlimited (no count per size, F7) |
 | Dumbbells | 2-10 kg in 2 kg steps, then 12.5-40 kg in 2.5 kg steps | unverified, expert guess | Must be confirmed in the gym; first use of a dumbbell exercise asks "Is X kg available?" while unconfirmed |
-| Machine stacks | 5 kg steps, per machine editable | unverified | First use of a machine asks for its smallest step while unconfirmed |
+| Machine stacks | 10 lb steps; unit kg or lb | user (F7, 2026-10-09) | Most stacks are marked in lb; the set card shows the lb value with the kg equivalent. First use of a machine asks for its smallest step while unconfirmed |
 | Smith bar weight | unknown -> "Ask me the first time" | F7 | Smith exercises are prescribed only after it is entered |
-| Assisted pull-up machine | `{unit lb, step 5, min 0, max: ask, offsetKg 6.5, ratio 1.0}` and a machine name | F7, C2; the offset is the user's estimate ("6-7 kg"), the ratio is assumed | Detail screen explains: "assist = pin x 0.4536 x ratio + 6.5 kg; at pin 0 the machine still helps about 6.5 kg." |
+| Assisted pull-up machine | `{unit lb, step 5, min 0, max: ask, offsetKg 6.5, ratio 1.0}` | F7, C2; the offset is the user's estimate ("6-7 kg"), the ratio is assumed | Detail screen explains: "assist = pin x 0.4536 x ratio + 6.5 kg; at pin 0 the machine still helps about 6.5 kg." |
 | Dip belt | own: yes; maximum belt load 60 kg | F7 (the maximum is a P default from the challenge) | |
-| Belt plates | the gym plates above, at most 2 per size (so 47.5 = 20 + 20 + 5 + 2.5 is loadable) | assumption | Editable counts per size |
+| Belt plates | the gym plates above, unlimited per size (F7, 2026-10-09) | user | Limited only by the belt maximum and the items-on-belt cap; each load uses the fewest plates (so 47.5 = 20 + 20 + 5 + 2.5) |
 | Chalk | yes | | The hang rules mention chalk |
 
 "Confirm equipment" writes the versioned gym profile and emits `equipment_confirmed {profile_version,

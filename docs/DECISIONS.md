@@ -51,7 +51,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | F4 | Free plan | The project is on the Free plan (no backups, read-only above 500 MB, pause after 7 quiet days). Mitigation: the phone database is the source of truth, monthly in-app JSON export, size guard view, chess usage keeps the project awake. |
 | F5 | Optional extension | Install `pg_jsonschema` in the `extensions` schema for structural validation of challenge definitions. **Approved by the user 2026-10-08**: installed by migration `fitness_007_jsonschema_extension` (M0); the CHECK on `challenge_definitions` follows in `fitness_018_jsonschema_constraint` (M2). |
 | F6 | Running | Calendar events classified as runs (`hardlopen`, `run`, `duurloop`, …) count as leg fatigue only (no hypertrophy credit) plus timing penalties. Running priority setting default `low`. Health Connect (runs, weight, sleep) is a later milestone. |
-| F7 | Equipment | First-run equipment checklist with Basic-Fit defaults (all editable): plates, dumbbell list, stack steps, Smith bar weight unknown → ask, assisted machine `{unit lb, step 5, offsetKg 6.5, ratio 1.0}`, own dip belt and belt plates. `requires_station` on every exercise. |
+| F7 | Equipment | First-run equipment checklist with Basic-Fit defaults (all editable): plate sizes (one list, 1.25 kg included only when the user adds it; gym plates are assumed unlimited, so no count per size is asked), dumbbell list, machine stack step in kg or lb (default 10 lb; lb stacks show the kg equivalent), Smith bar weight unknown → ask, assisted machine `{unit lb, step 5, offsetKg 6.5, ratio 1.0}` (no name field; the catalog label is used), own dip belt with the gym plate sizes (unlimited per size, capped by the belt maximum and items on the belt). `requires_station` on every exercise. |
 | F8 | Deloads | General training deloads in the same week as the active challenge's deload/test week (sets ×0.5, load kept, RIR +2), plus reactive triggers. Without an active challenge: reactive only. |
 | F9 | Test dates | Block-relative: each block is 5 weeks counted from the test actually done (matches the Todoist "every 5 weeks" recurrence). Offered as a `P` rule because the artifact's table lists fixed dates. |
 | F10 | Test order | From the Todoist test-day task (tag `A`): weigh-in → warm-up → weighted 3RM → max strict reps → one-arm dead hang L/R (fixed neutral handle) → one-arm top hold L/R → least assistance for one rep L/R. A `P` proposal moves max reps to the end (grip fatigue). |
@@ -255,3 +255,10 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   `torso_rotation` reason only when the exercise offers that flag (ALGORITHMS_PLANNING 19.2, UX 11.9, 19.3, GF-UX-07/14).
 - 2026-10-08 — M1a live-session decisions (user Q&A): D23 (a set changed today carries forward to the next set's
   prefill; ALGORITHMS_PLANNING 19.7 updated) and D24 (eccentric and top-hold round cards move to M2).
+- 2026-10-09 — F7 checklist simplified (user feedback on the M1a build): no "plates per size" (gym plates are
+  unlimited; the checklist writes `count` 20 per size, the top of the range), 1.25 kg is part of the plate-size list
+  instead of a separate Yes / No / Not sure question, the machine stack step is entered in kg or lb (default 10 lb,
+  stored as a `stack` scheme with `unit` lb), and the assisted machine has no name field. Belt plates are
+  unlimited per size too: the checklist writes `count` = `max_items`, so only `max_kg` and `max_items` limit a belt
+  load, and LOAD-1 already picks the fewest plates. The algorithm already supports lb stacks (ALGORITHMS B2.4); the `load.default_plate_inventory` param (counts 4, used only without
+  checklist rows) is unchanged. UX 8.7 and DATA_MODEL 9.3.3 updated.

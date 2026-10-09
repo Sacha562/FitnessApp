@@ -24,29 +24,35 @@ import kotlinx.serialization.json.put
 data class Checklist(
     val gymName: String = "Basic-Fit Amersfoort Ierse Pond",
     val stations: Map<String, Boolean>,
+    /** Gym plate sizes; 1.25 kg is in the list only when the gym has it. Plates are unlimited (F7). */
     val plates: List<Double> = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5),
-    val platesPerSize: Int = 4,
-    /** "1.25 kg?" Yes / No / Not sure (treated as absent, safer rounding). */
-    val smallPlates: Boolean? = null,
     val barKg: Double = 20.0,
     val dumbbells: List<Double> = defaultDumbbells(),
-    val stackStepKg: Double = 5.0,
+    /** `kg` or `lb`: most stacks are marked in lb (F7). */
+    val stackUnit: String = "lb",
+    val stackStep: Double = defaultStackStep("lb"),
     val stackMaxKg: Double = 100.0,
     val heavyStackMaxKg: Double = 200.0,
-    val assistedName: String = "Assisted pull-up machine",
     val assistedMaxPinLb: Double? = null,
     val assistedOffsetKg: Double = 6.5,
     val assistedRatio: Double = 1.0,
     val ownDipBelt: Boolean = true,
     val beltMaxKg: Double = 60.0,
     val beltMaxItems: Int = 4,
-    val beltPlatesPerSize: Int = 2,
     val chalk: Boolean = true,
 ) {
     companion object {
         /** Stations that are not common at Basic-Fit start unticked. */
         private val OPTIONAL = setOf("wide_bar", "rings", "home_bar", "chalk", "dip_belt", "barbell", "dumbbells")
         val HEAVY_STACKS = setOf("leg_press", "hack_squat", "calf_machine", "hip_thrust_machine")
+
+        /** Gym plates are unlimited (F7): 20 per size is the top of the count range and never binds. */
+        const val GYM_PLATE_COUNT = 20
+        const val LB_KG = 0.45359237
+
+        fun defaultStackStep(unit: String): Double = if (unit == "lb") 10.0 else 5.0
+
+        fun unitKg(unit: String): Double = if (unit == "lb") LB_KG else 1.0
 
         fun defaultDumbbells(): List<Double> = (1..5).map { it * 2.0 } + (0..11).map { 12.5 + it * 2.5 }
 
@@ -67,9 +73,7 @@ data class Checklist(
                 val plates = o["plates"]?.jsonArray?.map { it.jsonObject }.orEmpty()
                 c = c.copy(
                     barKg = o["bar_kg"]?.jsonPrimitive?.doubleOrNull ?: c.barKg,
-                    plates = plates.mapNotNull { it["kg"]?.jsonPrimitive?.doubleOrNull }.filter { it != 1.25 }.ifEmpty { c.plates },
-                    platesPerSize = plates.firstOrNull()?.get("count")?.jsonPrimitive?.intOrNull ?: c.platesPerSize,
-                    smallPlates = plates.any { it["kg"]?.jsonPrimitive?.doubleOrNull == 1.25 },
+                    plates = plates.mapNotNull { it["kg"]?.jsonPrimitive?.doubleOrNull }.ifEmpty { c.plates },
                 )
             }
             byType["dumbbells"]?.let { r ->
@@ -79,7 +83,7 @@ data class Checklist(
             byType["assisted_pullup_machine"]?.let { r ->
                 val o = Json.parseToJsonElement(r.load_scheme).jsonObject
                 c = c.copy(
-                    assistedName = r.label, assistedMaxPinLb = o["max"]?.jsonPrimitive?.doubleOrNull,
+                    assistedMaxPinLb = o["max"]?.jsonPrimitive?.doubleOrNull,
                     assistedOffsetKg = o["offset_kg"]?.jsonPrimitive?.doubleOrNull ?: c.assistedOffsetKg,
                     assistedRatio = o["ratio"]?.jsonPrimitive?.doubleOrNull ?: c.assistedRatio,
                 )
@@ -89,19 +93,25 @@ data class Checklist(
                 c = c.copy(
                     ownDipBelt = r.available, beltMaxKg = o["max_kg"]?.jsonPrimitive?.doubleOrNull ?: c.beltMaxKg,
                     beltMaxItems = o["max_items"]?.jsonPrimitive?.intOrNull ?: c.beltMaxItems,
-                    beltPlatesPerSize = o["plates"]?.jsonArray?.firstOrNull()?.jsonObject?.get("count")?.jsonPrimitive?.intOrNull ?: c.beltPlatesPerSize,
                 )
             }
             rows.firstOrNull { it.scheme_type == "stack" }?.let { r ->
                 val o = Json.parseToJsonElement(r.load_scheme).jsonObject
-                c = c.copy(stackStepKg = o["step"]?.jsonPrimitive?.doubleOrNull ?: c.stackStepKg)
+                val unit = o["unit"]?.jsonPrimitive?.content?.takeIf { it == "kg" || it == "lb" } ?: c.stackUnit
+                c = c.copy(stackUnit = unit, stackStep = o["step"]?.jsonPrimitive?.doubleOrNull ?: defaultStackStep(unit))
             }
             byType["chalk"]?.let { c = c.copy(chalk = it.available) }
             return c
         }
     }
 
-    private fun plateList(): List<Double> = plates + if (smallPlates == true) listOf(1.25) else emptyList()
+    private fun plateList(): List<Double> = plates.sortedDescending().distinct()
+
+    /** The heaviest stack value in [stackUnit] at or below [capKg], on the step grid. */
+    fun stackMaxNative(capKg: Double): Double {
+        val steps = kotlin.math.floor(capKg / unitKg(stackUnit) / stackStep + 1e-9)
+        return java.math.BigDecimal(steps * stackStep).setScale(2, java.math.RoundingMode.HALF_EVEN).toDouble()
+    }
 
     fun gym(): GymDraft = GymDraft(
         name = gymName.ifBlank { "Gym" },
@@ -136,15 +146,16 @@ data class Checklist(
                 "dip_belt" -> buildJsonObject {
                     put("type", "belt"); put("unit", "kg"); put("max_kg", beltMaxKg); put("max_items", beltMaxItems)
                     put("dumbbells_on_belt", true)
-                    put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", beltPlatesPerSize) } }))
+                    // Unlimited per size: only max_kg and max_items bind (F7).
+                    put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", beltMaxItems) } }))
                 }
                 else -> if (t.defaultSchemeType == "stack") buildJsonObject {
-                    put("type", "stack"); put("unit", "kg"); put("start", stackStepKg); put("step", stackStepKg)
-                    put("max", if (t.key in HEAVY_STACKS) heavyStackMaxKg else stackMaxKg)
+                    put("type", "stack"); put("unit", stackUnit); put("start", stackStep); put("step", stackStep)
+                    put("max", stackMaxNative(if (t.key in HEAVY_STACKS) heavyStackMaxKg else stackMaxKg))
                     put("add_on_steps", JsonArray(emptyList())); put("ratio", 1.0)
                 } else buildJsonObject { put("type", "bodyweight") }
             }
-            val label = if (t.key == "assisted_pullup_machine") assistedName.ifBlank { t.labelEn } else t.labelEn
+            val label = t.labelEn
             val defaultDraft = defaultDrafts[t.key]
             val draft = EquipmentDraft(
                 equipmentType = t.key, label = label, available = available, loadScheme = scheme,
@@ -158,6 +169,6 @@ data class Checklist(
     private fun platesScheme(bar: Double?): JsonObject = buildJsonObject {
         put("type", "plates"); put("unit", "kg")
         put("bar_kg", bar?.let(::JsonPrimitive) ?: JsonNull)
-        put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", platesPerSize) } }))
+        put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", GYM_PLATE_COUNT) } }))
     }
 }
