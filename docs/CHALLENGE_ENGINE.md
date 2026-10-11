@@ -1244,7 +1244,7 @@ once per root event. A cascade that would exceed the bound is cut and audited (`
 
 Each `notify` becomes a `ChallengeNotification {kind, msgKey, params, ruleId, scopeKey}`. Dedupe key:
 `(msgKey, scopeKey)` where `scopeKey` is the local date (`perDay`), the block index (`perBlock`) or a
-constant (`ever`). Kinds map to the UI: `stop` (safety red F16, full-screen sheet, cannot be
+constant (`ever`). Kinds map to the UI: `stop` (safety red D31, full-screen sheet, cannot be
 dismissed without reading), `warn` (amber banner), `info` (History entry plus a small card on Today
 when relevant), `celebrate` (expressive card), `prompt` (a question with buttons; the answer becomes
 an event). Placeholders (`{weaker}`, `{kgPerRep}`, ...) are filled from the rule's bindings.

@@ -1083,8 +1083,8 @@ One row per user, created lazily by the app on first login (never by a trigger o
 | `rest_alarm_mode` | text | not null | `'alarm_clock'` | `alarm_clock`, `exact_idle` | C28. `exact_idle` (the "standard exact" option) is offered only after 30 logged rests with p95 latency <= 2 s (C54, ANDROID.md 25.1). |
 | `rest_tone_enabled` | boolean | not null | `false` | | F20 (vibration is always on). |
 | `keep_screen_on` | boolean | not null | `true` | | F20. |
-| `theme` | text | not null | `'system'` | `system`, `light`, `dark` | F16. |
-| `dynamic_color` | boolean | not null | `false` | | F16. |
+| `theme` | text | not null | `'system'` | `system`, `light`, `dark` | Kept but ignored: the app is dark only (D31, was F16). |
+| `dynamic_color` | boolean | not null | `false` | | Kept but ignored: no dynamic colour (D31, was F16). |
 | `reminders_enabled` | boolean | not null | `true` | | Home-habit reminders (D4). |
 | `muscle_goal_preset` | text | null | | `legs_only`, `no_legs`, `pull_focus`, `balanced`, `custom` | D6. |
 | `disclaimer_accepted_at` | timestamptz | null | | | C33 "not medical advice". |

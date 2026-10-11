@@ -44,6 +44,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D28 | History editing | **A past session can also gain a forgotten exercise** (2026-10-11), with its sets, on top of the UX 15.3 actions (edit, add and delete a set, edit the quick check, reopen an abandoned session, delete a session). Logging a whole missed session after the fact is not added. |
 | D29 | Idle protection and review bundle | **Idle protection ships in M1b** (2026-10-11): ANDROID 11.5 was specified for M1a but not built; M1b adds N-IDLE with Finish / Keep open, the idle stop of the foreground service and `session_idle_prompted`. **The review-bundle export moves to M5** with the review tooling; the full export already contains every session, set and event. |
 | D30 | Preference changes | **No Undo snackbar for a preference change** (user, 2026-10-11): the change applies immediately and the segmented control itself is the way back (one tap). Exception to UX P6; `preference_changed` is still logged, and `action_undone` is no longer written for preferences. |
+| D31 | Visual style | **"Bento" dark design, dark only** (user, 2026-10-11, picked from four mock directions; replaces F16). Blue-black ground `#0B0D12`, layered tiles (`#151922`, inner `#1E2330`) with large soft corners (24 dp tiles, pill buttons and chips), one periwinkle accent `#A9A4FF`, advisory amber `#F5B85C`, safety red `#FF8A80`. Font: Manrope (variable, SIL OFL), bundled, tabular figures everywhere. No light theme, no dynamic colour, no System / Light / Dark setting; the `profiles.theme` and `profiles.dynamic_color` columns stay but are ignored. Compose Material 3 remains the component base (D1), restyled through the theme and a small set of Bento components. Tokens and rules: UX section 4. |
 
 ---
 
@@ -66,7 +67,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | F13 | Supersets | Offered only when the plan exceeds the time budget or the user enables them; only pairs with stimulus-vector cosine ≤ 0.2. |
 | F14 | RIR calibration sets | Opt-in, at most one per week, only on machine/cable/isolation exercises, never on challenge lifts. |
 | F15 | Feedback prompts | Optional 1-tap readiness (Worse/Normal/Better) + elbow check (0–3) before gym sessions, session effort (sRPE 0–10) + joint pain after, soreness asked at the next session for the muscles about to be trained. Tap budget ≤ 6 per session outside set logging. The elbow check is never reduced while a challenge pain rule is active. |
-| F16 | Visual style | Material 3, seed colour teal `#0B6A60` (continuity with the OAP artifact), advisory amber `#9C5217`, safety red `#8E3226`; follows system light/dark; dynamic colour optional; calm standard motion. |
+| F16 | Visual style | **Superseded by D31 (2026-10-11).** Was: Material 3, seed colour teal `#0B6A60` (continuity with the OAP artifact), advisory amber `#9C5217`, safety red `#8E3226`; follows system light/dark; dynamic colour optional. Still valid: calm standard motion. |
 | F17 | Distribution | Debug/dev builds via `gradlew installDebug` over adb Wi-Fi. Stable release keystore created at M0 and backed up (losing it forces a reinstall, which wipes unsynced local data). GitHub Actions + Obtainium is optional later. |
 | F18 | Week | ISO week Monday–Sunday, time zone Europe/Amsterdam (DST ends 2026-10-25; golden tests must span it). |
 | F19 | Explanations | Layered: ≤ 3 reason chips inline → Why sheet (numbers, rule id, evidence grade, citations, "use mine anyway") → trace export for reviews. |
@@ -314,3 +315,13 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   the pain reports with "Add pain", the note with "Change", and "Editable until Mon 12 Oct 11:10"; after 24 h the
   links and the hint disappear. Pain is add-only in History: removing a report stays limited to the 10 s "Undo
   (wrong tap)" (C33, safety). `pain_reported` gains the context value `history`. UX 13.2, 15.3 and 20 updated.
+- 2026-10-11 — D31 (user): the UI moves to the "Bento" dark design, chosen from four mock directions (Mono, Volt,
+  Instrument, Bento), and the app becomes dark only; F16 is superseded. Defaults taken with it: Manrope replaces
+  Roboto Flex (one variable font used at weights 500 to 800, bundled, `tnum` verified); section labels are sentence case
+  instead of uppercase overlines; the rest countdown sits in a ring instead of above a bar; the bottom navigation is a
+  floating tile; the RIR chips keep D9 (no prefill, no highlight), so the mock's "aim" marker is not built. The
+  `profiles.theme` and `profiles.dynamic_color` columns are kept and ignored (no migration). UX 2, 3, 4, 11.7.3, 11.13.2,
+  15.9, 15.12, 23, 24 and 25, ANDROID 2 and 27, DATA_MODEL 9.3, CHALLENGE_ENGINE 5.7 and PLAN.md 8 updated.
+  Found in the phone check (OnePlus, 363 x 792 dp): the set card pushed the RIR row below the fold, so the log row is
+  now pinned in its own tile under the set card (hidden while a rest counts down, 500 ms input guard) and the
+  exercise list only takes the height it needs (UX 4.3).

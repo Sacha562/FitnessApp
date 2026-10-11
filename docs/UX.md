@@ -116,8 +116,8 @@ and nothing on the screen is decoration.
 
 | # | Principle | Concrete rules | Evidence | Source |
 |---|---|---|---|---|
-| P1 | One primary action per screen | Exactly one filled (primary) button or one primary chip row per screen. Everything else is tonal, outlined or text. Live Session: the primary action is the RIR chip row (D9). Today: "Start ...". | expert-opinion | M3 guidance; Hick's law |
-| P2 | One accent per screen | The teal primary colour marks the one primary action and progress. Amber (advisory) appears only when there is advice. Red (safety) appears only when there is a safety state. No colour is ever decorative and colour never carries meaning alone (always icon + text). | expert-opinion; WCAG 1.4.1 | F16; ux_ui visual spec |
+| P1 | One primary action per screen | Exactly one filled (primary) button or one primary chip row per screen. Everything else is tonal (`raised`), outlined or text. Live Session: the primary action is the RIR chip row (D9). Today: "Start ...". | expert-opinion | M3 guidance; Hick's law |
+| P2 | One accent per screen | The periwinkle accent (D31) marks the one primary action and progress. Amber (advisory) appears only when there is advice. Red (safety) appears only when there is a safety state. No colour is ever decorative and colour never carries meaning alone (always icon + text). | expert-opinion; WCAG 1.4.1 | F16; ux_ui visual spec |
 | P3 | Thumb zone | Every in-gym action sits in the bottom 40 % of the screen. The top of the screen shows passive information only (titles, progress, the exercise list). Bottom-centre is easiest to reach; top corners are hardest. | moderate | Hoober 2013 (1,333 observations: 49 % one-handed, 36 % cradled) |
 | P4 | Big targets in the gym | Minimum 48 x 48 dp everywhere with 8 dp between targets. Primary in-session controls 56-64 dp (steppers 64 dp, RIR chips 64 dp tall). | moderate | Parhi, Karlson & Bederson 2006: 9.2-9.6 mm thumb targets = 58-60 dp; WCAG 2.5.8 |
 | P5 | Wet and sweaty fingers | No precision gestures: no swipe-to-complete, no swipe-to-delete, no tiny icons. A second tap within 300 ms on the same control is ignored. Controls that appear in the place where the user just tapped ignore input for 500 ms (input guard). | moderate | RainCheck (Wobbrock lab, ICMI 2018): wet-touch filtering improved accuracy 47.9 % |
@@ -137,8 +137,8 @@ and nothing on the screen is decoration.
 
 ### 3.1 Destinations
 
-Five bottom-navigation destinations (M3 navigation bar, icon + label, 5 destinations is the M3
-maximum):
+Five bottom-navigation destinations (the floating Bento navigation tile of 4.3, icon + label, at most
+five destinations):
 
 | Tab | Id | Question it answers | Main content |
 |---|---|---|---|
@@ -190,13 +190,13 @@ a persistent mini-bar sits directly above the navigation bar on every tab:
 
 ```
 +-------------------------------------+
-| * Session A    32:10   Rest 1:42  > |   56 dp, tonal surface, whole bar = tap target
+| * Session A    32:10   Rest 1:42  > |   56 dp raised tile, whole bar = tap target
 +-------------------------------------+
 | Today  Week  Exercises  Chall.  You |
 +-------------------------------------+
 ```
 
-* Left: a filled dot in primary colour (a session is running) and the session name.
+* Left: a filled dot in the accent colour (a session is running) and the session name.
 * Centre: elapsed session time (counts up, from the session's start Instant).
 * Right: rest countdown if a rest timer runs; "+0:23" in advisory colour when overtime; nothing
   when no timer runs.
@@ -247,82 +247,88 @@ a persistent mini-bar sits directly above the navigation bar on every tab:
 
 ## 4. Visual design system
 
-### 4.1 Colour tokens (F16)
+### 4.1 Colour tokens (D31)
 
-The Material 3 tonal scheme is generated once, at build time, from the seed teal `#0B6A60` (for
-secondary, tertiary and surface-variant roles) and committed as constants, so the colours are
-deterministic and do not depend on a library at runtime. The roles below are then **pinned** to the
-values taken from the user's OAP artifact for visual continuity. Dynamic colour (Material You) is an
-optional setting, default **off**; when it is on, only the neutral and primary roles follow the
-wallpaper, never `advisory` or `safety`.
+The app is dark only and uses the "Bento" palette the user chose from four mock directions (D31,
+2026-10-11). The colours are constants in `ui/theme/Color.kt`; the Material 3 colour scheme is mapped
+onto them so that stock components (dialogs, menus, bottom sheets, text fields, switches, checkboxes)
+match the Bento components. There is no dynamic colour.
 
-| Role | Light | Dark | Use |
-|---|---|---|---|
-| `background` | `#F1F4F1` | `#0F1413` | Screen ground |
-| `surface` | `#FFFFFF` | `#161D1C` | Cards, sheets |
-| `onSurface` (ink) | `#131918` | `#E9EEEB` | Body text and numbers |
-| `onSurfaceVariant` (muted) | `#4A5653` | `#B4C0BC` | Secondary text, maintain bars |
-| `outline` | `#7A8683` | `#87938F` | Borders, dividers, skip-goal bars (dashed) |
-| `primary` (teal, the one accent) | `#0B6A60` | `#4FB5A6` | Primary action, progress, done, improve bars |
-| `onPrimary` | `#FFFFFF` | `#00201C` | Text on primary |
-| `primaryContainer` | `#E2EDEC` | `#1E322F` | Selected chips, mini-bar |
-| `advisory` (amber) | `#9C5217` | `#D08B4E` | Evidence warnings, overtime, deficit bars |
-| `advisoryContainer` | `#F3EAE3` | `#302C23` | Advisory banners |
-| `safety` (red) | `#8E3226` | `#D4796C` | Pain, injury mode, enforced safety rules |
-| `safetyContainer` | `#F1E6E5` | `#312A27` | Safety banners |
-| `pureBlack` (opt-in OLED) | n/a | `#000000` background, `#0B0F0E` surface | Only if "Pure black" is enabled |
+| Token | Value | Use |
+|---|---|---|
+| `ground` | `#0B0D12` | Screen background, window background |
+| `tile` | `#151922` | Tiles, bottom sheets, dialogs, the navigation bar |
+| `raised` | `#1E2330` | Inner tiles, stepper buttons, chips and tonal buttons, the current exercise row, menus |
+| `line` | `#2A3040` | Dividers and decorative outlines (never the only boundary of a control) |
+| `outline` | `#6A7286` | Text-field borders and other UI boundaries that need 3:1 |
+| `ink` | `#EEF0F6` | Body text and numbers |
+| `muted` | `#9AA1B2` | Secondary text, maintain bars |
+| `accent` (periwinkle, the one accent) | `#A9A4FF` | Primary action, progress, selected chip, done, improve bars |
+| `onAccent` | `#14123A` | Text and icons on the accent |
+| `advisory` (amber) | `#F5B85C` | Evidence warnings, overtime, deficit bars |
+| `advisoryContainer` | `#342F2A` | Advisory banners |
+| `safety` (red) | `#FF8A80` | Pain, injury mode, enforced safety rules |
+| `safetyContainer` | `#36292F` | Safety banners |
 
-Containers are the role colour mixed over `surface` at 12 % (light) and 14 % (dark).
+Containers are the role colour mixed over `tile` at 14 %.
 
-**Verified contrast ratios** (WCAG 2.x relative-luminance formula, computed 2026-10-07; text needs
+**Verified contrast ratios** (WCAG 2.x relative-luminance formula, computed 2026-10-11; text needs
 4.5:1, UI parts and chart lines 3:1):
 
-| Pair | Light | Dark |
-|---|---|---|
-| ink on background / surface | 16.06 / 17.80 | 15.84 / 14.59 |
-| primary on background / surface | 5.84 / 6.47 | 7.52 / 6.92 |
-| advisory on background / surface | 5.22 / 5.78 | 6.63 / 6.10 |
-| safety on background / surface | 7.19 / 7.97 | 5.98 / 5.50 |
-| muted on surface | 7.64 | 9.14 |
-| outline on surface (UI parts only) | 3.77 | 5.38 |
-| onPrimary on primary | 6.47 | 6.94 |
-| role text on its container (primary / advisory / safety) | 5.41 / 4.87 / 6.53 | 5.47 / 4.96 / 4.53 |
+| Foreground | on `ground` | on `tile` | on `raised` |
+|---|---|---|---|
+| `ink` | 17.06 | 15.44 | 13.77 |
+| `muted` | 7.51 | 6.80 | 6.06 |
+| `accent` | 8.74 | 7.91 | 7.05 |
+| `advisory` | 11.01 | 9.96 | 8.89 |
+| `safety` | 8.51 | 7.70 | 6.87 |
+| `outline` (UI parts only) | 4.04 | 3.65 | 3.26 |
 
-Because containers differ from `surface` by only about 1.2:1 in dark mode, every banner also has a
-leading icon in the role colour (at least 3:1, so the banner is identifiable without the fill) and
-a 1 dp outline in the role colour at 40 % opacity.
+`onAccent` on `accent` is 8.02; `advisory` on its container 7.50; `safety` on its container 6.07.
 
-**High-contrast option** (You > Appearance): `onSurfaceVariant` becomes `onSurface`, outlines
-become 2 dp, chart lines become 3 dp, chip fills become solid. Gym lighting (fluorescent, sometimes
-glare) is the reason; test outdoors and under fluorescent light (ux_ui, engineering-fact).
+Tiles differ from the ground by only 1.11:1 and `raised` from `tile` by 1.12:1, so a surface change never
+carries meaning by itself: every control is identified by its text label or by an icon of at least 3:1, and
+every banner has a leading icon in the role colour and a 1 dp outline in the role colour at 40 %.
 
-**Muscle-goal colours** (Week bars, goal editor, muscle map): improve = `primary`; improve with focus
-= `primary` with a 2 dp outline; maintain = `onSurfaceVariant`; skip = `outline`, dashed; covered by
-challenge = `primary` at 50 % with a small challenge icon. Never colour alone: each row also has a
-text label.
+**High-contrast option** (You > Appearance): `muted` becomes `ink`, `line` becomes `outline`, chart lines
+become 3 dp and chips on `raised` get a 1 dp `outline` border. Gym lighting (fluorescent, sometimes
+glare) is the reason; test under fluorescent light (ux_ui, engineering-fact).
+
+**Muscle-goal colours** (Week bars, goal editor, muscle map): improve = `accent`; improve with focus
+= `accent` with a 2 dp outline; maintain = `muted`; skip = `outline`, dashed; covered by challenge =
+`accent` at 50 % with a small challenge icon. Never colour alone: each row also has a text label. The
+muscle map draws the base silhouette in `#262C3A` and idle muscles in `#343B4C`, with the shading of 13.3
+in `accent`.
 
 ### 4.2 Typography
 
-* Font: **Roboto Flex** (SIL Open Font License), bundled as static instances at weights 400 and 600,
-  subsetted to Latin. Reason: Xiaomi, OnePlus and Oppo replace the system font (MiSans, OnePlus
-  Sans, OPPO Sans) and those may not offer tabular figures; bundling guarantees identical numerals
-  on the user's phone, in Roborazzi screenshots and in reviews. Implementation must verify that the
-  bundled instances contain the `tnum` feature (engineering assumption).
-* Only two weights: 400 (regular) and 600 (semibold).
-* All numbers use tabular figures (`fontFeatureSettings = "tnum"`) so counting digits do not jitter.
-* Uppercase only for small overlines (12 sp, letter-spacing 0.8 sp), never for sentences.
+* Font: **Manrope** (SIL Open Font License), bundled as one variable font (`res/font/manrope.ttf`,
+  weight axis 200-800) and used at weights 500, 700 and 800. Reason for bundling: Xiaomi, OnePlus and
+  Oppo replace the system font (MiSans, OnePlus Sans, OPPO Sans) and those may not offer tabular
+  figures; bundling guarantees identical numerals on the user's phone, in Roborazzi screenshots and in
+  reviews. The font's `tnum` feature was verified on 2026-10-11.
+* Every text style sets `fontFeatureSettings = "tnum"`, so all digits are tabular and counting
+  digits never jitter.
+* Sentence case everywhere, including section labels (13 sp, 700, `muted`). No uppercase overlines.
+* Headlines use tight letter spacing (-0.5 to -1 sp); other styles use none.
 
 | Style | Size / line height | Weight | Used for |
 |---|---|---|---|
-| Rest countdown (custom) | 96 sp / 104 sp | 600, tnum | Rest timer and hold timer digits |
-| Display M | 45 sp / 52 sp | 600, tnum | Current-set load and reps values |
-| Headline S | 24 sp / 32 sp | 600 | Session Summary title, wizard step titles |
-| Title L | 22 sp / 28 sp | 600 | Card titles, exercise name on the set card |
-| Title M | 16 sp / 24 sp | 600 | List row titles |
-| Body L | 16 sp / 24 sp | 400 | Body text |
-| Body M | 14 sp / 20 sp | 400 | Secondary text |
-| Label L | 14 sp / 20 sp | 600 | Buttons, chips |
-| Label M | 12 sp / 16 sp | 600 | Overlines (uppercase), badges |
+| Rest countdown (custom) | 72 sp / 76 sp | 800 | Rest timer digits inside the ring (overtime 56 sp) |
+| Hold timer (custom) | 96 sp / 100 sp | 800 | Hold lead-in and hold digits |
+| Display M | 40 sp / 44 sp | 800 | Stepper values (load, reps, seconds) |
+| Headline L | 34 sp / 40 sp | 800 | Hero tile title on Today, "Session done" |
+| Headline M | 28 sp / 34 sp | 800 | Tab titles |
+| Headline S | 24 sp / 30 sp | 800 | Sub-screen titles, wizard step titles |
+| Title L | 22 sp / 28 sp | 800 | Exercise name on the set card, tile titles |
+| Title M | 16 sp / 22 sp | 700 | List row titles |
+| Title S | 14 sp / 20 sp | 700 | Small row titles |
+| Body L | 16 sp / 24 sp | 500 | Body text |
+| Body M | 14 sp / 20 sp | 500 | Secondary text |
+| Body S | 12.5 sp / 18 sp | 500 | Captions |
+| Label L | 15 sp / 20 sp | 700 | Buttons, chips |
+| Label M | 13 sp / 16 sp | 700 | Section labels, pills |
+| Label S | 11 sp / 14 sp | 700 | Navigation labels, small badges |
 
 Font scaling uses Android 14+ non-linear scaling. Fixed-size exceptions: none. Every screen is
 tested at font scale 1.0, 1.3 and 2.0 (section 4.8).
@@ -332,39 +338,40 @@ tested at font scale 1.0, 1.3 and 2.0 (section 4.8).
 | Token | Value |
 |---|---|
 | Grid | 4 dp |
-| Screen side margin | 16 dp (12 dp inside the RIR chip row, see 6.2) |
-| Card padding | 16 dp |
-| Gaps | 8 / 12 / 16 / 24 dp |
+| Screen side margin | 16 dp (12 dp around the Live Session tiles) |
+| Tile padding | 16 dp (hero tiles 18 dp) |
+| Gaps | 12 dp between tiles; 2-8 dp between rows inside a tile |
 | Minimum touch target | 48 x 48 dp, 8 dp apart |
 | In-session primary targets | 56-64 dp |
-| Docked primary button | 56 dp tall, full width minus margins |
-| Navigation bar | 64 dp (M3 flexible navigation bar), active indicator 56 dp |
-| Mini-bar | 56 dp |
-| Bottom sheet top inset | 28 dp corner radius, drag handle 32 x 4 dp |
+| Docked primary button | 58 dp tall pill, full width minus margins |
+| Navigation bar | A floating tile, 64 dp tall, 16 dp from the screen sides and 12 dp above the system bar; the active destination is a `raised` pill with the icon and label in `accent` |
+| Mini-bar | 56 dp `raised` tile directly above the navigation bar |
+| Bottom sheet | `tile` colour, 28 dp top corners, drag handle 32 x 4 dp |
 
-The Live Session screen is split: the top area (about 40 %) scrolls and holds passive information;
-the bottom area (about 60 %) is fixed and holds the current-set card or the rest card.
+The Live Session screen is split: the top area holds the exercise list in one tile, as tall as its rows
+but at most about 40 %, and scrolls; the rest holds the set tile or the rest tile. The log row (RIR chips,
+felt chips or the warm-up Done) is pinned below them in its own tile, so it is always in the thumb zone
+even on short screens (P3); it is hidden while a rest counts down and ignores taps for 500 ms after it
+appears for a new set (P5).
 
 ### 4.4 Shape
 
-The research lens noted that the OAP artifact uses 3 px corners while M3 uses 8-28 dp and asked to
-pick one. This spec picks **M3 corners**, because every M3 component uses them by default and a
-custom shape system would cost effort without improving usability (UX default, the user can
-overrule).
+D31 replaces the M3 corner set with larger, softer corners.
 
 | Element | Corner |
 |---|---|
-| Cards | 16 dp (M3 large) |
-| Chips | 8 dp (M3 small) |
-| Buttons (primary, tonal, outlined) | full (pill) |
+| Tiles | 24 dp |
+| Set and rest tiles in the Live Session | 28 dp |
+| Inner tiles, list rows, RIR and felt chips | 16-18 dp |
+| Buttons (primary and tonal) | full (pill) |
+| Chips and pills | full (pill) |
 | Stepper buttons | full (circle, 64 dp) |
-| Bottom sheets | 28 dp top corners |
-| Dialogs | 28 dp |
-| Text fields | 4 dp top (M3 filled) |
+| Text fields | 16 dp, filled with `raised`, 1 dp `outline` border (`accent` when focused) |
+| Bottom sheets and dialogs | 28 dp |
 
 ### 4.5 Icons
 
-Material Symbols Rounded, weight 400, optical size 24, grade 0. Filled variant only for selected
+Material icons in the Rounded style (Compose `Icons.Rounded`), 24 dp. Filled variant only for selected
 or done states. Icons are always paired with a text label in navigation, chips and banners. Icon
 choices that carry meaning:
 
@@ -403,13 +410,14 @@ choices that carry meaning:
 When the system setting "Remove animations" is on (`ANIMATOR_DURATION_SCALE == 0`), every
 transition is instant and the expressive moments are replaced by the haptic alone.
 
-### 4.7 Dark mode
+### 4.7 Dark only
 
-* The theme follows the system light/dark setting by default (You > Appearance: System / Light /
-  Dark). QA is dark-first because gym use is often in the evening (19:45 sessions).
-* Dark surfaces are dark grey, not black (shadows stay visible, less glare). Elevation is shown by
-  lighter tonal surfaces, not shadows. Pure black (OLED) is opt-in.
-* Charts and bars use the same role tokens in both themes; line widths at least 2 dp.
+* The app is dark only (D31): there is no light theme, no System / Light / Dark setting and no
+  dynamic colour. Gym use is often in the evening (19:45 sessions).
+* The ground is blue-black, not pure black; depth comes from lighter tiles, not shadows.
+* The window background is `ground`, so the app never flashes white at start, and the status and
+  navigation bar icons are always light.
+* Charts and bars use the role tokens of 4.1; line widths at least 2 dp.
 
 ### 4.8 Font scale and screen-size tests
 
@@ -417,18 +425,19 @@ Every screen has Roborazzi screenshot tests at:
 
 | Config | Width x height (dp) | Font scale | Theme |
 |---|---|---|---|
-| Reference | 393 x 873 | 1.0 | light and dark |
+| Reference | 393 x 873 | 1.0 | dark |
 | Large text | 393 x 873 | 1.3 | dark |
 | Maximum text | 393 x 873 | 2.0 | dark |
-| Narrow phone | 360 x 800 | 1.0 and 1.3 | light |
+| Narrow phone | 360 x 800 | 1.0 and 1.3 | dark |
 
 Responsive rules that the tests must prove:
 
 1. The RIR chip row switches from one row of six to a 2 x 3 grid when the computed chip width is
    below 52 dp or the font scale is 1.5 or more (section 6.2).
-2. Display M (45 sp) values shrink with auto-size down to 32 sp before the stepper buttons would
+2. Display M (40 sp) values draw their words and units ("BW +", "kg", "reps") at half size (D31) and
+   shrink with auto-size down to 24 sp before the stepper buttons would
    overlap; the stepper buttons never shrink below 56 dp.
-3. The 96 sp countdown shrinks down to 64 sp at font scale 2.0 if needed to keep the three timer
+3. The 72 sp ring countdown shrinks down to 56 sp at font scale 2.0 if needed to keep the three timer
    buttons on one row; if that still does not fit, the buttons wrap to two rows (Skip on its own row).
 4. No text is truncated in buttons; labels wrap to two lines instead.
 5. No horizontal scrolling on any screen at any tested size.
@@ -1739,7 +1748,7 @@ HOLDING                                RESULT
 
 * **Lead-in.** Default 5 s with audible and haptic 3-2-1 for the last three seconds (the user needs
   time to put the phone down and grip the bar). Options 3 / 5 / 10 s in You > Rest and alerts.
-* **Holding.** Count-up in 96 sp, a bar filling toward the target, a beep and 40 ms tick every 5 s, a
+* **Holding.** Count-up in the 96 sp hold timer style (4.2), a bar filling toward the target, a beep and 40 ms tick every 5 s, a
   double beep and double pulse at the target. While holding, the whole screen except the header is
   one stop target ("tap anywhere"), because the user taps with a chalky or sweaty hand after
   letting go. Beeps stop after the target.
@@ -2030,8 +2039,9 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
 +-------------------------------------+
 ```
 
-* Countdown in 96 sp tabular digits, depleting bar, "next: set 2 of 2" label.
-* Buttons 64 dp tall, tonal (not primary): -15 s, Skip, +15 s. They ignore input for 500 ms after the
+* Countdown in 72 sp tabular digits inside a depleting ring (an `accent` arc on a `raised` track,
+  216 dp; D31), "next: set 2 of 2" label.
+* Buttons 64 dp tall pills, tonal (not primary): -15 s, Skip, +15 s. They ignore input for 500 ms after the
   rest card appears (input guard, P5), because they occupy the screen region where the RIR chip was
   just tapped.
 * Next-set preview line; last-set summary line with Undo while the snackbar window is open.
@@ -2040,7 +2050,7 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
 * Tapping the countdown toggles **focus mode**: a full-screen dark rest view with the same digits and
   buttons (useful with the phone on a bench). Default off; remembered per user.
 * **Overtime**: when the time is up, the digits switch to "+0:23" counting up in advisory colour, the
-  bar disappears, and the card shows the next set's card directly below the overtime line, so the
+  ring disappears, and the card shows the next set's card directly below the overtime line, so the
   user can log the next set immediately. One reminder pulse at +60 s.
 
 #### 11.13.3 Notification during the session (foreground service)
@@ -2916,8 +2926,8 @@ in a row. Reset"). Emits `settings_changed`.
 
 ### 15.9 Appearance (`you.appearance`)
 
-Theme (System / Light / Dark), dynamic colour (off), high contrast (off), pure black in dark mode
-(off). Reduced motion follows the system setting (information line).
+High contrast (off). The app is dark only (D31): there is no theme, dynamic colour or pure-black
+setting. Reduced motion follows the system setting (information line).
 
 ### 15.10 Transparency (`you.transparency`)
 
@@ -2959,7 +2969,7 @@ not empty.
 
 Signed-in email, sign out (blocked while the outbox is not empty: "23 changes are not uploaded yet.
 Connect to the internet and sync first."; then a confirmation dialog), the disclaimer, about (app
-version, build, licences including Roboto Flex OFL and free-exercise-db Unlicense), "Redo setup".
+version, build, licences including Manrope OFL and free-exercise-db Unlicense), "Redo setup".
 
 ---
 
@@ -4825,7 +4835,7 @@ own accessibility guidance.
 | Banners | Text with heading | "Safety. Elbow protocol, day 3 of 14. No one-arm work. Not medical advice." | safety banner is announced once when it appears |
 | Snackbar | live region (polite) | "Set 2 logged. Undo" | focusable; Undo reachable before it times out |
 
-Headings (`semantics { heading() }`) on screen titles and section overlines. Focus order follows the
+Headings (`semantics { heading() }`) on screen titles and section labels. Focus order follows the
 visual order; when the Live Session opens, focus goes to the current-set card title, not to the
 exercise list. Sheets trap focus and close with Back. Dutch calendar titles and Dutch exercise names
 are wrapped in a `LocaleSpan("nl")` so TalkBack pronounces them in Dutch. Units are spelled out in
@@ -4869,7 +4879,7 @@ vibration off (except the rest-end alarm vibration, which is deliberate, F20) an
 
 * English only in the UI (D12); Dutch appears only as data (calendar titles shown verbatim; Dutch
   exercise names as secondary text and search terms, and only when the phone's language is Dutch).
-* Sentence case everywhere; uppercase only for small overlines (4.2).
+* Sentence case everywhere, section labels included (4.2).
 * Second person, plain words, short sentences. The app states facts and options; it never scolds and
   never says "you must". No exclamation marks and no emoji, except the two celebration moments ("Phase 2
   unlocked") which may use one.
@@ -5366,9 +5376,9 @@ pull-up: stays BW + 22.5 kg · deload week (prog.wpu.A)", "90-degree hold: stays
 
 ### 25.8 Screens (Roborazzi) and accessibility
 
-**GF-UX-18 Screenshot matrix.** Each screen state below is captured in six configurations, 393 x 873 dp
-at font scale 1.0, 1.3 and 2.0, each in light and dark; the two narrow configurations of 4.8 (360 x 800
-dp at 1.0 and 1.3, light) are added for the Live Session states. This extends the reduced matrix of
+**GF-UX-18 Screenshot matrix.** Each screen state below is captured in three configurations, 393 x 873 dp
+at font scale 1.0, 1.3 and 2.0 (dark only, D31); the two narrow configurations of 4.8 (360 x 800
+dp at 1.0 and 1.3) are added for the Live Session states. This extends the reduced matrix of
 4.8; ANDROID.md G14 is a subset of this list.
 
 | # | Screen state | Fixture |

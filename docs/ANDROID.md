@@ -91,7 +91,7 @@ must be tuned from logs).
 
 | Topic | Decision | Basis |
 |-------|----------|-------|
-| UI stack | Native Kotlin, Jetpack Compose, Material 3 (baseline components, stable `material3`), seed teal `#0B6A60`, advisory amber `#9C5217`, safety red `#8E3226`, system light/dark, optional dynamic colour | D1, F16 |
+| UI stack | Native Kotlin, Jetpack Compose, Material 3 (baseline components, stable `material3`) restyled as the "Bento" dark design: tokens in `ui/theme`, Bento components in `ui/common`, bundled Manrope, dark only, no dynamic colour (UX 4) | D1, D31 |
 | Build host | Windows 11, no Android Studio, Temurin JDK 21 for Gradle, system Java 25 untouched | D1 |
 | Modules | `:app` (Android application: UI, services, platform adapters), `:algo` (pure Kotlin JVM, deterministic engine), `:data` (Android library: Room, outbox sync, supabase-kt), `:sim` (JVM CLI: simulation and replay) | D1, task brief |
 | Local database | Room is the source of truth on the phone; Supabase is a synced copy | F4, C23 |
@@ -2653,7 +2653,8 @@ data/src/main/kotlin/dev/fitnessapp/data/
 app/src/main/kotlin/dev/fitnessapp/app/
   FitnessApplication.kt, AppContainer.kt, Startup.kt, PlatformConfig.kt, MainActivity.kt
   nav/Keys.kt, nav/AppNavHost.kt
-  ui/theme/Color.kt (precomputed tonal scheme from seed #0B6A60, F16), Theme.kt, Type.kt
+  ui/theme/Color.kt (Bento palette, D31), Theme.kt (Material 3 scheme mapped onto it), Type.kt (bundled Manrope)
+  ui/common/Bento.kt                  # tiles, pill buttons, chips, steppers, ring timer, floating nav bar (UX 4)
   ui/today/, ui/week/, ui/exercises/, ui/challenges/, ui/you/, ui/live/, ui/summary/, ui/onboarding/, ui/reliability/, ui/sync/
   uidet/                              # ui.todaycard, ui.prefill, ui.reasonchips, ui.prompts, ui.volumebars, ui.warndisplay, ui.progress (pure)
   session/SessionService.kt, session/SessionController.kt, session/FgsType.kt

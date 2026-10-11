@@ -408,8 +408,8 @@ Full spec with wireframes: [`docs/UX.md`](docs/UX.md).
   torso-rotation flags, the elbow check, a test-day wizard in your test order.
 - **Explanations in layers**: ≤ 3 reason chips → Why sheet (numbers, evidence grade, citations,
   algorithm version) → trace export for reviews.
-- **Look**: Material 3, teal accent from your OAP page, tabular numbers, calm motion, light/dark
-  following the system.
+- **Look**: "Bento" dark design (D31): blue-black layered tiles with soft corners, one periwinkle accent,
+  Manrope with tabular numbers, calm motion, dark only.
 
 ---
 
