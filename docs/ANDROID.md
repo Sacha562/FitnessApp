@@ -2564,6 +2564,7 @@ not restated here.
 | `hold.countAloudMaxS` | 30 s | 10–60 | assumption | UX 19.9 `COUNT_ALOUD_MAX_S` | No data needed |
 | `hold.eccPaceMaxS` | 30 s | 10–60 | assumption | UX 19.9 `ECC_PACE_MAX_S` | No data needed |
 | `timer.switchHintMs` | 1500 ms | 800–3000 | assumption | UX 19.8 `SWITCH_HINT_MS` | Yes: time from the left-side log to the first right-side touch |
+| `timer.chipTickMs` | 1000 ms | 500–5000 | engineering-fact | OnePlus CPH2747 (OxygenOS, Android 16) draws the Live Update chip from the title / `shortCriticalText`, not the chronometer (2026-10-11 screenshot) | No: reposts only while the screen is on |
 | `timer.focusModeDefault` | off | — | expert-opinion | UX 19.8 `FOCUS_MODE_DEFAULT` | User setting |
 | `session.overrunLineMin` | 10 min | fixed | canonical | C63 (UX 11.3 overrun line) | No: a different margin needs a change of C63 first |
 

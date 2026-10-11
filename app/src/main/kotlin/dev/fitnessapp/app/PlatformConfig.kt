@@ -23,6 +23,8 @@ data class PlatformConfig(
     val timerExactIdleP95MaxMs: Long = 2000,
     val timerExactIdleRevertWindow: Int = 20,
     val timerSwitchHintMs: Long = 1500,
+    /** Live Update chip refresh while the screen is on (OxygenOS shows `shortCriticalText`, not the chronometer). */
+    val timerChipTickMs: Long = 1000,
     val reliabilityLatencyAmberMs: Long = 2000,
     val reliabilityLatencyRedMs: Long = 5000,
     val sessionIdlePromptMin: Int = 60,
@@ -50,6 +52,7 @@ data class PlatformConfig(
             "timer.exactIdleP95MaxMs" to JsonPrimitive(timerExactIdleP95MaxMs),
             "timer.exactIdleRevertWindow" to JsonPrimitive(timerExactIdleRevertWindow),
             "timer.switchHintMs" to JsonPrimitive(timerSwitchHintMs),
+            "timer.chipTickMs" to JsonPrimitive(timerChipTickMs),
             "reliability.latencyAmberMs" to JsonPrimitive(reliabilityLatencyAmberMs),
             "reliability.latencyRedMs" to JsonPrimitive(reliabilityLatencyRedMs),
             "session.idlePromptMin" to JsonPrimitive(sessionIdlePromptMin),

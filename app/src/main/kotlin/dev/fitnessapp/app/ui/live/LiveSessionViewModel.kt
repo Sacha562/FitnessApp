@@ -457,11 +457,19 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
     }
 
+    /**
+     * True when the set just logged on [card] finishes the last open item's planned working sets (UX 19.8): there is
+     * no next set to rest for, so no timer or alarm starts. Adding a set or an exercise afterwards works as usual.
+     */
+    private fun completesPlannedWork(card: Card): Boolean =
+        completesPlannedWork(_ui.value.items, card.item.se.id, card.setNumber, card.item.planned, card.warmup, card.side)
+
     private fun feltCode(s: Double) = when (s) { 0.0 -> "max"; 2.0 -> "hard"; 5.0 -> "ok"; else -> "easy" }
 
     /** REST-1 base policy (D21); a left side switches immediately (between-sides 0 s, UX 11.7.2). */
     private suspend fun startRest(card: Card, setId: String, loggedAt: Long) {
         val p = params
+        if (completesPlannedWork(card)) return
         if (card.side == "L") {
             _ui.update { it.copy(switchHint = true) }
             kotlinx.coroutines.delay(c.platformConfig.timerSwitchHintMs)
@@ -629,10 +637,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             nextTitle = card?.let { "${it.item.ex.nameEn} ${it.setNumber}/${maxOf(it.item.planned, it.setNumber)}" } ?: "Next set",
             nextLoad = card?.let(::nextLine) ?: "", sessionStartWall = s?.started_at ?: 0L,
         )
-        if (_ui.value.rest == null && s?.status == "in_progress") c.notifications.postSession(c.notifications.session())
+        // The controller picks countdown, overtime or count-up from Room; the UI's rest state can lag a logged set.
+        if (s?.status == "in_progress") viewModelScope.launch { c.restTimer.refreshSessionNotification(sessionId) }
     }
 
     companion object {
         const val DEFAULT_REPS = 8
+
+        /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
+        fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {
+            if (warmup || side == "L") return false
+            if (setNumber < planned) return false
+            return items.none { it.se.id != seId && it.open && it.workingDone < it.planned }
+        }
     }
 }

@@ -10,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import dev.fitnessapp.app.MainActivity
 import dev.fitnessapp.app.R
 import dev.fitnessapp.app.timer.RestActionReceiver
+import dev.fitnessapp.app.timer.RestTimerReducer
 
 /**
  * What the session notification says (UX 11.13.3 wording). The live session screen keeps it current; it is
@@ -63,17 +64,26 @@ class NotificationPresenter(private val context: Context) {
         .setContentIntent(openIntent("fitapp://session/current"))
         .setRequestPromotedOngoing(true) // Android 16 Live Update (ignored below API 36)
 
+    /*
+     * Titles stay short and every state carries `shortCriticalText` (the remaining or elapsed time): the status-bar
+     * chip of a Live Update is at most 96 dp, and OxygenOS draws it from the title or that text rather than from
+     * the chronometer. While the screen is on, SessionService reposts once per `timer.chipTickMs`.
+     */
+
     /** Between sets: count-up from the session start. */
-    fun session(t: SessionNotificationText = text): Notification {
+    fun session(t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
+        val start = if (t.sessionStartWall > 0) t.sessionStartWall else nowWall
         return base().setContentTitle(t.sessionTitle).setContentText(t.currentLine)
-            .setUsesChronometer(true).setWhen(if (t.sessionStartWall > 0) t.sessionStartWall else System.currentTimeMillis())
-            .setShowWhen(true).build()
+            .setUsesChronometer(true).setWhen(start).setShowWhen(true)
+            .setShortCriticalText(RestTimerReducer.mmss(maxOf(0L, nowWall - start) / 1000))
+            .build()
     }
 
     /** Resting: countdown to the rest end with -15 s, Skip, +15 s. */
-    fun resting(endWall: Long, t: SessionNotificationText = text): Notification {
-        return base().setContentTitle("Rest · next: " + t.nextTitle).setContentText(t.nextLoad)
+    fun resting(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
+        return base().setContentTitle("Rest").setContentText(nextLine(t))
             .setUsesChronometer(true).setChronometerCountDown(true).setWhen(endWall).setShowWhen(true)
+            .setShortCriticalText(RestTimerReducer.mmss((maxOf(0L, endWall - nowWall) + 999) / 1000))
             .addAction(action(Channels.RC_MINUS_15, RestActionReceiver.MINUS_15, "-15 s"))
             .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, "Skip"))
             .addAction(action(Channels.RC_PLUS_15, RestActionReceiver.PLUS_15, "+15 s"))
@@ -81,12 +91,16 @@ class NotificationPresenter(private val context: Context) {
     }
 
     /** Overtime: count-up from the rest end, Skip only. */
-    fun overtime(endWall: Long, t: SessionNotificationText = text): Notification {
-        return base().setContentTitle("Rest over · " + t.nextTitle).setContentText(t.nextLoad)
+    fun overtime(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
+        return base().setContentTitle("Rest over").setContentText(nextLine(t))
             .setUsesChronometer(true).setWhen(endWall).setShowWhen(true)
+            .setShortCriticalText("+" + RestTimerReducer.mmss(maxOf(0L, nowWall - endWall) / 1000))
             .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, "Skip"))
             .build()
     }
+
+    private fun nextLine(t: SessionNotificationText): String =
+        "Next: " + listOf(t.nextTitle, t.nextLoad).filter { it.isNotBlank() }.joinToString(" · ")
 
     fun postSession(n: Notification) = notify(Channels.ID_SESSION, n)
 

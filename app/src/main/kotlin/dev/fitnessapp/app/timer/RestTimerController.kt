@@ -164,6 +164,33 @@ class RestTimerController(
         apply(RestTimerReducer.reconcile(t, now, device.elapsedRealtime(), device.bootCount(), timerConfig))
     }
 
+    /**
+     * Reposts the session notification for [sessionId] in its current state (countdown, overtime or count-up).
+     * Under the mutex, so it cannot overwrite a countdown that a concurrent [startAfter] just posted.
+     */
+    suspend fun refreshSessionNotification(sessionId: String) = mutex.withLock {
+        val t = db.restTimers().latest(sessionId)
+        val n = when (t?.state) {
+            RestTimerReducer.RUNNING -> notifications.resting(t.end_wall_ms)
+            RestTimerReducer.OVERTIME -> notifications.overtime(t.end_wall_ms)
+            else -> notifications.session()
+        }
+        notifications.postSession(n)
+    }
+
+    /**
+     * The chip tick (SessionService, screen on only): reposts the current state so `shortCriticalText` follows the
+     * clock. Posts nothing once the session is finished or the self-test is over.
+     */
+    suspend fun tickNotification() = mutex.withLock {
+        val t = db.restTimers().active()
+        when {
+            t?.state == RestTimerReducer.RUNNING -> notifications.postSession(notifications.resting(t.end_wall_ms, textFor(t)))
+            t?.state == RestTimerReducer.OVERTIME -> notifications.postSession(notifications.overtime(t.end_wall_ms, textFor(t)))
+            db.sessions().active() != null -> notifications.postSession(notifications.session())
+        }
+    }
+
     private fun isSelfTest(t: RestTimerEntity) = t.session_id == TimerSelfTest.SESSION_ID
 
     private suspend fun finishSelfTest(t: RestTimerEntity, firedWall: Long, alert: Boolean) {

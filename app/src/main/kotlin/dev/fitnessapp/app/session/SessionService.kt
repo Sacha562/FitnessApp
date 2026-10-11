@@ -11,6 +11,9 @@ import androidx.core.content.ContextCompat
 import dev.fitnessapp.app.FitnessApplication
 import dev.fitnessapp.app.notify.Channels
 import dev.fitnessapp.app.timer.TimerSelfTest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /** C28 type selection (ANDROID.md 11.2). */
@@ -35,7 +38,25 @@ object FgsType {
  * from a user action; on a sticky restart it checks Room for an active session first.
  */
 class SessionService : Service() {
+    private var chipTick: Job? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        val c = (application as FitnessApplication).container
+        chipTick = c.appScope.launch {
+            while (isActive) {
+                delay(c.platformConfig.timerChipTickMs)
+                if (c.device.screenInteractive()) runCatching { c.restTimer.tickNotification() }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        chipTick?.cancel()
+        super.onDestroy()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val c = (application as FitnessApplication).container

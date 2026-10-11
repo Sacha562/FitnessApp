@@ -271,3 +271,6 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   Chosen over an app-side generic stack so each machine keeps its own calibration. Existing checklists gain the new
   rows at app start, built from the saved stack settings and left unconfirmed. Migration
   `fitness_020_catalog_1_0_1`; ALGORITHMS_PLANNING 10.8 and DATA_MODEL 13.2 updated.
+- 2026-10-11 — Live-session fixes from the second gym test (user feedback): no rest timer or alarm after the working
+  set that finishes the session's planned work (UX 19.8 timer table); the session notification is reposted by
+  `RestTimerController` from the stored timer state, so the first rest no longer shows the count-up.

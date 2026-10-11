@@ -3816,6 +3816,7 @@ section 12.3 reference).
 | General warm-up block item (row, face pulls) | no | the block card has its own Done taps |
 | Test-day attempt (`test`, `attempt`) | yes | the protocol's `rest_s` from the challenge test template |
 | Timed hold | yes, after the felt chip | `rest.after(set)` |
+| The working set that finishes the last open item's planned sets (no other open item has sets left) | no: there is no next set to rest for; the session notification returns to the count-up (user feedback 2026-10-09) | — |
 
 Every timer is capped at the timer hard maximum of 900 s from its start (C18).
 
