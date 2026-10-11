@@ -438,7 +438,8 @@ Responsive rules that the tests must prove:
 ## 5. Number, unit, date and language formatting
 
 **Language (D12).** The UI is English. Exercise names are stored in English and Dutch; the UI
-shows English and search matches both. Dutch calendar titles (`sessie C`, `een arm zwaar` /
+shows English. Only when the phone's language is Dutch (`nl`) does the Dutch name appear as secondary
+text and does search match it too; otherwise Dutch names are neither shown nor searched. Dutch calendar titles (`sessie C`, `een arm zwaar` /
 `één arm zwaar`, `testdag`, `hardlopen`) are recognised by `calendar.classify`; the UI shows the
 event's own title verbatim.
 
@@ -553,7 +554,6 @@ that define them. A flag is not a reason; it is a fact about the set that rules 
 | Session abandoned | "Session abandoned, 8 sets kept · Undo" | 10 s |
 | Calendar event written (Plan it) | "Added to calendar · Undo" | 6 s |
 | Pain reported (protocol started) | "Elbow protocol started · Undo (wrong tap)" | 10 s |
-| Preference changed | "Leg press: Favorite · Undo" | 6 s |
 
 The snackbar sits at the top edge of the fixed action area so it never covers the chip row. Undo
 reverts the domain write (soft delete or previous value) and emits the matching `*_undone` event.
@@ -2286,7 +2286,7 @@ is loaded and what can replace it, and create custom exercises.
 ```
 +-------------------------------------+
 | Exercises                           |
-| [ Search exercises (EN / NL)     ]  |
+| [ Search exercises               ]  |
 | [Muscle v][Equipment v][Pattern v]  |
 | [Preference v] [x Available here]   |
 |                                     |
@@ -2305,7 +2305,8 @@ is loaded and what can replace it, and create custom exercises.
 +-------------------------------------+
 ```
 
-* **Search**: matches English and Dutch names and aliases (D12), case- and diacritic-insensitive
+* **Search**: matches English names and aliases, plus Dutch names when the phone's language is Dutch
+  (D12; the placeholder then reads "Search exercises (EN / NL)"), case- and diacritic-insensitive
   (`één` = `een`). Ranking: exact name, then name prefix, then word prefix, then alias, then
   substring; ties by name. Results update 150 ms after the last keystroke. The query text is never
   logged (only its length).
@@ -2352,7 +2353,7 @@ is loaded and what can replace it, and create custom exercises.
 
 | Section | Content | Source |
 |---|---|---|
-| Header | English name, Dutch name, equipment, pattern | `catalog` |
+| Header | English name, Dutch name (only when the phone's language is Dutch, D12), equipment, pattern | `catalog` |
 | Muscle map | Front and back silhouettes drawn from the 18 groups (C9) as a custom Compose ImageVector (about 22 regions, including lats, side delts and forearm flexors that off-the-shelf maps lack). Shading: group coefficient 1.0 = full primary colour, 0.75 = 70 %, 0.5 = 45 %, 0.25 = 20 %. Tapping a group shows its regions and coefficients. | `catalog` (group coefficient = max over regions, CAT-1) |
 | Coefficients | Group list with values; "Show regions" expands the region-level table with evidence notes | `catalog` |
 | Preference | 5-state segmented control with helper text (13.4) | `pref` (C26) |
@@ -2378,7 +2379,7 @@ under it changes with the selection:
 | Dislike | 0.6 | "Avoided. Still used if it is the only good way to train a muscle you want to train." |
 | Never | 0 | "Never suggested. You can still add it yourself. If this leaves a muscle without options, you'll see a warning." |
 
-* A change applies immediately with "Leg press: Favorite · Undo".
+* A change applies immediately, without an Undo snackbar: tapping the previous state is the way back (D30).
 * Setting **Never** on an exercise that is the last option with a sufficient coefficient for an
   improve or maintain group shows the WarningEngine's coverage note right away ("Adductors (improve)
   now have no exercise that trains them well. Pick another or change the goal.", ELIG-1
@@ -2847,8 +2848,9 @@ Emits `progress_viewed {exercise_id, metric, axis, range}`, `progress_axis_toggl
 * Session detail: every exercise with targets vs actuals per set (load, reps or seconds, RIR, reason,
   flags, rest), pre- and post-session answers, the note, the calendar link, and a Why per exercise
   (the recommendation that prescribed it).
-* Actions: edit a set (Set edit sheet), add a forgotten set, delete a set (undo), change the calendar
-  link, edit the quick check (within 24 h), reopen an abandoned session (same local date), delete the
+* Actions: edit a set (Set edit sheet), add a forgotten set, add a forgotten exercise with its sets
+  (D28; it stays "not done" until a set is added), delete a set (undo), change the calendar link,
+  edit the quick check (within 24 h), reopen an abandoned session (same local date), delete the
   session (undo, 10 s).
 * Copy: "Edits update future recommendations." Engines rebuild from facts; no other confirmation.
 * Emits `history_session_opened`, `set_edited`, `set_added_later`, `set_deleted`,
@@ -4124,7 +4126,7 @@ sent as null.
 | `exercise_reordered` | drag or Move up / down | session_exercise | `from_position`, `to_position`, `via` (drag, menu), `left_program_order` |
 | `override_applied` | "Add a set" (C63) or another prescription change at exercise level made by the user | session_exercise | `field` (sets, rest_s), `from`, `to`, `reason_code`? |
 | `rule_override` | the user does something a hard rule forbids ("Add anyway", "Log a session anyway") | session_exercise or session | `rule_id`, `enrollment_id`?, `action` (add_exercise, log_anyway), `exercise_id`? |
-| `action_undone` | Undo of a skip, remove, defer, swap, suggestion, preference change or Plan it | as the undone event | `undone_event_type`, `undone_event_id`, `ms_since` |
+| `action_undone` | Undo of a skip, remove, defer, swap, suggestion or Plan it | as the undone event | `undone_event_type`, `undone_event_id`, `ms_since` |
 | `habit_toggled` | habit row checkbox or home session finish (a notification never completes a habit, ANDROID section 17) | session | `habit_id`, `done`, `via` (checkbox, session) |
 | `pain_reported` | Pain sheet Report (same transaction as the PainEvent `wellness_logs` row) | wellness_log | `wellness_log_id`, `body_region`, `side`, `severity` (E20), `pain_score`, `symptom_codes[]`, `context` (set, session_menu, skip_sheet, summary, challenges, test, readiness) |
 | `pain_retracted` | "Undo (wrong tap)" within 10 s | wellness_log | `wellness_log_id`, `ms_since` |
@@ -4861,8 +4863,8 @@ vibration off (except the rest-end alarm vibration, which is deliberate, F20) an
 
 ### 24.1 Language and tone
 
-* English only in the UI (D12); Dutch appears only as data (calendar titles shown verbatim, Dutch
-  exercise names as secondary text and search terms).
+* English only in the UI (D12); Dutch appears only as data (calendar titles shown verbatim; Dutch
+  exercise names as secondary text and search terms, and only when the phone's language is Dutch).
 * Sentence case everywhere; uppercase only for small overlines (4.2).
 * Second person, plain words, short sentences. The app states facts and options; it never scolds and
   never says "you must". No exclamation marks and no emoji, except the two celebration moments ("Phase 2

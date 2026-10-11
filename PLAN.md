@@ -521,7 +521,7 @@ M1 is split so that real sessions can be logged as early as possible; the total 
   path. Deferred: the general warm-up block to M2 (D25). Still open from the 15.6 checklist (not done-when items):
   T6 reboot, T9/T10 denied permissions, T12 overnight idle (read from the next session's events).
 
-#### M1b — Complete the logger
+#### M1b — Complete the logger — done 2026-10-11
 
 - Room v2: the first real Room migration (ANDROID 8.5; tables for the exercise preferences and the export
   bookkeeping), with the no-destructive-fallback guard and a migration test.
@@ -535,6 +535,14 @@ M1 is split so that real sessions can be logged as early as possible; the total 
   logs.
 - **Done when**: you can correct a past session, export your data, and the review views return your
   logged sessions.
+- **Result**: all three done-when checks passed on 2026-10-11 (README M1b log): a past-session edit reached
+  `set_logs` and `v_set_facts`, the export file's SHA-256 equals the synced `exports` row, and `v_session_summary`
+  returns both logged sessions. Decisions taken during M1b, each in `docs/DECISIONS.md`: the muscle map is built now
+  (D26), custom exercises move to M3 (D27), past sessions can get a forgotten exercise (D28), idle protection is in
+  M1b and the review bundle moves to M5 (D29), a preference change has no Undo snackbar (D30), and Dutch exercise names appear only on a Dutch phone (D12). Deferred (changelog "M1b scope decisions"): the e1RM sparkline,
+  Alternatives, "Used by" and instructions on exercise detail, and the telemetry events that need later modules.
+  The three 2026-10-09 ab-crunch sets got a test load of 30 lb in History (the data is test data in this phase), which
+  cleared DQ06.
 
 ### M2 — Challenge engine + your OAP program (4–6 sessions)
 

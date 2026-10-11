@@ -2369,7 +2369,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 019 | `fitness_019_algo_params_1_0_1` (data; applied 2026-10-09, numbered after the reserved 016-018) | M1a | `algo_params` 1.0.1 = 1.0.0 with `load.default_plate_inventory` counts 20 (F7); 1.0.0 set to `superseded`. | Key count 621; only that key differs from 1.0.0; `params_hash` pinned in ParamsFileTest. |
 | 020 | `fitness_020_catalog_1_0_1` (data; applied 2026-10-09) | M1a | Four `stack` stations in `equipment_types` (ab crunch, preacher curl, triceps extension, dip machine); `catalog_releases` 1.0.1; the four matching global exercises require them and move to `catalog_version` 1.0.1. | Exactly 4 global rows at 1.0.1, each with a stack station; 158 global exercises. |
 | 016 | `fitness_016_oap_definition_v1` (data) | M2 | Insert the OAP definition 1.0.0 (id UUIDv5 `challenge_definition:oap@1.0.0` = `b2afe9c6-816e-51a4-9cdb-8a529fd54615`) as `published`, with `jcs_sha256` from the authoring tool; `on conflict (id) do nothing`; then assert the stored `jcs_sha256` equals the file's. Written only after the CHALLENGE spec is final and the definition passes the CDS validator with the section 8 domains (C38; open issue 3, resolved). | Guard trigger set `server_checksum`; an `update` of `definition` fails with `55000`. |
-| 017 | `fitness_017_review_views` | M1 (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
+| 017 | `fitness_017_review_views` (applied 2026-10-11, version 20261011163142) | M1b (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
 | 018 | `fitness_018_jsonschema_constraint` (optional) | M2 | `alter table fitness.challenge_definitions add constraint challenge_definitions_schema_ck check (extensions.jsonb_matches_schema('<CDS v1 JSON Schema>'::json, definition))` (the extension itself is installed by 007). | Advisors; a malformed definition insert fails. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
@@ -2382,7 +2382,7 @@ A small Kotlin tool in `:sim` (`seedgen`) reads the repo JSON files (reference d
 
 ## 14. Review views (`fitness_review`)
 
-The `fitness_review` schema holds the read-only views that Claude Code queries through the Supabase MCP during periodic algorithm reviews (milestone M5; the first review after 4-6 weeks of real logs). They are the fixed, reproducible tuning surface proposed by the research (data-model lens S6), reduced to what the canonical resolutions allow: every engine-derived number (e1RM, the rep-curve parameter `k`, fractional volume, hard-set credit, readiness, gate values) is **read from what the engine logged** and never recomputed in SQL (C3, C6, design principle 3). All views are created by migration 015.
+The `fitness_review` schema holds the read-only views that Claude Code queries through the Supabase MCP during periodic algorithm reviews (milestone M5; the first review after 4-6 weeks of real logs). They are the fixed, reproducible tuning surface proposed by the research (data-model lens S6), reduced to what the canonical resolutions allow: every engine-derived number (e1RM, the rep-curve parameter `k`, fractional volume, hard-set credit, readiness, gate values) is **read from what the engine logged** and never recomputed in SQL (C3, C6, design principle 3). All views are created by migration 017 (13.2).
 
 ### 14.1 Rules for every review view
 
@@ -3300,6 +3300,8 @@ where c.deleted_at is null and f.feature !~ '^[a-z0-9_.:]{1,60}$';
 
 DQ04 rows for global exercises have `user_id is null`; a review includes them with `where user_id = '<owner>' or user_id is null`. DQ17 deliberately reports only the length of the offending feature, never its text.
 
+Migration 017 selects `user_id` first in every branch, so the view's columns are `user_id, check_code, severity, entity, entity_id, detail` (R-V3); the SQL above shows the predicates and keeps the earlier column order for readability.
+
 ### 14.21 `v_sync_health` and `v_upload_latency`
 
 ```sql
@@ -3541,7 +3543,7 @@ Restore scenarios:
 }
 ```
 
-Rules: JCS sorts object keys, so the tables inside `tables` and `local_only` appear in alphabetical order (the example above is not in canonical order); an importer applies them in push order (11.3). Rows inside a table are sorted by `id`. Global reference data and the global catalog are not exported; `catalog_version` and `params_versions` identify them, while the user's own custom exercises and stimulus rows are exported. Each row uses exactly the sync DTO of that table (same column names and C22 grid as the server); timestamps are ISO 8601 UTC with microseconds; no email, no auth tokens, no device secrets. The `exports` row records kind, format, schema version, row counts per table, byte size and the SHA-256 of the file as written; the file itself never goes to Supabase. The container is settled by C40 (open issue 8, resolved); UX.md 15.10 still says "JSON zip" for review bundles (open issue 27).
+Rules: JCS sorts object keys, so the tables inside `tables` and `local_only` appear in alphabetical order (the example above is not in canonical order); an importer applies them in push order (11.3). Rows inside a table are sorted by `id` (local-only tables by their primary key). Global reference data and the global catalog are not exported; `catalog_version` and `params_versions` identify them, while the user's own custom exercises and stimulus rows are exported. Each row uses exactly the sync DTO of that table (same column names and C22 grid as the server), so timestamps are written as the DTO writes them: ISO 8601 UTC with milliseconds for client-written values (`generated_at` and `period.end` too) and `server_updated_at` exactly as PostgREST returned it (DECISIONS changelog 2026-10-11, M1b); no email, no auth tokens, no device secrets. The M1b export contains `local_only` = `crash_log`, `dead_letter`, `device` (one row: `id`, `device_id`, `last_client_updated_at_ms`), `rest_timer` and `scheduled_alarm`; `outbox` and `sync_cursor` are the outbox internals and are left out (only `outbox_depth` and `dead_letters` are reported). The gzip header carries no timestamp, so the same data gives the same file bytes. The `exports` row records kind, format, schema version, row counts per table, byte size and the SHA-256 of the file as written; the file itself never goes to Supabase. The container is settled by C40 (open issue 8, resolved); UX.md 15.10 still says "JSON zip" for review bundles (open issue 27).
 
 A full export is a precondition for server pruning (15.3) and for local pruning of telemetry and snapshots older than 365 days (12.5).
 
@@ -4245,6 +4247,20 @@ The fixture loader inserts one `estimation.sse` snapshot for session A whose `ou
 | V-06 | A `session_events` row with payload `{"note":"felt bad today"}` produces a DQ13 finding; a row with only codes does not | Privacy scan (16.3) |
 | V-07 | A `recommendations` row with module version `9.9.9` produces DQ01 | Release rule (9.1.9) |
 | V-08 | `v_data_quality` selects no free-text column; `v_set_facts` has no `deviation_note` column (`information_schema.columns`) | R-V7 |
+| V-09 | Exactly the 26 views of the 14.3 catalogue exist in `fitness_review`, nothing else | Migration 017 complete (14.24) |
+| V-10 | Every review view has `security_invoker = true` | R-V1, 17.4 item V |
+| V-11 | No ACL entry for anyone but the owner on any review view; no API role can read one | R-V2, 17.4 item V |
+| V-12 | `user_id` is the first column of every user-scoped view; the two size views have none | R-V3 |
+| V-13 | Every view answers over all rows the project holds | R-V8 (catches runtime casts and joins) |
+| V-14 | `v_db_size` lists `fitness.set_logs` and at least 38 tables; `v_db_size_summary` returns one valid row | 13.2 check of migration 017 |
+| V-15 | `v_set_facts` returns the sentinel session's sets on 2026-10-25 (the DST day) with their context | Base fact view |
+| V-16 | `v_session_summary` returns the sentinel session (actual 65.0 min, plan estimate 42.5 min, 2 sets, 1 work set, sRPE 7) | Session outcome view |
+| V-17 | `v_exercise_time` returns the sentinel session exercise | TIME-1 comparison view |
+| V-18 | `v_rest_alarm_latency` aggregates two alarms in the repeated hour of 2026-10-25 into one 2026-W43 row (n 2, p95 1180, max 1200) | Local-time bucketing across DST (C31) |
+| V-19 | `v_data_quality` reports exactly one finding for the sentinel session (DQ06 on its warm-up set without effective load) | Data-quality view on real shapes |
+| V-20 | Tombstoning the sentinel session removes it from the views | R-V5 at session level |
+
+V-09 to V-20 were added with migration 017 (M1b, 2026-10-11). Their fixtures use only fixture ids, a fixture-only `platform_config_hash` and module version `9.9.9`, so the owner's real rows on the live project never change a result. On the live project the file must run after migration 017 (V-09 fails on purpose otherwise).
 
 ### 19.10 Kotlin tests that share the fixtures
 

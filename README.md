@@ -92,3 +92,34 @@ mode `alarm_clock`; T1-T8 run with the 20 s self-test, which uses the production
 
 Real-session alarms (`rest_alarm_fired`): 7, 10 and 9 ms late, app in the foreground or foreground service.
 
+
+## M1b log (2026-10-11)
+
+**Builds**: debug builds installed over wireless adb. `gradlew check` green: 186 unit tests (`:algo` 74, `:data` 49,
+`:app` 63), including the Room 1 -> 2 migration test (a fixture row in every v1 table) and the muscle-map Roborazzi
+screenshots. On the phone Room migrated v1 -> v2 in place; the pre-migration backup is in `files/db-backups/`.
+
+**Supabase**: migration 017 (`fitness_review`, 26 security-invoker views, no grants; checklist note in
+`supabase/migrations/notes/20261011163142_fitness_017.md`). Live RLS suite `FITNESS_DB_TESTS_PASSED 76 (live)`,
+local `89 (local)`, residue 0; advisors unchanged; probes P1-P3 unchanged, `fitness_review` never exposed.
+
+**Done-when checks** (run over adb on the phone, verified read-only on Supabase):
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Correct a past session | pass | 2026-10-09 set 1 reps 8 -> 9: `set_logs` and `v_set_facts` showed 9 within 4 s, one `set_edited {field: reps}`; set back to 8 the same way. Delete set + Undo restored the set (`set_deleted`, `action_undone`). |
+| Export your data | pass | `fitnessapp-export-2026-10-11.json.gz`, 22,362 bytes, 370 rows (353 synced, 17 local-only); canonical JSON, one user; the file's SHA-256 equals the synced `exports` row; `export_completed {rows: 370}`. |
+| Review views return your sessions | pass | `v_session_summary` returns 2026-10-09 and 2026-10-11. `v_data_quality`: DQ06 x3 at first (the 2026-10-09 ab-crunch sets had no load), cleared by giving them a test load of 30 lb in History; DQ10 x2 remain (params snapshots arrive in M3). |
+
+**Fixed during the phone checks**:
+- A sync worker that cold-started the process ran before Supabase auth had loaded the stored session, showed "Sign
+  in again to upload" and dropped the run; it now waits for the session (`SyncRemote.awaitAuthLoaded`).
+- A write made while a sync run was active (for example the export record) waited for the next trigger, because its
+  `KEEP` request was dropped; the run now drains the outbox before it ends, as ANDROID.md 9.3 specifies.
+- Set edit sheet: a set logged without a load read "null (as logged)"; it now reads "No weight logged".
+- Undo snackbars lasted 4 s; they now follow UX P6 (6 s, 10 s for session actions, longer when the accessibility
+  timeout is longer). "Last export" counts calendar days ("today", "yesterday").
+- Exercise detail: a preference change no longer shows an Undo snackbar (D30, your call during the checks).
+- Dutch exercise names are shown and searched only when the phone language is Dutch (D12 updated, your call).
+- Debug builds only: `DebugActivity --es action restore_set --es set_id <id>` restores a set deleted in History
+  through the same code as Undo (used once when an Undo window ran out during the adb test).

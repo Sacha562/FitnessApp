@@ -1610,9 +1610,12 @@ section only illustrate structure.
 | 1101 / 1102 / 1103 | Rest actions −15 s / Skip / +15 s |
 | 1201 / 1202 | Rest end alarm / overtime alarm PendingIntents |
 | 2000 + (hash(reminderId) mod 1000) | Habit reminders and their alarms |
+| 1003 | Session notification delete intent (`notification_dismissed`) |
 | 3001 | Sync/status notification |
 | 3002 | Export reminder |
+| 3102 | Export reminder "Export" action |
 | 3003 | Session idle prompt |
+| 3103 / 3113 / 3123 | Idle alarm / idle "Finish" / idle "Keep open" |
 | 3004 | Weigh-in reminder (and its alarm) |
 | 4001 / 4002 / 4003 | Test-day morning (and its alarm) / program change / phase unlocked |
 | 4101 | Safety alert |
@@ -2136,7 +2139,8 @@ target guard (16.7, guard 1) refuses any other calendar.
 
 - UI language: English only (`res/values/strings.xml`). No `values-nl` resources. Dutch appears only as
   data: calendar title patterns in classifier params and challenge definitions, and Dutch exercise names
-  stored next to the English ones.
+  stored next to the English ones. Those names are shown and searched only when the first locale of the
+  configuration has language `nl` (D12); `ui/common/Language.kt` holds the check.
 - Numbers: always a decimal point, independent of the device locale (a Dutch device would otherwise
   format `42,8`). One `Numbers` helper in `:app` (UI) uses `DecimalFormatSymbols(Locale.US)`:
   `formatKg(42.8) = "42.8"`, trailing zeros trimmed to the equipment grid (`22.5`, `20`, `47.5`); weights
@@ -2527,10 +2531,13 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 | `reminders.horizonH` | 48 h | 24–96 | assumption | — | Yes: missed reminders after long offline periods |
 | `reminders.snoozeMin` | 30 min | 10–60 | assumption | — | Yes: snooze usage |
 | `reminders.inexactWindowMin` | 10 min | 5–30 | assumption | — | Yes: `latency_ms` of reminder `notification_posted` events |
-| `export.reminderDays` | 30 | 7–90 | DEFAULT | F4 | User setting |
+| `export.reminderDays` | 30 | 7–90 | DEFAULT | F4 | No: the reminder itself is a local on/off setting (UX 15.11, default on) |
 | `db.preMigrationBackupsKept` | 3 | 1–10 | assumption | — | No data needed |
 
 ### 25.4 Sync
+
+`sync.staleNoticeDays` (7 days, bounds 3-30, assumption, UX 18 N-SYNC; tuned by how often the notice is followed by a
+successful manual sync) posts N-SYNC when the oldest outbox entry is that old; dead letters post it at once.
 
 | Key | Default | Bounds | Grade | Source | Tunable? |
 |-----|---------|--------|-------|--------|----------|

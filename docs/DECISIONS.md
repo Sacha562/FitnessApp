@@ -25,7 +25,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D9 | Set logging | **Tapping the RIR chip logs the set.** Weight/reps are prefilled; the row "reps left in the tank: 0 1 2 3 4 5+" is the log action, on every set, without prefilling or highlighting the RIR. Timed holds use "Max / Hard / OK / Easy" (seconds-in-reserve) chips as the log action. |
 | D10 | Evidence vs preference | **Warn, keep the user's preference.** Non-blocking warning with a Why sheet (numbers, evidence grade, citations) and a one-tap "use suggested". Safety rules are always enforced (no failure on weighted / one-arm pulls or loaded dips, load-jump caps, pain protocol, challenge hard constraints). Mid-session load changes are one-tap suggestions, never automatic. |
 | D11 | Calendar | **Read + auto-write.** Read the phone's synced calendars via `CalendarContract` (no Google OAuth), primary calendar only by default, all-day events and the Todoist calendar ignored. The app automatically creates and updates challenge sessions and test days for the current and next ISO week in the primary calendar, each with a marker line so it only ever edits its own events. Recommended general sessions are written when the user accepts them ("Plan it", one tap). Events without a marker are never modified unless the user taps "adopt" (needed once for the events Claude created by hand). |
-| D12 | Language / numbers | **English UI, decimal point** (42.8 kg). Dutch calendar titles (`sessie C`, `één arm zwaar`, `testdag`, `hardlopen`) are still recognised. Exercise names stored in English and Dutch. |
+| D12 | Language / numbers | **English UI, decimal point** (42.8 kg). Dutch calendar titles (`sessie C`, `één arm zwaar`, `testdag`, `hardlopen`) are still recognised. Exercise names stored in English and Dutch; **Dutch names are shown and searched only when the phone's language is Dutch** (user, 2026-10-11). |
 | D13 | Load caps vs the user's own challenge rules | **The user's approved challenge rules win; the app warns.** Generic load-jump caps do not limit challenge RULE-mode loads; a jump above the generic cap produces a non-blocking WARN warning and a log entry (see C45). |
 | D14 | In-session challenge rules | **Auto-apply with Undo.** Challenge in-session rules (e.g. session A first-set pin calibration ±5 lb, 90° hold failure → +5 lb, B grind → −2.5 kg) change the remaining sets immediately; the set card shows "Rule: … · Undo". General (non-challenge) in-session changes remain one-tap suggestions (D10). See C46. |
 | D15 | Day before session A | **Allowed freely.** A general legs/push session may be planned on any gap day including the day before A; no whole-body (systemic) penalty term in v1. The 24 h protected window before A (no lats / elbow flexors / forearms) still applies (C12). See C50. |
@@ -39,6 +39,11 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D23 | Prefill within a session | **Today's change carries forward** (2026-10-08). When a set logged today differs from last time's set at the same index, the next set of that exercise is prefilled from today's previous set (`prefill_source = last_prev_index`); otherwise "last time" at the same index applies as before. Order: accepted adjustment, target, today's changed previous set, last time same index, last time previous index, default. Amends ALGORITHMS_PLANNING 19.7. |
 | D24 | OAP card types | **Eccentric (negative) and top-hold round cards ship with M2** (2026-10-08), with the challenge engine; until then OAP sessions stay on the chat workflow (D4). M1a covers external, dumbbell, stack, bodyweight, belt, assisted-pin, timed-hold and left/right cards. |
 | D25 | Warm-up block | **Moves from M1a to M2** (2026-10-11). With empty sessions only (D22) nothing creates a general warm-up block yet; it is built with the challenge sessions and templates that materialize one, and OI-27 (alarm-backed interval countdown or the in-app fallback) is decided then. Per-exercise warm-up sets stay in M1a. |
+| D26 | Muscle map | **Front and back silhouettes ship in M1b** (2026-10-11), as UX 13.3 specifies: a custom vector map shaded by group coefficient, next to the group list that is its accessible equivalent. Design tools are free to use (Blender is installed on the dev machine). |
+| D27 | Custom exercises | **Move to M3** (2026-10-11), together with the selection modules that use them. M1b ships the catalog list, exercise detail and five-state preferences only; the "Custom" filter and "Create custom exercise" appear in M3. |
+| D28 | History editing | **A past session can also gain a forgotten exercise** (2026-10-11), with its sets, on top of the UX 15.3 actions (edit, add and delete a set, edit the quick check, reopen an abandoned session, delete a session). Logging a whole missed session after the fact is not added. |
+| D29 | Idle protection and review bundle | **Idle protection ships in M1b** (2026-10-11): ANDROID 11.5 was specified for M1a but not built; M1b adds N-IDLE with Finish / Keep open, the idle stop of the foreground service and `session_idle_prompted`. **The review-bundle export moves to M5** with the review tooling; the full export already contains every session, set and event. |
+| D30 | Preference changes | **No Undo snackbar for a preference change** (user, 2026-10-11): the change applies immediately and the segmented control itself is the way back (one tap). Exception to UX P6; `preference_changed` is still logged, and `action_undone` is no longer written for preferences. |
 
 ---
 
@@ -279,3 +284,27 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   on-device rest-timer checklist (ANDROID 15.6) passed T1, T2, T4, T5, T7, T8, T11, T13 and T14 (T3 and T5 on the
   user's report); the self-test now uses the real rest cap (`rest.timer_hard_max_s`) so the notification's +15 s
   works as in a session. PLAN.md M1a result and README M1a log updated.
+- 2026-10-11 — M1b scope decisions (user Q&A at the start of M1b): D26 (silhouette muscle map in M1b), D27 (custom
+  exercises move to M3), D28 (a past session can gain a forgotten exercise), D29 (idle protection in M1b, review
+  bundle in M5). Defaults for M1b, following the milestone order: exercise detail shows the last five sessions of an
+  exercise without an e1RM sparkline until SSE-1 logs estimates (M3, C3: the UI never recomputes e1RM); its
+  Alternatives section waits for SUB-1 (M3) and "Used by" for the challenge engine (M2); the free-exercise-db
+  instructions are not bundled yet. Telemetry events whose feature arrives later are emitted with that feature:
+  `pr_detected` with `ui.progress` (M3), `warmup_item_done` with the warm-up block (M2, D25), `rest_tone_skipped`
+  and `focus_mode_toggled` with the rest tone and focus mode, `session_overrun_shown` with TIME-1 (M3), and the
+  Today, Week, calendar and challenge events with their screens.
+- 2026-10-11 — M1b build notes (defaults, no user decision needed): Room v2 adds `user_exercise_prefs` and `exports`
+  through an `AutoMigration` 1 -> 2, covered by `FitnessDatabaseMigrationTest`. The full export writes timestamps
+  exactly as the sync DTOs do (milliseconds; `server_updated_at` as returned) instead of the microseconds DATA_MODEL
+  15.5 printed; DATA_MODEL 15.5 updated. N-SYNC fires for dead letters or an outbox entry older than
+  `sync.staleNoticeDays` (7, new `PlatformConfig` key; ANDROID 25.4) rather than "no sync for 7 days", because the
+  phone keeps no durable last-sync time. `hold_interrupted` waits until a hold's state survives process death (the
+  timer lives in memory today). Migration 017 lists `user_id` first in `v_data_quality` (R-V3); DATA_MODEL 14 and
+  19.9 updated (view sentinels V-09 to V-20).
+- 2026-10-11 — D30 (user, during the M1b phone checks): changing an exercise preference shows no Undo snackbar; the
+  segmented control is the undo. UX 6.5 and 13.4 updated; the `action_undone` registry row no longer lists preference
+  changes.
+- 2026-10-11 — D12 (user, during the M1b phone checks): Dutch exercise names appear (exercise detail header, the
+  add-exercise sheet) and match in search only when the phone's language is Dutch (`nl`); otherwise the app shows and
+  searches English names and aliases only, and the search hints no longer mention Dutch. Calendar titles are
+  unchanged (F25). UX 5, 13.2, 13.3, 23 and 24.1 and ANDROID 18 updated.
