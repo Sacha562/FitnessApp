@@ -38,6 +38,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D22 | Session start in M1a | **Empty session only** (2026-10-08). Until the challenge engine (M2) materializes challenge sessions, every session starts empty and exercises are added from the catalog; no "repeat a past session" or user template is added. |
 | D23 | Prefill within a session | **Today's change carries forward** (2026-10-08). When a set logged today differs from last time's set at the same index, the next set of that exercise is prefilled from today's previous set (`prefill_source = last_prev_index`); otherwise "last time" at the same index applies as before. Order: accepted adjustment, target, today's changed previous set, last time same index, last time previous index, default. Amends ALGORITHMS_PLANNING 19.7. |
 | D24 | OAP card types | **Eccentric (negative) and top-hold round cards ship with M2** (2026-10-08), with the challenge engine; until then OAP sessions stay on the chat workflow (D4). M1a covers external, dumbbell, stack, bodyweight, belt, assisted-pin, timed-hold and left/right cards. |
+| D25 | Warm-up block | **Moves from M1a to M2** (2026-10-11). With empty sessions only (D22) nothing creates a general warm-up block yet; it is built with the challenge sessions and templates that materialize one, and OI-27 (alarm-backed interval countdown or the in-app fallback) is decided then. Per-exercise warm-up sets stay in M1a. |
 
 ---
 
@@ -274,3 +275,7 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
 - 2026-10-11 — Live-session fixes from the second gym test (user feedback): no rest timer or alarm after the working
   set that finishes the session's planned work (UX 19.8 timer table); the session notification is reposted by
   `RestTimerController` from the stored timer state, so the first rest no longer shows the count-up.
+- 2026-10-11 — M1a closed (user Q&A during the verification): D25 moves the general warm-up block to M2. The
+  on-device rest-timer checklist (ANDROID 15.6) passed T1, T2, T4, T5, T7, T8, T11, T13 and T14 (T3 and T5 on the
+  user's report); the self-test now uses the real rest cap (`rest.timer_hard_max_s`) so the notification's +15 s
+  works as in a session. PLAN.md M1a result and README M1a log updated.

@@ -487,7 +487,7 @@ Each milestone ends with something you can use. Sizes are rough, in Claude Code 
 
 M1 is split so that real sessions can be logged as early as possible; the total scope is unchanged.
 
-#### M1a — Log real sessions
+#### M1a — Log real sessions — done 2026-10-11
 
 - **Catalog**: about 150 curated exercises with English and Dutch names and muscle coefficients, every
   slug the OAP definition references (C38), the CAT-1 validator in CI, and the bundled catalog JSON that
@@ -504,17 +504,27 @@ M1 is split so that real sessions can be logged as early as possible; the total 
   exact alarms, battery-optimisation exemption, OxygenOS background settings).
 - **Live session**: start and finish a session; add, remove, reorder, skip and "do later"; the current-set
   card with RIR-chip logging (D9) and the reason chips (`ui.reasonchips`); left/right pairs; timed holds
-  with lead-in; assisted pins and dip-belt loads; the warm-up block (its interval countdown runs in the
-  app, ANDROID OI-27); prefill from the full `ui.prefill` module with "last time" as its source (D18).
+  with lead-in; assisted pins and dip-belt loads; per-exercise warm-up sets; prefill from the full `ui.prefill`
+  module with "last time" as its source (D18). The general warm-up block moved to M2 (D25).
 - **Rest timer** with every reliability measure (foreground service, `setAlarmClock`, countdown
   notification with an Android 16 Live Update), tested on your phone with Doze, the screen off and the
   app killed.
 - **Session summary** with session effort (sRPE) and joint pain.
 - **Done when**: you log a full real session (any type) without signal and it appears in Supabase
   afterwards; the rest timer fires on time with the screen off.
+- **Result**: both done-when checks passed (offline session 2026-10-09 arrived complete; rest alarms 4-10 ms late
+  with the screen off, in forced Doze and after a process crash, ANDROID 15.6 log in the README). Changes from the
+  first gym tests, each in `docs/DECISIONS.md` (changelog 2026-10-09 and 2026-10-11): the F7 checklist simplified
+  (unlimited plates, 1.25 kg in the plate list, stack step in kg or lb, no machine name); params 1.0.1 (migration
+  019) and catalog 1.0.1 with four machine stations (migration 020); sync status per UX 7.1; the Live Update chip
+  text for OxygenOS; no rest after the set that finishes the planned work; the timer self-test on the production
+  path. Deferred: the general warm-up block to M2 (D25). Still open from the 15.6 checklist (not done-when items):
+  T6 reboot, T9/T10 denied permissions, T12 overnight idle (read from the next session's events).
 
 #### M1b — Complete the logger
 
+- Room v2: the first real Room migration (ANDROID 8.5; tables for the exercise preferences and the export
+  bookkeeping), with the no-destructive-fallback guard and a migration test.
 - History with editing of past sessions and sets.
 - Exercises tab: the catalog list, exercise detail and the five-state preferences (stored now, used by
   the selection modules in M3).
@@ -530,6 +540,8 @@ M1 is split so that real sessions can be logged as early as possible; the total 
 
 - Challenge definition schema + validator, FitExpr, event-sourced enrollment, staged rule engine,
   materializer, challenge week planner and contract.
+- The general warm-up block (moved from M1a, D25) with the warm-up row countdown; OI-27 is decided here
+  (alarm-backed `purpose = interval` or the in-app fallback).
 - OAP definition v1 with `A` and `P` rules; setup wizard with per-rule approval; import of your current
   state; Challenges tab (gates per arm, block/week, next test, rule history); test-day wizard; elbow
   check and pain protocol; habit reminders.
@@ -650,7 +662,6 @@ Settled at M0: the phone is a OnePlus CPH2747 on Android 16 (API 36), so Live Up
 the OnePlus battery guidance applies; the application id `dev.fitnessapp` is confirmed and installed;
 `pg_jsonschema` is installed.
 
-- Basic-Fit equipment details (done via the in-app checklist in M1).
 - Running frequency and priority (setting; default low).
 - Muscle goals (set in onboarding, D6).
 - Approve/decline each OAP `P` rule (M2 setup).

@@ -57,3 +57,38 @@ findings, RLS/LWW test in `supabase/tests/fitness_m0_rls_test.sql`, params 1.0.0
 **Done-when checks**: `gradlew check` green; the app installs on the phone, signs in with the existing
 account, passes the allowlist probe and round-trips the profile row; determinism self-test on ART passes
 7/7 golden fixtures with the same hashes as the JVM.
+
+## M1a log (2026-10-11)
+
+**Builds**: debug builds signed with the release keystore (certificate above), installed over wireless or USB adb.
+Unit tests: `:algo`, `:data`, `:app` green; lint clean.
+
+**Supabase**: migrations 008-015 (M1a batch, checklist notes in `supabase/migrations/notes/`), 019 params 1.0.1 and
+020 catalog 1.0.1 (data only). Live RLS suite after 020: `FITNESS_DB_TESTS_PASSED 56 (live)`, residue 0; probes
+unchanged.
+
+**Done-when checks**: a full session logged in airplane mode (2026-10-09) arrived complete after reconnecting
+(session, exercise, three sets, events); the rest alarm fires on time with the screen off (below).
+
+**On-device rest-timer checklist** (ANDROID 15.6; OnePlus CPH2747, Android 16, battery optimisation exempt, alarm
+mode `alarm_clock`; T1-T8 run with the 20 s self-test, which uses the production timer path):
+
+| # | Result | Evidence |
+|---|--------|----------|
+| T1 screen off | pass | fired 7 ms late, screen off (phone dozing), vibration felt |
+| T2 forced Doze | pass | `deviceidle force-idle` (deep IDLE, battery unplugged over USB), fired 4 ms late, felt; state reverted |
+| T3 Battery Saver | pass (user report) | not measured |
+| T4 `am crash` | pass | fired 8 ms late in a fresh process, screen off, felt (the crash shows up as an `app_crash` event: test-induced) |
+| T5 swipe from Recents | pass (user report) | not measured |
+| T6 reboot | open | optional, not a done-when item |
+| T7 `am force-stop` | pass (expected failure mode) | no alarm while stopped; on relaunch the timer was recovered as 9.1 s late with "Rest over", no stale countdown, no crash |
+| T8 lock-screen actions | pass | +15/-15 change the end, Skip ends the rest; `notification_action` events logged (after the self-test cap fix) |
+| T9, T10 denied permissions | open | |
+| T11 Live Update | pass | countdown in the status-bar chip via `shortCriticalText` (OxygenOS ignores the chronometer) |
+| T12 overnight idle | open | read from the first rest of the next session |
+| T13 airplane-mode session | pass | 2026-10-09, outbox drained after reconnect |
+| T14 determinism self-test | pass | 7/7 golden hashes equal on ART, engine 1.0.0 |
+| T15-T17 | n/a | tone, habit reminders and calendar arrive with later milestones |
+
+Real-session alarms (`rest_alarm_fired`): 7, 10 and 9 ms late, app in the foreground or foreground service.
+
