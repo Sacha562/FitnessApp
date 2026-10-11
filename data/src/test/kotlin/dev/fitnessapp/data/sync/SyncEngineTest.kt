@@ -93,6 +93,34 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a cold-start run waits for the stored session instead of asking to sign in`() = blocking {
+        writeSession(session("s8"))
+        remote.signedIn = false
+        remote.sessionLoading = true
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        engine.state.value::class shouldBe SyncState.Synced::class
+        db.outbox().pendingCount("workout_sessions", "s8") shouldBe 0
+    }
+
+    @Test
+    fun `a write to an earlier table during the run is pushed in the same run`() = blocking {
+        writeSession(session("s1"))
+        db.withTransaction {
+            val b = block("b1", "s1")
+            db.blocks().upsert(b)
+            outbox.enqueue("session_blocks", b.id, now)
+        }
+        // While session_blocks is pushed, a new session is written; workout_sessions was already drained this pass
+        // and the write's own request() would be dropped by KEEP.
+        lateinit var hook: () -> Unit
+        hook = { if (remote.pushLog.last() == "session_blocks") runBlocking { writeSession(session("s2")) } else remote.duringUpsert = hook }
+        remote.duringUpsert = hook
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        remote.rows("workout_sessions").keys shouldBe sortedSetOf("s1", "s2")
+        db.outbox().pendingCount("workout_sessions", "s2") shouldBe 0
+    }
+
+    @Test
     fun `pushes children after parents and clears the outbox`() = blocking {
         db.withTransaction {
             val b = block("b1", "s1")
@@ -186,6 +214,15 @@ class SyncEngineTest {
     private class FakeRemote(private val uid: String) : SyncRemote {
         var signedIn = true
         var refreshPending = false
+        /** Simulates the auth plugin still reading its session from storage when the run starts. */
+        var sessionLoading = false
+
+        override suspend fun awaitAuthLoaded() {
+            if (sessionLoading) {
+                sessionLoading = false
+                signedIn = true
+            }
+        }
 
         override fun authRefreshPending() = refreshPending
 
@@ -222,8 +259,9 @@ class SyncEngineTest {
         override suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject> {
             check(table, rows)
             pushLog += table
-            duringUpsert?.invoke()
-            duringUpsert = null
+            val hook = duringUpsert
+            duringUpsert = null // one-shot; a hook may re-arm itself
+            hook?.invoke()
             val out = mutableListOf<JsonObject>()
             for (r in rows) {
                 val id = r["id"]!!.jsonPrimitive.content

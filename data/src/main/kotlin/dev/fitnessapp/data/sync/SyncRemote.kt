@@ -9,6 +9,8 @@ import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -22,7 +24,16 @@ interface SyncRemote {
     /** The signed-in user id, or null. */
     fun userId(): String?
 
-    /** True while the session exists but its refresh is failing (offline with an expired token): retry, don't stop. */
+    /**
+     * Suspends until the stored session has been loaded (bounded). A worker that cold-starts the process runs before
+     * the auth plugin has read its session from storage; without this wait it would see "signed out" and stop.
+     */
+    suspend fun awaitAuthLoaded() {}
+
+    /**
+     * True while the session exists but its refresh is failing (offline with an expired token), or is still loading
+     * after [awaitAuthLoaded] gave up: retry, don't stop.
+     */
     fun authRefreshPending(): Boolean = false
 
     /** Mutable tables: merge-duplicates upsert; returns the representation (`id, client_updated_at, device_id, server_updated_at`). */
@@ -51,7 +62,13 @@ interface SyncRemote {
 class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
     override fun userId(): String? = client.auth.currentUserOrNull()?.id
 
-    override fun authRefreshPending(): Boolean = client.auth.sessionStatus.value is SessionStatus.RefreshFailure
+    override suspend fun awaitAuthLoaded() {
+        withTimeoutOrNull(AUTH_LOAD_TIMEOUT_MS) { client.auth.sessionStatus.first { it !is SessionStatus.Initializing } }
+    }
+
+    override fun authRefreshPending(): Boolean = client.auth.sessionStatus.value.let {
+        it is SessionStatus.RefreshFailure || it is SessionStatus.Initializing
+    }
 
     override suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject> = call {
         client.from(table).upsert(JsonArray(rows)) {
@@ -115,5 +132,10 @@ class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
         throw SyncRemoteException(SyncFailure(null, null, network = true, message = e::class.simpleName), e)
     } catch (e: java.io.IOException) {
         throw SyncRemoteException(SyncFailure(null, null, network = true, message = e::class.simpleName), e)
+    }
+
+    private companion object {
+        /** Loading the session from storage took ~0.9 s on the phone; past this the run retries with backoff. */
+        const val AUTH_LOAD_TIMEOUT_MS = 10_000L
     }
 }

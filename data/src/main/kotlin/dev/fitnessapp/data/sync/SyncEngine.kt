@@ -71,6 +71,7 @@ class SyncEngine(
     }
 
     suspend fun run(trigger: String): RunOutcome {
+        remote.awaitAuthLoaded()
         val uid = remote.userId()
         if (uid == null) {
             if (remote.authRefreshPending()) {
@@ -97,6 +98,7 @@ class SyncEngine(
                 finalState = s.state
             }
             pull(uid, stats)
+            if (pushAllowed) drain(uid, stats)
         } catch (s: Stop) {
             outcome = s.outcome
             finalState = s.state
@@ -146,6 +148,20 @@ class SyncEngine(
         for (t in tables) {
             @Suppress("UNCHECKED_CAST")
             pushTable(t as SyncTable<SyncedRow>, uid, stats)
+        }
+    }
+
+    /**
+     * ANDROID.md 9.3: a run keeps draining the outbox while writes arrive, because their `request()` is dropped
+     * (`KEEP`) while this run is active. After a full pass every entry still due was enqueued during the run (failed
+     * rows are deferred or dead-lettered), so pushing again cannot spin on a failing row; the bound only guards against
+     * a writer that never stops.
+     */
+    private suspend fun drain(uid: String, stats: RunStats) {
+        var passes = 0
+        while (passes < MAX_DRAIN_PASSES && db.outbox().readyCount(nowMs()) > 0) {
+            push(uid, stats)
+            passes++
         }
     }
 
@@ -435,6 +451,9 @@ class SyncEngine(
 
     companion object {
         private val MICROS: DateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+
+        /** Guard of [drain]; not a tunable (a pass only finds rows written during the run). */
+        private const val MAX_DRAIN_PASSES = 5
 
         /** `server_updated_at` minus the overlap, kept at microsecond precision (ANDROID.md 8.2). */
         fun minusSeconds(serverTs: String, seconds: Long): String =
