@@ -1,4 +1,5 @@
--- fitness_db_tests.sql — DATA_MODEL.md 17.6, 19.2-19.5 (C61). Covers the migrations up to 015.
+-- fitness_db_tests.sql — DATA_MODEL.md 17.6, 19.2-19.5, 19.9 (C61). Covers the migrations up to 020,
+-- including the fitness_review views of 017.
 --
 -- One DO block that always ends by raising an exception, so nothing can commit. Success is the message
 -- FITNESS_DB_TESTS_PASSED <n> (<env>); any other message names the failing test id.
@@ -8,7 +9,10 @@
 -- member (local only); C is a synthetic outsider that exists only in the JWT claims. Only fixed fixture
 -- UUIDs (19.6), ids derived from them, and synthetic UUIDs are used.
 --
--- RLS-21 is checked at schema level (no fitness_review view exists before migration 017).
+-- The 19.9 view sentinels (V-*) run as postgres at the end. Their fixture rows use the fixed session-A ids
+-- and FIX7(2026-10-25 17:15 CET, n) ids, and every assertion filters on those ids (or on a fixture-only
+-- platform_config_hash / module version), so real rows of the owner on the live project never change a
+-- result.
 
 do $tests$
 declare
@@ -52,6 +56,32 @@ declare
   v_ex_h90  uuid;
   v_ex_cust uuid := gen_random_uuid();
   v_b_row   uuid := gen_random_uuid();
+  -- 19.9 view sentinels: snapshots and events of session A (FIX7(2026-10-08 19:45, n))
+  v_sse1    constant uuid := '01a11c9e-5160-7000-8000-0000000000c1';   -- estimation.sse
+  v_sse2    constant uuid := '01a11c9e-5160-7000-8000-0000000000c2';   -- newer estimation.sse
+  v_acc     constant uuid := '01a11c9e-5160-7000-8000-0000000000c3';   -- accounting.week 2026-W41
+  v_tgt     constant uuid := '01a11c9e-5160-7000-8000-0000000000c4';   -- targets.weekly 2026-W41
+  v_rv9     constant uuid := '01a11c9e-5160-7000-8000-0000000000c5';   -- unregistered module version 9.9.9
+  v_ev_txt  constant uuid := '01a11c9e-5160-7000-8000-0000000000e2';   -- payload with free text
+  v_ev_code constant uuid := '01a11c9e-5160-7000-8000-0000000000e3';   -- payload with codes only
+  -- DST-day sentinel session (19.8): FIX7(2026-10-25 17:15 CET, n)
+  v_s3      constant uuid := '01a173d8-07a0-7000-8000-000000000001';
+  v_s3_blk  constant uuid := '01a173d8-07a0-7000-8000-000000000002';
+  v_s3_se   constant uuid := '01a173d8-07a0-7000-8000-000000000003';
+  v_s3_set1 constant uuid := '01a173d8-07a0-7000-8000-000000000004';   -- working set
+  v_s3_set2 constant uuid := '01a173d8-07a0-7000-8000-000000000005';   -- warm-up, effective load missing
+  v_s3_wl   constant uuid := '01a173d8-07a0-7000-8000-0000000000a1';   -- sRPE
+  v_s3_plan constant uuid := '01a173d8-07a0-7000-8000-0000000000c1';   -- session.plan of the block
+  v_s3_ev1  constant uuid := '01a173d8-07a0-7000-8000-0000000000e1';   -- rest_alarm_fired 02:30 CEST
+  v_s3_ev2  constant uuid := '01a173d8-07a0-7000-8000-0000000000e2';   -- rest_alarm_fired 02:30 CET
+  v_pch     constant text := 'c2787b7b6a44a23cf1f271950f94c4201831490ed2afc9f22306fd3a1408da4d'; -- sha256 'fixture-platform-config'
+  v_views   constant text[] := array[
+    'v_set_facts', 'v_set_estimates', 'v_e1rm_history', 'v_prescription_error', 'v_rir_calibration',
+    'v_override_stats', 'v_skip_stats', 'v_weekly_muscle_volume', 'v_rest_compliance', 'v_rest_alarm_latency',
+    'v_adherence_week', 'v_recommendation_acceptance', 'v_session_summary', 'v_exercise_time',
+    'v_challenge_timeline', 'v_challenge_var_changes', 'v_challenge_tests', 'v_wellness_safety',
+    'v_calendar_events', 'v_calendar_classification', 'v_data_quality', 'v_sync_health', 'v_upload_latency',
+    'v_db_size', 'v_db_size_summary', 'v_replay_index'];                -- 14.3 catalogue
 begin
   select a.user_id into strict v_a from fitness_private.allowed_users a where a.role = 'owner';
   v_local := coalesce(current_setting('fitness_tests.env', true), 'live') = 'local';
@@ -232,10 +262,14 @@ begin
   -- RLS-20 (A part): is_allowed() is true for the owner.
   assert (select fitness_private.is_allowed()), 'RLS-20 FAILED: is_allowed() false for the owner';
 
-  -- RLS-21 (schema level until 017): no USAGE on fitness_review.
+  -- RLS-21: no USAGE on fitness_review, so even the owner cannot read a review view (R-V2).
   assert not has_schema_privilege('authenticated', 'fitness_review', 'USAGE'),
     'RLS-21 FAILED: authenticated has USAGE on fitness_review';
-  v_pass := v_pass + 1;
+  begin
+    perform 1 from fitness_review.v_set_facts limit 1;
+    raise exception 'RLS-21 FAILED: authenticated read fitness_review.v_set_facts';
+  exception when insufficient_privilege then v_pass := v_pass + 1;
+  end;
 
   -- RLS-22 (A part): the trigger keeps user_id immutable.
   update fitness.gyms set user_id = v_c, client_updated_at = '2026-10-07T09:00:01Z' where id = v_gym;
@@ -788,6 +822,346 @@ begin
     raise exception 'FK-10 FAILED: session deleted while a wellness log references it';
   exception when foreign_key_violation then v_pass := v_pass + 1;
   end;
+
+  -- ================================================================================================
+  -- 19.9 View sentinel tests (as postgres: the review views are owner-only, R-V2). Every assertion filters
+  -- on fixture ids, so the owner's real rows on the live project never change a result.
+  -- ================================================================================================
+
+  -- V-09: exactly the 14.3 catalogue exists in fitness_review (26 views, nothing else).
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'fitness_review' and c.relkind = 'v' and c.relname = any (v_views);
+  assert v_n = cardinality(v_views),
+    'V-09 FAILED: ' || v_n || ' of ' || cardinality(v_views) || ' review views exist (migration 017 applied?)';
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'fitness_review' and not (c.relkind = 'v' and c.relname = any (v_views));
+  assert v_n = 0, 'V-09 FAILED: ' || v_n || ' relations in fitness_review outside the 14.3 catalogue';
+  v_pass := v_pass + 1;
+
+  -- V-10: every review view is security_invoker (R-V1, 17.4 item V).
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'fitness_review' and c.relkind = 'v'
+    and not coalesce(c.reloptions @> array['security_invoker=true'], false);
+  assert v_n = 0, 'V-10 FAILED: ' || v_n || ' review views without security_invoker = true';
+  v_pass := v_pass + 1;
+
+  -- V-11: no grants (R-V2, 17.4 item V): no ACL entry for anyone but the owner (PUBLIC included), and
+  -- anon, authenticated and service_role have neither USAGE on the schema nor SELECT on a view.
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+  where n.nspname = 'fitness_review' and a.grantee <> c.relowner;
+  assert v_n = 0, 'V-11 FAILED: ' || v_n || ' ACL entries for non-owners on review views';
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  cross join unnest(array['anon', 'authenticated', 'service_role']) as r(rolname)
+  where n.nspname = 'fitness_review' and c.relkind = 'v'
+    and (has_table_privilege(r.rolname, c.oid, 'SELECT')
+         or has_schema_privilege(r.rolname, 'fitness_review', 'USAGE'));
+  assert v_n = 0, 'V-11 FAILED: an API role can read a review view';
+  v_pass := v_pass + 1;
+
+  -- V-12: user_id is the first column of every user-scoped view; the two size views have none (R-V3).
+  select count(*) into v_n
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  join pg_attribute a on a.attrelid = c.oid and a.attnum = 1
+  where n.nspname = 'fitness_review' and c.relkind = 'v'
+    and c.relname not in ('v_db_size', 'v_db_size_summary') and a.attname <> 'user_id';
+  assert v_n = 0, 'V-12 FAILED: ' || v_n || ' user-scoped review views without user_id as first column';
+  select count(*) into v_n from information_schema.columns
+   where table_schema = 'fitness_review' and table_name in ('v_db_size', 'v_db_size_summary')
+     and column_name = 'user_id';
+  assert v_n = 0, 'V-12 FAILED: a size view exposes user_id';
+  v_pass := v_pass + 1;
+
+  -- V-13: every view answers over all rows the project holds (R-V8; catches runtime casts and joins).
+  foreach v_t in array v_views loop
+    execute format('select count(*) from fitness_review.%I', v_t) into v_n;
+  end loop;
+  v_pass := v_pass + 1;
+
+  -- V-14: the size guard answers (13.2: v_db_size returns rows).
+  select count(*) into v_n from fitness_review.v_db_size
+   where schema_name = 'fitness' and table_name = 'set_logs' and total_bytes > 0;
+  assert v_n = 1, 'V-14 FAILED: v_db_size has no row for fitness.set_logs';
+  select count(*) into v_n from fitness_review.v_db_size
+   where schema_name in ('fitness', 'fitness_private');
+  assert v_n >= 38, 'V-14 FAILED: v_db_size returns only ' || v_n || ' tables';
+  select count(*) into v_n from fitness_review.v_db_size_summary
+   where status in ('ok', 'warn', 'critical') and db_mb > 0 and fitness_mb > 0 and measured_at = now();
+  assert v_n = 1, 'V-14 FAILED: v_db_size_summary does not return exactly one valid row';
+  v_pass := v_pass + 1;
+
+  -- Sentinel SSE-1 snapshot for session A (19.9): deliberately implausible values for the wpu set.
+  insert into fitness.recommendations (id, user_id, created_at, device_id, app_version, kind, module_id,
+      module_version, engine_version, params_hash, catalog_version, inputs_hash, inputs, inputs_bytes, outputs,
+      scope_key, session_id)
+  values (v_sse1, v_a, now(), v_dev, 'dbtest', 'estimation.sse', 'sse', '1.0.0', '1.0.0', v_hash, '1.0.0',
+          repeat('1', 64), '{}', 2,
+          jsonb_build_object(
+            'sets', jsonb_build_array(jsonb_build_object(
+              'set_id', v_set1, 'estimator_class', 'rir', 'q_true', 2.5, 'n_eff', 6.5, 'n_fresh', 6.5,
+              'fatigue_f', 1.0, 'z', 0.1, 's', 1.2, 'e1rm_kg', 123.45, 'e1rm_added_kg', 52.75, 'k_used', 31.7,
+              'residual', 0.25)),
+            'states', jsonb_build_array(jsonb_build_object(
+              'exercise_id', v_ex_wpu, 'side', 'both', 'm_kg', 118.5, 'ci80_lo_kg', 112.0, 'ci80_hi_kg', 125.0,
+              'g_per_week', 0.4))),
+          'session:' || v_sess, v_sess);
+
+  -- V-01: v_set_estimates returns the logged values unchanged (C3, R-V4).
+  select count(*) into v_n from fitness_review.v_set_estimates
+   where user_id = v_a and set_id = v_set1 and sse_recommendation_id = v_sse1
+     and e1rm_kg = 123.45 and e1rm_added_kg = 52.75 and k_used = 31.7 and q_true = 2.5 and q_minus_reported = 0.5;
+  assert v_n = 1, 'V-01 FAILED: v_set_estimates does not return the logged sentinel values';
+  v_pass := v_pass + 1;
+
+  -- V-02: the same values through aggregation, next to the logged state M.
+  select count(*) into v_n from fitness_review.v_e1rm_history
+   where user_id = v_a and exercise_id = v_ex_wpu and side = 'both' and local_date = '2026-10-08'
+     and best_set_e1rm_kg = 123.45 and best_set_e1rm_added_kg = 52.75 and k_used_last = 31.7
+     and state_m_kg = 118.5;
+  assert v_n = 1, 'V-02 FAILED: v_e1rm_history does not return the logged sentinel values';
+  v_pass := v_pass + 1;
+
+  -- V-03: a newer snapshot listing the same set wins (R-V6); the set still appears once.
+  insert into fitness.recommendations (id, user_id, created_at, device_id, app_version, kind, module_id,
+      module_version, engine_version, params_hash, catalog_version, inputs_hash, inputs, inputs_bytes, outputs,
+      scope_key, session_id)
+  values (v_sse2, v_a, now() + interval '1 second', v_dev, 'dbtest', 'estimation.sse', 'sse', '1.0.0', '1.0.0',
+          v_hash, '1.0.0', repeat('2', 64), '{}', 2,
+          jsonb_build_object('sets', jsonb_build_array(jsonb_build_object(
+            'set_id', v_set1, 'estimator_class', 'rir', 'q_true', 2.5, 'e1rm_kg', 124.00, 'e1rm_added_kg', 53.30,
+            'k_used', 31.7))),
+          'session:' || v_sess, v_sess);
+  select count(*) into v_n from fitness_review.v_set_estimates
+   where set_id = v_set1 and sse_recommendation_id = v_sse2 and e1rm_kg = 124.00;
+  assert v_n = 1, 'V-03 FAILED: the newer estimation.sse snapshot was not selected';
+  select count(*) into v_n from fitness_review.v_set_estimates where set_id = v_set1;
+  assert v_n = 1, 'V-03 FAILED: the set appears ' || v_n || ' times in v_set_estimates';
+  v_pass := v_pass + 1;
+
+  -- V-04: tombstoning the set removes it from every set-level view (R-V5).
+  update fitness.set_logs set deleted_at = now(), client_updated_at = '2026-10-08T18:00:01Z' where id = v_set1;
+  select (select count(*) from fitness.set_logs where id = v_set1 and deleted_at is not null)
+    into v_n;
+  assert v_n = 1, 'V-04 FAILED: the tombstone was not stored';
+  select (select count(*) from fitness_review.v_set_facts where set_id = v_set1)
+       + (select count(*) from fitness_review.v_set_estimates where set_id = v_set1)
+       + (select count(*) from fitness_review.v_e1rm_history
+           where user_id = v_a and exercise_id = v_ex_wpu and local_date = '2026-10-08'
+             and best_set_e1rm_kg in (123.45, 124.00))
+    into v_n;
+  assert v_n = 0, 'V-04 FAILED: a tombstoned set is still visible in a review view';
+  v_pass := v_pass + 1;
+
+  -- V-05: logged weekly volume and targets appear unchanged; no set credit is recomputed (C6, C14).
+  insert into fitness.recommendations (id, user_id, created_at, device_id, app_version, kind, module_id,
+      module_version, engine_version, params_hash, catalog_version, inputs_hash, inputs, inputs_bytes, outputs,
+      scope_key, iso_week)
+  values
+    (v_acc, v_a, now(), v_dev, 'dbtest', 'accounting.week', 'setcredit', '1.0.0', '1.0.0', v_hash, '1.0.0',
+     repeat('3', 64), '{}', 2,
+     '{"groups":{"lats":{"vhyp_done":7.25,"vstr_done":3.5,"fatigue_done":2.0,"committed":0}},"sets":[]}',
+     'week:2026-W41', '2026-W41'),
+    (v_tgt, v_a, now(), v_dev, 'dbtest', 'targets.weekly', 'targets', '1.0.0', '1.0.0', v_hash, '1.0.0',
+     repeat('4', 64), '{}', 2,
+     '{"groups":{"lats":{"goal":"maintain","target":0,"mrv":20,"cap_s":12,"covered_by_challenge":true,"reentry":false,"deload":true}}}',
+     'week:2026-W41', '2026-W41');
+  select count(*) into v_n from fitness_review.v_weekly_muscle_volume
+   where user_id = v_a and iso_week = '2026-W41' and group_id = 'lats'
+     and accounting_id = v_acc and targets_id = v_tgt
+     and vhyp_done = 7.25 and vstr_done = 3.5 and target = 0 and goal = 'maintain'
+     and covered_by_challenge = 'true'::jsonb and deload = 'true'::jsonb
+     and family = (select mg.family from fitness.muscle_groups mg where mg.id = 'lats');
+  assert v_n = 1, 'V-05 FAILED: v_weekly_muscle_volume does not return the logged lats values';
+  select count(*) into v_n from fitness_review.v_weekly_muscle_volume
+   where user_id = v_a and iso_week = '2026-W41';
+  assert v_n = 1, 'V-05 FAILED: v_weekly_muscle_volume invents ' || (v_n - 1) || ' groups';
+  v_pass := v_pass + 1;
+
+  -- V-06: free text in a telemetry payload is reported (DQ13, 16.3); a codes-only payload is not.
+  insert into fitness.session_events (id, user_id, device_id, app_version, event_type, category, occurred_at,
+      tz_offset_min, session_id, payload)
+  values
+    (v_ev_txt, v_a, v_dev, 'dbtest', 'set_logged', 'logging', '2026-10-08T18:02:00Z', 120, v_sess,
+     '{"note":"felt bad today"}'),
+    (v_ev_code, v_a, v_dev, 'dbtest', 'set_logged', 'logging', '2026-10-08T18:03:00Z', 120, v_sess,
+     '{"set_index":2,"side":"both","input_method":"chip","deviation_fields":["reps","rir"]}');
+  select count(*) into v_n from fitness_review.v_data_quality
+   where check_code = 'DQ13' and severity = 'error' and user_id = v_a and entity_id = v_ev_txt::text;
+  assert v_n = 1, 'V-06 FAILED: free text in a telemetry payload was not reported (DQ13)';
+  select count(*) into v_n from fitness_review.v_data_quality
+   where check_code = 'DQ13' and entity_id = v_ev_code::text;
+  assert v_n = 0, 'V-06 FAILED: a codes-only payload was reported as free text';
+  v_pass := v_pass + 1;
+
+  -- V-07: a snapshot from an unregistered module version is reported (DQ01, 9.1.9) and flagged for replay;
+  -- the registered sse@1.0.0 snapshots are not.
+  insert into fitness.recommendations (id, user_id, created_at, device_id, app_version, kind, module_id,
+      module_version, engine_version, params_hash, catalog_version, inputs_hash, inputs, inputs_bytes, outputs,
+      scope_key)
+  values (v_rv9, v_a, now(), v_dev, 'dbtest', 'today.options', 'today', '9.9.9', '1.0.0', v_hash, '1.0.0',
+          repeat('5', 64), '{}', 2, '{"options":[]}', 'day:2026-10-08');
+  select count(*) into v_n from fitness_review.v_data_quality
+   where check_code = 'DQ01' and severity = 'warn' and user_id = v_a and entity = 'module_version'
+     and entity_id = 'today@9.9.9' and (detail->>'count')::int = 1;
+  assert v_n = 1, 'V-07 FAILED: the unregistered module version 9.9.9 was not reported (DQ01)';
+  select count(*) into v_n from fitness_review.v_data_quality
+   where check_code = 'DQ01' and user_id = v_a and entity_id = 'sse@1.0.0';
+  assert v_n = 0, 'V-07 FAILED: the registered sse@1.0.0 was reported';
+  select count(*) into v_n from fitness_review.v_replay_index
+   where recommendation_id = v_rv9 and not version_registered and params_available and inputs_available;
+  assert v_n = 1, 'V-07 FAILED: v_replay_index does not flag the unregistered version';
+  v_pass := v_pass + 1;
+
+  -- V-08: no personal free text (R-V7): v_set_facts has no deviation_note, v_data_quality has only its six
+  -- columns, and no view reads a free-text column except the two named exceptions.
+  select count(*) into v_n from information_schema.columns
+   where table_schema = 'fitness_review' and table_name = 'v_set_facts' and column_name = 'deviation_note';
+  assert v_n = 0, 'V-08 FAILED: v_set_facts exposes deviation_note';
+  select string_agg(column_name::text, ',' order by ordinal_position) into v_txt
+  from information_schema.columns where table_schema = 'fitness_review' and table_name = 'v_data_quality';
+  assert v_txt = 'user_id,check_code,severity,entity,entity_id,detail',
+    'V-08 FAILED: v_data_quality columns are ' || coalesce(v_txt, 'none');
+  select count(*) into v_n from information_schema.columns
+   where table_schema = 'fitness'
+     and (table_name::text, column_name::text) in (
+       ('workout_sessions', 'notes'), ('set_logs', 'deviation_note'), ('wellness_logs', 'note'),
+       ('user_exercise_prefs', 'note'), ('gyms', 'address_note'), ('profiles', 'display_name'),
+       ('user_algo_params', 'note'));
+  assert v_n = 7, 'V-08 FAILED: the R-V7 column list is stale (' || v_n || ' of 7 columns exist)';
+  select count(*) into v_n from information_schema.view_column_usage u
+   where u.view_schema = 'fitness_review' and u.table_schema = 'fitness'
+     and ((u.table_name::text, u.column_name::text) in (
+            ('workout_sessions', 'notes'), ('set_logs', 'deviation_note'), ('wellness_logs', 'note'),
+            ('user_exercise_prefs', 'note'), ('gyms', 'address_note'), ('profiles', 'display_name'),
+            ('user_algo_params', 'note'))
+          or (u.table_name::text = 'calendar_events' and u.column_name::text in ('title', 'location')
+              and u.view_name::text <> 'v_calendar_events')
+          or (u.table_name::text = 'metric_observations' and u.column_name::text = 'validity_note'
+              and u.view_name::text <> 'v_challenge_tests'));
+  assert v_n = 0, 'V-08 FAILED: ' || v_n || ' review view columns read personal free text (R-V7)';
+  v_pass := v_pass + 1;
+
+  -- Sentinel session on the DST day (19.8): one block with its session.plan, one done exercise, a working
+  -- set, a warm-up set whose effective load the engine did not write, an sRPE answer, and two rest alarms
+  -- in the repeated local hour (02:30 CEST and 02:30 CET) with a fixture-only platform_config_hash.
+  insert into fitness.workout_sessions (id, user_id, client_updated_at, device_id, app_version, kind, status,
+      template_source, local_date, timezone, iso_week, engine_version, params_hash, catalog_version, started_at,
+      finished_at)
+  values (v_s3, v_a, '2026-10-25T17:20:00Z', v_dev, 'dbtest', 'gym', 'finished', 'empty', '2026-10-25',
+          'Europe/Amsterdam', '2026-W43', '1.0.0', v_hash, '1.0.0', '2026-10-25T16:15:00Z', '2026-10-25T17:20:00Z');
+  insert into fitness.recommendations (id, user_id, created_at, device_id, app_version, kind, module_id,
+      module_version, engine_version, params_hash, catalog_version, inputs_hash, inputs, inputs_bytes, outputs,
+      scope_key, session_id)
+  values (v_s3_plan, v_a, '2026-10-25T16:14:00Z', v_dev, 'dbtest', 'session.plan', 'select', '1.0.0', '1.0.0',
+          v_hash, '1.0.0', repeat('6', 64), '{}', 2,
+          jsonb_build_object('est_min', 42.5, 'budget_min', 45, 'exercises',
+            jsonb_build_array(jsonb_build_object('exercise_id', v_ex_wpu, 'sets', 2, 'est_s', 600))),
+          'block:' || v_s3_blk, v_s3);
+  insert into fitness.session_blocks (id, user_id, client_updated_at, device_id, app_version, session_id, position,
+      block_kind, origin, status, recommendation_id)
+  values (v_s3_blk, v_a, '2026-10-25T16:15:00Z', v_dev, 'dbtest', v_s3, 0, 'general', 'user_built', 'done',
+          v_s3_plan);
+  insert into fitness.session_exercises (id, user_id, client_updated_at, device_id, app_version, session_id, block_id,
+      exercise_id, position, origin, status, load_mode, side_mode, equipment_id, progression_mode, rep_scheme,
+      started_at, completed_at)
+  values (v_s3_se, v_a, '2026-10-25T16:32:00Z', v_dev, 'dbtest', v_s3, v_s3_blk, v_ex_wpu, 1, 'plan', 'done',
+          'bodyweight_plus_external', 'bilateral', v_eq_b, 'none', 'fixed',
+          '2026-10-25T16:20:00Z', '2026-10-25T16:32:00Z');
+  insert into fitness.set_logs (id, user_id, client_updated_at, device_id, app_version, session_id,
+      session_exercise_id, exercise_id, set_index, set_kind, load_mode, equipment_id, input_value, input_unit,
+      added_kg, bodyweight_kg, f_bw, effective_load_kg, reps, rir_reported, rir_source, started_at, completed_at)
+  values
+    (v_s3_set2, v_a, '2026-10-25T16:25:00Z', v_dev, 'dbtest', v_s3, v_s3_se, v_ex_wpu, 1, 'warmup',
+     'bodyweight_plus_external', v_eq_b, 10, 'kg', 10.00, 70.70, 1, null, 5, null, 'missing',
+     '2026-10-25T16:24:00Z', '2026-10-25T16:25:00Z'),
+    (v_s3_set1, v_a, '2026-10-25T16:32:00Z', v_dev, 'dbtest', v_s3, v_s3_se, v_ex_wpu, 2, 'working',
+     'bodyweight_plus_external', v_eq_b, 20, 'kg', 20.00, 70.70, 1, 90.70, 5, 2, 'chip',
+     '2026-10-25T16:31:00Z', '2026-10-25T16:32:00Z');
+  insert into fitness.wellness_logs (id, user_id, client_updated_at, device_id, app_version, kind, phase,
+      observed_at, local_date, session_id, srpe)
+  values (v_s3_wl, v_a, '2026-10-25T17:21:00Z', v_dev, 'dbtest', 'srpe', 'post', '2026-10-25T17:21:00Z',
+          '2026-10-25', v_s3, 7);
+  insert into fitness.session_events (id, user_id, device_id, app_version, event_type, category, occurred_at,
+      tz_offset_min, payload)
+  values
+    (v_s3_ev1, v_a, v_dev, 'dbtest', 'rest_alarm_fired', 'rest', '2026-10-25T00:30:00Z', 120,
+     jsonb_build_object('latency_ms', 800, 'alarm_mode', 'alarm_clock', 'app_state', 'fgs_background',
+                        'screen_interactive', false, 'platform_config_hash', v_pch)),
+    (v_s3_ev2, v_a, v_dev, 'dbtest', 'rest_alarm_fired', 'rest', '2026-10-25T01:30:00Z', 60,
+     jsonb_build_object('latency_ms', 1200, 'alarm_mode', 'alarm_clock', 'app_state', 'fgs_background',
+                        'screen_interactive', false, 'platform_config_hash', v_pch));
+
+  -- V-15: v_set_facts returns both live sets with their session, block and exercise context.
+  select count(*) into v_n from fitness_review.v_set_facts where session_id = v_s3;
+  assert v_n = 2, 'V-15 FAILED: v_set_facts returns ' || v_n || ' of 2 sentinel sets';
+  select count(*) into v_n from fitness_review.v_set_facts
+   where user_id = v_a and set_id = v_s3_set1 and session_exercise_id = v_s3_se and block_id = v_s3_blk
+     and block_kind = 'general' and exercise_id = v_ex_wpu and exercise_slug = 'chinup_weighted'
+     and session_kind = 'gym' and session_status = 'finished' and local_date = '2026-10-25'
+     and iso_week = '2026-W43' and params_hash = v_hash and exercise_origin = 'plan' and exercise_status = 'done'
+     and set_kind = 'working' and is_work_set and effective_load_kg = 90.70 and reps = 5 and rir_reported = 2;
+  assert v_n = 1, 'V-15 FAILED: the working set context differs';
+  select count(*) into v_n from fitness_review.v_set_facts
+   where set_id = v_s3_set2 and set_kind = 'warmup' and not is_work_set and effective_load_kg is null
+     and rir_source = 'missing';
+  assert v_n = 1, 'V-15 FAILED: the warm-up set context differs';
+  v_pass := v_pass + 1;
+
+  -- V-16: v_session_summary: duration, block plan estimate, set counts and the sRPE answer.
+  select count(*) into v_n from fitness_review.v_session_summary
+   where user_id = v_a and session_id = v_s3 and local_date = '2026-10-25' and iso_week = '2026-W43'
+     and kind = 'gym' and status = 'finished' and actual_min = 65.0
+     and est_min_total = 42.5 and budget_min_total = 45
+     and n_sets = 2 and n_work_sets = 1 and n_pain_flags = 0
+     and srpe = 7 and readiness_level is null and elbow_score is null;
+  assert v_n = 1, 'V-16 FAILED: v_session_summary does not summarise the sentinel session';
+  v_pass := v_pass + 1;
+
+  -- V-17: v_exercise_time: the TIME-1 estimate of the block plan next to the actual duration.
+  select count(*) into v_n from fitness_review.v_exercise_time
+   where user_id = v_a and session_exercise_id = v_s3_se and block_kind = 'general'
+     and plan_kind = 'session.plan' and plan_version = '1.0.0' and plan_sets = 2 and est_s = 600
+     and actual_s = 720 and n_sets = 2;
+  assert v_n = 1, 'V-17 FAILED: v_exercise_time does not match the sentinel plan and timing';
+  v_pass := v_pass + 1;
+
+  -- V-18: both alarms of the repeated hour fall into 2026-W43 and one group (19.8): n 2, p50 1000 ms.
+  select count(*) into v_n from fitness_review.v_rest_alarm_latency
+   where user_id = v_a and platform_config_hash = v_pch and iso_week = '2026-W43'
+     and app_state = 'fgs_background' and screen_interactive = false and alarm_mode = 'alarm_clock'
+     and n = 2 and p50_ms = 1000 and round(p95_ms::numeric, 3) = 1180 and max_ms = 1200;
+  assert v_n = 1, 'V-18 FAILED: v_rest_alarm_latency does not return n 2, p50 1000, p95 1180, max 1200 in W43';
+  select count(*) into v_n from fitness_review.v_rest_alarm_latency where platform_config_hash = v_pch;
+  assert v_n = 1, 'V-18 FAILED: the two alarms of the repeated hour were split into ' || v_n || ' groups';
+  v_pass := v_pass + 1;
+
+  -- V-19: v_data_quality reports exactly one finding on the sentinel rows: DQ06 for the warm-up set.
+  select count(*), string_agg(check_code || ':' || entity_id, ',') into v_n, v_txt
+  from fitness_review.v_data_quality
+  where entity_id in (v_s3::text, v_s3_blk::text, v_s3_se::text, v_s3_set1::text, v_s3_set2::text,
+                      v_s3_wl::text, v_s3_plan::text, v_s3_ev1::text, v_s3_ev2::text);
+  assert v_n = 1 and v_txt = 'DQ06:' || v_s3_set2,
+    'V-19 FAILED: findings on the sentinel session: ' || coalesce(v_txt, 'none');
+  select count(*) into v_n from fitness_review.v_data_quality
+   where user_id = v_a and check_code = 'DQ06' and severity = 'error' and entity = 'set'
+     and entity_id = v_s3_set2::text and detail->>'load_mode' = 'bodyweight_plus_external';
+  assert v_n = 1, 'V-19 FAILED: the DQ06 finding has the wrong shape';
+  v_pass := v_pass + 1;
+
+  -- V-20: tombstoning the session removes it and its sets from the session- and set-level views (R-V5).
+  update fitness.workout_sessions set deleted_at = now(), client_updated_at = '2026-10-25T17:20:01Z'
+   where id = v_s3;
+  select (select count(*) from fitness_review.v_session_summary where session_id = v_s3)
+       + (select count(*) from fitness_review.v_set_facts where session_id = v_s3)
+       + (select count(*) from fitness_review.v_exercise_time where session_id = v_s3)
+    into v_n;
+  assert v_n = 0, 'V-20 FAILED: a tombstoned session is still visible in a review view';
+  v_pass := v_pass + 1;
 
   raise exception 'FITNESS_DB_TESTS_PASSED % (%)', v_pass, case when v_local then 'local' else 'live' end;
 end
