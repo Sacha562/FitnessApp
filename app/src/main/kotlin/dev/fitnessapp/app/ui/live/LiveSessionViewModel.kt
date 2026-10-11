@@ -128,6 +128,14 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private data class PendingLog(val seId: String, val setIndex: Int, val side: String)
 
     @Volatile private var pendingLog: PendingLog? = null
+    @Volatile private var pendingAt = 0L
+
+    /** `exercise_focused` (UX 20.2): the last focused item and how the next change was caused. */
+    private var lastFocus: String? = null
+    private var focusVia: String? = null
+
+    /** `deviation_shown` once per card slot and chip context (UX 20.3). */
+    private var deviationShownKey: String? = null
 
     init {
         viewModelScope.launch {
@@ -161,12 +169,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             ?: items.firstOrNull { it.open }?.se?.id
         if (focus != focusOverride) focusOverride = null
         val item = items.firstOrNull { it.se.id == focus }
+        if (focus != null && focus != lastFocus) {
+            if (lastFocus != null) emit("exercise_focused", focus, mapOf("via" to JsonPrimitive(focusVia ?: "auto")))
+            lastFocus = focus
+        }
+        focusVia = null
         val old = _ui.value.card
         pendingLog?.let { p ->
             if (snap.sets.any { it.session_exercise_id == p.seId && it.set_index == p.setIndex && it.side == p.side }) pendingLog = null
         }
         val card = if (pendingLog != null) null else item?.let { buildCard(it, snap.sets, old) }
         val activeRest = snap.rest?.takeIf { it.state != "ended" }
+        card?.let(::reportDeviation)
         _ui.update {
             it.copy(
                 session = snap.s, items = items, focusedId = focus, card = card, rest = activeRest,
@@ -285,6 +299,32 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         return "Last " + listOfNotNull(load, perf).joinToString(" × ") + " · " + date
     }
 
+    private fun emit(type: String, sessionExerciseId: String?, payload: Map<String, JsonElement>, entityType: String = "session_exercise") {
+        viewModelScope.launch {
+            c.sessionRepository.event(
+                dev.fitnessapp.data.telemetry.EventDraft(
+                    type = type, sessionId = sessionId, entityType = if (sessionExerciseId == null) "none" else entityType,
+                    entityId = sessionExerciseId, screen = "session.live", payload = payload,
+                ),
+            )
+        }
+    }
+
+    private fun reportDeviation(card: Card) {
+        val chips = card.chips ?: return
+        val key = card.slotKey + "|" + chips.context.code + "|" + card.deviation.direction.code
+        if (key == deviationShownKey) return
+        deviationShownKey = key
+        emit(
+            "deviation_shown", card.item.se.id,
+            mapOf(
+                "context" to JsonPrimitive(chips.context.code), "direction" to JsonPrimitive(card.deviation.direction.code),
+                "fields" to JsonArray(card.deviation.fields.map { JsonPrimitive(it.field) }),
+                "codes_shown" to JsonArray(chips.visible.map { JsonPrimitive(it.code) }), "visible_count" to JsonPrimitive(chips.visible.size),
+            ),
+        )
+    }
+
     // ------------------------------------------------------------------------------------------------ edits
 
     private fun edit(method: String, change: (Card) -> Card) {
@@ -298,6 +338,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             )
             u.copy(card = withDeviation(change(touched)))
         }
+        _ui.value.card?.let(::reportDeviation)
     }
 
     fun stepLoad(harder: Boolean) = edit("stepper") { card ->
@@ -310,8 +351,21 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun stepHold(up: Boolean) = edit("stepper") { it.copy(holdS = UiPrefill.stepHold(it.holdS ?: 0.0, up, it.holdTargetS, params)) }
 
-    /** Keypad "Set" (UX 16.7): snaps to the nearest loadable, ties to the easier load. */
-    fun keypad(typed: Double) = edit("keypad") { card ->
+    /** Keypad "Set" (UX 16.7): snaps to the nearest loadable, ties to the easier load; logs `keypad_used`. */
+    fun keypad(typed: Double) {
+        keypadEdit(typed)
+        val card = _ui.value.card ?: return
+        val snappedTo = card.point?.let { it.assistPinNative ?: it.nativeValue }
+        emit(
+            "keypad_used", card.item.se.id,
+            mapOf(
+                "field" to JsonPrimitive("load"), "typed" to JsonPrimitive(typed),
+                "snapped_to" to (snappedTo?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull), "changed" to JsonPrimitive(snappedTo != typed),
+            ),
+        )
+    }
+
+    private fun keypadEdit(typed: Double) = edit("keypad") { card ->
         if (card.points.isEmpty()) return@edit card
         when (val r = UiPrefill.snap(typed, card.scheme, card.point?.implementCount ?: 1, card.points, params)) {
             is SnapResult.Snapped -> card.copy(
@@ -388,9 +442,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val card = u.card ?: return
         val s = u.session ?: return
         if (card.isHold && card.holdS == null) return
-        if (pendingLog != null) return
+        if (pendingLog != null) {
+            emit("log_double_tap_dropped", null, mapOf("control" to JsonPrimitive(control), "gap_ms" to JsonPrimitive(System.currentTimeMillis() - pendingAt)))
+            return
+        }
         // Double-tap guard: the next card is rebuilt from Room once the set is there (rebuild clears it).
         pendingLog = PendingLog(card.item.se.id, card.setIndex, card.side)
+        pendingAt = System.currentTimeMillis()
         _ui.update { it.copy(card = null) }
         // The app scope: leaving the screen right after the tap must not cancel the write or the rest alarm.
         c.appScope.launch {
@@ -448,6 +506,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 ),
             )
             historyCache.remove(card.item.se.exercise_id)
+            val timer = card.holdTimerS
+            if (card.isHold && timer != null && card.holdS != null && Numbers.oneDecimal(timer) != Numbers.oneDecimal(card.holdS)) {
+                val t = Numbers.oneDecimal(timer).toDouble()
+                val l = Numbers.oneDecimal(card.holdS).toDouble()
+                c.sessionRepository.event(
+                    dev.fitnessapp.data.telemetry.EventDraft(
+                        type = "hold_corrected", sessionId = sessionId, entityType = "set", entityId = setId, screen = "session.live",
+                        payload = mapOf("timer_s" to JsonPrimitive(t), "logged_s" to JsonPrimitive(l), "delta_s" to JsonPrimitive(Numbers.oneDecimal(l - t).toDouble())),
+                    ),
+                )
+            }
             if (card.reason == "pain") _ui.update { it.copy(banner = "pain") }
             val label = (if (card.side != "both") card.side + " · " else "") +
                 (if (card.isHold) Numbers.num(card.holdS ?: 0.0, 1) + " s" else "${card.reps} reps") +
@@ -503,13 +572,34 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun skipRest() = viewModelScope.launch { c.restTimer.skip("button") }
 
+    /** `rest_prewarn` (UX 20.6): the 10 s pre-warning shown while the app is visible (C72). */
+    fun prewarned(timerId: String) = emit("rest_prewarn", null, mapOf("timer_id" to JsonPrimitive(timerId)))
+
     // ------------------------------------------------------------------------------------------------ holds
 
-    fun startHold() = _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.LEAD_IN, holdPhaseStart = System.currentTimeMillis())) }
+    fun startHold() {
+        _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.LEAD_IN, holdPhaseStart = System.currentTimeMillis())) }
+        val card = _ui.value.card ?: return
+        emit(
+            "hold_started", card.item.se.id,
+            buildMap {
+                put("mode", JsonPrimitive(if (card.holdTargetS != null) "prescribed" else "max"))
+                put("side", JsonPrimitive(card.side))
+                card.holdTargetS?.let { put("target_s", JsonPrimitive(it)) }
+                put("lead_in_s", JsonPrimitive(c.platformConfig.holdLeadInS))
+            },
+        )
+    }
 
     fun holdGo() = _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.HOLDING, holdPhaseStart = System.currentTimeMillis())) }
 
-    fun cancelHold() = _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.READY)) }
+    fun cancelHold() {
+        val card = _ui.value.card
+        _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.READY)) }
+        if (card?.holdPhase == HoldPhase.LEAD_IN) {
+            emit("hold_lead_in_cancelled", card.item.se.id, mapOf("ms_into_lead_in" to JsonPrimitive(System.currentTimeMillis() - card.holdPhaseStart)))
+        }
+    }
 
     /** Stop (tap anywhere, UX 11.7.3): prefill the target when reached, else the time down to the step. */
     fun stopHold(auto: Boolean = false) {
@@ -534,6 +624,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun focus(id: String) {
         focusOverride = id
+        focusVia = "list_tap"
         last?.let { s -> viewModelScope.launch { rebuild(s) } }
     }
 
@@ -566,6 +657,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val r = UiReasonChips.doLater(refs(), seId, item.se.defer_count, params)
         if (r.moved) {
             focusOverride = null
+            focusVia = "deferred_return"
             c.sessionRepository.reorder(sessionId, r.order, seId, deferred = true, via = "do_later")
         }
     }
@@ -576,6 +668,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val j = if (up) i - 1 else i + 1
         if (i < 0 || j !in ids.indices) return@launch
         ids[i] = ids[j].also { ids[j] = ids[i] }
+        focusVia = "reorder"
         c.sessionRepository.reorder(sessionId, ids, seId, deferred = false, via = "menu")
     }
 

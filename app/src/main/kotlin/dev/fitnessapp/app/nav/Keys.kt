@@ -8,6 +8,12 @@ sealed interface AppKey {
     data object DataSync : AppKey
     data object Equipment : AppKey
     data object Reliability : AppKey
+    data object History : AppKey
+    data class SessionDetail(val sessionId: String) : AppKey
+    data class ExerciseDetail(val exerciseId: String, val from: String) : AppKey
+
+    /** Data and sync opened from the N-EXPORT reminder: starts the monthly export right away (UX 18). */
+    data object DataSyncExport : AppKey
 
     companion object {
         /** Saved-state form of a key, so the back stack survives recreation and process death. */
@@ -18,6 +24,10 @@ sealed interface AppKey {
             DataSync -> "data_sync"
             Equipment -> "equipment"
             Reliability -> "reliability"
+            History -> "history"
+            is SessionDetail -> "session_detail:" + k.sessionId
+            is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
+            DataSyncExport -> "data_sync_export"
         }
 
         fun decode(s: String): AppKey? = when {
@@ -27,13 +37,17 @@ sealed interface AppKey {
             s == "data_sync" -> DataSync
             s == "equipment" -> Equipment
             s == "reliability" -> Reliability
+            s == "history" -> History
+            s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
+            s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
+            s == "data_sync_export" -> DataSyncExport
             else -> null
         }
     }
 }
 
-/** Top-level tabs of M1a; Week, Exercises and Challenges arrive with their milestones. */
-enum class Tab { TODAY, YOU }
+/** Top-level tabs; Week and Challenges arrive with their milestones. */
+enum class Tab { TODAY, EXERCISES, YOU }
 
 /** Internal route names of notification taps (ANDROID.md 7.4, C54): never deep links. */
 object Routes {
@@ -41,11 +55,13 @@ object Routes {
         data object CurrentSession : Target
         data object Today : Target
         data object DataSync : Target
+        data object DataSyncExport : Target
     }
 
     fun parse(route: String?): Target = when (route) {
         "fitapp://session/current", "fitapp://session/current/rest" -> Target.CurrentSession
         "fitapp://you/data" -> Target.DataSync
+        "fitapp://you/data/export" -> Target.DataSyncExport
         else -> Target.Today
     }
 }

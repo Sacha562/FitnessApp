@@ -25,6 +25,10 @@ class DeviceIdentity(context: Context) {
         return Instant.ofEpochMilli(issued)
     }
 
+    /** The last issued `client_updated_at` (the local-only `device` row of the full export, DATA_MODEL 15.5). */
+    @Synchronized
+    fun lastIssuedMs(): Long = prefs.getLong(KEY_LAST_MS, 0L)
+
     private companion object {
         const val KEY_DEVICE_ID = "device_id"
         const val KEY_LAST_MS = "last_client_updated_ms"

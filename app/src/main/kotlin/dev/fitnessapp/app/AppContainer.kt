@@ -5,6 +5,8 @@ import androidx.room.withTransaction
 import androidx.work.WorkManager
 import dev.fitnessapp.algo.core.clock.Clock
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.selection.catalog.Catalog
+import dev.fitnessapp.algo.selection.catalog.Taxonomy
 import dev.fitnessapp.data.account.AccountStore
 import dev.fitnessapp.app.notify.NotificationPresenter
 import dev.fitnessapp.app.platform.DeviceState
@@ -23,6 +25,9 @@ import dev.fitnessapp.data.remote.SupabaseFactory
 import dev.fitnessapp.data.repo.BodyweightRepository
 import dev.fitnessapp.data.repo.CatalogRepository
 import dev.fitnessapp.data.repo.EquipmentRepository
+import dev.fitnessapp.data.repo.HistoryRepository
+import dev.fitnessapp.data.repo.PreferenceRepository
+import dev.fitnessapp.data.export.ExportRepository
 import dev.fitnessapp.data.repo.ProfileRepository
 import dev.fitnessapp.data.repo.SessionRepository
 import dev.fitnessapp.data.repo.SyncRepository
@@ -70,7 +75,7 @@ class AppContainer(private val context: Context) {
 
     /** The bundled params 1.0.1 (A8.4); server params and user overrides arrive with later milestones. */
     val params: ParamView by lazy {
-        ParamView.fromParamsFile(resource("/fitness/params/default-params-1.0.1.json"))
+        ParamView.fromParamsFile(resource("/fitness/params/default-params-$PARAMS_VERSION.json"))
     }
     val reasons: ReasonVocabulary by lazy { ReasonVocabulary.parse(resource("/fitness/reference/reason_codes.json")) }
 
@@ -85,6 +90,11 @@ class AppContainer(private val context: Context) {
     }
 
     val catalog: CatalogRepository by lazy { CatalogRepository.bundled() }
+
+    /** CAT-1 read model over the bundled catalog and taxonomy (group coefficients for the Exercises tab). */
+    val catalogModel: Catalog by lazy {
+        Catalog(catalog.doc, Taxonomy.parse(resource("/fitness/reference/muscle_groups.json"), resource("/fitness/reference/muscle_regions.json")))
+    }
     val profiles: ProfileRepository by lazy { ProfileRepository(db, outbox, telemetry, writeContext, syncScheduler) }
     val equipment: EquipmentRepository by lazy { EquipmentRepository(db, outbox, telemetry, writeContext, syncScheduler) }
     val bodyweight: BodyweightRepository by lazy { BodyweightRepository(db, outbox, writeContext, syncScheduler) }
@@ -92,6 +102,13 @@ class AppContainer(private val context: Context) {
         SessionRepository(db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles)
     }
     val sync: SyncRepository by lazy { SyncRepository(db, outbox, syncEngine, syncScheduler, writeContext) }
+    val preferences: PreferenceRepository by lazy { PreferenceRepository(db, outbox, telemetry, writeContext, syncScheduler) }
+    val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
+    val exports: ExportRepository by lazy {
+        ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })
+    }
+    val settings: LocalSettings by lazy { LocalSettings(context) }
+    val idle: dev.fitnessapp.app.session.IdleWatcher by lazy { dev.fitnessapp.app.session.IdleWatcher(this) }
 
     val notifications: NotificationPresenter by lazy { NotificationPresenter(context) }
     val haptics: Haptics by lazy { Haptics(context) }
@@ -129,6 +146,48 @@ class AppContainer(private val context: Context) {
         syncScheduler.request()
     }
 
+    /** A platform event whose payload holds JSON values (lists, objects), e.g. `platform_config_logged`. */
+    suspend fun fgsEventJson(type: String, payload: Map<String, kotlinx.serialization.json.JsonElement>) {
+        if (writeContext.userId() == null) return
+        db.withTransaction { telemetry.write(EventDraft(type = type, entityType = "none", payload = payload)) }
+        syncScheduler.request()
+    }
+
+    /** `screen_viewed` (UX 20.9) with the UX screen id in the `screen` envelope column. */
+    suspend fun screenViewed(screen: String, payload: Map<String, Any?>) {
+        if (writeContext.userId() == null) return
+        db.withTransaction {
+            telemetry.write(
+                EventDraft(
+                    type = "screen_viewed", entityType = "none", screen = screen.take(40),
+                    payload = payload.mapNotNull { (k, v) -> (v as? Boolean)?.let { k to JsonPrimitive(it) } ?: (v as? Number)?.let { k to JsonPrimitive(it) } }.toMap(),
+                ),
+            )
+        }
+        syncScheduler.request()
+    }
+
+    /** A platform event that belongs to a session (idle prompt, restore). */
+    suspend fun sessionEvent(sessionId: String, type: String, payload: Map<String, Any?>, screen: String? = null) {
+        if (writeContext.userId() == null) return
+        db.withTransaction {
+            telemetry.write(
+                EventDraft(
+                    type = type, sessionId = sessionId, entityType = "session", entityId = sessionId, screen = screen,
+                    payload = payload.mapNotNull { (k, v) ->
+                        when (v) {
+                            null -> null
+                            is Boolean -> k to JsonPrimitive(v)
+                            is Number -> k to JsonPrimitive(v)
+                            else -> k to JsonPrimitive(v.toString())
+                        }
+                    }.toMap(),
+                ),
+            )
+        }
+        syncScheduler.request()
+    }
+
     suspend fun notificationAction(action: String) {
         val code = when (action) {
             dev.fitnessapp.app.timer.RestActionReceiver.MINUS_15 -> "minus_15"
@@ -141,4 +200,9 @@ class AppContainer(private val context: Context) {
 
     private fun resource(path: String): String =
         requireNotNull(AppContainer::class.java.getResource(path)) { "missing $path" }.readText(Charsets.UTF_8)
+
+    companion object {
+        /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
+        const val PARAMS_VERSION = "1.0.1"
+    }
 }

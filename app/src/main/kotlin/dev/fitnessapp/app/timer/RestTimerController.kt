@@ -1,5 +1,7 @@
 package dev.fitnessapp.app.timer
 
+import dev.fitnessapp.app.notify.Channels
+
 import android.os.Build
 import androidx.room.withTransaction
 import dev.fitnessapp.app.PlatformConfig
@@ -236,7 +238,9 @@ class RestTimerController(
                 RestEffect.NotifySession -> if (timer?.let(::isSelfTest) == true) onSelfTestEnded() else notifications.postSession(notifications.session())
                 RestEffect.Alert -> {
                     haptics.alarm(config.timerVibrationWaveformMs)
-                    notifications.postRestDone(timer?.let(::textFor) ?: notifications.text)
+                    if (notifications.postRestDone(timer?.let(::textFor) ?: notifications.text)) {
+                        timer?.let { event(it, "notification_posted", mapOf("notification_id" to JsonPrimitive("N-REST-DONE"), "channel" to JsonPrimitive(Channels.REST_DONE))) }
+                    }
                 }
                 RestEffect.ReminderBuzz -> haptics.buzz()
                 is RestEffect.Event -> timer?.let { event(it, e.type, e.payload) } ?: eventNoTimer(e)

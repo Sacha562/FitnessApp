@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
+import dev.fitnessapp.app.FitnessApplication
 import dev.fitnessapp.app.ui.theme.FitnessTheme
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -32,13 +34,20 @@ import kotlinx.serialization.json.jsonPrimitive
  * (ANDROID.md 6.3 item 4, guarantee R2). Results go to logcat with the tag DeterminismSelfTest:
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action selftest
  *   adb logcat -d -s DeterminismSelfTest
+ * "restore_set" puts back a set deleted in History after its Undo snackbar timed out, through the same
+ * [dev.fitnessapp.data.repo.HistoryRepository.restoreSet] as Undo (so the row syncs and `action_undone` is written):
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action restore_set --es set_id <id>
+ *   adb logcat -d -s DebugRestore
  */
 class DebugActivity : ComponentActivity() {
     private val report = mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (intent?.getStringExtra("action") == "selftest") runSelfTest()
+        when (intent?.getStringExtra("action")) {
+            "selftest" -> runSelfTest()
+            "restore_set" -> restoreSet(intent.getStringExtra("set_id"))
+        }
         setContent {
             FitnessTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -61,8 +70,26 @@ class DebugActivity : ComponentActivity() {
         report.value = lines.joinToString("\n")
     }
 
+    private fun restoreSet(setId: String?) {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                val id = requireNotNull(setId) { "set_id missing" }
+                val row = requireNotNull(c.db.setLogs().get(id)) { "set not found" }
+                val deletedAt = requireNotNull(row.deleted_at) { "set is not deleted" }
+                val ev = c.db.events().latest("set_deleted", 50).firstOrNull { it.entity_id == id }
+                requireNotNull(ev) { "no set_deleted event for this set" }
+                c.history.restoreSet(id, ev.id, c.clock.now().toEpochMilli() - deletedAt)
+                "restored $id"
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(RESTORE_TAG, result)
+            report.value = result
+        }
+    }
+
     private companion object {
         const val TAG = "DeterminismSelfTest"
+        const val RESTORE_TAG = "DebugRestore"
     }
 }
 

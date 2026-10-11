@@ -9,7 +9,10 @@ import androidx.work.Configuration
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
+import android.os.Build
+import dev.fitnessapp.app.maintenance.MaintenanceWorker
 import dev.fitnessapp.app.notify.Channels
+import kotlinx.serialization.json.JsonPrimitive
 import dev.fitnessapp.app.ui.equipment.EquipmentUpgrade
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.sync.SyncWorker
@@ -41,26 +44,53 @@ class FitnessApplication : Application(), Configuration.Provider {
         else -> "fgs_background"
     }
 
-    /** ANDROID.md 7.7, each step guarded. */
+    /** ANDROID.md 7.7, each step guarded; a failed step is recorded as `app_startup_failed { step, error_class }`. */
     private fun startup() {
         installCrashHandler()
-        runCatching { Channels.create(this) }
+        val failed = java.util.Collections.synchronizedList(mutableListOf<Pair<String, Throwable>>())
+        fun step(name: String, block: () -> Unit) = runCatching(block).onFailure { failed += name to it }
+        step("channels") { Channels.create(this) }
+        step("periodic_sync") { container.syncScheduler.ensurePeriodic() }
+        step("maintenance") { MaintenanceWorker.ensureScheduled(this) }
         container.appScope.launch {
-            runCatching { container.restTimer.reconcile() }
-            runCatching { reportCrashes() }
-            runCatching { EquipmentUpgrade.addMissingTypes(container.equipment) }
+            suspend fun stepS(name: String, block: suspend () -> Unit) = runCatching { block() }.onFailure { failed += name to it }
+            stepS("rest_timer_recovery") { container.restTimer.reconcile() }
+            stepS("crash_report") { reportCrashes() }
+            stepS("equipment_upgrade") { EquipmentUpgrade.addMissingTypes(container.equipment) }
+            stepS("idle_watch") { container.idle.start(container.appScope) }
+            stepS("platform_snapshots") { platformSnapshots() }
+            for ((name, e) in failed.toList()) {
+                runCatching { container.fgsEvent("app_startup_failed", mapOf("step" to name, "error_class" to (e::class.simpleName ?: "unknown"))) }
+            }
         }
+        var coldStart = true
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 foreground = true
                 container.syncScheduler.request(trigger = "app_start", immediate = true)
+                val cold = coldStart
+                coldStart = false
+                container.appScope.launch { runCatching { container.fgsEvent("app_opened", mapOf("cold_start" to cold)) } }
             }
 
             override fun onStop(owner: LifecycleOwner) {
                 foreground = false
             }
         })
-        runCatching { container.syncScheduler.ensurePeriodic() }
+    }
+
+    /** ANDROID.md 7.7 step 8: permission and alarm state at each cold start, the platform config when it changed. */
+    private suspend fun platformSnapshots() {
+        val d = container.device
+        if (Build.VERSION.SDK_INT >= 33) container.fgsEvent("permission_state", mapOf("permission" to "post_notifications", "granted" to d.notificationsAllowed()))
+        if (Build.VERSION.SDK_INT >= 29) container.fgsEvent("permission_state", mapOf("permission" to "activity_recognition", "granted" to d.activityRecognitionGranted()))
+        container.fgsEvent("exact_alarm_status", mapOf("allowed" to d.canScheduleExactAlarms()))
+        container.fgsEvent("battery_optimization_status", mapOf("ignoring" to d.ignoringBatteryOptimizations()))
+        val cfg = container.platformConfig
+        if (container.writeContext.userId() != null && container.settings.lastPlatformConfigHash != cfg.hash) {
+            container.fgsEventJson("platform_config_logged", mapOf("platform_config_hash" to JsonPrimitive(cfg.hash), "values" to cfg.values()))
+            container.settings.lastPlatformConfigHash = cfg.hash
+        }
     }
 
     private fun installCrashHandler() {
@@ -98,6 +128,10 @@ class FitnessApplication : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(object : WorkerFactory() {
             override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters): ListenableWorker? =
-                if (workerClassName == SyncWorker::class.java.name) SyncWorker(appContext, workerParameters, container.syncEngine) else null
+                when (workerClassName) {
+                    SyncWorker::class.java.name -> SyncWorker(appContext, workerParameters, container.syncEngine)
+                    MaintenanceWorker::class.java.name -> MaintenanceWorker(appContext, workerParameters, container)
+                    else -> null
+                }
         }).build()
 }

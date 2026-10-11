@@ -39,11 +39,31 @@ class NotificationPresenter(private val context: Context) {
                 .putString("next_title", v.nextTitle).putString("next_load", v.nextLoad).putLong("start", v.sessionStartWall).apply()
         }
 
-    private fun openIntent(route: String): PendingIntent = PendingIntent.getActivity(
-        context, 0,
-        Intent(context, MainActivity::class.java).putExtra("route", route).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+    /** A tap that opens [route] and reports `notification_opened` for [notificationId] (UX 18; one request code per notification). */
+    private fun openIntent(route: String, notificationId: String = "N-SESSION", channel: String = Channels.SESSION_ONGOING, requestCode: Int = 0): PendingIntent =
+        PendingIntent.getActivity(
+            context, requestCode,
+            Intent(context, MainActivity::class.java).putExtra("route", route)
+                .putExtra(MainActivity.EXTRA_NOTIFICATION_ID, notificationId).putExtra(MainActivity.EXTRA_CHANNEL, channel)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
+    /** `notification_dismissed` for the dismissible FGS notification (Android 14+, ANDROID.md 13.3). */
+    private fun deleteIntent(notificationId: String, channel: String, requestCode: Int): PendingIntent = PendingIntent.getBroadcast(
+        context, requestCode,
+        Intent(context, NotificationEventReceiver::class.java).setAction(NotificationEventReceiver.ACTION_DISMISSED)
+            .putExtra(NotificationEventReceiver.EXTRA_ID, notificationId).putExtra(NotificationEventReceiver.EXTRA_CHANNEL, channel),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+    private fun broadcastAction(requestCode: Int, action: String, label: String): NotificationCompat.Action {
+        val pi = PendingIntent.getBroadcast(
+            context, requestCode, Intent(context, NotificationEventReceiver::class.java).setAction(action),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return NotificationCompat.Action.Builder(0, label, pi).build()
+    }
 
     private fun action(requestCode: Int, act: String, label: String): NotificationCompat.Action {
         val pi = PendingIntent.getBroadcast(
@@ -62,6 +82,7 @@ class NotificationPresenter(private val context: Context) {
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setContentIntent(openIntent("fitapp://session/current"))
+        .setDeleteIntent(deleteIntent("N-SESSION", Channels.SESSION_ONGOING, Channels.RC_SESSION_DISMISSED))
         .setRequestPromotedOngoing(true) // Android 16 Live Update (ignored below API 36)
 
     /*
@@ -102,10 +123,12 @@ class NotificationPresenter(private val context: Context) {
     private fun nextLine(t: SessionNotificationText): String =
         "Next: " + listOf(t.nextTitle, t.nextLoad).filter { it.isNotBlank() }.joinToString(" · ")
 
-    fun postSession(n: Notification) = notify(Channels.ID_SESSION, n)
+    fun postSession(n: Notification) {
+        notify(Channels.ID_SESSION, n)
+    }
 
     /** Heads-up at rest end (`N-REST-DONE`), cancelled when the next set is logged. */
-    fun postRestDone(t: SessionNotificationText = text) {
+    fun postRestDone(t: SessionNotificationText = text): Boolean {
         val n = NotificationCompat.Builder(context, Channels.REST_DONE)
             .setSmallIcon(R.drawable.ic_stat_session)
             .setContentTitle("Rest over")
@@ -115,19 +138,74 @@ class NotificationPresenter(private val context: Context) {
             .setAutoCancel(true)
             .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(openIntent("fitapp://session/current/rest"))
+            .setContentIntent(openIntent("fitapp://session/current/rest", "N-REST-DONE", Channels.REST_DONE, Channels.ID_REST_DONE))
             .build()
-        notify(Channels.ID_REST_DONE, n)
+        return notify(Channels.ID_REST_DONE, n)
     }
+
+    /** N-IDLE (ANDROID.md 11.5, UX 18): "Session still running. Finish it?" with Finish / Keep open. */
+    fun postIdle(): Boolean = notify(
+        Channels.ID_IDLE,
+        NotificationCompat.Builder(context, Channels.APP_STATUS)
+            .setSmallIcon(R.drawable.ic_stat_session)
+            .setContentTitle("Session still running")
+            .setContentText("Finish it?")
+            .setAutoCancel(true)
+            .setContentIntent(openIntent("fitapp://session/current", "N-IDLE", Channels.APP_STATUS, Channels.ID_IDLE))
+            .addAction(broadcastAction(Channels.RC_IDLE_FINISH, NotificationEventReceiver.ACTION_IDLE_FINISH, "Finish"))
+            .addAction(broadcastAction(Channels.RC_IDLE_KEEP, NotificationEventReceiver.ACTION_IDLE_KEEP, "Keep open"))
+            .build(),
+    )
+
+    fun cancelIdle() = NotificationManagerCompat.from(context).cancel(Channels.ID_IDLE)
+
+    /** N-EXPORT (F4, UX 18): the monthly backup reminder; "Export" opens Data and sync and starts the export. */
+    fun postExportReminder(): Boolean = notify(
+        Channels.ID_EXPORT,
+        NotificationCompat.Builder(context, Channels.APP_STATUS)
+            .setSmallIcon(R.drawable.ic_stat_session)
+            .setContentTitle("Monthly backup")
+            .setContentText("Export your data")
+            .setAutoCancel(true)
+            .setContentIntent(openIntent("fitapp://you/data", "N-EXPORT", Channels.APP_STATUS, Channels.ID_EXPORT))
+            .addAction(
+                NotificationCompat.Action.Builder(0, "Export", openIntent("fitapp://you/data/export", "N-EXPORT", Channels.APP_STATUS, Channels.RC_EXPORT_ACTION)).build(),
+            )
+            .build(),
+    )
+
+    /** N-SYNC (UX 18): rows the server rejected, or changes not uploaded for 7 days. */
+    fun postSyncNotice(text: String): Boolean = notify(
+        Channels.ID_SYNC,
+        NotificationCompat.Builder(context, Channels.APP_STATUS)
+            .setSmallIcon(R.drawable.ic_stat_session)
+            .setContentTitle("Upload problem")
+            .setContentText(text)
+            .setAutoCancel(true)
+            .setContentIntent(openIntent("fitapp://you/data", "N-SYNC", Channels.APP_STATUS, Channels.ID_SYNC))
+            .build(),
+    )
 
     fun cancelRestDone() = NotificationManagerCompat.from(context).cancel(Channels.ID_REST_DONE)
 
     fun cancelSession() = NotificationManagerCompat.from(context).cancel(Channels.ID_SESSION)
 
-    private fun notify(id: Int, n: Notification) {
+    /** Posts unless notifications are denied; returns whether it was posted. */
+    private fun notify(id: Int, n: Notification): Boolean {
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) return
+        ) return false
         NotificationManagerCompat.from(context).notify(id, n)
+        return true
+    }
+
+    /** `notification_promotion_state` (ANDROID.md 13.4): Live Updates allowed, and whether the posted one is promoted. */
+    fun promotionState(): Pair<Boolean, Boolean>? {
+        if (Build.VERSION.SDK_INT < 36) return null
+        val nm = context.getSystemService(android.app.NotificationManager::class.java)
+        val can = nm.canPostPromotedNotifications()
+        val flagged = nm.activeNotifications.firstOrNull { it.id == Channels.ID_SESSION }
+            ?.let { (it.notification.flags and Notification.FLAG_PROMOTED_ONGOING) != 0 } ?: false
+        return can to flagged
     }
 }

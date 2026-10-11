@@ -28,11 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
-import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.live.PainSheet
-import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.telemetry.EventDraft
 import kotlinx.coroutines.launch
@@ -67,7 +65,17 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
         c.sessionRepository.event(
             EventDraft(
                 type = "session_summary_shown", sessionId = sessionId, screen = "session.summary",
-                payload = mapOf("prs" to JsonPrimitive(0), "next_changes_count" to JsonPrimitive(0), "pipeline_ms" to JsonPrimitive(0)),
+                payload = mapOf("prs" to kotlinx.serialization.json.JsonArray(emptyList()), "next_changes_count" to JsonPrimitive(0), "pipeline_ms" to JsonPrimitive(0)),
+            ),
+        )
+        // UX 20.5: the session-effort prompt of the quick check (the only post-session prompt shown in M1).
+        c.sessionRepository.event(
+            EventDraft(
+                type = "prompt_shown", sessionId = sessionId, screen = "session.summary",
+                payload = mapOf(
+                    "prompt" to JsonPrimitive("srpe"), "phase" to JsonPrimitive("post"), "position" to JsonPrimitive(1),
+                    "budget_used" to JsonPrimitive(1), "reduced" to JsonPrimitive(false),
+                ),
             ),
         )
     }
@@ -142,15 +150,4 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     }
 }
 
-private fun setLine(s: SetLogEntity): String {
-    val side = if (s.side == "L" || s.side == "R") "${s.side} " else ""
-    val effort = s.reps?.let { "$it" } ?: s.duration_s?.let { Numbers.oneDecimal(Scaled.toDouble(it, 1)) + " s" } ?: "-"
-    val load = when {
-        s.load_mode == "bodyweight" -> ""
-        s.assist_pin_native != null -> " @ pin " + Numbers.num(Scaled.toDouble(s.assist_pin_native!!, 2)) + (s.assist_unit?.let { " $it" } ?: "")
-        s.input_value != null -> " @ " + Numbers.num(Scaled.toDouble(s.input_value!!, 2)) + (s.input_unit?.let { " $it" } ?: "")
-        s.added_kg != 0L -> " @ +" + Numbers.kg(Scaled.toDouble(s.added_kg, 2))
-        else -> ""
-    }
-    return side + effort + load
-}
+private fun setLine(s: SetLogEntity): String = dev.fitnessapp.app.format.SetLines.line(s)

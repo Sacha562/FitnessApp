@@ -5,6 +5,7 @@ package dev.fitnessapp.data.db.local
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 /**
  * Pending push of one row (ANDROID.md 8.3, C40). No payload copy: the push reads the entity, which coalesces
@@ -35,6 +36,7 @@ data class SyncCursorEntity(
 )
 
 /** Rows the server rejected permanently (ANDROID.md 9.5); never deleted automatically. */
+@Serializable
 @Entity(tableName = "dead_letter")
 data class DeadLetterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -49,6 +51,7 @@ data class DeadLetterEntity(
 )
 
 /** The active and last rest timer per session (ANDROID.md 12.2). Timestamps only, never a counter. */
+@Serializable
 @Entity(tableName = "rest_timer", indices = [Index("session_id"), Index("state")])
 data class RestTimerEntity(
     @PrimaryKey val id: String,
@@ -80,6 +83,7 @@ data class RestTimerEntity(
 )
 
 /** Every alarm the app scheduled, for rescheduling after boot, force-stop or update (ANDROID.md 8.3). */
+@Serializable
 @Entity(tableName = "scheduled_alarm")
 data class ScheduledAlarmEntity(
     @PrimaryKey val request_code: Int,
@@ -91,6 +95,7 @@ data class ScheduledAlarmEntity(
 )
 
 /** Local crash record, summarised into an `app_crash` event at the next start (ANDROID.md 7.7). */
+@Serializable
 @Entity(tableName = "crash_log")
 data class CrashLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

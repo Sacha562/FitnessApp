@@ -15,6 +15,8 @@ import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
+import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
+import dev.fitnessapp.data.db.entity.ExportEntity
 import kotlinx.coroutines.flow.Flow
 
 /** The operations the sync engine needs on every synced table (ANDROID.md 9). */
@@ -28,6 +30,9 @@ interface SyncDao<E> {
     suspend fun byIds(ids: List<String>): List<E>
 
     suspend fun allIds(): List<String>
+
+    /** Every row including tombstones, ordered by id (the full export, DATA_MODEL 15.5). */
+    suspend fun exportAll(): List<E>
 }
 
 @Dao
@@ -37,6 +42,9 @@ interface ProfileDao : SyncDao<ProfileEntity> {
 
     @Query("SELECT id FROM profiles")
     override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM profiles ORDER BY id")
+    override suspend fun exportAll(): List<ProfileEntity>
 
     @Query("SELECT * FROM profiles WHERE id = :userId")
     fun observe(userId: String): Flow<ProfileEntity?>
@@ -53,6 +61,9 @@ interface GymDao : SyncDao<GymEntity> {
     @Query("SELECT id FROM gyms")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM gyms ORDER BY id")
+    override suspend fun exportAll(): List<GymEntity>
+
     @Query("SELECT * FROM gyms WHERE deleted_at IS NULL ORDER BY is_default DESC, name, id")
     fun observeAll(): Flow<List<GymEntity>>
 
@@ -67,6 +78,9 @@ interface GymEquipmentDao : SyncDao<GymEquipmentEntity> {
 
     @Query("SELECT id FROM gym_equipment")
     override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM gym_equipment ORDER BY id")
+    override suspend fun exportAll(): List<GymEquipmentEntity>
 
     @Query("SELECT * FROM gym_equipment WHERE deleted_at IS NULL ORDER BY equipment_type, label, id")
     fun observeAll(): Flow<List<GymEquipmentEntity>>
@@ -83,6 +97,9 @@ interface WorkoutSessionDao : SyncDao<WorkoutSessionEntity> {
     @Query("SELECT id FROM workout_sessions")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM workout_sessions ORDER BY id")
+    override suspend fun exportAll(): List<WorkoutSessionEntity>
+
     @Query("SELECT * FROM workout_sessions WHERE id = :id")
     suspend fun get(id: String): WorkoutSessionEntity?
 
@@ -97,6 +114,13 @@ interface WorkoutSessionDao : SyncDao<WorkoutSessionEntity> {
 
     @Query("SELECT * FROM workout_sessions WHERE status IN ('finished', 'abandoned') AND deleted_at IS NULL ORDER BY started_at DESC, id DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<WorkoutSessionEntity>>
+
+    /** History (UX 15.3): every finished or abandoned session, newest first. */
+    @Query("SELECT * FROM workout_sessions WHERE status IN ('finished', 'abandoned') AND deleted_at IS NULL ORDER BY started_at DESC, id DESC")
+    fun observeHistory(): Flow<List<WorkoutSessionEntity>>
+
+    @Query("SELECT MIN(started_at) FROM workout_sessions WHERE deleted_at IS NULL")
+    suspend fun firstStartedAt(): Long?
 }
 
 @Dao
@@ -106,6 +130,9 @@ interface SessionBlockDao : SyncDao<SessionBlockEntity> {
 
     @Query("SELECT id FROM session_blocks")
     override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM session_blocks ORDER BY id")
+    override suspend fun exportAll(): List<SessionBlockEntity>
 
     @Query("SELECT * FROM session_blocks WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY position, id")
     suspend fun bySession(sessionId: String): List<SessionBlockEntity>
@@ -119,6 +146,9 @@ interface SessionExerciseDao : SyncDao<SessionExerciseEntity> {
     @Query("SELECT id FROM session_exercises")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM session_exercises ORDER BY id")
+    override suspend fun exportAll(): List<SessionExerciseEntity>
+
     @Query("SELECT * FROM session_exercises WHERE id = :id")
     suspend fun get(id: String): SessionExerciseEntity?
 
@@ -127,7 +157,20 @@ interface SessionExerciseDao : SyncDao<SessionExerciseEntity> {
 
     @Query("SELECT * FROM session_exercises WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY position, id")
     suspend fun bySession(sessionId: String): List<SessionExerciseEntity>
+
+    /** Exercise ids per session in list order, for the History rows. */
+    @Query("SELECT session_id, exercise_id, status FROM session_exercises WHERE deleted_at IS NULL AND status != 'removed' ORDER BY session_id, position, id")
+    fun observeNames(): Flow<List<SessionExerciseName>>
 }
+
+/** One exercise of a session, for History rows. */
+data class SessionExerciseName(val session_id: String, val exercise_id: String, val status: String)
+
+/** Working sets of a session; an L+R pair counts as one (C7): `units / 2`. */
+data class SessionWorkUnits(val session_id: String, val units: Int)
+
+/** Sessions in which an exercise was trained since a date (the "most used" sort, UX 13.2). */
+data class ExerciseUsage(val exercise_id: String, val sessions: Int)
 
 /** One logged set joined with its session start (for "last time" history, UI-04). */
 data class SetWithSessionStart(
@@ -144,6 +187,9 @@ interface SetLogDao : SyncDao<SetLogEntity> {
     @Query("SELECT id FROM set_logs")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM set_logs ORDER BY id")
+    override suspend fun exportAll(): List<SetLogEntity>
+
     @Query("SELECT * FROM set_logs WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY completed_at, id")
     fun observeBySession(sessionId: String): Flow<List<SetLogEntity>>
 
@@ -159,6 +205,37 @@ interface SetLogDao : SyncDao<SetLogEntity> {
            LIMIT :limit""",
     )
     suspend fun historyForExercise(exerciseId: String, excludeSessionId: String, limit: Int): List<SetWithSessionStart>
+
+    @Query(
+        """SELECT s.started_at AS session_started_at, s.local_date AS session_local_date, l.*
+           FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
+           WHERE l.exercise_id = :exerciseId AND l.deleted_at IS NULL AND s.deleted_at IS NULL
+             AND s.status IN ('finished', 'abandoned', 'in_progress')
+           ORDER BY s.started_at DESC, s.id DESC, l.set_index, l.side, l.id
+           LIMIT :limit""",
+    )
+    fun observeHistoryForExercise(exerciseId: String, limit: Int): Flow<List<SetWithSessionStart>>
+
+    @Query(
+        """SELECT l.session_id AS session_id, SUM(CASE WHEN l.side = 'both' THEN 2 ELSE 1 END) AS units
+           FROM set_logs l WHERE l.deleted_at IS NULL AND l.set_kind != 'warmup' GROUP BY l.session_id""",
+    )
+    fun observeWorkUnits(): Flow<List<SessionWorkUnits>>
+
+    @Query(
+        """SELECT l.exercise_id AS exercise_id, COUNT(DISTINCT l.session_id) AS sessions
+           FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
+           WHERE l.deleted_at IS NULL AND s.deleted_at IS NULL AND s.local_date >= :sinceDate
+           GROUP BY l.exercise_id""",
+    )
+    fun observeUsageSince(sinceDate: String): Flow<List<ExerciseUsage>>
+
+    @Query("SELECT * FROM set_logs WHERE id = :id")
+    suspend fun get(id: String): SetLogEntity?
+
+    /** Every set of a session including tombstones (new set indexes never collide with a set that is restored). */
+    @Query("SELECT * FROM set_logs WHERE session_id = :sessionId ORDER BY completed_at, id")
+    suspend fun bySessionAll(sessionId: String): List<SetLogEntity>
 }
 
 @Dao
@@ -169,8 +246,18 @@ interface WellnessLogDao : SyncDao<WellnessLogEntity> {
     @Query("SELECT id FROM wellness_logs")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM wellness_logs ORDER BY id")
+    override suspend fun exportAll(): List<WellnessLogEntity>
+
     @Query("SELECT * FROM wellness_logs WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY observed_at, id")
     suspend fun bySession(sessionId: String): List<WellnessLogEntity>
+
+    @Query("SELECT * FROM wellness_logs WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY observed_at, id")
+    fun observeBySession(sessionId: String): Flow<List<WellnessLogEntity>>
+
+    /** Sessions with a pain report (the History "pain" badge). */
+    @Query("SELECT DISTINCT session_id FROM wellness_logs WHERE kind = 'pain' AND deleted_at IS NULL AND session_id IS NOT NULL")
+    fun observePainSessions(): Flow<List<String>>
 }
 
 @Dao
@@ -180,6 +267,9 @@ interface MetricObservationDao : SyncDao<MetricObservationEntity> {
 
     @Query("SELECT id FROM metric_observations")
     override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM metric_observations ORDER BY id")
+    override suspend fun exportAll(): List<MetricObservationEntity>
 
     @Query("SELECT * FROM metric_observations WHERE metric_code = :code AND deleted_at IS NULL ORDER BY observed_at, id")
     suspend fun byMetric(code: String): List<MetricObservationEntity>
@@ -196,9 +286,65 @@ interface SessionEventDao : SyncDao<SessionEventEntity> {
     @Query("SELECT id FROM session_events")
     override suspend fun allIds(): List<String>
 
+    @Query("SELECT * FROM session_events ORDER BY id")
+    override suspend fun exportAll(): List<SessionEventEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(row: SessionEventEntity)
 
     @Query("SELECT * FROM session_events WHERE session_id = :sessionId ORDER BY occurred_at, id")
     suspend fun bySession(sessionId: String): List<SessionEventEntity>
+
+    @Query("SELECT * FROM session_events WHERE event_type = :type ORDER BY occurred_at DESC, id DESC LIMIT :limit")
+    fun observeLatest(type: String, limit: Int): Flow<List<SessionEventEntity>>
+
+    @Query("SELECT * FROM session_events WHERE event_type = :type ORDER BY occurred_at DESC, id DESC LIMIT :limit")
+    suspend fun latest(type: String, limit: Int): List<SessionEventEntity>
+
+    /** The last activity of a session (idle protection, ANDROID.md 11.5): any of its events except [ignored] types. */
+    @Query("SELECT MAX(occurred_at) FROM session_events WHERE session_id = :sessionId AND event_type NOT IN (:ignored)")
+    fun observeLastActivity(sessionId: String, ignored: List<String>): Flow<Long?>
+
+    @Query("SELECT MAX(occurred_at) FROM session_events WHERE session_id = :sessionId AND event_type NOT IN (:ignored)")
+    suspend fun lastActivity(sessionId: String, ignored: List<String>): Long?
+}
+
+@Dao
+interface UserExercisePrefDao : SyncDao<UserExercisePrefEntity> {
+    @Query("SELECT * FROM user_exercise_prefs WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<UserExercisePrefEntity>
+
+    @Query("SELECT id FROM user_exercise_prefs")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM user_exercise_prefs ORDER BY id")
+    override suspend fun exportAll(): List<UserExercisePrefEntity>
+
+    @Query("SELECT * FROM user_exercise_prefs WHERE deleted_at IS NULL ORDER BY exercise_id, id")
+    fun observeAll(): Flow<List<UserExercisePrefEntity>>
+
+    @Query("SELECT * FROM user_exercise_prefs WHERE id = :id")
+    suspend fun get(id: String): UserExercisePrefEntity?
+}
+
+@Dao
+interface ExportDao : SyncDao<ExportEntity> {
+    @Query("SELECT * FROM exports WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<ExportEntity>
+
+    @Query("SELECT id FROM exports")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM exports ORDER BY id")
+    override suspend fun exportAll(): List<ExportEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(row: ExportEntity)
+
+    /** The newest full export (monthly or manual): the "last export" line and the N-EXPORT reminder (F4). */
+    @Query("SELECT * FROM exports WHERE export_kind IN ('monthly_full', 'manual_full') ORDER BY period_end DESC, id DESC LIMIT 1")
+    fun observeLastFull(): Flow<ExportEntity?>
+
+    @Query("SELECT * FROM exports WHERE export_kind IN ('monthly_full', 'manual_full') ORDER BY period_end DESC, id DESC LIMIT 1")
+    suspend fun lastFull(): ExportEntity?
 }

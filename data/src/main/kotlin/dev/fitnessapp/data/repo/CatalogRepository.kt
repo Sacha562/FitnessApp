@@ -26,13 +26,16 @@ class CatalogRepository(text: () -> String) {
     fun byId(id: String): CatalogExercise? = byId[id]
     fun bySlug(slug: String): CatalogExercise? = bySlug[slug]
 
-    /** Search by English and Dutch names and aliases (D12), accent- and case-insensitive; empty query = all. */
-    fun search(query: String): List<CatalogExercise> {
+    /**
+     * Search by English names and aliases, plus Dutch names when [dutch] (D12: the phone's language is Dutch), accent-
+     * and case-insensitive; empty query = all.
+     */
+    fun search(query: String, dutch: Boolean): List<CatalogExercise> {
         val q = fold(query)
         if (q.isBlank()) return exercises
         val words = q.split(' ').filter { it.isNotBlank() }
         return exercises.filter { e ->
-            val hay = fold(listOfNotNull(e.nameEn, e.nameNl).plus(e.aliases).joinToString(" "))
+            val hay = fold(listOfNotNull(e.nameEn, e.nameNl?.takeIf { dutch }).plus(e.aliases).joinToString(" "))
             words.all { hay.contains(it) }
         }
     }

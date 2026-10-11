@@ -43,6 +43,15 @@ import dev.fitnessapp.app.ui.you.DataSyncRoute
 import dev.fitnessapp.app.ui.you.EquipmentRoute
 import dev.fitnessapp.app.ui.you.ReliabilityRoute
 import dev.fitnessapp.app.ui.you.YouRoute
+import dev.fitnessapp.app.ui.exercises.ExerciseDetailRoute
+import dev.fitnessapp.app.ui.exercises.ExercisesRoute
+import dev.fitnessapp.app.ui.history.HistoryRoute
+import dev.fitnessapp.app.ui.history.SessionDetailRoute
+import dev.fitnessapp.app.notify.Channels
+import dev.fitnessapp.app.session.SessionService
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
@@ -73,9 +82,14 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
     val backStack = rememberSaveable(saver = BackStackSaver) { mutableStateListOf<AppKey>(AppKey.Main) }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     val pending by route.collectAsState()
+    val scope = rememberCoroutineScope()
 
     fun push(k: AppKey) {
         if (backStack.lastOrNull() != k) backStack.add(k)
+    }
+
+    fun pop() {
+        if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
     }
 
     // An open session always comes back to the front after a restart (UX 11.15 "Restored").
@@ -83,35 +97,70 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         val active = c.sessionRepository.observeActiveOnce()
         when (pending) {
             Routes.Target.DataSync -> push(AppKey.DataSync)
+            Routes.Target.DataSyncExport -> {
+                push(AppKey.DataSyncExport)
+                c.fgsEvent("notification_action", mapOf("notification_id" to "N-EXPORT", "channel" to Channels.APP_STATUS, "action" to "export"))
+            }
             Routes.Target.CurrentSession, null -> active?.let { a ->
                 val key = AppKey.LiveSession(a.id)
-                if (pending != null || key !in backStack) push(key)
+                if (key !in backStack) {
+                    push(key)
+                    if (pending == null) restored(c, a.id) else c.sessionEvent(a.id, "session_resumed", mapOf("via" to "notification"))
+                } else if (pending != null) {
+                    push(key)
+                }
             }
             Routes.Target.Today -> {}
         }
         route.value = null
     }
 
+    // `screen_viewed` on navigation, at most once per screen and `SCREEN_VIEW_MIN_GAP_MS` (UX 20.9).
+    val top = backStack.lastOrNull()
+    val screen = screenName(top, tab)
+    val lastViews = remember { mutableMapOf<String, Long>() }
+    LaunchedEffect(screen) {
+        val now = System.currentTimeMillis()
+        if (now - (lastViews[screen] ?: 0L) >= SCREEN_VIEW_MIN_GAP_MS) {
+            lastViews[screen] = now
+            c.screenViewed(screen, emptyMap())
+        }
+    }
+
+    fun openSession(id: String, via: String) {
+        push(AppKey.LiveSession(id))
+        if (via != "start") scope.launch { c.sessionEvent(id, "session_resumed", mapOf("via" to via)) }
+    }
+
     NavDisplay(
         backStack = backStack,
-        onBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) },
+        onBack = { pop() },
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
         entryProvider = entryProvider {
             entry<AppKey.Main> {
                 Scaffold(
                     bottomBar = {
                         NavigationBar {
-                            NavigationBarItem(tab == Tab.TODAY, { tab = Tab.TODAY }, { Icon(Icons.Filled.FitnessCenter, null) }, label = { Text("Today") })
-                            NavigationBarItem(tab == Tab.YOU, { tab = Tab.YOU }, { Icon(Icons.Filled.Person, null) }, label = { Text("You") })
+                            fun select(t: Tab) {
+                                if (tab == t) scope.launch { c.screenViewed(screenName(AppKey.Main, t), mapOf("tab_reselected" to true)) }
+                                tab = t
+                            }
+                            NavigationBarItem(tab == Tab.TODAY, { select(Tab.TODAY) }, { Icon(Icons.Filled.FitnessCenter, null) }, label = { Text("Today") })
+                            NavigationBarItem(tab == Tab.EXERCISES, { select(Tab.EXERCISES) }, { Icon(Icons.AutoMirrored.Filled.List, null) }, label = { Text("Exercises") })
+                            NavigationBarItem(tab == Tab.YOU, { select(Tab.YOU) }, { Icon(Icons.Filled.Person, null) }, label = { Text("You") })
                         }
                     },
                 ) { pad ->
                     val m = Modifier.padding(pad)
                     when (tab) {
-                        Tab.TODAY -> TodayRoute(c, m, onOpenSession = { push(AppKey.LiveSession(it)) }, onOpenSync = { push(AppKey.DataSync) })
+                        Tab.TODAY -> TodayRoute(
+                            c, m, onOpenSession = { id, resumed -> openSession(id, if (resumed) "today_card" else "start") }, onOpenSync = { push(AppKey.DataSync) },
+                            onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
+                        )
+                        Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) })
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
-                            onReliability = { push(AppKey.Reliability) },
+                            onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) },
                         )
                     }
                 }
@@ -119,21 +168,64 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             entry<AppKey.LiveSession> { k ->
                 LiveSessionRoute(
                     c, k.sessionId,
-                    onMinimise = { backStack.removeAt(backStack.lastIndex) },
+                    onMinimise = { via ->
+                        pop()
+                        scope.launch { c.sessionEvent(k.sessionId, "session_minimised", mapOf("via" to via)) }
+                    },
                     onFinished = { id ->
-                        backStack.removeAt(backStack.lastIndex)
+                        pop()
                         push(AppKey.Summary(id))
                     },
-                    onAbandoned = { backStack.removeAt(backStack.lastIndex) },
+                    onAbandoned = { pop() },
                 )
             }
-            entry<AppKey.Summary> { k -> SummaryRoute(c, k.sessionId, onDone = { backStack.removeAt(backStack.lastIndex) }) }
-            entry<AppKey.DataSync> { DataSyncRoute(c, onBack = { backStack.removeAt(backStack.lastIndex) }) }
-            entry<AppKey.Equipment> { EquipmentRoute(c, onBack = { backStack.removeAt(backStack.lastIndex) }) }
-            entry<AppKey.Reliability> { ReliabilityRoute(c, onBack = { backStack.removeAt(backStack.lastIndex) }) }
+            entry<AppKey.Summary> { k -> SummaryRoute(c, k.sessionId, onDone = { pop() }) }
+            entry<AppKey.DataSync> { DataSyncRoute(c, onBack = { pop() }) }
+            entry<AppKey.DataSyncExport> { DataSyncRoute(c, onBack = { pop() }, autoExport = true) }
+            entry<AppKey.Equipment> { EquipmentRoute(c, onBack = { pop() }) }
+            entry<AppKey.Reliability> { ReliabilityRoute(c, onBack = { pop() }) }
+            entry<AppKey.History> { HistoryRoute(c, onBack = { pop() }, onOpen = { push(AppKey.SessionDetail(it)) }) }
+            entry<AppKey.SessionDetail> { k ->
+                SessionDetailRoute(
+                    c, k.sessionId, onBack = { pop() },
+                    onOpenExercise = { push(AppKey.ExerciseDetail(it, "history")) },
+                    onReopened = { id ->
+                        pop()
+                        SessionService.start(c.appContext)
+                        push(AppKey.LiveSession(id))
+                    },
+                )
+            }
+            entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }) }
         },
     )
 }
+
+/** UX 20.2 `session_restored`: the app came back with a session in progress. */
+private suspend fun restored(c: AppContainer, sessionId: String) {
+    val rest = c.db.restTimers().latest(sessionId)?.state?.takeIf { it == "running" || it == "overtime" } ?: "none"
+    val last = c.db.events().lastActivity(sessionId, emptyList())
+    c.sessionEvent(sessionId, "session_restored", mapOf("rest_state" to rest, "ms_since_last_event" to (last?.let { System.currentTimeMillis() - it } ?: 0L)))
+}
+
+/** The UX screen id of the visible destination (UX 3.1), the `screen` envelope column of `screen_viewed`. */
+private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
+    AppKey.Main, null -> when (tab) {
+        Tab.TODAY -> "today"
+        Tab.EXERCISES -> "exercises"
+        Tab.YOU -> "you"
+    }
+    is AppKey.LiveSession -> "session.live"
+    is AppKey.Summary -> "session.summary"
+    AppKey.DataSync, AppKey.DataSyncExport -> "you.data"
+    AppKey.Equipment -> "you.equipment"
+    AppKey.Reliability -> "you.rest"
+    AppKey.History -> "you.history"
+    is AppKey.SessionDetail -> "you.session_detail"
+    is AppKey.ExerciseDetail -> "exercises.detail"
+}
+
+private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
 
 private val BackStackSaver = listSaver<SnapshotStateList<AppKey>, String>(
     save = { stack -> stack.map(AppKey::encode) },

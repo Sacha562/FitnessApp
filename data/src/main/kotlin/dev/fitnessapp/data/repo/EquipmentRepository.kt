@@ -90,6 +90,15 @@ class EquipmentRepository(
                 if (old != null && old == row.copy(client_updated_at = old.client_updated_at, server_updated_at = old.server_updated_at)) continue
                 db.gymEquipment().upsert(row)
                 outbox.enqueue("gym_equipment", row.id, now)
+                if (old != null && old.available != row.available) {
+                    // UX 20.8 `equipment_changed {key, from, to}`: a station switched on or off in the checklist.
+                    telemetry.write(
+                        EventDraft(
+                            type = "equipment_changed", entityType = "gym_equipment", entityId = row.id,
+                            payload = mapOf("key" to JsonPrimitive(row.equipment_type), "from" to JsonPrimitive(old.available), "to" to JsonPrimitive(row.available)),
+                        ),
+                    )
+                }
                 if (calibrationChanged) {
                     telemetry.write(
                         EventDraft(

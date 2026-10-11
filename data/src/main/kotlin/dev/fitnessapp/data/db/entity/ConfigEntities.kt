@@ -103,3 +103,23 @@ data class GymEquipmentEntity(
     val calibration_source: String = "default",
     @Serializable(with = EpochMsIso::class) val confirmed_at: Long? = null,
 ) : MutableRow
+
+/**
+ * `fitness.user_exercise_prefs` (9.3.6, C26); id = UUIDv5 `user_exercise_prefs:<uid>:<exercise_id>` (6.4), so two
+ * devices converge on one row. Neutral is stored as a row too once the user changed it back.
+ */
+@Serializable
+@Entity(tableName = "user_exercise_prefs", indices = [Index("exercise_id")])
+data class UserExercisePrefEntity(
+    @PrimaryKey override val id: String,
+    override val user_id: String,
+    @Serializable(with = EpochMsIso::class) override val client_updated_at: Long,
+    override val server_updated_at: String? = null,
+    @Serializable(with = EpochMsIso::class) override val deleted_at: Long? = null,
+    override val device_id: String,
+    override val app_version: String,
+    val exercise_id: String,
+    val preference: String = "neutral",
+    val unavailable_until: String? = null,
+    val note: String? = null,
+) : MutableRow

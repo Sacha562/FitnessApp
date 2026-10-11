@@ -2,12 +2,14 @@ package dev.fitnessapp.data.db
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import dev.fitnessapp.data.db.dao.CrashLogDao
 import dev.fitnessapp.data.db.dao.DeadLetterDao
+import dev.fitnessapp.data.db.dao.ExportDao
 import dev.fitnessapp.data.db.dao.GymDao
 import dev.fitnessapp.data.db.dao.GymEquipmentDao
 import dev.fitnessapp.data.db.dao.MetricObservationDao
@@ -20,8 +22,10 @@ import dev.fitnessapp.data.db.dao.SessionEventDao
 import dev.fitnessapp.data.db.dao.SessionExerciseDao
 import dev.fitnessapp.data.db.dao.SetLogDao
 import dev.fitnessapp.data.db.dao.SyncCursorDao
+import dev.fitnessapp.data.db.dao.UserExercisePrefDao
 import dev.fitnessapp.data.db.dao.WellnessLogDao
 import dev.fitnessapp.data.db.dao.WorkoutSessionDao
+import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
@@ -30,6 +34,7 @@ import dev.fitnessapp.data.db.entity.SessionBlockEntity
 import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
+import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.db.local.CrashLogEntity
@@ -42,8 +47,9 @@ import java.io.File
 
 /**
  * The phone's source of truth (ANDROID.md 8). Version 1 holds the synced tables that logging needs in M1a
- * (configuration, sessions and sets, wellness, metrics, telemetry) plus the local-only tables of 8.3; later
- * milestones add tables through numbered migrations, never through a destructive fallback (8.5).
+ * (configuration, sessions and sets, wellness, metrics, telemetry) plus the local-only tables of 8.3; version 2
+ * (M1b) adds `user_exercise_prefs` and `exports`. Later milestones add tables through numbered migrations,
+ * never through a destructive fallback (8.5).
  */
 @Database(
     version = FitnessDatabase.VERSION,
@@ -54,7 +60,10 @@ import java.io.File
         WellnessLogEntity::class, MetricObservationEntity::class, SessionEventEntity::class,
         OutboxEntity::class, SyncCursorEntity::class, DeadLetterEntity::class, RestTimerEntity::class,
         ScheduledAlarmEntity::class, CrashLogEntity::class,
+        // v2 (M1b)
+        UserExercisePrefEntity::class, ExportEntity::class,
     ],
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @TypeConverters(Converters::class)
 abstract class FitnessDatabase : RoomDatabase() {
@@ -74,13 +83,18 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun restTimers(): RestTimerDao
     abstract fun alarms(): ScheduledAlarmDao
     abstract fun crashes(): CrashLogDao
+    abstract fun exercisePrefs(): UserExercisePrefDao
+    abstract fun exports(): ExportDao
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
-        /** Every migration of every version; [NoDestructiveMigrationTest] checks the builder uses only these. */
+        /**
+         * Hand-written migrations of every version; [NoDestructiveMigrationTest] checks the builder uses only these.
+         * 1 -> 2 only adds tables and is an [AutoMigration] declared on the class.
+         */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()
 
         /** The production builder: no destructive fallback in any build type (8.5). */

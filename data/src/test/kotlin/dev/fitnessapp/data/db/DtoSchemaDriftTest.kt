@@ -1,5 +1,6 @@
 package dev.fitnessapp.data.db
 
+import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
@@ -8,6 +9,7 @@ import dev.fitnessapp.data.db.entity.SessionBlockEntity
 import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
+import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import io.kotest.matchers.shouldBe
@@ -16,8 +18,8 @@ import org.junit.jupiter.api.Test
 
 /**
  * ANDROID.md 27.2 `DtoSchemaDriftTest`: the JSON keys of every synced entity equal the server columns of
- * migrations 006-015 (read from the live `information_schema` on 2026-10-08), minus `created_at`, which the
- * server fills. A migration that adds a column must update the entity and this list together.
+ * migrations 006-015 (read from the live `information_schema` on 2026-10-08; `user_exercise_prefs` and `exports`
+ * from migrations 010 and 015 on 2026-10-11), minus `created_at`, which the server fills. A migration that adds a column must update the entity and this list together.
  */
 class DtoSchemaDriftTest {
     private val std = listOf("id", "user_id", "client_updated_at", "server_updated_at", "deleted_at", "device_id", "app_version")
@@ -111,6 +113,17 @@ class DtoSchemaDriftTest {
         SessionEventEntity.serializer(),
         "event_type, category, occurred_at, tz_offset_min, screen, session_id, entity_type, entity_id, recommendation_id, " +
             "module_id, module_version, ui_version, payload",
+        standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    @Test
+    fun userExercisePrefs() = check(UserExercisePrefEntity.serializer(), "exercise_id, preference, unavailable_until, note")
+
+    @Test
+    fun exports() = check(
+        ExportEntity.serializer(),
+        "export_kind, format, schema_version, table_row_counts, bytes, sha256, destination, period_start, period_end, " +
+            "includes_local_only, engine_version, catalog_version",
         standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
     )
 }

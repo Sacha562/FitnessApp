@@ -65,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +84,8 @@ import dev.fitnessapp.app.timer.RestTimerReducer
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.StepperRow
 import dev.fitnessapp.app.ui.common.TabularNums
+import dev.fitnessapp.app.ui.common.dutchNames
+import dev.fitnessapp.app.ui.common.undoTimeoutMs
 import dev.fitnessapp.app.ui.theme.AdvisoryAmber
 import dev.fitnessapp.app.ui.theme.SafetyRed
 import dev.fitnessapp.app.uidet.ChipContext
@@ -102,12 +105,12 @@ private sealed interface Sheet {
 }
 
 @Composable
-fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: () -> Unit, onFinished: (String) -> Unit, onAbandoned: () -> Unit) {
+fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: String) -> Unit, onFinished: (String) -> Unit, onAbandoned: () -> Unit) {
     val vm: LiveSessionViewModel = viewModel(key = sessionId, factory = viewModelFactory { initializer { LiveSessionViewModel(c, sessionId) } })
     val ui by vm.ui.collectAsState()
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     val profile by remember { c.profiles.observe() }.collectAsState(initial = null)
-    BackHandler(onBack = onMinimise)
+    BackHandler(onBack = { onMinimise("back") })
 
     // Keep screen on during the session (F20, ANDROID.md 14.3); holds force it on.
     val view = LocalView.current
@@ -119,7 +122,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: () -> Unit,
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.safeDrawingPadding().fillMaxSize()) {
-            Header(ui, onMinimise, onFinish = {
+            Header(ui, { onMinimise("chevron") }, onFinish = {
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
             }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon })
             if (ui.banner == "pain") Banner("Pain noted. The exercise ended. If it hurts, stop and get it checked; this app does not give medical advice.", vm::dismissBanner)
@@ -290,6 +293,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
             if (!prewarned && t.state == "running" && r in 1..(c.platformConfig.timerPrewarnS * 1000L)) {
                 prewarned = true
                 haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                vm.prewarned(t.id)
             }
             delay(200)
         }
@@ -519,7 +523,8 @@ private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
 @Composable
 private fun UndoBar(ui: LiveUi, vm: LiveSessionViewModel) {
     val l = ui.lastLogged ?: return
-    LaunchedEffect(l.setId) { delay(6000); vm.dismissUndo() }
+    val context = LocalContext.current
+    LaunchedEffect(l.setId) { delay(undoTimeoutMs(context)); vm.dismissUndo() }
     Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.inverseSurface).padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("Logged: ${l.label}", color = MaterialTheme.colorScheme.inverseOnSurface, modifier = Modifier.weight(1f))
         TextButton(onClick = vm::undoLast) { Text("Undo", color = MaterialTheme.colorScheme.inversePrimary) }
@@ -530,17 +535,18 @@ private fun UndoBar(ui: LiveUi, vm: LiveSessionViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, onPick: (dev.fitnessapp.algo.selection.catalog.CatalogExercise) -> Unit) {
+fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, onPick: (dev.fitnessapp.algo.selection.catalog.CatalogExercise) -> Unit) {
     var query by remember { mutableStateOf("") }
-    val results = remember(query) { c.catalog.search(query) }
+    val dutch = dutchNames()
+    val results = remember(query, dutch) { c.catalog.search(query, dutch) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 16.dp)) {
-            OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text("Search (English or Dutch)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text(if (dutch) "Search (English or Dutch)" else "Search") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
                 items(results, key = { it.slug }) { ex ->
                     Column(Modifier.fillMaxWidth().clickable { onPick(ex) }.padding(vertical = 10.dp)) {
                         Text(ex.nameEn, style = MaterialTheme.typography.bodyLarge)
-                        Text(listOfNotNull(ex.nameNl, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(listOfNotNull(ex.nameNl?.takeIf { dutch }, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

@@ -111,7 +111,7 @@ fun openOemSettings(context: Context, maker: Maker): Boolean {
  * the user returns from Settings, and a Grant action; plus the manufacturer steps and the timer self-test.
  */
 @Composable
-fun ReliabilityContent(c: AppContainer) {
+fun ReliabilityContent(c: AppContainer, showStats: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var tick by remember { mutableIntStateOf(0) }
@@ -130,6 +130,7 @@ fun ReliabilityContent(c: AppContainer) {
 
     // Statuses are read during composition; key(tick) re-reads them on resume and after permission results.
     key(tick) { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (showStats) AlarmLatencyCard(c)
         Row1(
             "Notifications", "Shows the rest countdown on the lock screen and alerts you when rest is over.",
             c.device.notificationsAllowed(), if (Build.VERSION.SDK_INT >= 33) "Allow" else null,

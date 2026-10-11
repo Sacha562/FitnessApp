@@ -5,6 +5,8 @@ plugins {
 
 android {
     namespace = "dev.fitnessapp.data"
+    // MigrationTestHelper reads the exported schemas as assets (ANDROID.md 8.5).
+    sourceSets { named("test") { assets.directories.add("$projectDir/schemas") } }
 }
 
 dependencies {

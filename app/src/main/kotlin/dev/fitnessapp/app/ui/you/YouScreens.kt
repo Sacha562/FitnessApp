@@ -1,6 +1,8 @@
 package dev.fitnessapp.app.ui.you
 
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,10 +27,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,13 +57,19 @@ import dev.fitnessapp.app.ui.equipment.EquipmentViewModel
 import dev.fitnessapp.app.ui.reliability.ReliabilityContent
 import dev.fitnessapp.app.ui.today.WeighInDialog
 import dev.fitnessapp.app.ui.today.pendingLine
+import dev.fitnessapp.data.export.ExportRepository
 import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
 import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun YouRoute(
@@ -69,8 +79,10 @@ fun YouRoute(
     onDataSync: () -> Unit,
     onEquipment: () -> Unit,
     onReliability: () -> Unit,
+    onHistory: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val history by remember { c.history.observeHistory() }.collectAsState(initial = emptyList())
     val syncState by c.sync.state.collectAsState()
     val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
@@ -79,6 +91,12 @@ fun YouRoute(
     var signOutBlocked by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
         Text("You", style = MaterialTheme.typography.headlineMedium)
+        val thisWeek = history.firstOrNull()?.session?.iso_week
+        NavRow(
+            "History",
+            thisWeek?.let { w -> "Week ${w.substringAfter("-W").trimStart('0')} · ${history.count { it.session.iso_week == w }} sessions" } ?: "No sessions yet",
+            onHistory,
+        )
         SectionLabel("Settings")
         NavRow("Data and sync", when {
             dead > 0 -> "$dead could not be uploaded"
@@ -139,10 +157,36 @@ private fun SubScreen(title: String, onBack: () -> Unit, bottom: (@Composable ()
     }
 }
 
-/** You > Data and sync (ANDROID.md 9.7, D17). */
+/** You > Data and sync (UX 15.11, ANDROID.md 9.7 and 20.4, D17). [autoExport]: opened from N-EXPORT, starts the monthly export. */
 @Composable
-fun DataSyncRoute(c: AppContainer, onBack: () -> Unit) {
+fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = false) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val lastExport by remember { c.exports.observeLastFull() }.collectAsState(initial = null)
+    var exportKind by remember { mutableStateOf(if (autoExport) "monthly_full" else "manual_full") }
+    var exporting by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    var reminder by remember { mutableStateOf(c.settings.exportReminderEnabled) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/gzip")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        exporting = true
+        scope.launch {
+            exportMessage = runCatching {
+                withContext(Dispatchers.IO) {
+                    val built = c.exports.build(exportKind)
+                    requireNotNull(context.contentResolver.openOutputStream(uri, "wt")) { "no output stream" }.use { it.write(built.bytes) }
+                    c.exports.record(built, "device_storage")
+                    "Exported ${built.rows} rows (${(built.bytes.size + 1023) / 1024} KB)."
+                }
+            }.getOrElse { "Export failed (${it::class.simpleName}). Nothing was recorded; try again." }
+            exporting = false
+        }
+    }
+    fun startExport(kind: String) {
+        exportKind = kind
+        launcher.launch(ExportRepository.fileName(LocalDate.now(ZoneId.of("Europe/Amsterdam")).toString()))
+    }
+    LaunchedEffect(autoExport) { if (autoExport) startExport("monthly_full") }
     val state by c.sync.state.collectAsState()
     val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
@@ -156,8 +200,41 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
         )
         Text("Everything is saved on this phone first and uploaded when there is a connection.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Button(onClick = { c.sync.syncNow() }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Sync now") }
+        Button(onClick = {
+            scope.launch {
+                c.fgsEvent("sync_now_tapped", mapOf("outbox_depth" to outbox.first))
+                c.sync.syncNow()
+            }
+        }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Sync now") }
         if (dead > 0) OutlinedButton(onClick = { scope.launch { c.sync.retryDeadLetters() } }, modifier = Modifier.fillMaxWidth()) { Text("Retry failed uploads") }
+        SectionLabel("Backup")
+        Text(
+            "Your data are on this phone and uploaded to your server when you are online. The monthly export is your " +
+                "offline copy. After a reinstall, signing in restores everything that was uploaded.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val last = lastExport?.period_end
+        Text(
+            if (last == null) "No export yet" else lastExportLine(last, System.currentTimeMillis()),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        OutlinedButton(onClick = { startExport("manual_full") }, enabled = !exporting, modifier = Modifier.fillMaxWidth()) {
+            Text(if (exporting) "Exporting..." else "Export all data")
+        }
+        exportMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text("Monthly reminder", style = MaterialTheme.typography.bodyLarge)
+                Text("A notification when the last export is over ${c.platformConfig.exportReminderDays} days old.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = reminder, onCheckedChange = { on ->
+                val from = reminder
+                reminder = on
+                c.settings.exportReminderEnabled = on
+                scope.launch { c.fgsEvent("settings_changed", mapOf("key" to "export_reminder", "from" to from, "to" to on)) }
+            })
+        }
+        Text("Storage on this phone: " + phoneStorage(context), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         SectionLabel("Recovery")
         Text("If the server lost data (for example after a restore), upload every row on this phone again. Rows the server already has are left as they are.", style = MaterialTheme.typography.bodyMedium)
         OutlinedButton(onClick = { confirmRepush = true }, modifier = Modifier.fillMaxWidth()) { Text("Re-push all data") }
@@ -175,6 +252,27 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit) {
         },
         dismissButton = { TextButton(onClick = { confirmRepush = false }) { Text("Cancel") } },
     )
+}
+
+/** The database file with its journal files and the pre-migration copies (ANDROID.md 8.5), in MB. */
+private fun phoneStorage(context: Context): String {
+    val db = context.getDatabasePath(dev.fitnessapp.data.db.FitnessDatabase.FILE)
+    val files = listOf("", "-wal", "-shm").map { java.io.File(db.path + it) } +
+        (java.io.File(context.filesDir, "db-backups").listFiles()?.toList() ?: emptyList())
+    val bytes = files.filter { it.exists() }.sumOf { it.length() }
+    return java.math.BigDecimal(bytes / 1_048_576.0).setScale(1, java.math.RoundingMode.HALF_EVEN).toPlainString() + " MB"
+}
+
+/** "Last export: Sun 11 Oct 2026 (today)", counted in calendar days of the app's zone. */
+internal fun lastExportLine(lastMs: Long, nowMs: Long): String {
+    val zone = ZoneId.of("Europe/Amsterdam")
+    val day = Instant.ofEpochMilli(lastMs).atZone(zone)
+    val ago = when (val d = ChronoUnit.DAYS.between(day.toLocalDate(), Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate())) {
+        0L -> "today"
+        1L -> "yesterday"
+        else -> "$d days ago"
+    }
+    return "Last export: " + DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.ENGLISH).format(day) + " ($ago)"
 }
 
 private fun describe(s: SyncState): String = when (s) {
@@ -207,5 +305,5 @@ fun EquipmentRoute(c: AppContainer, onBack: () -> Unit) {
 
 @Composable
 fun ReliabilityRoute(c: AppContainer, onBack: () -> Unit) {
-    SubScreen("Rest timer reliability", onBack) { ReliabilityContent(c) }
+    SubScreen("Rest timer reliability", onBack) { ReliabilityContent(c, showStats = true) }
 }

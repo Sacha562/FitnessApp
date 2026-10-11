@@ -47,6 +47,9 @@ interface OutboxDao {
     @Query("SELECT COUNT(*) FROM outbox")
     suspend fun depth(): Int
 
+    @Query("SELECT COUNT(*) FROM outbox WHERE next_attempt_at_ms <= :now")
+    suspend fun readyCount(now: Long): Int
+
     @Query("SELECT MIN(enqueued_at_ms) FROM outbox")
     suspend fun oldestEnqueuedAt(): Long?
 
@@ -101,6 +104,13 @@ interface RestTimerDao {
 
     @Query("SELECT * FROM rest_timer WHERE session_id = :sessionId ORDER BY start_wall_ms DESC, id DESC LIMIT 1")
     suspend fun latest(sessionId: String): RestTimerEntity?
+
+    @Query("SELECT * FROM rest_timer ORDER BY id")
+    suspend fun all(): List<RestTimerEntity>
+
+    /** Timers recovered after the process was dead at the end (ANDROID.md 12.6), for the Reliability screen (15.5). */
+    @Query("SELECT COUNT(*) FROM rest_timer WHERE ended_by = 'elapsed_while_dead' AND start_wall_ms >= :sinceMs")
+    fun observeRecoveredDeadSince(sinceMs: Long): Flow<Int>
 }
 
 @Dao
@@ -125,4 +135,7 @@ interface CrashLogDao {
 
     @Query("UPDATE crash_log SET reported = 1 WHERE id = :id")
     suspend fun markReported(id: Long)
+
+    @Query("SELECT * FROM crash_log ORDER BY id")
+    suspend fun all(): List<CrashLogEntity>
 }

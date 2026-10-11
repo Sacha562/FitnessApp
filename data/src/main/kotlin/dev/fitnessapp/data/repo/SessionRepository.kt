@@ -95,6 +95,8 @@ class SessionRepository(
     fun observeExercises(sessionId: String): Flow<List<SessionExerciseEntity>> = db.sessionExercises().observeBySession(sessionId)
     fun observeSets(sessionId: String): Flow<List<SetLogEntity>> = db.setLogs().observeBySession(sessionId)
     fun observeRecent(limit: Int): Flow<List<WorkoutSessionEntity>> = db.sessions().observeRecent(limit)
+    fun observeExerciseHistory(exerciseId: String, limit: Int): Flow<List<SetWithSessionStart>> = db.setLogs().observeHistoryForExercise(exerciseId, limit)
+    fun observeUsageSince(sinceDate: String): Flow<List<dev.fitnessapp.data.db.dao.ExerciseUsage>> = db.setLogs().observeUsageSince(sinceDate)
 
     suspend fun session(id: String): WorkoutSessionEntity? = db.sessions().get(id)
     suspend fun observeActiveOnce(): WorkoutSessionEntity? = db.sessions().active()
@@ -174,6 +176,9 @@ class SessionRepository(
                 writeExercise(e.copy(status = status, completed_at = if (done > 0) now else e.completed_at))
             }
             val ratio = if (planned > 0) minOf(1.0, doneUnits / planned) else null
+            for (b in db.blocks().bySession(sessionId)) {
+                if (exs.any { it.block_id == b.id }) blockEvent("block_finished", sessionId, b.id, "done")
+            }
             writeSession(
                 s.copy(
                     status = "finished", finished_at = now, end_reason_code = if (notDone.isNotEmpty()) endReason else null,
@@ -427,20 +432,6 @@ class SessionRepository(
                 planned_duration_s = cmd.planned?.durationS?.let { Scaled.fromDouble(it, 1) },
                 planned_source = cmd.planned?.source,
                 load_mode = p?.mode?.code ?: e.load_mode,
-                equipment_id = p?.equipmentId, equipment_calibration_rev = p?.calibrationRev,
-                input_value = p?.takeIf { it.mode != LoadMode.ASSISTED_MACHINE && it.nativeValue != null }?.nativeValue?.let { Scaled.fromDouble(it, 2) },
-                input_unit = p?.takeIf { it.mode != LoadMode.ASSISTED_MACHINE && it.nativeValue != null }?.nativeUnit,
-                implement_count = p?.implementCount,
-                load_per_implement_kg = p?.perImplementKg?.let { Scaled.fromDouble(it, 2) },
-                implement_base_kg = Scaled.fromDouble(p?.implementBaseKg ?: 0.0, 2),
-                added_kg = Scaled.fromDouble(p?.addedKg ?: 0.0, 2),
-                assist_pin_native = p?.assistPinNative?.let { Scaled.fromDouble(it, 2) },
-                assist_unit = p?.assistPinNative?.let { p.nativeUnit },
-                assist_kg = p?.assistKg?.let { Scaled.fromDouble(it, 2) },
-                bodyweight_kg = if ((p?.fBw ?: 0.0) > 0) bw else null,
-                f_bw = p?.fBw?.takeIf { it > 0 }?.let { Scaled.fromDouble(it, 4) },
-                // The engine writes the LOAD-1 identity with the session's BW snapshot; the server only verifies it.
-                effective_load_kg = p?.wSys?.let { Scaled.fromDouble(it, 2) },
                 reps = cmd.reps, duration_s = cmd.durationS?.let { Scaled.fromDouble(it, 1) },
                 hold_reserve_s = cmd.holdReserveS?.let { Scaled.fromDouble(it, 1) }, hold_reserve_is_lower_bound = cmd.holdReserveLowerBound,
                 rir_reported = cmd.rir?.let { Scaled.fromDouble(it, 1) }, rir_is_lower_bound = cmd.rirLowerBound,
@@ -451,9 +442,13 @@ class SessionRepository(
                 rest_before_s = cmd.rest?.beforeS?.let { Scaled.fromDouble(it, 1) }, rest_source = cmd.rest?.source,
                 rest_end_reason = cmd.rest?.endReason,
                 started_at = cmd.startedAtMs, completed_at = cmd.completedAtMs,
-            )
+            ).withLoad(p, e.load_mode, bw)
+            val firstInBlock = db.setLogs().bySession(cmd.sessionId).none { prev ->
+                db.sessionExercises().get(prev.session_exercise_id)?.block_id == e.block_id
+            }
             db.setLogs().upsert(row)
             outbox.enqueue("set_logs", id, now)
+            if (firstInBlock) blockEvent("block_started", cmd.sessionId, e.block_id, null)
             val working = db.setLogs().bySession(cmd.sessionId).filter { it.session_exercise_id == e.id && it.set_kind != "warmup" }
             val units = working.sumOf { if (it.side == "both") 2 else 1 } / 2
             val done = e.planned_sets != null && units >= e.planned_sets
@@ -528,6 +523,22 @@ class SessionRepository(
     }
 
     // ------------------------------------------------------------------------------------------ helpers
+
+    /** `block_started` / `block_finished` (UX 20.2), inside the caller's transaction. */
+    private suspend fun blockEvent(type: String, sessionId: String, blockId: String, status: String?) {
+        val b = db.blocks().bySession(sessionId).firstOrNull { it.id == blockId } ?: return
+        telemetry.write(
+            EventDraft(
+                type = type, sessionId = sessionId, entityType = "block", entityId = blockId,
+                payload = buildMap {
+                    put("block_id", JsonPrimitive(blockId))
+                    put("block_kind", JsonPrimitive(b.block_kind))
+                    put("origin", JsonPrimitive(b.origin))
+                    status?.let { put("status", JsonPrimitive(it)) }
+                },
+            ),
+        )
+    }
 
     private suspend fun exerciseEvent(sessionExerciseId: String, change: suspend (SessionExerciseEntity, Int) -> EventDraft) {
         db.withTransaction {

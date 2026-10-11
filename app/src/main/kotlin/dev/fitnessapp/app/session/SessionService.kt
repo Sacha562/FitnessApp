@@ -70,6 +70,14 @@ class SessionService : Service() {
                 c.fgsEvent("fgs_started", mapOf("fgs_type" to FgsType.code(Build.VERSION.SDK_INT, c.device.activityRecognitionGranted()), "sdk_int" to Build.VERSION.SDK_INT))
                 val active = c.sessionRepository.observeActiveOnce() != null || c.restTimer.selfTestRunning()
                 if (active) c.restTimer.reconcile() else stopSelf()
+                if (active && testEnd == 0L) {
+                    c.fgsEvent("notification_posted", mapOf("notification_id" to "N-SESSION", "channel" to Channels.SESSION_ONGOING))
+                    // ANDROID.md 13.4: whether the posted notification became a Live Update, once per service start.
+                    delay(PROMOTION_CHECK_DELAY_MS)
+                    c.notifications.promotionState()?.let { (can, flagged) ->
+                        c.fgsEvent("notification_promotion_state", mapOf("can_post_promoted" to can, "flag_promoted" to flagged))
+                    }
+                }
             }
         } catch (e: Exception) {
             c.appScope.launch { c.fgsEvent("fgs_restart_failed", mapOf("error_class" to (e::class.simpleName ?: "unknown"))) }
@@ -80,6 +88,7 @@ class SessionService : Service() {
 
     companion object {
         private const val EXTRA_SELF_TEST_END = "self_test_end"
+        private const val PROMOTION_CHECK_DELAY_MS = 1_500L
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, SessionService::class.java))

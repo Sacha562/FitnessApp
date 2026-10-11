@@ -60,13 +60,15 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
                 _state.update { it.copy(email = email.trim()) }
                 check()
             } catch (e: Exception) {
-                val msg = when {
-                    e is java.io.IOException || e::class.simpleName == "HttpRequestException" -> "No internet. The first sign-in needs a connection."
-                    e.message?.contains("Invalid login", ignoreCase = true) == true -> "Email or password is wrong."
-                    e.message?.contains("rate", ignoreCase = true) == true -> "Too many attempts. Wait a minute and try again."
-                    else -> "Sign-in failed. Check your email and password."
+                val (cls, msg) = when {
+                    e is java.io.IOException || e::class.simpleName == "HttpRequestException" -> "offline" to "No internet. The first sign-in needs a connection."
+                    e.message?.contains("Invalid login", ignoreCase = true) == true -> "credentials" to "Email or password is wrong."
+                    e.message?.contains("rate", ignoreCase = true) == true -> "rate_limited" to "Too many attempts. Wait a minute and try again."
+                    else -> "server" to "Sign-in failed. Check your email and password."
                 }
                 _state.update { it.copy(error = msg) }
+                // Written only when a user id is known (a previous sign-in on this device); never the email (UX 20.9).
+                runCatching { c.fgsEvent("signin_failed", mapOf("error_class" to cls)) }
             } finally {
                 _state.update { it.copy(busy = false) }
             }
@@ -83,7 +85,11 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
                     val p = c.profiles.ensure()
                     _state.update { it.copy(gate = if (p.onboarding_completed_at != null) Gate.READY else Gate.ONBOARDING) }
                 }
-                AccessCheck.Result.NotAllowed -> _state.update { it.copy(gate = Gate.NOT_ALLOWED) }
+                AccessCheck.Result.NotAllowed -> {
+                    _state.update { it.copy(gate = Gate.NOT_ALLOWED) }
+                    // The row cannot be pushed (RLS rejects a non-allowlisted user); it stays local as a record.
+                    runCatching { c.fgsEvent("allowlist_rejected", emptyMap()) }
+                }
                 AccessCheck.Result.SchemaNotExposed -> _state.update { it.copy(gate = Gate.SCHEMA_NOT_EXPOSED) }
                 is AccessCheck.Result.Failed -> {
                     val p = c.profiles.get()

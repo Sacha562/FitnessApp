@@ -56,7 +56,7 @@ import java.util.Locale
  * prompt when stale, the status row and recent sessions. The recommendation card arrives with M4.
  */
 @Composable
-fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> Unit, onOpenSync: () -> Unit) {
+fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {}, onHistory: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val active by c.sessionRepository.observeActive().collectAsState(initial = null)
@@ -89,7 +89,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
                     Text("Started $mins min ago", style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = {
                         SessionService.start(context)
-                        onOpenSession(a.id)
+                        onOpenSession(a.id, true)
                     }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Resume") }
                 }
             }
@@ -105,7 +105,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
                             val id = c.sessionRepository.start(c.params)
                             SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
                             starting = false
-                            onOpenSession(id)
+                            onOpenSession(id, false)
                         }
                     }, enabled = !starting, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Start session") }
                 }
@@ -135,8 +135,12 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (String) -> U
             recent.forEach { s ->
                 val date = LocalDate.parse(s.local_date).format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH))
                 val dur = if (s.started_at != null && s.finished_at != null) " · " + ((s.finished_at!! - s.started_at!!) / 60_000) + " min" else ""
-                Text("$date$dur" + if (s.status == "abandoned") " · abandoned" else "", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "$date$dur" + if (s.status == "abandoned") " · abandoned" else "", style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().clickable { onOpenPast(s.id) }.padding(vertical = 12.dp),
+                )
             }
+            TextButton(onClick = onHistory) { Text("All sessions") }
         }
     }
 
