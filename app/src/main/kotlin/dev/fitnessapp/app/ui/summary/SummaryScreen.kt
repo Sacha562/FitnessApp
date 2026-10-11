@@ -2,17 +2,17 @@ package dev.fitnessapp.app.ui.summary
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,11 +25,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.common.ChoiceChips
-import dev.fitnessapp.app.ui.common.SectionLabel
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TileDivider
+import dev.fitnessapp.app.ui.common.TileLabel
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.live.PainSheet
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.telemetry.EventDraft
@@ -45,7 +53,7 @@ private val PAIN_CHIPS = listOf("none" to "None", "elbow" to "Elbow", "shoulder"
 private val PAIN_PRESELECT = mapOf("shoulder" to "shoulder", "wrist" to "wrist", "knee" to "knee", "other" to "other")
 
 /**
- * Session summary in M1a (UX 12): header, what was logged, and the optional quick check (sRPE 0-10, joint pain,
+ * Session summary in M1a (UX 12), as Bento tiles (D31): header, duration and set tiles, what was logged, and the optional quick check (sRPE 0-10, joint pain,
  * note). "New best" and "Next time" need `ui.progress` and `rx`, which arrive with later milestones.
  */
 @Composable
@@ -98,46 +106,64 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
 
     val zone = ZoneId.of("Europe/Amsterdam")
     val working = sets.filter { it.deleted_at == null && it.set_kind == "working" }
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
         Column(Modifier.safeDrawingPadding().fillMaxSize()) {
             Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Session done", style = MaterialTheme.typography.headlineMedium)
                 val s = session
+                val date = s?.started_at?.let { DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH).format(Instant.ofEpochMilli(it).atZone(zone)) } ?: s?.local_date
+                Column {
+                    if (date != null) Text(date, style = MaterialTheme.typography.titleSmall, color = Fit.Muted)
+                    Text("Session done", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                }
                 if (s != null) {
-                    val mins = if (s.started_at != null && s.finished_at != null) "${(s.finished_at!! - s.started_at!!) / 60_000} min · " else ""
-                    val date = s.started_at?.let { DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH).format(Instant.ofEpochMilli(it).atZone(zone)) } ?: s.local_date
-                    Text("$mins${working.size} sets · $date", style = MaterialTheme.typography.bodyLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val mins = if (s.started_at != null && s.finished_at != null) ((s.finished_at!! - s.started_at!!) / 60_000).toString() else "—"
+                        StatTile("Duration", mins, "min", Modifier.weight(1f))
+                        StatTile("Working sets", working.size.toString(), if (working.size == 1) "set" else "sets", Modifier.weight(1f))
+                    }
                 }
 
-                if (exercises.isNotEmpty()) SectionLabel("What you did")
-                exercises.filter { it.deleted_at == null }.sortedWith(compareBy({ it.position }, { it.id })).forEach { se ->
-                    val name = c.catalog.byId(se.exercise_id)?.nameEn ?: "Exercise"
-                    val lines = working.filter { it.session_exercise_id == se.id }.sortedWith(compareBy({ it.set_index }, { it.side }, { it.id }))
-                    Text(name, style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        if (lines.isEmpty()) "No working sets" else lines.joinToString(" · ") { setLine(it) },
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                val done = exercises.filter { it.deleted_at == null }.sortedWith(compareBy({ it.position }, { it.id }))
+                if (done.isNotEmpty()) {
+                    Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
+                        TileLabel("What you did", Modifier.padding(bottom = 6.dp))
+                        done.forEachIndexed { i, se ->
+                            if (i > 0) TileDivider()
+                            val name = c.catalog.byId(se.exercise_id)?.nameEn ?: "Exercise"
+                            val lines = working.filter { it.session_exercise_id == se.id }.sortedWith(compareBy({ it.set_index }, { it.side }, { it.id }))
+                            Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(name, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    if (lines.isEmpty()) "No working sets" else lines.joinToString(" · ") { setLine(it) },
+                                    style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Tile(spacing = 10.dp) {
+                    TileLabel("Quick check (optional)")
+                    Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleMedium)
+                    ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
+                    Text("Any joint pain?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp))
+                    ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
+                        pain = code
+                        if (code != "none") painSheetFor = code
+                    }
+                    if (painReported.isNotEmpty()) Text("Pain saved: " + painReported.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Fit.Safety)
+                    FitTextField(
+                        value = note, onValueChange = { note = it.take(2000) }, label = "Note",
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp), minLines = 2,
                     )
                 }
-
-                SectionLabel("Quick check (optional)")
-                Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleSmall)
-                ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
-                Text("Any joint pain?", style = MaterialTheme.typography.titleSmall)
-                ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
-                    pain = code
-                    if (code != "none") painSheetFor = code
-                }
-                if (painReported.isNotEmpty()) Text("Pain saved: " + painReported.joinToString(", "), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = note, onValueChange = { note = it.take(2000) }, label = { Text("Note") },
-                    modifier = Modifier.fillMaxWidth(), minLines = 2,
-                )
             }
-            Button(onClick = ::done, enabled = !saving, modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp)) { Text("Done") }
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                PrimaryButton("Done", ::done, Modifier.fillMaxWidth(), enabled = !saving)
+            }
         }
     }
 
@@ -151,3 +177,15 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
 }
 
 private fun setLine(s: SetLogEntity): String = dev.fitnessapp.app.format.SetLines.line(s)
+
+/** A half-width stat tile: label, big number, unit. */
+@Composable
+private fun StatTile(label: String, value: String, unit: String, modifier: Modifier) {
+    Tile(modifier, radius = 22.dp, padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp), spacing = 2.dp) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(value, style = MaterialTheme.typography.headlineMedium)
+            Text(unit, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(bottom = 4.dp))
+        }
+    }
+}

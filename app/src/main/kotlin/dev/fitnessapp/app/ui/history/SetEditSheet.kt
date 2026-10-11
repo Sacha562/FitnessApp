@@ -12,12 +12,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -28,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.algo.core.load.LoadMode
 import dev.fitnessapp.algo.core.load.LoadPoint
@@ -35,9 +33,13 @@ import dev.fitnessapp.algo.core.load.LoadScheme
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
+import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.StepperRow
+import dev.fitnessapp.app.ui.common.TonalButton
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.uidet.SnapResult
 import dev.fitnessapp.app.uidet.UiPrefill
 import dev.fitnessapp.data.db.Scaled
@@ -123,13 +125,13 @@ fun SetEditSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text((if (set == null) "Add a set · " else "Edit set · ") + ex.nameEn, style = MaterialTheme.typography.titleMedium)
+            Text((if (set == null) "Add a set · " else "Edit set · ") + ex.nameEn, style = MaterialTheme.typography.titleLarge)
             if (set == null && unilateral) ChoiceChips(listOf("L", "R"), side, { if (it == "L") "Left" else "Right" }) { side = it }
 
             val p = points
             when {
-                mode == LoadMode.BODYWEIGHT -> Text("Bodyweight", style = MaterialTheme.typography.titleLarge)
-                p == null -> Text("…")
+                mode == LoadMode.BODYWEIGHT -> Text("Bodyweight", style = MaterialTheme.typography.displayMedium)
+                p == null -> Text("…", color = Fit.Muted)
                 p.isEmpty() -> Text(set?.let { SetLines.load(it) } ?: "No loadable values known", style = MaterialTheme.typography.titleLarge)
                 else -> {
                     val assisted = mode == LoadMode.ASSISTED_MACHINE
@@ -160,14 +162,15 @@ fun SetEditSheet(
             ChoiceChips(reasons.map { it.code }, reason, { code -> reasons.first { it.code == code }.labelEn }) { reason = if (reason == it) null else it }
             if (ex.flagsOffered.isNotEmpty()) {
                 SectionLabel("Flags")
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ex.flagsOffered.forEach { f ->
-                        FilterChip(selected = f in flags, onClick = { flags = if (f in flags) flags - f else flags + f }, label = { Text(f.replace('_', ' ')) }, modifier = Modifier.heightIn(min = 48.dp))
+                        ChipButton(f.replace('_', ' '), selected = f in flags, onClick = { flags = if (f in flags) flags - f else flags + f }, role = Role.Checkbox)
                     }
                 }
             }
             val canSave = !saving && (if (isHold) (holdS ?: 0.0) > 0.0 else (reps ?: 0) > 0) && (set != null || mode == LoadMode.BODYWEIGHT || index != null)
-            Button(
+            PrimaryButton(
+                if (set == null) "Add set" else "Save",
                 enabled = canSave,
                 onClick = {
                     saving = true
@@ -183,12 +186,12 @@ fun SetEditSheet(
                         onDismiss()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text(if (set == null) "Add set" else "Save") }
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            )
             if (set != null) {
-                OutlinedButton(onClick = {
+                TonalButton("Delete set", {
                     scope.launch { c.history.deleteSet(set.id, "history")?.let(onDeleted) ?: onDismiss() }
-                }, modifier = Modifier.fillMaxWidth()) { Text("Delete set") }
+                }, Modifier.fillMaxWidth(), content = Fit.Safety)
             }
             Row { Spacer(Modifier.height(24.dp)) }
         }

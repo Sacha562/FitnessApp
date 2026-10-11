@@ -2,13 +2,10 @@ package dev.fitnessapp.app.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,7 +46,9 @@ import dev.fitnessapp.app.ui.history.HistoryRoute
 import dev.fitnessapp.app.ui.history.SessionDetailRoute
 import dev.fitnessapp.app.notify.Channels
 import dev.fitnessapp.app.session.SessionService
-import androidx.compose.material.icons.automirrored.filled.List
+import dev.fitnessapp.app.ui.common.FitNavBar
+import dev.fitnessapp.app.ui.common.NavItem
+import dev.fitnessapp.app.ui.theme.Fit
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,16 +138,13 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         entryProvider = entryProvider {
             entry<AppKey.Main> {
                 Scaffold(
+                    containerColor = Fit.Ground,
                     bottomBar = {
-                        NavigationBar {
-                            fun select(t: Tab) {
-                                if (tab == t) scope.launch { c.screenViewed(screenName(AppKey.Main, t), mapOf("tab_reselected" to true)) }
-                                tab = t
-                            }
-                            NavigationBarItem(tab == Tab.TODAY, { select(Tab.TODAY) }, { Icon(Icons.Filled.FitnessCenter, null) }, label = { Text("Today") })
-                            NavigationBarItem(tab == Tab.EXERCISES, { select(Tab.EXERCISES) }, { Icon(Icons.AutoMirrored.Filled.List, null) }, label = { Text("Exercises") })
-                            NavigationBarItem(tab == Tab.YOU, { select(Tab.YOU) }, { Icon(Icons.Filled.Person, null) }, label = { Text("You") })
-                        }
+                        FitNavBar(NAV_ITEMS, Tab.entries.indexOf(tab), onSelect = { i ->
+                            val t = Tab.entries[i]
+                            if (tab == t) scope.launch { c.screenViewed(screenName(AppKey.Main, t), mapOf("tab_reselected" to true)) }
+                            tab = t
+                        })
                     },
                 ) { pad ->
                     val m = Modifier.padding(pad)
@@ -226,6 +222,13 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
 }
 
 private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
+
+/** The floating navigation tile's destinations, in [Tab] order (UX 3.1, 4.3). */
+private val NAV_ITEMS = listOf(
+    NavItem("Today", Icons.Rounded.FitnessCenter),
+    NavItem("Exercises", Icons.AutoMirrored.Rounded.FormatListBulleted),
+    NavItem("You", Icons.Rounded.Person),
+)
 
 private val BackStackSaver = listSaver<SnapshotStateList<AppKey>, String>(
     save = { stack -> stack.map(AppKey::encode) },

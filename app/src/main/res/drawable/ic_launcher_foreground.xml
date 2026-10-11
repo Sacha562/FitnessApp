@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder launcher mark: a stylised dumbbell on the teal background. -->
+<!-- Placeholder launcher mark: a stylised dumbbell in the Bento accent on the ground (D31). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M30,44h6v20h-6z M38,38h6v32h-6z M64,38h6v32h-6z M72,44h6v20h-6z M44,51h20v6h-20z" />
+    <path android:fillColor="#A9A4FF" android:pathData="M30,44h6v20h-6z M38,38h6v32h-6z M64,38h6v32h-6z M72,44h6v20h-6z M44,51h20v6h-20z" />
 </vector>

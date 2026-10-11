@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,8 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.FgsType
-import dev.fitnessapp.app.ui.theme.AdvisoryAmber
-import dev.fitnessapp.app.ui.theme.SafetyRed
+import dev.fitnessapp.app.ui.common.Pill
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.theme.Fit
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -75,17 +74,17 @@ fun AlarmLatencyCard(c: AppContainer) {
     val since = remember { System.currentTimeMillis() - AlarmLatency.DEAD_LOOKBACK_DAYS * 86_400_000L }
     val dead by remember { c.db.restTimers().observeRecoveredDeadSince(since) }.collectAsState(initial = 0)
     val stats = AlarmLatency.stats(events.mapNotNull { AlarmLatency.latencyOf(it.payload) }, dead, c.platformConfig.reliabilityLatencyAmberMs, c.platformConfig.reliabilityLatencyRedMs)
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Tile(spacing = 6.dp) {
+        run {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val (icon, tint, label) = when (stats.level) {
-                    Level.GREEN -> Triple(Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "On time")
-                    Level.AMBER -> Triple(Icons.Filled.Warning, AdvisoryAmber, "Sometimes late")
-                    Level.RED -> Triple(Icons.Filled.Error, SafetyRed, "Unreliable")
+                    Level.GREEN -> Triple(Icons.Rounded.CheckCircle, Fit.Accent, "On time")
+                    Level.AMBER -> Triple(Icons.Rounded.Warning, Fit.Advisory, "Sometimes late")
+                    Level.RED -> Triple(Icons.Rounded.Error, Fit.Safety, "Unreliable")
                 }
                 Icon(icon, contentDescription = label, tint = tint)
-                Text("Rest alarm latency", style = MaterialTheme.typography.titleMedium)
-                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Rest alarm latency", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                Pill(label, content = tint)
             }
             if (stats.n == 0) {
                 Text("No rest alarms yet. They are measured during sessions.", style = MaterialTheme.typography.bodyMedium)
@@ -109,7 +108,7 @@ fun AlarmLatencyCard(c: AppContainer) {
                     "special_use" -> "special use (allow Physical activity for the fitness type)"
                     else -> "standard"
                 },
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
             )
         }
     }

@@ -4,12 +4,15 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,33 +26,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,15 +58,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -81,13 +76,27 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.timer.RestDisplay
 import dev.fitnessapp.app.timer.RestTimerReducer
+import dev.fitnessapp.app.ui.common.Banner
+import dev.fitnessapp.app.ui.common.BannerKind
+import dev.fitnessapp.app.ui.common.ChipButton
+import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.LogChip
+import dev.fitnessapp.app.ui.common.Pill
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.ProgressBar
+import dev.fitnessapp.app.ui.common.RingTimer
+import dev.fitnessapp.app.ui.common.RoundIconButton
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.StepperRow
-import dev.fitnessapp.app.ui.common.TabularNums
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TileDivider
+import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.dutchNames
 import dev.fitnessapp.app.ui.common.undoTimeoutMs
-import dev.fitnessapp.app.ui.theme.AdvisoryAmber
-import dev.fitnessapp.app.ui.theme.SafetyRed
+import dev.fitnessapp.app.ui.theme.Fit
+import dev.fitnessapp.app.ui.theme.FitType
 import dev.fitnessapp.app.uidet.ChipContext
 import dev.fitnessapp.app.uidet.ChipRoute
 import dev.fitnessapp.app.uidet.UiReasonChips
@@ -120,29 +129,40 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
         onDispose { view.keepScreenOn = false }
     }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.safeDrawingPadding().fillMaxSize()) {
+    Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
+        Column(Modifier.safeDrawingPadding().fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Header(ui, { onMinimise("chevron") }, onFinish = {
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
             }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon })
-            if (ui.banner == "pain") Banner("Pain noted. The exercise ended. If it hurts, stop and get it checked; this app does not give medical advice.", vm::dismissBanner)
-            if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", vm::dismissBanner)
-            ExerciseList(ui, Modifier.weight(0.38f), onFocus = vm::focus, onAdd = { sheet = Sheet.Add })
-            HorizontalDivider()
-            Column(Modifier.weight(0.62f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
-                ui.rest?.let { RestCard(c, it, ui, vm) }
-                if (ui.switchHint) Text("Switch to your right side", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp))
-                val card = ui.card
-                if (card == null) {
-                    EmptyAction(ui, onAdd = { sheet = Sheet.Add }, onFinish = { vm.finish(null, onFinished) })
-                } else {
-                    SetCard(card, vm, onMenu = { action ->
-                        when (action) {
-                            "skip" -> sheet = Sheet.Skip(card.item.se.id)
-                            "end" -> sheet = Sheet.End(card.item.se.id)
-                            "pain" -> sheet = Sheet.Pain
+            if (ui.banner == "pain") Banner(
+                "Pain noted. The exercise ended. If it hurts, stop and get it checked; this app does not give medical advice.",
+                BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
+            )
+            if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner)
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                // The list takes what it needs, at most the top 38 % (UX 4.3); the set card gets the rest.
+                val listMax = maxHeight * 0.38f
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (ui.items.isNotEmpty()) ExerciseList(ui, Modifier.heightIn(max = listMax), onFocus = vm::focus, onAdd = { sheet = Sheet.Add })
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ui.rest?.let { RestCard(c, it, ui, vm) }
+                        if (ui.switchHint) Pill("Switch to your right side", container = Fit.Accent, content = Fit.OnAccent)
+                        val card = ui.card
+                        if (card == null) {
+                            EmptyAction(ui, onAdd = { sheet = Sheet.Add }, onFinish = { vm.finish(null, onFinished) })
+                        } else {
+                            SetCard(card, vm, onMenu = { action ->
+                                when (action) {
+                                    "skip" -> sheet = Sheet.Skip(card.item.se.id)
+                                    "end" -> sheet = Sheet.End(card.item.se.id)
+                                    "pain" -> sheet = Sheet.Pain
+                                }
+                            }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain })
                         }
-                    }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain })
+                        Spacer(Modifier.height(2.dp))
+                    }
+                    // The log row is pinned in the thumb zone (P3, D9); it waits while a rest is counting down.
+                    ui.card?.let { card -> if (ui.rest?.state != "running") LogRow(card, vm) }
                 }
             }
             UndoBar(ui, vm)
@@ -192,14 +212,18 @@ private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onA
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     var menu by remember { mutableStateOf(false) }
     val started = ui.session?.started_at ?: now
-    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onMinimise) { Icon(Icons.Filled.KeyboardArrowDown, "Minimise") }
-        Text("Free session", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        if (ui.pendingCount > 0) Icon(Icons.Filled.CloudOff, "Changes waiting to upload", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-        Text(Numbers.clock((now - started) / 1000), style = MaterialTheme.typography.titleMedium.merge(TabularNums), modifier = Modifier.padding(horizontal = 8.dp))
-        TextButton(onClick = onFinish) { Text("Finish") }
+    val done = ui.items.sumOf { minOf(it.workingDone, maxOf(it.planned, it.workingDone)) }
+    val total = ui.items.filter { it.se.status != "skipped" }.sumOf { maxOf(it.planned, it.workingDone) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        RoundIconButton(Icons.Rounded.KeyboardArrowDown, "Minimise", onMinimise)
+        Column(Modifier.weight(1f).padding(start = 2.dp)) {
+            Text("Free session", style = MaterialTheme.typography.titleMedium, color = Fit.Ink)
+            Text(Numbers.clock((now - started) / 1000) + " · $done of $total sets", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+        }
+        if (ui.pendingCount > 0) Icon(Icons.Rounded.CloudOff, "Changes waiting to upload", tint = Fit.Muted, modifier = Modifier.size(18.dp))
+        TonalButton("Finish", onFinish, height = 48.dp, container = Fit.Tile)
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "Session menu") }
+            RoundIconButton(Icons.Rounded.MoreVert, "Session menu", { menu = true })
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Add exercise") }, onClick = { menu = false; onAdd() })
                 DropdownMenuItem(text = { Text("Report pain") }, onClick = { menu = false; onPain() })
@@ -207,44 +231,38 @@ private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onA
             }
         }
     }
-    val done = ui.items.sumOf { minOf(it.workingDone, maxOf(it.planned, it.workingDone)) }
-    val total = ui.items.filter { it.se.status != "skipped" }.sumOf { maxOf(it.planned, it.workingDone) }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        LinearProgressIndicator(progress = { if (total == 0) 0f else done.toFloat() / total }, modifier = Modifier.weight(1f).height(8.dp))
-        Text("  $done / $total sets", style = MaterialTheme.typography.labelMedium)
-    }
-}
-
-@Composable
-private fun Banner(text: String, onDismiss: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(SafetyRed).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        TextButton(onClick = onDismiss) { Text("OK", color = androidx.compose.ui.graphics.Color.White) }
-    }
+    ProgressBar(if (total == 0) 0f else done.toFloat() / total, Modifier.padding(horizontal = 4.dp))
 }
 
 @Composable
 private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit) {
-    LazyColumn(modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+    LazyColumn(modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fit.Tile), contentPadding = PaddingValues(6.dp)) {
         items(ui.items, key = { it.se.id }) { item ->
             val current = item.se.id == ui.focusedId
             val skipped = item.se.status == "skipped"
+            val done = item.se.status == "done"
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = !skipped) { onFocus(item.se.id) }.padding(horizontal = 8.dp),
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) Fit.Raised else Fit.Tile)
+                    .clickable(enabled = !skipped) { onFocus(item.se.id) }.padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when {
-                    item.se.status == "done" -> Icon(Icons.Filled.CheckCircle, "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    current -> Icon(Icons.Filled.PlayArrow, "Current", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    else -> Icon(Icons.Outlined.Circle, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+                    done -> Box(Modifier.size(22.dp).clip(CircleShape).background(Fit.Raised), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Check, "Done", tint = Fit.Accent, modifier = Modifier.size(14.dp))
+                    }
+                    current -> Box(Modifier.size(22.dp).clip(CircleShape).background(Fit.Accent), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(Fit.OnAccent))
+                    }
+                    else -> Box(Modifier.size(22.dp).padding(1.dp).border(2.dp, Fit.Line, CircleShape))
                 }
                 Spacer(Modifier.width(12.dp))
                 Text(
                     item.ex.nameEn + if (item.unilateral) " (L/R)" else "",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                    style = (if (current) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge).copy(
                         textDecoration = if (skipped) TextDecoration.LineThrough else null,
                     ),
+                    color = if (done || skipped) Fit.Muted else Fit.Ink,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
                 val tail = when {
@@ -252,14 +270,17 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
                     item.se.status == "deferred" -> "later · ${item.workingDone}/${item.planned}"
                     else -> "${item.workingDone}/${maxOf(item.planned, item.workingDone)}"
                 }
-                Text(tail, style = MaterialTheme.typography.labelLarge.merge(TabularNums), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(tail, style = MaterialTheme.typography.labelLarge, color = if (current) Fit.Ink else Fit.Muted, modifier = Modifier.padding(start = 8.dp))
             }
         }
         item {
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onAdd).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onAdd).padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Rounded.Add, null, tint = Fit.Muted, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Add exercise", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
+                Text("Add exercise", color = Fit.Muted, style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -267,19 +288,20 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
 
 @Composable
 private fun EmptyAction(ui: LiveUi, onAdd: () -> Unit, onFinish: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Tile(radius = 28.dp, padding = PaddingValues(18.dp), spacing = 12.dp) {
         if (ui.items.isEmpty()) {
             Text("Add your first exercise", style = MaterialTheme.typography.titleLarge)
-            Button(onClick = onAdd, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Add exercise") }
+            Text("Search the catalog; each set starts from what you did last time.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            PrimaryButton("Add exercise", onAdd, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add)
         } else {
             Text("All exercises done", style = MaterialTheme.typography.titleLarge)
-            Button(onClick = onFinish, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Finish session") }
-            OutlinedButton(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("Add another exercise") }
+            PrimaryButton("Finish session", onFinish, Modifier.fillMaxWidth())
+            TonalButton("Add another exercise", onAdd, Modifier.fillMaxWidth())
         }
     }
 }
 
-/** UX 11.13.2: countdown, -15 / Skip / +15 (500 ms input guard), next-set preview; overtime counts up. */
+/** UX 11.13.2: countdown in a depleting ring, -15 / Skip / +15 (500 ms input guard), next-set preview; overtime counts up. */
 @Composable
 private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerEntity, ui: LiveUi, vm: LiveSessionViewModel) {
     var display by remember(t.id) { mutableStateOf<RestDisplay?>(null) }
@@ -300,25 +322,37 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
     }
     val shownAt = remember(t.id) { System.currentTimeMillis() }
     val guard = { System.currentTimeMillis() - shownAt > 500 }
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("REST", style = MaterialTheme.typography.labelLarge)
+    Tile(radius = 28.dp, padding = PaddingValues(16.dp), spacing = 12.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill("Rest")
+            Spacer(Modifier.weight(1f))
+            if (t.alarm_mode == "inexact") Text("Alarm may be late (exact alarms off)", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
+        }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             when (val d = display) {
-                is RestDisplay.Countdown -> {
-                    Text(d.digits, fontSize = 72.sp, style = TabularNums)
-                    LinearProgressIndicator(progress = { d.barFraction.toFloat() }, modifier = Modifier.fillMaxWidth().height(6.dp))
+                is RestDisplay.Countdown -> RingTimer(d.barFraction.toFloat(), Modifier.size(196.dp)) {
+                    Text(d.digits, style = FitType.RestDigits, color = Fit.Ink)
                 }
-                is RestDisplay.Overtime -> Text(d.digits, fontSize = 56.sp, color = AdvisoryAmber, style = TabularNums)
-                null -> Text(" ", fontSize = 72.sp)
+                is RestDisplay.Overtime -> Box(Modifier.size(196.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(d.digits, style = FitType.Overtime, color = Fit.Advisory)
+                        Text("Over the rest time", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
+                    }
+                }
+                null -> Box(Modifier.size(196.dp))
             }
-            if (t.alarm_mode == "inexact") Text("Alarm may be late (exact alarms off)", color = AdvisoryAmber, style = MaterialTheme.typography.bodySmall)
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val running = t.state == "running"
-                FilledTonalButton(onClick = { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, enabled = running, modifier = Modifier.weight(1f).height(64.dp)) { Text("-15 s") }
-                FilledTonalButton(onClick = { if (guard()) vm.skipRest() }, modifier = Modifier.weight(1f).height(64.dp)) { Text("Skip") }
-                FilledTonalButton(onClick = { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, enabled = running, modifier = Modifier.weight(1f).height(64.dp)) { Text("+15 s") }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val running = t.state == "running"
+            TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
+            TonalButton("Skip", { if (guard()) vm.skipRest() }, Modifier.weight(1f), height = 64.dp)
+            TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
+        }
+        ui.restNext?.let {
+            Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 2.dp) {
+                Text("Up next", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+                Text(it, style = MaterialTheme.typography.titleMedium)
             }
-            ui.restNext?.let { Text("Next: $it", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 8.dp)) }
         }
     }
 }
@@ -329,32 +363,29 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     val item = card.item
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+    Tile(radius = 28.dp, padding = PaddingValues(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 16.dp), spacing = 10.dp) {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(item.ex.nameEn, style = MaterialTheme.typography.titleLarge)
-                val sideLabel = when (card.side) { "L" -> " · LEFT"; "R" -> " · RIGHT"; else -> "" }
-                Text(
-                    (if (card.warmup) "Warm-up set" else "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}") + sideLabel,
-                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary,
-                )
+                val sideLabel = when (card.side) { "L" -> " · Left"; "R" -> " · Right"; else -> "" }
+                Pill((if (card.warmup) "Warm-up set" else "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}") + sideLabel)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "Exercise menu") }
+                RoundIconButton(Icons.Rounded.MoreVert, "Exercise menu", { menu = true }, container = Fit.Raised)
                 ExerciseMenu(menu, card, vm, onDismiss = { menu = false }, onAction = { menu = false; onMenu(it) })
             }
         }
-        card.lastLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (card.sideCapApplied) Text("Right ≤ left: ${card.reps} clean reps", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-        if (card.deviation.fields.any { it.field == "side_rule" }) Text("Right above left", style = MaterialTheme.typography.bodySmall, color = AdvisoryAmber)
+        card.lastLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
+        if (card.sideCapApplied) Text("Right ≤ left: ${card.reps} clean reps", style = MaterialTheme.typography.bodySmall, color = Fit.Accent)
+        if (card.deviation.fields.any { it.field == "side_rule" }) Text("Right above left", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
 
         // Load row (UX 11.7).
         when {
             card.mode == LoadMode.BODYWEIGHT -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("BW", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-                if (LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in item.ex.allowedLoadModes) TextButton(onClick = { vm.setLoadMode(LoadMode.BODYWEIGHT_PLUS_EXTERNAL) }) { Text("+ add weight") }
+                Text("BW", style = MaterialTheme.typography.displayMedium, modifier = Modifier.weight(1f))
+                if (LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in item.ex.allowedLoadModes) LinkButton("+ Add weight", { vm.setLoadMode(LoadMode.BODYWEIGHT_PLUS_EXTERNAL) })
             }
-            card.points.isEmpty() -> Text("No loadable values known for this machine. Set them in You > Equipment.", style = MaterialTheme.typography.bodyMedium, color = AdvisoryAmber)
+            card.points.isEmpty() -> Text("No loadable values known for this machine. Set them in You > Equipment.", style = MaterialTheme.typography.bodyMedium, color = Fit.Advisory)
             else -> {
                 val assisted = card.mode == LoadMode.ASSISTED_MACHINE
                 StepperRow(
@@ -365,9 +396,9 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
                     minusLabel = if (assisted) "harder" else null, plusLabel = if (assisted) "easier" else null,
                     onValueClick = onKeypad,
                 )
-                card.keypadMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = AdvisoryAmber) }
+                card.keypadMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Advisory) }
                 if (card.mode == LoadMode.BODYWEIGHT_PLUS_EXTERNAL && LoadMode.BODYWEIGHT.code in item.ex.allowedLoadModes) {
-                    TextButton(onClick = { vm.setLoadMode(LoadMode.BODYWEIGHT) }) { Text("Bodyweight only") }
+                    LinkButton("Bodyweight only", { vm.setLoadMode(LoadMode.BODYWEIGHT) })
                 }
             }
         }
@@ -378,50 +409,62 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
 
         // Reason chips: optional, only when deviating (UX 11.8).
         card.chips?.let { chips ->
-            Text("Why the change? (optional)", style = MaterialTheme.typography.labelLarge)
+            Text("Why the change? (optional)", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
             var more by remember { mutableStateOf(false) }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 (chips.visible + if (more) chips.more else emptyList()).forEach { chip ->
-                    FilterChip(selected = card.reason == chip.code, onClick = {
+                    ChipButton(chip.label, selected = card.reason == chip.code, onClick = {
                         vm.chooseReason(chip.code, chip.position, chip.position >= chips.visible.size)
                         if (chip.code == "pain") onPainReason()
-                    }, label = { Text(chip.label) }, modifier = Modifier.heightIn(min = 48.dp))
+                    })
                 }
-                if (!more && chips.more.isNotEmpty()) TextButton(onClick = { more = true }) { Text("More") }
+                if (!more && chips.more.isNotEmpty()) LinkButton("More", { more = true })
             }
         }
 
         // Flags offered by the exercise (C74, UX 11.9).
-        if (item.ex.flagsOffered.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (item.ex.flagsOffered.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item.ex.flagsOffered.forEach { f ->
-                FilterChip(selected = f in card.flags, onClick = { vm.toggleFlag(f) }, label = { Text(flagLabel(f)) }, modifier = Modifier.heightIn(min = 48.dp))
+                ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox)
             }
         }
 
-        // Log row (D9): one tap logs the set.
+    }
+}
+
+/**
+ * The log action of the current set (D9), pinned below the set card: one tap logs; the RIR is never prefilled or
+ * highlighted. A row that appears under the finger ignores taps for 500 ms (P5).
+ */
+@Composable
+private fun LogRow(card: Card, vm: LiveSessionViewModel) {
+    if (card.isHold && card.holdPhase != HoldPhase.RESULT) return
+    val haptic = LocalHapticFeedback.current
+    val shownAt = remember(card.slotKey) { System.currentTimeMillis() }
+    fun guarded(action: () -> Unit) {
+        if (System.currentTimeMillis() - shownAt < 500) return
+        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+        action()
+    }
+    Tile(radius = 28.dp, padding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp), spacing = 8.dp) {
         when {
-            card.warmup -> Button(onClick = { haptic.performHapticFeedback(HapticFeedbackType.Confirm); vm.log(control = "done") }, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("Done") }
-            card.isHold -> if (card.holdPhase == HoldPhase.RESULT) {
-                Text("How did it feel?", style = MaterialTheme.typography.labelLarge)
+            card.warmup -> PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
+            card.isHold -> {
+                Text("How did it feel? Tap to log.", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("Max" to 0.0, "Hard" to 2.0, "OK" to 5.0, "Easy" to 10.0).forEach { (label, s) ->
-                        FilledTonalButton(onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                            vm.log(feltReserveS = s, feltLowerBound = s == 10.0, control = "felt_chip")
-                        }, modifier = Modifier.weight(1f).height(64.dp)) { Text(label) }
+                        LogChip(label, { guarded { vm.log(feltReserveS = s, feltLowerBound = s == 10.0, control = "felt_chip") } }, Modifier.weight(1f))
                     }
                 }
             }
             else -> {
-                Text((if (card.side != "both") (if (card.side == "L") "LEFT · " else "RIGHT · ") else "") + "Reps left in the tank?", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    (if (card.side != "both") (if (card.side == "L") "Left · " else "Right · ") else "") + "Reps left in the tank? Tap to log.",
+                    style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp),
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (0..5).forEach { r ->
-                        FilledTonalButton(onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                            vm.log(rir = r, control = "rir_chip")
-                        }, modifier = Modifier.weight(1f).height(64.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                            Text(if (r == 5) "5+" else r.toString(), style = MaterialTheme.typography.titleLarge)
-                        }
+                        LogChip(if (r == 5) "5+" else r.toString(), { guarded { vm.log(rir = r, control = "rir_chip") } }, Modifier.weight(1f))
                     }
                 }
             }
@@ -462,7 +505,7 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, on
             }
             DropdownMenuItem(text = { Text(label) }, onClick = { onDismiss(); vm.setLoadMode(m) })
         }
-        DropdownMenuItem(text = { Text("Something hurts") }, onClick = { onAction("pain") })
+        DropdownMenuItem(text = { Text("Something hurts", color = Fit.Safety) }, onClick = { onAction("pain") })
     }
 }
 
@@ -494,21 +537,21 @@ private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
             delay(100)
         }
     }
-    card.holdTargetS?.let { Text("Target " + Numbers.num(it, 1) + " s", style = MaterialTheme.typography.bodyLarge) }
+    card.holdTargetS?.let { Text("Target " + Numbers.num(it, 1) + " s", style = MaterialTheme.typography.titleMedium) }
     when (card.holdPhase) {
-        HoldPhase.READY -> Button(onClick = vm::startHold, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("START (5 s lead-in)") }
+        HoldPhase.READY -> PrimaryButton("Start (5 s lead-in)", vm::startHold, Modifier.fillMaxWidth(), height = 64.dp)
         HoldPhase.LEAD_IN -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(maxOf(1, 5 - (now - card.holdPhaseStart) / 1000).toString(), fontSize = 96.sp, style = TabularNums)
-            Text("Get on the bar")
-            TextButton(onClick = vm::cancelHold) { Text("Cancel") }
+            Text(maxOf(1, 5 - (now - card.holdPhaseStart) / 1000).toString(), style = FitType.HoldDigits, color = Fit.Ink)
+            Text("Get on the bar", style = MaterialTheme.typography.titleMedium, color = Fit.Muted)
+            LinkButton("Cancel", vm::cancelHold)
         }
         HoldPhase.HOLDING -> Box(
-            Modifier.fillMaxWidth().height(260.dp).background(MaterialTheme.colorScheme.primaryContainer).clickable { vm.stopHold() },
+            Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(24.dp)).background(Fit.Raised).clickable { vm.stopHold() },
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(Numbers.clock((now - card.holdPhaseStart) / 1000), fontSize = 96.sp, style = TabularNums)
-                Text("TAP ANYWHERE TO STOP", style = MaterialTheme.typography.titleMedium)
+                Text(Numbers.clock((now - card.holdPhaseStart) / 1000), style = FitType.HoldDigits, color = Fit.Accent)
+                Text("Tap anywhere to stop", style = MaterialTheme.typography.titleMedium, color = Fit.Ink)
             }
         }
         HoldPhase.RESULT -> {
@@ -525,13 +568,20 @@ private fun UndoBar(ui: LiveUi, vm: LiveSessionViewModel) {
     val l = ui.lastLogged ?: return
     val context = LocalContext.current
     LaunchedEffect(l.setId) { delay(undoTimeoutMs(context)); vm.dismissUndo() }
-    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.inverseSurface).padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("Logged: ${l.label}", color = MaterialTheme.colorScheme.inverseOnSurface, modifier = Modifier.weight(1f))
-        TextButton(onClick = vm::undoLast) { Text("Undo", color = MaterialTheme.colorScheme.inversePrimary) }
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(CircleShape).background(Fit.Line).padding(start = 18.dp, end = 4.dp).heightIn(min = 52.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Check, null, tint = Fit.Accent, modifier = Modifier.size(18.dp))
+        Text("Logged: ${l.label}", style = MaterialTheme.typography.bodyMedium, color = Fit.Ink, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        LinkButton("Undo", vm::undoLast)
     }
 }
 
 // ---------------------------------------------------------------------------------------------------- sheets
+
+/** Sheet content padding: 16 dp sides, room for the gesture bar at the bottom. */
+private val SheetPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -540,14 +590,19 @@ fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, onPick: (dev.fitnes
     val dutch = dutchNames()
     val results = remember(query, dutch) { c.catalog.search(query, dutch) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text(if (dutch) "Search (English or Dutch)" else "Search") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Add exercise", style = MaterialTheme.typography.titleLarge)
+            FitTextField(
+                value = query, onValueChange = { query = it }, placeholder = if (dutch) "Search (English or Dutch)" else "Search",
+                singleLine = true, leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Fit.Muted) }, modifier = Modifier.fillMaxWidth(),
+            )
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
                 items(results, key = { it.slug }) { ex ->
-                    Column(Modifier.fillMaxWidth().clickable { onPick(ex) }.padding(vertical = 10.dp)) {
-                        Text(ex.nameEn, style = MaterialTheme.typography.bodyLarge)
-                        Text(listOfNotNull(ex.nameNl?.takeIf { dutch }, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onPick(ex) }.padding(horizontal = 8.dp, vertical = 12.dp)) {
+                        Text(ex.nameEn, style = MaterialTheme.typography.titleMedium)
+                        Text(listOfNotNull(ex.nameNl?.takeIf { dutch }, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                     }
+                    TileDivider()
                 }
             }
         }
@@ -559,14 +614,13 @@ fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, onPick: (dev.fitnes
 private fun ReasonSheet(c: AppContainer, context: ChipContext, title: String, onDismiss: () -> Unit, onChoose: (String, Int) -> Unit) {
     val chips = remember(context) { UiReasonChips.chipsFor(context, dev.fitnessapp.app.uidet.ExerciseFlags(emptyList()), c.reasons, c.params.fork()).value }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 (chips.visible + chips.more).forEach { chip ->
-                    FilledTonalButton(onClick = { onChoose(chip.code, chip.position) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(chip.label) }
+                    ChipButton(chip.label, selected = false, onClick = { onChoose(chip.code, chip.position) }, role = Role.Button)
                 }
             }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -575,31 +629,31 @@ private fun ReasonSheet(c: AppContainer, context: ChipContext, title: String, on
 @Composable
 private fun OccupiedSheet(name: String, canDoLater: Boolean, onDismiss: () -> Unit, onDoLater: () -> Unit, onSkip: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("$name is occupied", style = MaterialTheme.typography.titleMedium)
-            if (canDoLater) Button(onClick = onDoLater, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Do later") }
-            OutlinedButton(onClick = onSkip, modifier = Modifier.fillMaxWidth()) { Text("Skip anyway") }
-            Spacer(Modifier.height(16.dp))
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("$name is occupied", style = MaterialTheme.typography.titleLarge)
+            if (canDoLater) PrimaryButton("Do later", onDoLater, Modifier.fillMaxWidth())
+            TonalButton("Skip anyway", onSkip, Modifier.fillMaxWidth())
         }
     }
 }
 
 /** UX 16.13: the remaining exercises and a reason (no time preselected). */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FinishSheet(c: AppContainer, remaining: List<String>, onDismiss: () -> Unit, onFinish: (String) -> Unit) {
     val chips = remember { UiReasonChips.chipsFor(ChipContext.SESSION_END, dev.fitnessapp.app.uidet.ExerciseFlags(emptyList()), c.reasons, c.params.fork()).value }
     var reason by remember { mutableStateOf(chips.preselected ?: "no_time") }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Not done yet", style = MaterialTheme.typography.titleMedium)
-            remaining.forEach { Text("· $it") }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                chips.visible.forEach { chip -> FilterChip(selected = reason == chip.code, onClick = { reason = chip.code }, label = { Text(chip.label) }) }
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Not done yet", style = MaterialTheme.typography.titleLarge)
+            Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 4.dp) {
+                remaining.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
             }
-            Button(onClick = { onFinish(reason) }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Finish") }
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Keep going") }
-            Spacer(Modifier.height(16.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                chips.visible.forEach { chip -> ChipButton(chip.label, selected = reason == chip.code, onClick = { reason = chip.code }) }
+            }
+            PrimaryButton("Finish", { onFinish(reason) }, Modifier.fillMaxWidth())
+            TonalButton("Keep going", onDismiss, Modifier.fillMaxWidth())
         }
     }
 }
@@ -617,16 +671,15 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
     var side by remember { mutableStateOf("none") }
     var severity by remember { mutableStateOf<String?>(null) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Where does it hurt?", style = MaterialTheme.typography.titleMedium)
-            dev.fitnessapp.app.ui.common.ChoiceChips(regions.map { it.first }, region, { code -> regions.first { it.first == code }.second }) { region = it }
+        Column(Modifier.padding(SheetPadding).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Where does it hurt?", style = MaterialTheme.typography.titleLarge)
+            ChoiceChips(regions.map { it.first }, region, { code -> regions.first { it.first == code }.second }) { region = it }
             SectionLabel("Side")
-            dev.fitnessapp.app.ui.common.ChoiceChips(listOf("L", "R", "both", "none"), side, { mapOf("L" to "Left", "R" to "Right", "both" to "Both", "none" to "Not sided")[it]!! }) { side = it }
+            ChoiceChips(listOf("L", "R", "both", "none"), side, { mapOf("L" to "Left", "R" to "Right", "both" to "Both", "none" to "Not sided")[it]!! }) { side = it }
             SectionLabel("How bad")
-            dev.fitnessapp.app.ui.common.ChoiceChips(listOf("mild", "moderate", "sharp"), severity, { it.replaceFirstChar(Char::uppercase) }) { severity = it }
-            Text("This app does not give medical advice. If something hurts, stop and get it checked.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(onClick = { onSubmit(region!!, side, severity!!) }, enabled = region != null && severity != null, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Save") }
-            Spacer(Modifier.height(16.dp))
+            ChoiceChips(listOf("mild", "moderate", "sharp"), severity, { it.replaceFirstChar(Char::uppercase) }) { severity = it }
+            Banner("This app does not give medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY, Modifier.padding(top = 8.dp))
+            PrimaryButton("Save", { onSubmit(region!!, side, severity!!) }, Modifier.fillMaxWidth().padding(top = 4.dp), enabled = region != null && severity != null)
         }
     }
 }
@@ -640,18 +693,18 @@ private fun KeypadSheet(card: Card, vm: LiveSessionViewModel, onDismiss: () -> U
     val (lo, hi) = remember(typed) { typed?.let { vm.keypadChips(it) } ?: (null to null) }
     val unit = if (card.mode == LoadMode.ASSISTED_MACHINE) "pin, lb" else card.point?.nativeUnit ?: "kg"
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = text, onValueChange = { text = it }, label = { Text("Load ($unit)") }, singleLine = true,
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Type a load", style = MaterialTheme.typography.titleLarge)
+            FitTextField(
+                value = text, onValueChange = { text = it }, label = "Load ($unit)", singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOfNotNull(lo, hi).distinct().forEach { p ->
-                    OutlinedButton(onClick = { vm.keypad(p.assistPinNative ?: p.nativeValue ?: 0.0); onDismiss() }) { Text(Numbers.loadMain(p, card.mode)) }
+                    TonalButton(Numbers.loadMain(p, card.mode), { vm.keypad(p.assistPinNative ?: p.nativeValue ?: 0.0); onDismiss() })
                 }
             }
-            Button(onClick = { typed?.let(vm::keypad); onDismiss() }, enabled = typed != null, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Set") }
-            Spacer(Modifier.height(16.dp))
+            PrimaryButton("Set", { typed?.let(vm::keypad); onDismiss() }, Modifier.fillMaxWidth(), enabled = typed != null)
         }
     }
 }

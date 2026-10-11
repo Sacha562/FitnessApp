@@ -1,10 +1,12 @@
 package dev.fitnessapp.app.ui.exercises
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,22 +16,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.ThumbDown
+import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,8 +55,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.fitnessapp.algo.selection.catalog.CatalogExercise
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.ui.common.ChipButton
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.dutchNames
 import dev.fitnessapp.app.ui.common.isDutch
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.data.telemetry.EventDraft
 import java.time.LocalDate
 import java.time.ZoneId
@@ -172,25 +180,27 @@ private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewMo
     LaunchedEffect(text) { vm.setQuery(text) }
     LaunchedEffect(dutch) { vm.setDutch(dutch) }
     Column(modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-            Text("Exercises", style = MaterialTheme.typography.headlineMedium)
-            OutlinedTextField(
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("Exercises", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f).semantics { heading() })
+                Text("${ui.rows.size} of ${ui.total}", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(bottom = 6.dp))
+            }
+            FitTextField(
                 value = text, onValueChange = { text = it }, singleLine = true,
-                placeholder = { Text(if (dutch) "Search exercises (EN / NL)" else "Search exercises") },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
-                trailingIcon = { if (text.isNotEmpty()) IconButton(onClick = { text = "" }) { Icon(Icons.Filled.Close, "Clear search") } },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                placeholder = if (dutch) "Search exercises (EN / NL)" else "Search exercises",
+                leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Fit.Muted) },
+                trailingIcon = { if (text.isNotEmpty()) IconButton(onClick = { text = "" }) { Icon(Icons.Rounded.Close, "Clear search", tint = Fit.Muted) } },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         FilterBar(c, ui, vm)
-        HorizontalDivider()
         if (ui.rows.isEmpty()) {
             Text(
                 if (text.isNotBlank()) "No exercise matches '$text'." else "No exercise matches these filters.",
-                style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(20.dp),
+                style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(20.dp),
             )
         }
-        LazyColumn(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(ui.rows, key = { it.id }) { row -> CatalogRowItem(row) { onOpen(row.id) } }
         }
     }
@@ -200,7 +210,7 @@ private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewMo
 private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
     val f = ui.filter
     Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val groups = c.catalogModel.taxonomy.activeGroups
@@ -213,9 +223,9 @@ private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
         MenuChip("Preference", f.preference?.let(::prefLabel), listOf<Pair<String?, String>>(null to "Any preference") + CatalogQuery.PREF_ORDER.map { it to prefLabel(it) }) { v ->
             vm.setFilter("preference", v) { it.copy(preference = v) }
         }
-        FilterChip(
-            selected = f.availableOnly, onClick = { vm.setFilter("available_here", (!f.availableOnly).toString()) { it.copy(availableOnly = !it.availableOnly) } },
-            label = { Text("Available here") }, modifier = Modifier.heightIn(min = 48.dp),
+        ChipButton(
+            "Available here", selected = f.availableOnly, role = Role.Checkbox,
+            onClick = { vm.setFilter("available_here", (!f.availableOnly).toString()) { it.copy(availableOnly = !it.availableOnly) } },
         )
         MenuChip("Sort", ui.sort.label, CatalogSort.entries.map { it.code to it.label }, alwaysSelected = true) { v ->
             vm.setSort(CatalogSort.entries.first { it.code == v })
@@ -226,13 +236,17 @@ private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
 @Composable
 private fun MenuChip(label: String, value: String?, options: List<Pair<String?, String>>, alwaysSelected: Boolean = false, onPick: (String?) -> Unit) {
     var open by remember { mutableStateOf(false) }
+    val on = value != null && !alwaysSelected
     Box {
-        FilterChip(
-            selected = value != null && !alwaysSelected, onClick = { open = true },
-            label = { Text(if (alwaysSelected) "$label: $value" else value ?: label) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null) },
-            modifier = Modifier.heightIn(min = 48.dp),
-        )
+        Row(
+            Modifier.heightIn(min = 48.dp).clip(CircleShape).background(if (on) Fit.Accent else Fit.Raised)
+                .clickable(role = Role.DropdownList) { open = true }.padding(start = 16.dp, end = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val ink = if (on) Fit.OnAccent else Fit.Ink
+            Text(if (alwaysSelected) "$label: $value" else value ?: label, style = MaterialTheme.typography.labelLarge, color = ink)
+            Icon(Icons.Rounded.ArrowDropDown, null, tint = ink)
+        }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { (code, text) ->
                 DropdownMenuItem(text = { Text(text) }, onClick = { open = false; onPick(code) })
@@ -244,33 +258,36 @@ private fun MenuChip(label: String, value: String?, options: List<Pair<String?, 
 @Composable
 private fun CatalogRowItem(row: CatalogRow, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(18.dp)).background(Fit.Tile).clickable(onClick = onClick)
+            .padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(28.dp), contentAlignment = Alignment.CenterStart) { PreferenceIcon(row.preference) }
         Column(Modifier.weight(1f)) {
-            Text(row.ex.nameEn, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                PreferenceIcon(row.preference)
+                Text(row.ex.nameEn, style = MaterialTheme.typography.titleMedium, color = if (row.available) Fit.Ink else Fit.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             val sub = buildList {
                 if (row.groups.isNotEmpty()) add(row.groups.joinToString(" · "))
                 if (!row.available) add("not available here")
                 if (row.preference != "neutral") add(prefLabel(row.preference))
             }.joinToString(" · ")
-            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = Fit.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(row.equipment, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (row.equipment.isNotBlank()) Pill(row.equipment)
     }
 }
 
 @Composable
 fun PreferenceIcon(pref: String) {
     val (icon, desc) = when (pref) {
-        "favorite" -> Icons.Filled.Star to "Favorite"
-        "like" -> Icons.Filled.ThumbUp to "Liked"
-        "dislike" -> Icons.Filled.ThumbDown to "Disliked"
-        "never" -> Icons.Filled.Block to "Never"
+        "favorite" -> Icons.Rounded.Star to "Favorite"
+        "like" -> Icons.Rounded.ThumbUp to "Liked"
+        "dislike" -> Icons.Rounded.ThumbDown to "Disliked"
+        "never" -> Icons.Rounded.Block to "Never"
         else -> return
     }
-    Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp).semantics { contentDescription = desc })
+    Icon(icon, null, tint = if (pref == "never" || pref == "dislike") Fit.Muted else Fit.Accent, modifier = Modifier.size(18.dp).semantics { contentDescription = desc })
 }
 
 fun prefLabel(p: String): String = when (p) {

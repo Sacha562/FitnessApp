@@ -16,15 +16,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +39,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.SessionService
-import dev.fitnessapp.app.ui.theme.AdvisoryAmber
+import dev.fitnessapp.app.ui.common.Pill
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TonalButton
+import dev.fitnessapp.app.ui.theme.Fit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -166,23 +166,21 @@ fun ReliabilityContent(c: AppContainer, showStats: Boolean = false) {
 
         // Phone-maker settings (step 6): instructions, best-effort intent, user confirmation.
         var confirmed by remember { mutableStateOf(prefs.getBoolean("oem_confirmed", false)) }
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusTitle(maker.label + " settings", confirmed)
-                Text("Your phone has its own battery manager that can stop apps even when the steps above are done.", style = MaterialTheme.typography.bodyMedium)
-                maker.steps.forEachIndexed { i, s -> Text("${i + 1}. $s", style = MaterialTheme.typography.bodyMedium) }
-                OutlinedButton(onClick = {
-                    val ok = openOemSettings(context, maker)
-                    scope.launch { c.fgsEvent("oem_settings_opened", mapOf("maker" to maker.name.lowercase(), "intent_ok" to ok)) }
-                }) { Text("Open settings") }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = confirmed, onCheckedChange = { v ->
-                        confirmed = v
-                        prefs.edit().putBoolean("oem_confirmed", v).apply()
-                        if (v) scope.launch { c.fgsEvent("oem_settings_confirmed", mapOf("maker" to maker.name.lowercase())) }
-                    })
-                    Text("I've done this")
-                }
+        Tile(spacing = 6.dp) {
+            StatusTitle(maker.label + " settings", confirmed)
+            Text("Your phone has its own battery manager that can stop apps even when the steps above are done.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            maker.steps.forEachIndexed { i, s -> Text("${i + 1}. $s", style = MaterialTheme.typography.bodyMedium) }
+            TonalButton("Open settings", {
+                val ok = openOemSettings(context, maker)
+                scope.launch { c.fgsEvent("oem_settings_opened", mapOf("maker" to maker.name.lowercase(), "intent_ok" to ok)) }
+            }, Modifier.padding(top = 4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = confirmed, onCheckedChange = { v ->
+                    confirmed = v
+                    prefs.edit().putBoolean("oem_confirmed", v).apply()
+                    if (v) scope.launch { c.fgsEvent("oem_settings_confirmed", mapOf("maker" to maker.name.lowercase())) }
+                })
+                Text("I've done this", style = MaterialTheme.typography.bodyLarge)
             }
         }
 
@@ -202,12 +200,12 @@ private fun SelfTestCard(c: AppContainer) {
     var running by remember { mutableStateOf(false) }
     var answered by remember { mutableStateOf(false) }
     var blocked by remember { mutableStateOf(false) }
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Tile(spacing = 8.dp) {
+        run {
             val r = result
             val latency = r?.firedAt?.let { it - r.scheduledEnd }
             StatusTitle("Test the rest alarm", latency != null && latency <= c.platformConfig.timerExactIdleP95MaxMs)
-            Text("Start, then lock your phone and put it away. It should vibrate in 20 seconds.", style = MaterialTheme.typography.bodyMedium)
+            Text("Start, then lock your phone and put it away. It should vibrate in 20 seconds.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             if (running) Text("Waiting for the alarm…", style = MaterialTheme.typography.bodyMedium)
             if (blocked) Text("Finish your session first, then run the test.", style = MaterialTheme.typography.bodyMedium)
             if (latency != null) {
@@ -216,10 +214,10 @@ private fun SelfTestCard(c: AppContainer) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (!answered) {
-                    Text("Did you feel the vibration?")
+                    Text("Did you feel the vibration?", style = MaterialTheme.typography.titleMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(true, false).forEach { felt ->
-                            OutlinedButton(onClick = {
+                            TonalButton(if (felt) "Yes" else "No", onClick = {
                                 answered = true
                                 scope.launch {
                                     c.fgsEvent(
@@ -230,12 +228,12 @@ private fun SelfTestCard(c: AppContainer) {
                                         ),
                                     )
                                 }
-                            }) { Text(if (felt) "Yes" else "No") }
+                            })
                         }
                     }
                 }
             }
-            Button(onClick = {
+            PrimaryButton(if (result == null) "Start 20 s test" else "Run again", onClick = {
                 running = true
                 answered = false
                 blocked = false
@@ -260,19 +258,17 @@ private fun SelfTestCard(c: AppContainer) {
                     }
                     running = false
                 }
-            }, enabled = !running) { Text(if (result == null) "Start 20 s test" else "Run again") }
+            }, enabled = !running, modifier = Modifier.padding(top = 4.dp), height = 52.dp)
         }
     }
 }
 
 @Composable
 private fun Row1(title: String, reason: String, ok: Boolean, action: String?, onAction: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusTitle(title, ok)
-            Text(reason, style = MaterialTheme.typography.bodyMedium)
-            if (!ok && action != null) OutlinedButton(onClick = onAction) { Text(action) }
-        }
+    Tile(spacing = 6.dp) {
+        StatusTitle(title, ok)
+        Text(reason, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+        if (!ok && action != null) TonalButton(action, onAction, Modifier.padding(top = 4.dp))
     }
 }
 
@@ -280,10 +276,10 @@ private fun Row1(title: String, reason: String, ok: Boolean, action: String?, on
 private fun StatusTitle(title: String, ok: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Icon(
-            if (ok) Icons.Filled.CheckCircle else Icons.Filled.Warning, contentDescription = if (ok) "OK" else "Needs attention",
-            tint = if (ok) MaterialTheme.colorScheme.primary else AdvisoryAmber,
+            if (ok) Icons.Rounded.CheckCircle else Icons.Rounded.Warning, contentDescription = if (ok) "OK" else "Needs attention",
+            tint = if (ok) Fit.Accent else Fit.Advisory,
         )
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(if (ok) "Allowed" else "Not yet", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+        Pill(if (ok) "Allowed" else "Not yet", content = if (ok) Fit.Ink else Fit.Advisory)
     }
 }

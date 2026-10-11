@@ -7,20 +7,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,7 +34,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.ui.common.Banner
+import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.ProgressBar
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TonalButton
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.equipment.EquipmentContent
 import dev.fitnessapp.app.ui.equipment.EquipmentViewModel
 import dev.fitnessapp.app.ui.reliability.ReliabilityContent
@@ -61,11 +64,11 @@ fun OnboardingScreen(c: AppContainer, onDone: () -> Unit) {
         prefs.edit().putInt("step", stepIndex).apply()
     }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
         Column(Modifier.safeDrawingPadding().fillMaxSize()) {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
-                Text("Step ${stepIndex + 1} of ${Step.entries.size} · ${step.title}", style = MaterialTheme.typography.labelLarge)
-                LinearProgressIndicator(progress = { (stepIndex + 1f) / Step.entries.size }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text("Step ${stepIndex + 1} of ${Step.entries.size} · ${step.title}", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+                ProgressBar((stepIndex + 1f) / Step.entries.size, Modifier.padding(top = 8.dp))
             }
             when (step) {
                 Step.ABOUT -> AboutStep { scope.launch { c.profiles.acceptDisclaimer(); next() } }
@@ -76,8 +79,8 @@ fun OnboardingScreen(c: AppContainer, onDone: () -> Unit) {
                         next()
                     },
                 ) {
-                    Text("Make the rest timer reliable", style = MaterialTheme.typography.headlineSmall)
-                    Text("Your phone is among the most aggressive at stopping apps in the background. Each step is optional, but the timer is only as reliable as these settings.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Make the rest timer reliable", style = MaterialTheme.typography.headlineMedium)
+                    Text("Your phone is among the most aggressive at stopping apps in the background. Each step is optional, but the timer is only as reliable as these settings.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                     ReliabilityContent(c)
                 }
                 Step.EQUIPMENT -> {
@@ -103,9 +106,11 @@ fun OnboardingScreen(c: AppContainer, onDone: () -> Unit) {
                         onDone()
                     }
                 }) {
-                    Text("You're set.", style = MaterialTheme.typography.headlineSmall)
-                    Text("Today is where you start a session. Add exercises as you go; the app remembers what you did last time and fills it in.", style = MaterialTheme.typography.bodyLarge)
-                    Text("Weights are in kilograms. Machines marked in pounds (like the assisted pull-up machine) are shown in pounds with kilograms next to them.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("You're set.", style = MaterialTheme.typography.headlineLarge)
+                    Tile(spacing = 8.dp) {
+                        Text("Today is where you start a session. Add exercises as you go; the app remembers what you did last time and fills it in.", style = MaterialTheme.typography.bodyLarge)
+                        Text("Weights are in kilograms. Machines marked in pounds (like the assisted pull-up machine) are shown in pounds with kilograms next to them.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                    }
                 }
             }
         }
@@ -123,12 +128,12 @@ private fun Scrolling(
 ) {
     Column(Modifier.fillMaxSize()) {
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) { content() }
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (secondary != null) TextButton(onClick = onSecondary) { Text(secondary) }
-            Button(onClick = onPrimary, enabled = enabled, modifier = Modifier.weight(1f).height(56.dp)) { Text(primary) }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (secondary != null) TonalButton(secondary, onSecondary, height = 58.dp)
+            PrimaryButton(primary, onPrimary, Modifier.weight(1f), enabled = enabled)
         }
     }
 }
@@ -138,13 +143,15 @@ private fun Scrolling(
 private fun AboutStep(onContinue: () -> Unit) {
     var checked by rememberSaveable { mutableStateOf(false) }
     Scrolling(primary = "Continue", onPrimary = onContinue, enabled = checked) {
-        Text("About this app", style = MaterialTheme.typography.headlineSmall)
-        Text("The app plans your week, picks exercises and suggests weights from what you log. Every recommendation can be explained (tap Why) and overridden.", style = MaterialTheme.typography.bodyLarge)
-        Text("It is offline-first: everything is saved on this phone and uploaded when you have internet.", style = MaterialTheme.typography.bodyLarge)
-        Text("This app does not give medical advice. If something hurts, stop and get it checked.", style = MaterialTheme.typography.bodyLarge)
+        Text("About this app", style = MaterialTheme.typography.headlineLarge)
+        Tile(spacing = 10.dp) {
+            Text("The app plans your week, picks exercises and suggests weights from what you log. Every recommendation can be explained (tap Why) and overridden.", style = MaterialTheme.typography.bodyLarge)
+            Text("It is offline-first: everything is saved on this phone and uploaded when you have internet.", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted)
+        }
+        Banner("This app does not give medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY)
         Row(Modifier.fillMaxWidth().clickable { checked = !checked }, verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = checked, onCheckedChange = { checked = it })
-            Text("I understand this is not medical advice.")
+            Text("I understand this is not medical advice.", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
@@ -169,19 +176,19 @@ private fun ProfileStep(c: AppContainer, onContinue: () -> Unit) {
         scope.launch { c.profiles.stepCompleted("profile", emptyList()) }
         onContinue()
     }) {
-        Text("A few facts", style = MaterialTheme.typography.headlineSmall)
-        OutlinedTextField(
-            value = bw, onValueChange = { bw = it }, label = { Text("Bodyweight (kg)") }, singleLine = true,
+        Text("A few facts", style = MaterialTheme.typography.headlineLarge)
+        FitTextField(
+            value = bw, onValueChange = { bw = it }, label = "Bodyweight (kg)", singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
             supportingText = { Text("Needed for pull-ups, dips and assisted machines (system load).") },
         )
-        Text("Training experience", style = MaterialTheme.typography.titleSmall)
+        Text("Training experience", style = MaterialTheme.typography.titleMedium)
         ChoiceChips(experience.map { it.first }, age, { code -> experience.first { it.first == code }.second }) { age = it }
-        OutlinedTextField(
-            value = birthYear, onValueChange = { birthYear = it.filter(Char::isDigit).take(4) }, label = { Text("Birth year (optional)") }, singleLine = true,
+        FitTextField(
+            value = birthYear, onValueChange = { birthYear = it.filter(Char::isDigit).take(4) }, label = "Birth year (optional)", singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
             supportingText = { Text("Only used to adjust maintenance volume if you are 60 or older.") },
         )
-        OutlinedTextField(value = name, onValueChange = { name = it.take(60) }, label = { Text("Display name (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        FitTextField(value = name, onValueChange = { name = it.take(60) }, label = "Display name (optional)", singleLine = true, modifier = Modifier.fillMaxWidth())
     }
 }

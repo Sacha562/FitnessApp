@@ -17,19 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,8 +39,14 @@ import dev.fitnessapp.algo.selection.catalog.CatalogExercise
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
-import dev.fitnessapp.app.ui.common.SectionLabel
+import dev.fitnessapp.app.ui.common.FitScaffold
+import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.Segmented
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TileDivider
+import dev.fitnessapp.app.ui.common.TileLabel
 import dev.fitnessapp.app.ui.common.dutchNames
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.data.repo.PreferenceRepository
 import dev.fitnessapp.data.telemetry.EventDraft
 import java.time.Instant
@@ -75,7 +70,6 @@ fun preferenceHelp(p: String): String = when (p) {
  * preference, the last five sessions, loading, rest and flags. Alternatives (SUB-1) and "Used by" arrive with M3/M2
  * (DECISIONS changelog 2026-10-11).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBack: () -> Unit) {
     val ex = c.catalog.byId(exerciseId) ?: run { onBack(); return }
@@ -98,92 +92,91 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
         .sortedWith(compareByDescending<Pair<dev.fitnessapp.algo.selection.catalog.MuscleGroup, Double>> { it.second }.thenBy { it.first.sort })
     val coeffs = groups.associate { it.first.id to it.second }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(ex.nameEn) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) },
-    ) { pad ->
+    FitScaffold(ex.nameEn, onBack) { pad ->
         Column(
-            Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 listOfNotNull(ex.nameNl?.takeIf { dutch && it != ex.nameEn }, equipmentLine(ex), CatalogQuery.patternLabel(ex.pattern)).joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(horizontal = 4.dp),
             )
-            MuscleMap(coeffs, Modifier.padding(vertical = 8.dp).heightIn(max = 320.dp)) { tapped = it }
-            tapped?.let { g ->
-                val label = catalog.taxonomy.activeGroups.firstOrNull { it.id == g }?.labelEn ?: g
-                val regions = catalog.taxonomy.regionsOf(g).map { it.labelEn + " " + Numbers.num(ex.stimulus[it.id] ?: 0.0) }
-                Text("$label: " + regions.joinToString(", "), style = MaterialTheme.typography.bodySmall)
-            }
-            groups.forEach { (g, coef) -> CoefficientRow(g.labelEn, coef) }
-            if (groups.isEmpty()) Text("No muscle coefficients (skill or conditioning item).", style = MaterialTheme.typography.bodyMedium)
-            TextButton(onClick = { showRegions = !showRegions }) { Text(if (showRegions) "Hide regions" else "Show regions") }
-            if (showRegions) {
-                catalog.taxonomy.activeRegions.filter { (ex.stimulus[it.id] ?: 0.0) > 0.0 }.forEach { r ->
-                    Text(r.labelEn + " · " + Numbers.num(ex.stimulus.getValue(r.id)), style = MaterialTheme.typography.bodySmall)
+            Tile(spacing = 6.dp) {
+                TileLabel("Muscles")
+                MuscleMap(coeffs, Modifier.padding(vertical = 8.dp).heightIn(max = 320.dp)) { tapped = it }
+                tapped?.let { g ->
+                    val label = catalog.taxonomy.activeGroups.firstOrNull { it.id == g }?.labelEn ?: g
+                    val regions = catalog.taxonomy.regionsOf(g).map { it.labelEn + " " + Numbers.num(ex.stimulus[it.id] ?: 0.0) }
+                    Text("$label: " + regions.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Fit.Ink)
                 }
-                ex.evidenceNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                Text("Coefficients are expert estimates (catalog ${c.catalog.version}).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            SectionLabel("Your preference")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(48.dp)) {
-                PreferenceRepository.STATES.forEachIndexed { i, s ->
-                    SegmentedButton(
-                        selected = pref == s,
-                        // No Undo snackbar (D30): tapping the previous state is the way back.
-                        onClick = {
-                            if (s == pref) return@SegmentedButton
-                            scope.launch { c.preferences.set(exerciseId, s, if (from == "session") "session" else "detail") }
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(i, PreferenceRepository.STATES.size),
-                        icon = {},
-                        contentPadding = PaddingValues(horizontal = 2.dp),
-                    ) { Text(shortPref(s), maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge) }
+                groups.forEach { (g, coef) -> CoefficientRow(g.labelEn, coef) }
+                if (groups.isEmpty()) Text("No muscle coefficients (skill or conditioning item).", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                LinkButton(if (showRegions) "Hide regions" else "Show regions", { showRegions = !showRegions })
+                if (showRegions) {
+                    catalog.taxonomy.activeRegions.filter { (ex.stimulus[it.id] ?: 0.0) > 0.0 }.forEach { r ->
+                        Text(r.labelEn + " · " + Numbers.num(ex.stimulus.getValue(r.id)), style = MaterialTheme.typography.bodySmall)
+                    }
+                    ex.evidenceNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+                    Text("Coefficients are expert estimates (catalog ${c.catalog.version}).", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
             }
-            Text(preferenceHelp(pref), style = MaterialTheme.typography.bodyMedium)
 
-            SectionLabel("History")
-            val zone = ZoneId.of("Europe/Amsterdam")
-            val sessions = history.groupBy { it.set.session_id }.entries.take(5)
-            if (sessions.isEmpty()) Text("Not logged yet.", style = MaterialTheme.typography.bodyMedium)
-            sessions.forEach { (_, rows) ->
-                val first = rows.first()
-                val date = (first.session_started_at ?: first.set.completed_at).let {
-                    DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH).format(Instant.ofEpochMilli(it).atZone(zone))
+            Tile(spacing = 10.dp) {
+                TileLabel("Your preference")
+                // No Undo snackbar (D30): tapping the previous state is the way back.
+                Segmented(PreferenceRepository.STATES, pref, ::shortPref, onSelect = { st ->
+                    if (st != pref) scope.launch { c.preferences.set(exerciseId, st, if (from == "session") "session" else "detail") }
+                })
+                Text(preferenceHelp(pref), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            }
+
+            Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
+                TileLabel("History", Modifier.padding(bottom = 6.dp))
+                val zone = ZoneId.of("Europe/Amsterdam")
+                val sessions = history.groupBy { it.set.session_id }.entries.take(5)
+                if (sessions.isEmpty()) Text("Not logged yet.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                sessions.forEachIndexed { i, (_, rows) ->
+                    if (i > 0) TileDivider()
+                    val first = rows.first()
+                    val date = (first.session_started_at ?: first.set.completed_at).let {
+                        DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH).format(Instant.ofEpochMilli(it).atZone(zone))
+                    }
+                    val working = rows.map { it.set }.filter { it.set_kind != "warmup" }.sortedWith(compareBy({ it.set_index }, { it.side }))
+                    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(date, style = MaterialTheme.typography.titleSmall, modifier = Modifier.width(92.dp))
+                        Text(SetLines.compact(working), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.weight(1f))
+                    }
                 }
-                val working = rows.map { it.set }.filter { it.set_kind != "warmup" }.sortedWith(compareBy({ it.set_index }, { it.side }))
-                Text("$date  " + SetLines.compact(working), style = MaterialTheme.typography.bodyMedium)
             }
 
-            SectionLabel("Loading")
-            Text(loadingLine(ex), style = MaterialTheme.typography.bodyMedium)
-            SectionLabel("Rest")
-            val rest = remember(ex.restClass) { RestPolicy.decide(RestInput(RestClass.of(ex.restClass)), c.params.fork()).timerS.toLong() }
-            Text("About ${Numbers.clock(rest)} (${restClassLabel(ex.restClass)})", style = MaterialTheme.typography.bodyMedium)
-            val flags = buildList {
-                if (ex.laterality != "bilateral") add("Left and right logged separately")
-                if (ex.measure == "duration") add("Timed hold")
-                ex.flagsOffered.forEach { add(flagText(it)) }
+            Tile(spacing = 4.dp) {
+                TileLabel("Loading")
+                Text(loadingLine(ex), style = MaterialTheme.typography.bodyMedium)
+                TileLabel("Rest", Modifier.padding(top = 8.dp))
+                val rest = remember(ex.restClass) { RestPolicy.decide(RestInput(RestClass.of(ex.restClass)), c.params.fork()).timerS.toLong() }
+                Text("About ${Numbers.clock(rest)} (${restClassLabel(ex.restClass)})", style = MaterialTheme.typography.bodyMedium)
+                val flags = buildList {
+                    if (ex.laterality != "bilateral") add("Left and right logged separately")
+                    if (ex.measure == "duration") add("Timed hold")
+                    ex.flagsOffered.forEach { add(flagText(it)) }
+                }
+                if (flags.isNotEmpty()) {
+                    TileLabel("While logging", Modifier.padding(top = 8.dp))
+                    flags.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                }
             }
-            if (flags.isNotEmpty()) {
-                SectionLabel("While logging")
-                flags.forEach { Text("· $it", style = MaterialTheme.typography.bodyMedium) }
-            }
-            Box(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
 private fun CoefficientRow(label: String, coefficient: Double) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(150.dp))
-        Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth(coefficient.toFloat().coerceIn(0f, 1f)).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = shadeAlpha(coefficient))))
+    Row(Modifier.fillMaxWidth().heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(140.dp))
+        Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Fit.Raised)) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(coefficient.toFloat().coerceIn(0f, 1f)).clip(RoundedCornerShape(5.dp)).background(Fit.Accent.copy(alpha = shadeAlpha(coefficient))))
         }
-        Text(Numbers.num(coefficient), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp).width(36.dp))
+        Text(Numbers.num(coefficient), style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 10.dp).width(36.dp))
     }
 }
 

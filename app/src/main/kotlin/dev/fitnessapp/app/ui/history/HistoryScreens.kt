@@ -1,43 +1,37 @@
 package dev.fitnessapp.app.ui.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,15 +43,30 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
+import dev.fitnessapp.app.ui.common.Banner
+import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.FitScaffold
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.Pill
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.RoundIconButton
 import dev.fitnessapp.app.ui.common.SectionLabel
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TileDivider
+import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.showUndo
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.live.AddExerciseSheet
 import dev.fitnessapp.app.ui.live.PainSheet
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
@@ -95,24 +104,23 @@ fun sessionName(c: AppContainer, exerciseIds: List<String>): String {
 private fun minutes(s: WorkoutSessionEntity): Long? =
     if (s.started_at != null && s.finished_at != null) (s.finished_at!! - s.started_at!!) / 60_000 else null
 
-/** History (UX 15.3): sessions grouped by ISO week, newest first. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** History (UX 15.3): sessions grouped by ISO week, newest first, one tile per session (D31). */
 @Composable
 fun HistoryRoute(c: AppContainer, onBack: () -> Unit, onOpen: (String) -> Unit) {
     val rows by remember { c.history.observeHistory() }.collectAsState(initial = null)
-    Scaffold(topBar = { TopAppBar(title = { Text("History") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { pad ->
+    FitScaffold("History", onBack) { pad ->
         val list = rows
         if (list != null && list.isEmpty()) {
-            Text("No sessions yet. Finished and abandoned sessions appear here.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(pad).padding(20.dp))
+            Text("No sessions yet. Finished and abandoned sessions appear here.", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(pad).padding(20.dp))
         }
-        LazyColumn(Modifier.padding(pad).fillMaxSize()) {
+        LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val weeks = list.orEmpty().groupBy { it.session.iso_week }
             weeks.forEach { (week, items) ->
                 item(key = "w$week") {
                     Text(
                         "Week ${week.substringAfter("-W").trimStart('0')} · ${items.size} session${if (items.size == 1) "" else "s"}",
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
+                        style = MaterialTheme.typography.labelMedium, color = Fit.Muted,
+                        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp).semantics { heading() },
                     )
                 }
                 items(items, key = { it.session.id }) { r -> HistoryRowItem(c, r) { onOpen(r.session.id) } }
@@ -124,20 +132,29 @@ fun HistoryRoute(c: AppContainer, onBack: () -> Unit, onOpen: (String) -> Unit) 
 @Composable
 private fun HistoryRowItem(c: AppContainer, r: HistoryRow, onClick: () -> Unit) {
     val s = r.session
-    Column(Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 10.dp)) {
-        val date = s.started_at?.let { DAY.format(Instant.ofEpochMilli(it).atZone(ZONE)) } ?: s.local_date
-        Text("$date · ${sessionName(c, r.exerciseIds)}", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        val badges = buildList {
-            minutes(s)?.let { add("$it min") }
-            add("${r.workingSets} working set${if (r.workingSets == 1) "" else "s"}")
-            if (s.status == "abandoned") add("abandoned")
-            if (r.pain) add("pain")
-            if (s.kind == "home") add("home")
-            if (s.kind == "test") add("test")
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(18.dp)).background(Fit.Tile).clickable(onClick = onClick)
+            .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val date = s.started_at?.let { DAY.format(Instant.ofEpochMilli(it).atZone(ZONE)) } ?: s.local_date
+            Text(date, style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+            Text(sessionName(c, r.exerciseIds), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val badges = buildList {
+                minutes(s)?.let { add("$it min") }
+                add("${r.workingSets} working set${if (r.workingSets == 1) "" else "s"}")
+                if (s.status == "abandoned") add("abandoned")
+                if (s.kind == "home") add("home")
+                if (s.kind == "test") add("test")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(badges.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                if (r.pain) Text(" · pain", style = MaterialTheme.typography.bodySmall, color = Fit.Safety)
+            }
         }
-        Text(badges.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = Fit.Muted)
     }
-    HorizontalDivider()
 }
 
 private sealed interface DetailSheet {
@@ -181,7 +198,7 @@ internal fun QuickCheck(
         val at = Instant.ofEpochMilli(editableUntil).atZone(ZONE)
         Text(
             "Editable until ${DAY.format(at)} ${TIME.format(at)}",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
         )
     }
 }
@@ -190,7 +207,7 @@ internal fun QuickCheck(
 private fun CheckRow(text: String, link: String?, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        if (link != null) TextButton(onClick = onClick) { Text(link) }
+        if (link != null) LinkButton(link, onClick)
     }
 }
 
@@ -199,7 +216,7 @@ private fun CheckRow(text: String, link: String?, onClick: () -> Unit) {
 private fun EffortSheet(current: Int?, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleMedium)
+            Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleLarge)
             ChoiceChips((0..10).toList(), current, { it.toString() }, onSelect = onPick)
         }
     }
@@ -211,17 +228,14 @@ private fun NoteSheet(current: String?, onDismiss: () -> Unit, onSave: (String) 
     var text by remember { mutableStateOf(current.orEmpty()) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = text, onValueChange = { text = it.take(2000) }, label = { Text("Note") },
-                minLines = 3, modifier = Modifier.fillMaxWidth(),
-            )
-            Button(onClick = { onSave(text) }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Save") }
+            Text("Note", style = MaterialTheme.typography.titleLarge)
+            FitTextField(value = text, onValueChange = { text = it.take(2000) }, label = "Note", minLines = 3, modifier = Modifier.fillMaxWidth())
+            PrimaryButton("Save", { onSave(text) }, Modifier.fillMaxWidth())
         }
     }
 }
 
 /** Session detail (UX 15.3, D28): targets vs actuals, the quick check, edits and the session actions. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, onOpenExercise: (String) -> Unit, onReopened: (String) -> Unit) {
     val session by remember(sessionId) { c.sessionRepository.observeSession(sessionId) }.collectAsState(initial = null)
@@ -255,66 +269,63 @@ fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, o
     }
 
     val s = session
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(s?.started_at?.let { DAY.format(Instant.ofEpochMilli(it).atZone(ZONE)) } ?: "Session") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-                actions = {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "Session actions") }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        if (s?.status == "abandoned") DropdownMenuItem(text = { Text("Reopen session") }, onClick = {
-                            menu = false
-                            scope.launch {
-                                message = when (c.history.reopen(sessionId)) {
-                                    ReopenResult.REOPENED -> { onReopened(sessionId); null }
-                                    ReopenResult.OTHER_DAY -> "Only a session from today can be reopened."
-                                    ReopenResult.ANOTHER_ACTIVE -> "Finish the open session first."
-                                    ReopenResult.NOT_ABANDONED -> null
-                                }
+    FitScaffold(
+        s?.started_at?.let { DAY.format(Instant.ofEpochMilli(it).atZone(ZONE)) } ?: "Session", onBack,
+        actions = {
+            Box {
+                RoundIconButton(Icons.Rounded.MoreVert, "Session actions", { menu = true })
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    if (s?.status == "abandoned") DropdownMenuItem(text = { Text("Reopen session") }, onClick = {
+                        menu = false
+                        scope.launch {
+                            message = when (c.history.reopen(sessionId)) {
+                                ReopenResult.REOPENED -> { onReopened(sessionId); null }
+                                ReopenResult.OTHER_DAY -> "Only a session from today can be reopened."
+                                ReopenResult.ANOTHER_ACTIVE -> "Finish the open session first."
+                                ReopenResult.NOT_ABANDONED -> null
                             }
-                        })
-                        DropdownMenuItem(text = { Text("Add exercise") }, onClick = { menu = false; sheet = DetailSheet.AddExercise })
-                        DropdownMenuItem(text = { Text("Delete session") }, onClick = { menu = false; confirmDelete = true })
-                    }
-                },
-            )
+                        }
+                    })
+                    DropdownMenuItem(text = { Text("Add exercise") }, onClick = { menu = false; sheet = DetailSheet.AddExercise })
+                    DropdownMenuItem(text = { Text("Delete session", color = Fit.Safety) }, onClick = { menu = false; confirmDelete = true })
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { pad ->
-        if (s == null) return@Scaffold
+        if (s == null) return@FitScaffold
         Column(
-            Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val live = sets.filter { it.deleted_at == null }
             val working = live.filter { it.set_kind != "warmup" }.sumOf { if (it.side == "both") 2 else 1 } / 2
             val time = listOfNotNull(s.started_at, s.finished_at).joinToString("-") { TIME.format(Instant.ofEpochMilli(it).atZone(ZONE)) }
-            Text(
-                listOfNotNull(time.ifEmpty { null }, minutes(s)?.let { "$it min" }, "$working working sets", if (s.status == "abandoned") "abandoned" else null).joinToString(" · "),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            message?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
-            Text("Edits update future recommendations.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    listOfNotNull(time.ifEmpty { null }, minutes(s)?.let { "$it min" }, "$working working set" + if (working == 1) "" else "s", if (s.status == "abandoned") "abandoned" else null).joinToString(" · "),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text("Edits update future recommendations.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            }
+            message?.let { Banner(it, BannerKind.ADVISORY) }
 
             exercises.filter { it.status != "removed" }.forEach { se ->
                 ExerciseBlock(c, se, live.filter { it.session_exercise_id == se.id }, onOpenExercise, onEdit = { sheet = DetailSheet.Edit(it) }, onAdd = { sheet = DetailSheet.Add(se.id) })
             }
-            OutlinedButton(onClick = { sheet = DetailSheet.AddExercise }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Icon(Icons.Filled.Add, null)
-                Text("Add a forgotten exercise")
-            }
+            TonalButton("Add a forgotten exercise", { sheet = DetailSheet.AddExercise }, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add, container = Fit.Tile)
 
-            QuickCheck(
-                srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe,
-                pains = wellness.filter { it.kind == "pain" },
-                note = s.notes?.takeIf { it.isNotBlank() },
-                editableUntil = (s.finished_at ?: s.started_at)?.let { it + QUICK_CHECK_EDIT_MS },
-                onEffort = { sheet = DetailSheet.Effort },
-                onPain = { sheet = DetailSheet.Pain },
-                onNote = { sheet = DetailSheet.Note },
-            )
-            Spacer(Modifier.height(24.dp))
+            Tile(spacing = 0.dp) {
+                QuickCheck(
+                    srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe,
+                    pains = wellness.filter { it.kind == "pain" },
+                    note = s.notes?.takeIf { it.isNotBlank() },
+                    editableUntil = (s.finished_at ?: s.started_at)?.let { it + QUICK_CHECK_EDIT_MS },
+                    onEffort = { sheet = DetailSheet.Effort },
+                    onPain = { sheet = DetailSheet.Pain },
+                    onNote = { sheet = DetailSheet.Note },
+                )
+            }
         }
     }
 
@@ -373,18 +384,18 @@ private fun ExerciseBlock(
     onAdd: () -> Unit,
 ) {
     val ex = c.catalog.byId(se.exercise_id)
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+    Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 ex?.nameEn ?: "Exercise", style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f).clickable { onOpenExercise(se.exercise_id) }.padding(vertical = 4.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp).clickable { onOpenExercise(se.exercise_id) }.padding(vertical = 12.dp),
             )
             val status = when (se.status) {
                 "skipped" -> "skipped" + (se.status_reason_code?.let { " · " + reasonLabel(c, it) } ?: "")
                 "not_done" -> "not done"
                 else -> null
             }
-            status?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+            status?.let { Pill(it, Modifier.padding(end = 8.dp)) }
         }
         val ordered = sets.sortedWith(compareBy({ it.set_kind != "warmup" }, { it.set_index }, { it.side }, { it.completed_at }))
         var working = 0
@@ -394,23 +405,21 @@ private fun ExerciseBlock(
                 s.side == "R" -> "Set $working R"
                 else -> { working++; "Set $working" + if (s.side == "L") " L" else "" }
             }
+            TileDivider()
             SetRow(c, label, s) { onEdit(s.id) }
         }
-        TextButton(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp)) {
-            Icon(Icons.Filled.Add, null)
-            Text("Add a set")
-        }
-        HorizontalDivider()
+        TileDivider()
+        LinkButton("+ Add a set", onAdd)
     }
 }
 
 @Composable
 private fun SetRow(c: AppContainer, label: String, s: SetLogEntity, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onClick).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(end = 12.dp).weight(0.28f))
+    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = Fit.Muted, modifier = Modifier.padding(end = 12.dp).weight(0.28f))
         Column(Modifier.weight(0.72f)) {
             val main = listOfNotNull(SetLines.load(s)?.takeIf { s.load_mode != "bodyweight" || s.reps == null }, SetLines.perf(s)).joinToString(" × ")
-            Text(main, style = MaterialTheme.typography.bodyLarge)
+            Text(main, style = MaterialTheme.typography.titleMedium)
             val planned = s.planned_reps?.let { p -> if (s.reps != null && s.reps != p) "target $p" else null }
             val details = listOfNotNull(
                 SetLines.effort(s), planned,
@@ -419,7 +428,7 @@ private fun SetRow(c: AppContainer, label: String, s: SetLogEntity, onClick: () 
                 s.flags.filter { it != s.deviation_reason_code }.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.replace('_', ' ') },
                 s.rest_before_s?.let { "rest " + Numbers.clock((it / 10)) },
             )
-            if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
         }
     }
 }

@@ -3,6 +3,7 @@ package dev.fitnessapp.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Dark only (D31): light system-bar icons regardless of the system theme.
+        enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         route.value = intent?.getStringExtra("route")?.let(Routes::parse)
         val container = (application as FitnessApplication).container
         if (savedInstanceState == null) reportOpened(intent)

@@ -6,22 +6,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import dev.fitnessapp.app.ui.theme.Fit
 
-/** UX 13.3 shading: group coefficient -> share of the primary colour drawn over the idle muscle colour. */
+/** UX 13.3 shading: group coefficient -> share of the accent drawn over the idle muscle colour. */
 fun shadeAlpha(coefficient: Double): Float = when {
     coefficient >= 1.0 -> 1f
     coefficient >= 0.75 -> 0.70f
@@ -42,10 +40,9 @@ private val parsed: List<ParsedShape> by lazy {
  */
 @Composable
 fun MuscleMap(coefficients: Map<String, Double>, modifier: Modifier = Modifier, onGroupTap: (String) -> Unit = {}) {
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val base = if (dark) Color(0xFF2A3331) else Color(0xFFDAE5E1)
-    val idle = if (dark) Color(0xFF3A4643) else Color(0xFFC3D0CB)
-    val primary = MaterialTheme.colorScheme.primary
+    val base = Fit.MapBase
+    val idle = Fit.MapIdle
+    val primary = Fit.Accent
     Row(modifier.fillMaxWidth().clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         for (view in MapView.entries) {
             val shapes = remember(view) { parsed.filter { it.view == view } }

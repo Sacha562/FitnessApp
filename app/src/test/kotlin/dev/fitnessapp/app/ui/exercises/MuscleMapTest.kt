@@ -58,9 +58,9 @@ class MuscleMapTest {
         shadeAlpha(0.0) shouldBe 0f
     }
 
-    private fun shot(name: String, coefficients: Map<String, Double>, dark: Boolean) {
+    private fun shot(name: String, coefficients: Map<String, Double>) {
         compose.setContent {
-            FitnessTheme(darkTheme = dark) {
+            FitnessTheme {
                 Surface { MuscleMap(coefficients, Modifier.padding(16.dp).width(360.dp)) }
             }
         }
@@ -68,10 +68,10 @@ class MuscleMapTest {
     }
 
     @Test
-    fun legPressLight() = shot("legpress_light", mapOf("quads" to 1.0, "glutes" to 0.5, "adductors" to 0.5), dark = false)
+    fun legPress() = shot("legpress", mapOf("quads" to 1.0, "glutes" to 0.5, "adductors" to 0.5))
 
     @Test
-    fun pullUpDark() = shot(
-        "pullup_dark", mapOf("lats" to 1.0, "biceps" to 0.75, "upper_back" to 0.5, "rear_delts" to 0.5, "forearms" to 0.5, "abs" to 0.25), dark = true,
+    fun pullUp() = shot(
+        "pullup", mapOf("lats" to 1.0, "biceps" to 0.75, "upper_back" to 0.5, "rear_delts" to 0.5, "forearms" to 0.5, "abs" to 0.25),
     )
 }

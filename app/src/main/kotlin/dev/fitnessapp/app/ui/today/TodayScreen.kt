@@ -1,27 +1,32 @@
 package dev.fitnessapp.app.ui.today
 
 import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,27 +38,44 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.session.SessionService
-import dev.fitnessapp.app.ui.common.SectionLabel
-import dev.fitnessapp.app.ui.theme.AdvisoryAmber
+import dev.fitnessapp.app.ui.common.Banner
+import dev.fitnessapp.app.ui.common.BannerKind
+import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.Pill
+import dev.fitnessapp.app.ui.common.PrimaryButton
+import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.ui.common.TileDivider
+import dev.fitnessapp.app.ui.common.TileLabel
+import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.data.db.Scaled
+import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.IsoFields
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 /**
- * Today in M1a (D22): start an empty session or resume the open one, the bodyweight line with a weigh-in
- * prompt when stale, the status row and recent sessions. The recommendation card arrives with M4.
+ * Today in M1 (D22): start an empty session or resume the open one, this week's strip, the bodyweight tile with a
+ * weigh-in prompt when stale, the status banner and recent sessions, laid out as Bento tiles (D31). The
+ * recommendation card arrives with M4.
  */
 @Composable
 fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {}, onHistory: () -> Unit = {}) {
@@ -65,88 +87,166 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, 
     val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
     val sync by c.sync.state.collectAsState()
-    val profile by remember { c.profiles.observe() }.collectAsState(initial = null)
     var weighIn by remember { mutableStateOf(false) }
     var starting by remember { mutableStateOf(false) }
     val zone = ZoneId.of("Europe/Amsterdam")
     val today = LocalDate.now(zone)
 
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(today.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH)), style = MaterialTheme.typography.labelLarge)
-        Text(profile?.display_name?.let { "Hi $it" } ?: "Today", style = MaterialTheme.typography.headlineMedium)
+    Column(modifier.fillMaxSize()) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column {
+                Text(
+                    today.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH)) + " · Week " + today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
+                    style = MaterialTheme.typography.titleSmall, color = Fit.Muted,
+                )
+                Text(
+                    today.format(DateTimeFormatter.ofPattern("d MMMM", Locale.ENGLISH)), style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
 
-        StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
+            WeekStrip(today, recent)
 
-        val a = active
-        if (a != null) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Session in progress", style = MaterialTheme.typography.titleMedium)
+            StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
+
+            val a = active
+            Tile(padding = androidx.compose.foundation.layout.PaddingValues(18.dp), spacing = 6.dp) {
+                if (a != null) {
                     val mins = a.started_at?.let { (System.currentTimeMillis() - it) / 60_000 } ?: 0
-                    Text("Started $mins min ago", style = MaterialTheme.typography.bodyMedium)
-                    Button(onClick = {
-                        SessionService.start(context)
-                        onOpenSession(a.id, true)
-                    }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Resume") }
+                    Pill("In progress · started $mins min ago")
+                    Text("Session in progress", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 4.dp))
+                    Text("Pick up at the set you were on.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                } else {
+                    Pill("Free session")
+                    Text("Train today", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 4.dp))
+                    Text(
+                        "Start a session and add exercises as you go. Each set starts from what you did last time.",
+                        style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                    )
                 }
             }
-        } else {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Train today", style = MaterialTheme.typography.titleMedium)
-                    Text("Start a session and add exercises as you go. Each set starts from what you did last time.", style = MaterialTheme.typography.bodyMedium)
-                    Button(onClick = {
-                        if (starting) return@Button
-                        starting = true
-                        scope.launch {
-                            val id = c.sessionRepository.start(c.params)
-                            SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
-                            starting = false
-                            onOpenSession(id, false)
-                        }
-                    }, enabled = !starting, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Start session") }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BodyweightTile(c, latestBw?.value_num?.let { Scaled.toDouble(it, 3) }, latestBw?.local_date, today, Modifier.weight(1f)) { weighIn = true }
+                WeekTile(recent, today, Modifier.weight(1f))
+            }
+
+            if (recent.isNotEmpty()) {
+                Tile(spacing = 0.dp, padding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 8.dp, top = 14.dp, bottom = 6.dp)) {
+                    TileLabel("Recent sessions", Modifier.padding(bottom = 4.dp))
+                    recent.forEachIndexed { i, s ->
+                        if (i > 0) TileDivider()
+                        RecentRow(s) { onOpenPast(s.id) }
+                    }
+                    LinkButton("All sessions", onHistory, Modifier.padding(top = 2.dp))
                 }
             }
         }
 
-        // Bodyweight (C32): the snapshot needs a weigh-in; stale after 14 days.
-        val bw = latestBw
-        val days = bw?.let { ChronoUnit.DAYS.between(LocalDate.parse(it.local_date), today) }
-        Row(Modifier.fillMaxWidth().clickable { weighIn = true }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Bodyweight", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    when {
-                        bw?.value_num == null -> "No weigh-in yet. Needed for pull-ups, dips and assisted work."
-                        days != null && days > c.params.fork().int("bodyweight.stale_days") -> Numbers.kg(Scaled.toDouble(bw.value_num!!, 3)) + " · $days days ago, weigh in again"
-                        else -> Numbers.kg(Scaled.toDouble(bw.value_num!!, 3)) + if (days == 0L) " · today" else " · $days days ago"
-                    },
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            val a = active
+            if (a != null) {
+                PrimaryButton("Resume session", onClick = {
+                    SessionService.start(context)
+                    onOpenSession(a.id, true)
+                }, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+            } else {
+                PrimaryButton("Start session", onClick = {
+                    if (starting) return@PrimaryButton
+                    starting = true
+                    scope.launch {
+                        val id = c.sessionRepository.start(c.params)
+                        SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
+                        starting = false
+                        onOpenSession(id, false)
+                    }
+                }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             }
-            TextButton(onClick = { weighIn = true }) { Text("Log weight") }
-        }
-
-        if (recent.isNotEmpty()) {
-            SectionLabel("Recent sessions")
-            recent.forEach { s ->
-                val date = LocalDate.parse(s.local_date).format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH))
-                val dur = if (s.started_at != null && s.finished_at != null) " · " + ((s.finished_at!! - s.started_at!!) / 60_000) + " min" else ""
-                Text(
-                    "$date$dur" + if (s.status == "abandoned") " · abandoned" else "", style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth().clickable { onOpenPast(s.id) }.padding(vertical = 12.dp),
-                )
-            }
-            TextButton(onClick = onHistory) { Text("All sessions") }
         }
     }
 
     if (weighIn) WeighInDialog(onDismiss = { weighIn = false }) { kg ->
         weighIn = false
         scope.launch { c.bodyweight.logWeighIn(kg) }
+    }
+}
+
+/** Monday to Sunday of this week: a check on days with a finished session, today in the accent. */
+@Composable
+private fun WeekStrip(today: LocalDate, recent: List<WorkoutSessionEntity>) {
+    val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val done = recent.filter { it.status == "finished" }.map { it.local_date }.toSet()
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (i in 0L until 7L) {
+            val day = monday.plusDays(i)
+            val isToday = day == today
+            val trained = day.toString() in done
+            val name = day.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH))
+            Column(
+                Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (isToday) Fit.Accent else Fit.Tile)
+                    .semantics { contentDescription = name + (if (isToday) ", today" else "") + (if (trained) ", trained" else "") },
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+            ) {
+                val ink = if (isToday) Fit.OnAccent else Fit.Muted
+                Text(name.take(1), style = MaterialTheme.typography.labelMedium, color = ink)
+                when {
+                    trained -> Icon(Icons.Rounded.Check, null, tint = if (isToday) Fit.OnAccent else Fit.Accent, modifier = Modifier.size(16.dp))
+                    else -> Box(Modifier.padding(top = 5.dp, bottom = 6.dp).size(5.dp).clip(CircleShape).background(if (isToday) Fit.OnAccent else Fit.Line))
+                }
+            }
+        }
+    }
+}
+
+/** Bodyweight (C32): the snapshot needs a weigh-in; stale after `bodyweight.stale_days`. */
+@Composable
+private fun BodyweightTile(c: AppContainer, kg: Double?, date: String?, today: LocalDate, modifier: Modifier, onWeighIn: () -> Unit) {
+    val days = date?.let { ChronoUnit.DAYS.between(LocalDate.parse(it), today) }
+    val stale = kg == null || (days != null && days > c.params.fork().int("bodyweight.stale_days"))
+    Tile(modifier.heightIn(min = 112.dp), radius = 22.dp, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 14.dp), spacing = 2.dp, onClick = onWeighIn) {
+        Text("Bodyweight", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+        Text(kg?.let { Numbers.kg(it) } ?: "—", style = MaterialTheme.typography.headlineMedium)
+        if (stale) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Rounded.Warning, null, tint = Fit.Advisory, modifier = Modifier.size(14.dp))
+                Text(if (kg == null) "Log a weigh-in" else "$days days ago, weigh in", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
+            }
+        } else {
+            Text(if (days == 0L) "Today · tap to update" else "$days days ago · tap to update", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+        }
+    }
+}
+
+/** Finished sessions in this ISO week and the last one. */
+@Composable
+private fun WeekTile(recent: List<WorkoutSessionEntity>, today: LocalDate, modifier: Modifier) {
+    val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val finished = recent.filter { it.status == "finished" }
+    val count = finished.count { !LocalDate.parse(it.local_date).isBefore(monday) }
+    Tile(modifier.heightIn(min = 112.dp), radius = 22.dp, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 14.dp), spacing = 2.dp) {
+        Text("This week", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(count.toString(), style = MaterialTheme.typography.headlineMedium)
+            Text(if (count == 1) "session" else "sessions", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(bottom = 4.dp))
+        }
+        Text(
+            finished.firstOrNull()?.let { "Last: " + LocalDate.parse(it.local_date).format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)) } ?: "No sessions yet",
+            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+        )
+    }
+}
+
+@Composable
+private fun RecentRow(s: WorkoutSessionEntity, onClick: () -> Unit) {
+    val date = LocalDate.parse(s.local_date).format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH))
+    val dur = if (s.started_at != null && s.finished_at != null) ((s.finished_at!! - s.started_at!!) / 60_000).toString() + " min" else null
+    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+        Text(date, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(listOfNotNull(dur, if (s.status == "abandoned") "abandoned" else null).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
@@ -170,13 +270,10 @@ private fun StatusRow(c: AppContainer, pending: PendingStatus, dead: Int, sync: 
         else -> pendingLine(pending)
     }
     val line = problems.firstOrNull() ?: syncText ?: return
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onOpenSync).padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(if (problems.isNotEmpty() || dead > 0) Icons.Filled.Warning else Icons.Filled.CloudOff, null, tint = AdvisoryAmber)
-        Text(line, style = MaterialTheme.typography.bodyMedium)
-    }
+    Banner(
+        line, BannerKind.ADVISORY, icon = if (problems.isNotEmpty() || dead > 0) Icons.Rounded.Warning else Icons.Rounded.CloudOff,
+        onClick = onOpenSync,
+    )
 }
 
 /** UX 7.1 wording; null when nothing is worth showing. */
@@ -194,8 +291,8 @@ fun WeighInDialog(onDismiss: () -> Unit, onSave: (Double) -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Log weight") },
         text = {
-            OutlinedTextField(
-                value = text, onValueChange = { text = it }, label = { Text("Bodyweight (kg)") }, singleLine = true,
+            FitTextField(
+                value = text, onValueChange = { text = it }, label = "Bodyweight (kg)", singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             )
         },

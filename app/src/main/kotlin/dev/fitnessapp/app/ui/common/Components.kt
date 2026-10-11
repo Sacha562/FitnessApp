@@ -1,6 +1,8 @@
 package dev.fitnessapp.app.ui.common
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,38 +12,49 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import dev.fitnessapp.app.ui.theme.Fit
 
-/** Tabular numbers for every changing value (UX 4). */
+/** Tabular numbers for every changing value (UX 4.2); the theme's styles already set it. */
 val TabularNums = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
 
+/** A section label: sentence case, muted (UX 4.2). */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
-        text.uppercase(),
+        text,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(top = 8.dp, bottom = 4.dp),
+        color = Fit.Muted,
+        modifier = modifier.padding(top = 8.dp, bottom = 4.dp).semantics { heading() },
     )
 }
 
 /**
- * The 64 dp stepper row of the set card (UX 6.1): ( - ) value ( + ). [minusLabel]/[plusLabel] name the effect
- * for assisted machines ("harder" / "easier").
+ * The 64 dp stepper row of the set card (UX 6.1): ( - ) value ( + ), raised circles with accent glyphs.
+ * [minusLabel]/[plusLabel] name the effect for assisted machines ("harder" / "easier").
  */
 @Composable
 fun StepperRow(
@@ -55,33 +68,52 @@ fun StepperRow(
     onValueClick: (() -> Unit)? = null,
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledTonalIconButton(onClick = onMinus, enabled = enabled, modifier = Modifier.size(64.dp).semantics { contentDescription = minusLabel ?: "Decrease" }) {
-                Icon(Icons.Filled.Remove, contentDescription = null)
-            }
-            if (minusLabel != null) Text(minusLabel, style = MaterialTheme.typography.labelSmall)
-        }
-        val valueModifier = if (onValueClick != null) Modifier.heightIn(min = 48.dp).clickable(onClick = onValueClick) else Modifier
+        StepButton(minusLabel, "Decrease", Icons.Rounded.Remove, onMinus, enabled)
+        val valueModifier = if (onValueClick != null) Modifier.heightIn(min = 48.dp).clip(CircleShape).clickable(onClick = onValueClick) else Modifier
         Column(Modifier.weight(1f).padding(horizontal = 8.dp).then(valueModifier), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value, style = MaterialTheme.typography.headlineMedium.merge(TabularNums), textAlign = TextAlign.Center)
-            if (secondary != null) Text(secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            BasicText(
+                emphasizeNumbers(value), maxLines = 1,
+                style = MaterialTheme.typography.displayMedium.copy(color = Fit.Ink, textAlign = TextAlign.Center),
+                // UX 4.8 rule 2: shrink instead of wrapping when a long value meets the 64 dp buttons.
+                autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = 40.sp, stepSize = 2.sp),
+            )
+            if (secondary != null) Text(secondary, style = MaterialTheme.typography.bodySmall, color = Fit.Muted, textAlign = TextAlign.Center)
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledTonalIconButton(onClick = onPlus, enabled = enabled, modifier = Modifier.size(64.dp).semantics { contentDescription = plusLabel ?: "Increase" }) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-            }
-            if (plusLabel != null) Text(plusLabel, style = MaterialTheme.typography.labelSmall)
-        }
+        StepButton(plusLabel, "Increase", Icons.Rounded.Add, onPlus, enabled)
     }
 }
 
-/** A wrapping row of single-choice chips. */
+private val NUMBER = Regex("""\d+(?:[.,]\d+)?""")
+
+/** Digits at full size, words and units ("BW +", "kg", "reps", "Pin") at half size in the muted colour (D31). */
+internal fun emphasizeNumbers(value: String): AnnotatedString = buildAnnotatedString {
+    var last = 0
+    val small = SpanStyle(fontSize = 0.5.em, color = Fit.Muted)
+    for (m in NUMBER.findAll(value)) {
+        if (m.range.first > last) withStyle(small) { append(value.substring(last, m.range.first)) }
+        append(m.value)
+        last = m.range.last + 1
+    }
+    if (last < value.length) withStyle(small) { append(value.substring(last)) }
+}
+
+@Composable
+private fun StepButton(label: String?, fallback: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, enabled: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        FilledIconButton(
+            onClick = onClick, enabled = enabled, shape = CircleShape,
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Fit.Raised, contentColor = Fit.Accent, disabledContainerColor = Fit.Raised.copy(alpha = 0.5f), disabledContentColor = Fit.Muted),
+            modifier = Modifier.size(64.dp).semantics { contentDescription = label ?: fallback },
+        ) { Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp)) }
+        if (label != null) Text(label, style = MaterialTheme.typography.labelSmall, color = Fit.Muted, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+/** A wrapping row of single-choice pill chips. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun <T> ChoiceChips(options: List<T>, selected: T?, label: (T) -> String, modifier: Modifier = Modifier, onSelect: (T) -> Unit) {
-    FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        options.forEach { o ->
-            FilterChip(selected = o == selected, onClick = { onSelect(o) }, label = { Text(label(o)) }, modifier = Modifier.heightIn(min = 48.dp))
-        }
+    FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { o -> ChipButton(label(o), selected = o == selected, onClick = { onSelect(o) }) }
     }
 }
