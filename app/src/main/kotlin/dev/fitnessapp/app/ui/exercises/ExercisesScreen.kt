@@ -210,9 +210,6 @@ private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
         MenuChip("Equipment", f.equipment?.label, listOf<Pair<String?, String>>(null to "Any equipment") + EquipmentFilter.entries.map { it.code to it.label }) { v ->
             vm.setFilter("equipment", v) { it.copy(equipment = EquipmentFilter.entries.firstOrNull { e -> e.code == v }) }
         }
-        MenuChip("Pattern", f.pattern?.let(CatalogQuery::patternLabel), listOf<Pair<String?, String>>(null to "Any pattern") + CatalogQuery.PATTERN_LABELS.entries.map { it.key to it.value }) { v ->
-            vm.setFilter("pattern", v) { it.copy(pattern = v) }
-        }
         MenuChip("Preference", f.preference?.let(::prefLabel), listOf<Pair<String?, String>>(null to "Any preference") + CatalogQuery.PREF_ORDER.map { it to prefLabel(it) }) { v ->
             vm.setFilter("preference", v) { it.copy(preference = v) }
         }

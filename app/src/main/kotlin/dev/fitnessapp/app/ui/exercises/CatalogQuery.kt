@@ -30,7 +30,6 @@ enum class CatalogSort(val code: String, val label: String) { NAME("a_z", "A-Z")
 data class CatalogFilter(
     val muscle: String? = null,
     val equipment: EquipmentFilter? = null,
-    val pattern: String? = null,
     val preference: String? = null,
     val availableOnly: Boolean = true,
 )
@@ -84,7 +83,6 @@ object CatalogQuery {
             .filter { (e, _) ->
                 (filter.muscle == null || catalog.groupCoeff(e, filter.muscle) >= MUSCLE_FILTER_MIN) &&
                     (filter.equipment == null || filter.equipment.matches(e)) &&
-                    (filter.pattern == null || e.pattern == filter.pattern) &&
                     (filter.preference == null || (prefs[idOf(e)] ?: "neutral") == filter.preference) &&
                     (!filter.availableOnly || available(e))
             }
@@ -117,7 +115,7 @@ object CatalogQuery {
         else -> ""
     }
 
-    /** Plain pattern names of UX 13.5, grouped by family in the filter menu. */
+    /** Plain pattern names of UX 13.5 (exercise detail header). */
     val PATTERN_LABELS: Map<String, String> = linkedMapOf(
         "squat" to "Squat", "squat_machine" to "Squat (machine)", "lunge" to "Lunge", "hinge" to "Hip hinge",
         "hip_ext" to "Hip extension", "knee_ext" to "Knee extension", "knee_flex" to "Knee flexion", "hip_abd" to "Hip abduction",
