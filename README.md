@@ -121,5 +121,7 @@ local `89 (local)`, residue 0; advisors unchanged; probes P1-P3 unchanged, `fitn
   timeout is longer). "Last export" counts calendar days ("today", "yesterday").
 - Exercise detail: a preference change no longer shows an Undo snackbar (D30, your call during the checks).
 - Dutch exercise names are shown and searched only when the phone language is Dutch (D12 updated, your call).
+- Session detail quick check: one layout before and after the 24 h window ("Change" for effort and note, "Add pain",
+  "Editable until ..."); the catalog list drops the Pattern filter (your calls, changelog 2026-10-11).
 - Debug builds only: `DebugActivity --es action restore_set --es set_id <id>` restores a set deleted in History
   through the same code as Undo (used once when an Undo window ran out during the adb test).

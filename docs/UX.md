@@ -2287,7 +2287,7 @@ is loaded and what can replace it, and create custom exercises.
 +-------------------------------------+
 | Exercises                           |
 | [ Search exercises               ]  |
-| [Muscle v][Equipment v][Pattern v]  |
+| [Muscle v][Equipment v]             |
 | [Preference v] [x Available here]   |
 |                                     |
 | * Leg press          Quads Glutes M |
@@ -2311,8 +2311,7 @@ is loaded and what can replace it, and create custom exercises.
   substring; ties by name. Results update 150 ms after the last keystroke. The query text is never
   logged (only its length).
 * **Filters** (chips with menus): muscle group (the 18 groups of C9), equipment (barbell, dumbbell,
-  machine, cable, bodyweight, assisted machine, belt), pattern (about 35 patterns grouped by family),
-  preference (Favorite, Like, Neutral, Dislike, Never), "Available here" (default on; hides
+  machine, cable, bodyweight, assisted machine, belt), preference (Favorite, Like, Neutral, Dislike, Never), "Available here" (default on; hides
   exercises whose `requires_station` is missing from the gym profile), "Custom".
 * **Sort**: A-Z (default), most used (last 8 weeks), preference.
 * **Row**: name; up to two primary groups (group coefficient 1.0); equipment abbreviation; a
@@ -2852,6 +2851,11 @@ Emits `progress_viewed {exercise_id, metric, axis, range}`, `progress_axis_toggl
   (D28; it stays "not done" until a set is added), delete a set (undo), change the calendar link,
   edit the quick check (within 24 h), reopen an abandoned session (same local date), delete the
   session (undo, 10 s).
+* Quick check: one layout before and after the 24 h window. "Session effort: 7" (or "not answered")
+  with a "Change" link that opens the 0-10 chips; each pain report as "Pain: elbow lateral (moderate)"
+  with "Add pain" (the Pain sheet, context `history`); the note with "Change"; and the hint "Editable
+  until Mon 12 Oct 11:10". After 24 h the links and the hint disappear and the values stay as text.
+  Pain is add-only here: a report can only be retracted by its 10 s "Undo (wrong tap)" (C33).
 * Copy: "Edits update future recommendations." Engines rebuild from facts; no other confirmation.
 * Emits `history_session_opened`, `set_edited`, `set_added_later`, `set_deleted`,
   `session_deleted`, `session_reopened`.
@@ -4128,7 +4132,7 @@ sent as null.
 | `rule_override` | the user does something a hard rule forbids ("Add anyway", "Log a session anyway") | session_exercise or session | `rule_id`, `enrollment_id`?, `action` (add_exercise, log_anyway), `exercise_id`? |
 | `action_undone` | Undo of a skip, remove, defer, swap, suggestion or Plan it | as the undone event | `undone_event_type`, `undone_event_id`, `ms_since` |
 | `habit_toggled` | habit row checkbox or home session finish (a notification never completes a habit, ANDROID section 17) | session | `habit_id`, `done`, `via` (checkbox, session) |
-| `pain_reported` | Pain sheet Report (same transaction as the PainEvent `wellness_logs` row) | wellness_log | `wellness_log_id`, `body_region`, `side`, `severity` (E20), `pain_score`, `symptom_codes[]`, `context` (set, session_menu, skip_sheet, summary, challenges, test, readiness) |
+| `pain_reported` | Pain sheet Report (same transaction as the PainEvent `wellness_logs` row) | wellness_log | `wellness_log_id`, `body_region`, `side`, `severity` (E20), `pain_score`, `symptom_codes[]`, `context` (set, session_menu, skip_sheet, summary, history, challenges, test, readiness) |
 | `pain_retracted` | "Undo (wrong tap)" within 10 s | wellness_log | `wellness_log_id`, `ms_since` |
 | `pr_detected` | a personal best is found at session finish (19.7.2) | set | `exercise_id`, `kind` (e1rm, reps, hold, assist), `side`, `value`, `previous` |
 
@@ -4233,7 +4237,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 | `notification_opened` | a notification body is tapped | none | `notification_id`, `channel` |
 | `engine_error` | an engine module throws (7.5) | recommendation | `module_id`, `module_version`, `inputs_hash`, `error_class` |
 | `catalog_searched` | search results update (13.2) | none | `query_length`, `results` |
-| `catalog_filter_changed` | a catalog filter or sort changes | none | `filter` (muscle, equipment, pattern, preference, available_here, custom, sort), `value` |
+| `catalog_filter_changed` | a catalog filter or sort changes | none | `filter` (muscle, equipment, preference, available_here, custom, sort), `value` |
 | `exercise_opened` | exercise detail opened | exercise | `exercise_id`, `from` (list, session, alternatives, history, add_sheet) |
 | `exercise_alternatives_opened` | Alternatives section expanded | exercise | `exercise_id`, `count` |
 | `progress_viewed` | Progress chart shown | exercise | `exercise_id`, `metric`, `axis`, `range` |

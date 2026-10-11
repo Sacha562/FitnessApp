@@ -308,3 +308,9 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   add-exercise sheet) and match in search only when the phone's language is Dutch (`nl`); otherwise the app shows and
   searches English names and aliases only, and the search hints no longer mention Dutch. Calendar titles are
   unchanged (F25). UX 5, 13.2, 13.3, 23 and 24.1 and ANDROID 18 updated.
+- 2026-10-11 — UX changes (user, after M1b): the catalog list drops the Pattern filter (muscle, equipment,
+  preference, "Available here" and sort remain; the pattern still shows on exercise detail). The quick check in
+  session detail keeps one layout before and after its 24 h edit window: "Session effort: 7" with a "Change" link,
+  the pain reports with "Add pain", the note with "Change", and "Editable until Mon 12 Oct 11:10"; after 24 h the
+  links and the hint disappear. Pain is add-only in History: removing a report stays limited to the 10 s "Undo
+  (wrong tap)" (C33, safety). `pain_reported` gains the context value `history`. UX 13.2, 15.3 and 20 updated.
