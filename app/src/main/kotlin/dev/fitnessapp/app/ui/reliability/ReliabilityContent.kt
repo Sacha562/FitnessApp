@@ -240,7 +240,7 @@ private fun SelfTestCard(c: AppContainer) {
                 blocked = false
                 scope.launch {
                     // Never runs beside a real session: the test timer and service would interfere with it.
-                    val end = if (c.sessionRepository.observeActiveOnce() == null) c.restTimer.startSelfTest() else null
+                    val end = if (c.sessionRepository.observeActiveOnce() == null) c.restTimer.startSelfTest(c.params.double("rest.timer_hard_max_s").toInt()) else null
                     if (end == null) {
                         blocked = true
                         running = false

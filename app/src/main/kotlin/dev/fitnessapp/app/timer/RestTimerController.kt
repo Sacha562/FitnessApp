@@ -70,9 +70,10 @@ class RestTimerController(
 
     /**
      * Starts the 20 s self-test rest (UX 8.6 step 7) through the production timer path; returns its planned
-     * end, or null while another rest is running.
+     * end, or null while another rest is running. [hardMaxS] is the real rest cap (`rest.timer_hard_max_s`), so
+     * the notification's +15 s behaves as in a session.
      */
-    suspend fun startSelfTest(): Long? = mutex.withLock {
+    suspend fun startSelfTest(hardMaxS: Int): Long? = mutex.withLock {
         if (db.restTimers().active() != null) return@withLock null
         notifications.cancelRestDone()
         val now = nowWall()
@@ -80,7 +81,7 @@ class RestTimerController(
         val tr = RestTimerReducer.start(
             RestTimerReducer.Start(
                 ids.next(), TimerSelfTest.SESSION_ID, "", "", "none", now, device.elapsedRealtime(), device.bootCount(),
-                TimerSelfTest.DURATION_S, TimerSelfTest.DURATION_S, "rest", "self_test", mode,
+                TimerSelfTest.DURATION_S, hardMaxS, "rest", "self_test", mode,
             ),
             timerConfig,
         )
