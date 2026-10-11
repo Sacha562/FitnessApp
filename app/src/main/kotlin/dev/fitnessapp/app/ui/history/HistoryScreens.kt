@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +28,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -39,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,8 +59,10 @@ import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.showUndo
 import dev.fitnessapp.app.ui.live.AddExerciseSheet
+import dev.fitnessapp.app.ui.live.PainSheet
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
+import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.repo.HistoryRow
 import dev.fitnessapp.data.repo.ReopenResult
@@ -66,6 +72,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val ZONE: ZoneId = ZoneId.of("Europe/Amsterdam")
@@ -137,6 +144,80 @@ private sealed interface DetailSheet {
     data class Edit(val setId: String) : DetailSheet
     data class Add(val sessionExerciseId: String) : DetailSheet
     data object AddExercise : DetailSheet
+    data object Effort : DetailSheet
+    data object Pain : DetailSheet
+    data object Note : DetailSheet
+}
+
+/**
+ * Quick check (UX 15.3): the same rows before and after the 24 h edit window; only the links and the "Editable until"
+ * hint go away when it closes. Pain is add-only here (a report is retracted only by its 10 s Undo, C33).
+ */
+@Composable
+internal fun QuickCheck(
+    srpe: Int?,
+    pains: List<WellnessLogEntity>,
+    note: String?,
+    editableUntil: Long?,
+    onEffort: () -> Unit,
+    onPain: () -> Unit,
+    onNote: () -> Unit,
+) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(editableUntil) {
+        val until = editableUntil ?: return@LaunchedEffect
+        if (until > now) {
+            delay(until - now)
+            now = System.currentTimeMillis()
+        }
+    }
+    val editable = editableUntil != null && now < editableUntil
+    SectionLabel("Quick check")
+    CheckRow("Session effort: " + (srpe?.toString() ?: "not answered"), "Change".takeIf { editable }, onEffort)
+    val painLines = pains.map { "Pain: ${it.pain_body_region?.replace('_', ' ')} (${it.pain_severity})" }.ifEmpty { listOf("Pain: none") }
+    painLines.forEachIndexed { i, line -> CheckRow(line, "Add pain".takeIf { editable && i == painLines.lastIndex }, onPain) }
+    CheckRow("Note: " + (note ?: "none"), "Change".takeIf { editable }, onNote)
+    if (editable && editableUntil != null) {
+        val at = Instant.ofEpochMilli(editableUntil).atZone(ZONE)
+        Text(
+            "Editable until ${DAY.format(at)} ${TIME.format(at)}",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun CheckRow(text: String, link: String?, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        if (link != null) TextButton(onClick = onClick) { Text(link) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EffortSheet(current: Int?, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleMedium)
+            ChoiceChips((0..10).toList(), current, { it.toString() }, onSelect = onPick)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NoteSheet(current: String?, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf(current.orEmpty()) }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(
+                value = text, onValueChange = { text = it.take(2000) }, label = { Text("Note") },
+                minLines = 3, modifier = Modifier.fillMaxWidth(),
+            )
+            Button(onClick = { onSave(text) }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Save") }
+        }
+    }
 }
 
 /** Session detail (UX 15.3, D28): targets vs actuals, the quick check, edits and the session actions. */
@@ -224,22 +305,15 @@ fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, o
                 Text("Add a forgotten exercise")
             }
 
-            SectionLabel("Quick check")
-            val srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe
-            val editable = (System.currentTimeMillis() - (s.finished_at ?: s.started_at ?: 0L)) < QUICK_CHECK_EDIT_MS
-            if (editable) {
-                Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleSmall)
-                ChoiceChips((0..10).toList(), srpe, { it.toString() }) { v -> scope.launch { c.history.editSrpe(sessionId, v) } }
-            } else {
-                Text("Session effort: " + (srpe?.toString() ?: "not answered"), style = MaterialTheme.typography.bodyMedium)
-            }
-            wellness.filter { it.kind == "pain" }.forEach { w ->
-                Text("Pain: ${w.pain_body_region?.replace('_', ' ')} (${w.pain_severity})", style = MaterialTheme.typography.bodyMedium)
-            }
-            s.notes?.takeIf { it.isNotBlank() }?.let {
-                SectionLabel("Note")
-                Text(it, style = MaterialTheme.typography.bodyMedium)
-            }
+            QuickCheck(
+                srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe,
+                pains = wellness.filter { it.kind == "pain" },
+                note = s.notes?.takeIf { it.isNotBlank() },
+                editableUntil = (s.finished_at ?: s.started_at)?.let { it + QUICK_CHECK_EDIT_MS },
+                onEffort = { sheet = DetailSheet.Effort },
+                onPain = { sheet = DetailSheet.Pain },
+                onNote = { sheet = DetailSheet.Note },
+            )
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -272,6 +346,18 @@ fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, o
                 val id = c.history.addExercise(sessionId, ex)
                 sheet = DetailSheet.Add(id)
             }
+        }
+        DetailSheet.Effort -> EffortSheet(wellness.firstOrNull { it.kind == "srpe" }?.srpe, onDismiss = { sheet = null }) { v ->
+            sheet = null
+            scope.launch { c.history.editSrpe(sessionId, v) }
+        }
+        DetailSheet.Pain -> PainSheet(onDismiss = { sheet = null }) { region, side, severity ->
+            sheet = null
+            scope.launch { c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "history") }
+        }
+        DetailSheet.Note -> NoteSheet(session?.notes, onDismiss = { sheet = null }) { text ->
+            sheet = null
+            scope.launch { c.history.editNote(sessionId, text) }
         }
         null -> {}
     }

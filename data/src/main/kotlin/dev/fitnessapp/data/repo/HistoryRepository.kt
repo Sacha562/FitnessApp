@@ -270,6 +270,17 @@ class HistoryRepository(
         scheduler.request()
     }
 
+    /** The session note from the quick check (UX 15.3); blank clears it. Free text, never copied into telemetry. */
+    suspend fun editNote(sessionId: String, note: String) {
+        val value = note.trim().take(NOTE_MAX).takeIf { it.isNotEmpty() }
+        db.withTransaction {
+            val s = db.sessions().get(sessionId) ?: return@withTransaction
+            if (s.notes == value) return@withTransaction
+            writeSession(s.copy(notes = value))
+        }
+        scheduler.request()
+    }
+
     /** A forgotten exercise (D28): added at the end, `not_done` until a set is added. */
     suspend fun addExercise(sessionId: String, e: CatalogExercise): String {
         val id = sessions.addExercise(sessionId, e)
@@ -377,6 +388,8 @@ class HistoryRepository(
     }
 
     private companion object {
+        const val NOTE_MAX = 2000
+
         /** Reasons that imply their flag (`reason_codes.implies_flag`, CHECK `set_logs_reason_flag_ck`). */
         val FLAG_REASONS = setOf("torso_rotation", "technique_breakdown")
     }

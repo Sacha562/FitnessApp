@@ -183,6 +183,19 @@ class HistoryRepositoryTest {
     }
 
     @Test
+    fun `quick check note is set, trimmed and cleared by a blank edit`() = blocking {
+        val (sid, _, _) = finishedSession()
+        history.editNote(sid, "  knee felt fine  ")
+        db.sessions().get(sid)!!.notes shouldBe "knee felt fine"
+        val stamp = db.sessions().get(sid)!!.client_updated_at
+        history.editNote(sid, "knee felt fine")
+        db.sessions().get(sid)!!.client_updated_at shouldBe stamp // unchanged text writes nothing
+        history.editNote(sid, "   ")
+        db.sessions().get(sid)!!.notes shouldBe null
+        db.outbox().pendingCount("workout_sessions", sid) shouldBe 1
+    }
+
+    @Test
     fun `preference change converges on one row and is reverted by changing it back`() = blocking {
         val ex = catalog.idOf(bwEx)
         prefs.set(ex, "dislike", "detail") shouldNotBe null
