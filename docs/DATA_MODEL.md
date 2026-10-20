@@ -773,13 +773,13 @@ Seed (35 rows; 34 from the exercise-selection lens plus `neck`):
 
 #### 9.1.3 `fitness.reason_codes`
 
-The 13 canonical override/skip reasons. Semantics (estimator class, session effect, future effect) belong to REASON-1 and its params (C16); this table holds only labels and where each chip may appear. One semantic fact is fixed by DECISIONS: `too_tired` has the same effect as `feeling_bad` (C57).
+The 18 canonical override, skip, pause and correction reasons (13 in 005, five more in 021, D34). Semantics (estimator class, session effect, future effect) belong to REASON-1 and its params (C16); this table holds only labels and where each chip may appear. One semantic fact is fixed by DECISIONS: `too_tired` has the same effect as `feeling_bad` (C57).
 
 | Column | Type | Null | Default | Check / FK | Notes |
 |--------|------|------|---------|-----------|-------|
 | `code` | text | not null | | PK, E54 | |
 | `label_en` / `label_nl` | text | not null / null | | length 1-40 | |
-| `ui_contexts` | text[] | not null | | subset of `easier`, `harder`, `skip`, `session_end`, `substitute` | Where the chip may be offered; order within a context is UI-05's job. |
+| `ui_contexts` | text[] | not null | | subset of `easier`, `harder`, `skip`, `session_end`, `substitute`, `pause`, `correction` | Where the chip may be offered; order within a context is UI-05's job. `pause` is the pause dialog (UX 14.7), `correction` Correct a value (D34). |
 | `is_safety` | boolean | not null | `false` | | `pain` only: opens the pain sheet and the SafetyState path (C33). |
 | `implies_flag` | text | null | | E6 | When chosen on a set, this flag must also be present (enforced by a `set_logs` CHECK). |
 | S-REF | | | | | |
@@ -788,8 +788,8 @@ Seed:
 
 | code | label_en | label_nl | ui_contexts | is_safety | implies_flag |
 |------|----------|----------|-------------|-----------|--------------|
-| `too_easy` | Too easy | Te makkelijk | easier | false | |
-| `too_hard` | Too hard | Te zwaar | harder | false | |
+| `too_easy` | Too easy | Te makkelijk | easier, correction | false | |
+| `too_hard` | Too hard | Te zwaar | harder, correction | false | |
 | `feeling_good` | Feeling good | Voel me goed | easier | false | |
 | `feeling_bad` | Feeling bad | Voel me slecht | harder, skip | false | |
 | `too_tired` | Too tired | Te moe | harder, skip | false | |
@@ -800,7 +800,12 @@ Seed:
 | `grip_failure` | Grip failed | Grip gaf op | harder | false | |
 | `torso_rotation` | Torso rotation | Romp draaide | harder | false | `torso_rotation` |
 | `technique_breakdown` | Technique broke down | Techniek brak af | harder | false | `technique_breakdown` |
-| `other` | Other | Anders | easier, harder, skip, session_end | false | |
+| `other` | Other | Anders | easier, harder, skip, session_end, pause, correction | false | |
+| `holiday` | Holiday | Vakantie | pause | false | |
+| `illness` | Illness | Ziek | pause | false | |
+| `injury` | Injury | Blessure | pause | false | |
+| `loaded_different` | Loaded a different weight | Ander gewicht geladen | correction | false | |
+| `value_wrong` | The value was wrong | Waarde klopte niet | correction | false | |
 
 #### 9.1.4 `fitness.metric_defs`
 
@@ -2371,6 +2376,8 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 016 | `fitness_016_oap_definition_v1` (data; applied 2026-10-20 in 5 parts, versions 20261020161521-20261020162006) | M2b | Insert the OAP definition 1.0.0 (id UUIDv5 `challenge_definition:oap@1.0.0` = `b2afe9c6-816e-51a4-9cdb-8a529fd54615`) as `published`, with `jcs_sha256` from the authoring tool; `on conflict (id) do nothing`; then assert the stored `jcs_sha256` equals the file's. Written only after the CHALLENGE spec is final and the definition passes the CDS validator with the section 8 domains (C38; open issue 3, resolved). | Guard trigger set `server_checksum`; an `update` of `definition` fails with `55000`. |
 | 017 | `fitness_017_review_views` (applied 2026-10-11, version 20261011163142) | M1b (needed by the first review after 4-6 weeks) | All `fitness_review` views (section 14), `security_invoker = true`, no grants. | Views compile; `v_db_size` returns rows. |
 | 018 | `fitness_018_jsonschema_constraint` (optional; deferred by D33) | later (a second challenge or in-app publishing) | `alter table fitness.challenge_definitions add constraint challenge_definitions_schema_ck check (extensions.jsonb_matches_schema('<CDS v1 JSON Schema>'::json, definition))` (the extension itself is installed by 007). | Advisors; a malformed definition insert fails. |
+
+| 021 | `fitness_021_reason_codes_pause_correction` (data and CHECK; applied 2026-10-20, version 20261020212943) | M2b (D34) | The `ui_contexts` CHECK gains `pause` and `correction`; codes `holiday`, `illness`, `injury`, `loaded_different`, `value_wrong`; `other`, `too_hard`, `too_easy` join the new contexts. | `select code, ui_contexts from fitness.reason_codes order by sort` shows 18 rows. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 

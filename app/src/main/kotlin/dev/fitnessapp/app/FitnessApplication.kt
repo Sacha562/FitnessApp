@@ -74,6 +74,7 @@ class FitnessApplication : Application(), Configuration.Provider {
                 }
             }
             for ((name, e) in failed.toList()) {
+                android.util.Log.w("FitnessApp", "startup step $name failed", e) // the event carries the class only
                 runCatching { container.fgsEvent("app_startup_failed", mapOf("step" to name, "error_class" to (e::class.simpleName ?: "unknown"))) }
             }
         }

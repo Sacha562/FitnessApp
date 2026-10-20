@@ -95,7 +95,7 @@ object Cds {
     /** kotlinx messages end with "at path: $.a.b[2]"; turn that into a JSON pointer. */
     private fun pointerOf(message: String?): String {
         val m = Regex("""path:? \$([^\s]*)""").find(message ?: return "") ?: return ""
-        return m.groupValues[1].replace(Regex("""\[(\d+)]"""), ".$1").replace('.', '/').let { if (it.isEmpty() || it.startsWith("/")) it else "/$it" }
+        return m.groupValues[1].replace(Regex("""\[(\d+)\]"""), ".$1").replace('.', '/').let { if (it.isEmpty() || it.startsWith("/")) it else "/$it" }
     }
 }
 

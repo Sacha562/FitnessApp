@@ -93,5 +93,5 @@ fun CorrectDialog(targets: List<CorrectTarget>, onSave: (String, Value, String) 
     )
 }
 
-/** Reason chips of a correction; the DATA_MODEL 9.1.3 vocabulary has no correction codes yet (CHALLENGE_ENGINE 16.2). */
-private val OVERRIDE_REASONS = listOf("Loaded a different weight" to "other", "The value was wrong" to "other", "Too hard" to "too_hard", "Too easy" to "too_easy")
+/** Reason chips of a correction and their DATA_MODEL 9.1.3 codes (context `correction`, D34). */
+private val OVERRIDE_REASONS = listOf("Loaded a different weight" to "loaded_different", "The value was wrong" to "value_wrong", "Too hard" to "too_hard", "Too easy" to "too_easy")

@@ -6,7 +6,8 @@
       "label_en": "Too easy",
       "label_nl": "Te makkelijk",
       "ui_contexts": [
-        "easier"
+        "easier",
+        "correction"
       ],
       "is_safety": false,
       "implies_flag": null,
@@ -18,7 +19,8 @@
       "label_en": "Too hard",
       "label_nl": "Te zwaar",
       "ui_contexts": [
-        "harder"
+        "harder",
+        "correction"
       ],
       "is_safety": false,
       "implies_flag": null,
@@ -162,12 +164,74 @@
         "easier",
         "harder",
         "skip",
-        "session_end"
+        "session_end",
+        "pause",
+        "correction"
       ],
       "is_safety": false,
       "implies_flag": null,
       "active": true,
       "sort": 130
+    },
+    {
+      "code": "holiday",
+      "label_en": "Holiday",
+      "label_nl": "Vakantie",
+      "ui_contexts": [
+        "pause"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 140
+    },
+    {
+      "code": "illness",
+      "label_en": "Illness",
+      "label_nl": "Ziek",
+      "ui_contexts": [
+        "pause"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 150
+    },
+    {
+      "code": "injury",
+      "label_en": "Injury",
+      "label_nl": "Blessure",
+      "ui_contexts": [
+        "pause"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 160
+    },
+    {
+      "code": "loaded_different",
+      "label_en": "Loaded a different weight",
+      "label_nl": "Ander gewicht geladen",
+      "ui_contexts": [
+        "correction"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 170
+    },
+    {
+      "code": "value_wrong",
+      "label_en": "The value was wrong",
+      "label_nl": "Waarde klopte niet",
+      "ui_contexts": [
+        "correction"
+      ],
+      "is_safety": false,
+      "implies_flag": null,
+      "active": true,
+      "sort": 180
     }
   ]
 }

@@ -358,7 +358,6 @@ private fun PauseDialog(vm: DashboardViewModel, onDone: () -> Unit) {
 }
 
 /**
- * Pause reasons of UX 14.7 stored as DATA_MODEL 9.1.3 reason codes; the vocabulary has no holiday or illness code
- * yet, so those map to the nearest code (CHALLENGE_ENGINE 16.2).
+ * Pause reasons of UX 14.7 and their DATA_MODEL 9.1.3 codes (context `pause`, D34).
  */
-private val PAUSE_REASONS = listOf("Holiday" to "other", "Illness" to "feeling_bad", "Injury" to "pain", "Other" to "other")
+private val PAUSE_REASONS = listOf("Holiday" to "holiday", "Illness" to "illness", "Injury" to "injury", "Other" to "other")

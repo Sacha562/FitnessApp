@@ -508,7 +508,7 @@ object RuleEngine : DeclaresParams {
     /** Plain-language explanation from the rule's template and its bindings (5.9). */
     private fun explain(f: Fired, s0: EnrollmentState, s1: EnrollmentState, env: RuleEnv): String? {
         val text = f.rule.spec.explain["en"] ?: return null
-        return Regex("\\{([A-Za-z_][A-Za-z0-9_]*)}").replace(text) { m ->
+        return Regex("\\{([A-Za-z_][A-Za-z0-9_]*)\\}").replace(text) { m ->
             val k = m.groupValues[1]
             val v = f.lets[k] ?: s1.vars[k] ?: s0.vars[k] ?: env.effectiveParams[k]
             v?.let(ValueJson::text) ?: m.value

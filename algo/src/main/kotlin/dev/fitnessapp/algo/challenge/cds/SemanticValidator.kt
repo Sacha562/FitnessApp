@@ -386,7 +386,7 @@ class SemanticValidator(private val doc: DefinitionDoc, private val def: Compile
     }
 
     private fun v11Messages() {
-        val placeholder = Regex("\\{([A-Za-z_][A-Za-z0-9_.]*)}")
+        val placeholder = Regex("\\{([A-Za-z_][A-Za-z0-9_.]*)\\}")
         val known = doc.state.vars.map { it.name }.toSet() + def.params.keys + "value"
         for (r in def.rules) {
             val lets = r.lets.map { it.first }.toSet()
