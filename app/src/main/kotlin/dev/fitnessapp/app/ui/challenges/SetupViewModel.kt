@@ -234,7 +234,7 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
                         out += "Week ${Week.isoWeek(start)} · ${ChallengeTexts.mode(s.mode)}"
                         for (p in plan.sessions) {
                             val sp = Materializer.materialize(def, c.params, MaterializeInput(p.slot, p.date, s, facts, c.catalog.doc, changeoverMin = AppContainer.CHANGEOVER_MIN))
-                            out += "  ${p.slot} ${ChallengeTexts.date(p.date)} ${Week.localTime(p.interval.start, zone)}: " +
+                            out += "  ${p.slot} ${ChallengeTexts.date(p.date)} ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}: " +
                                 sp.items.filter { it.status == "planned" && it.role != "warmup" }.joinToString("; ") { item -> itemLine(item) }
                         }
                         plan.droppedSlots.forEach { out += "  $it: no room in this week" }
@@ -257,8 +257,19 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
             added != null && added.signum() > 0 -> "+${added.stripTrailingZeros().toPlainString()} kg"
             else -> null
         }
-        val target = r.targetReps?.let { "$it" } ?: r.targetHoldS?.let { "${it.stripTrailingZeros().toPlainString()} s" } ?: ""
-        return "${item.name["en"] ?: item.key} $sets×$target" + (load?.let { " $it" } ?: "")
+        fun n(x: java.math.BigDecimal) = x.stripTrailingZeros().toPlainString()
+        val attempts = r.attempts
+        val volume = when {
+            // Top-hold rounds (UX 11.7.4): rounds of short attempts, no per-attempt target.
+            attempts != null && attempts > 1 && r.targetReps == null && r.targetHoldS == null -> "$sets rounds × $attempts attempts"
+            r.targetReps != null && r.targetRepsMax != null && r.targetRepsMax != r.targetReps -> "$sets×${r.targetReps}-${r.targetRepsMax}"
+            r.targetReps != null -> "$sets×${r.targetReps}"
+            r.targetHoldS != null -> "$sets×" + n(r.targetHoldS!!) + (r.targetHoldMaxS?.let { "-" + n(it) } ?: "") + " s"
+            r.durationS != null -> n(r.durationS!!) + " s"
+            else -> "$sets sets"
+        }
+        val ecc = r.targetEccS?.let { " · lower in " + n(it) + " s" } ?: ""
+        return "${item.name["en"] ?: item.key} $volume$ecc" + (load?.let { " $it" } ?: "")
     }
 
     /** UX 14.8 step 10: creates the enrollment, clears the draft and returns its id. */

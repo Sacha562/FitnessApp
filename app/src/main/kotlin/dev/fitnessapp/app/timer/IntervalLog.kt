@@ -26,7 +26,7 @@ object IntervalLog {
                 setKind = "warmup", load = null, reps = null, durationS = d.durationS, rir = null, rirLowerBound = false,
                 holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(), deviationReason = null,
                 planned = PlannedValues(durationS = t.prescribed_s.toDouble(), source = "engine"),
-                rest = null, startedAtMs = t.start_wall_ms, completedAtMs = d.completedAtWall,
+                rest = null, startedAtMs = t.start_wall_ms, completedAtMs = d.completedAtWall, countsAsWork = true,
                 telemetry = mapOf(
                     "prefill_source" to JsonPrimitive("engine_target"), "side_cap_applied" to JsonPrimitive(false),
                     "deviation_direction" to JsonPrimitive("none"), "deviation_fields" to JsonArray(emptyList()),

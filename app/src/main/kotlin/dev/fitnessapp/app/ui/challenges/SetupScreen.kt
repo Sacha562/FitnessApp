@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
@@ -206,7 +208,11 @@ private fun ScheduleStep(def: CompiledDefinition) {
     def.doc.schedule.preferred.forEach { p -> Text("• ${p.slot}: ${p.weekday} ${p.start} (${p.durMin} min)", style = MaterialTheme.typography.bodySmall) }
     Text("Home habits:", style = MaterialTheme.typography.bodyMedium)
     def.doc.habits.forEach { h -> Text("• ${h.name["en"]} at ${h.schedule.time}", style = MaterialTheme.typography.bodySmall) }
-    Text("Editing these and the habit reminders come with the habit step of M2b.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+    Text(
+        "The week planner moves sessions around your calendar once calendar access is set up. Habit reminders are off until " +
+            "you switch them on in the challenge's dashboard.",
+        style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+    )
 }
 
 @Composable
@@ -262,9 +268,13 @@ private fun CutoverStep(ui: SetupUi, vm: SetupViewModel) {
         "The program page is frozen as a reference.",
         "Home habits now come from this app.",
     ).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(ui.draft.cutover, { v -> vm.update { it.copy(cutover = v) } }, colors = CheckboxDefaults.colors(checkedColor = Fit.Accent))
-        Text("I confirm the cutover", style = MaterialTheme.typography.bodyMedium)
+    // The whole row toggles (48 dp target), not only the box.
+    Row(
+        Modifier.fillMaxWidth().toggleable(ui.draft.cutover, role = Role.Checkbox) { v -> vm.update { it.copy(cutover = v) } },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(ui.draft.cutover, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = Fit.Accent))
+        Text("I confirm the cutover", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp))
     }
     if (ui.busy) Text("Starting…", color = Fit.Muted)
 }

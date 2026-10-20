@@ -26,6 +26,7 @@ import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -90,8 +91,10 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     init {
         viewModelScope.launch {
             val enrollment = c.challenges.observeAll().map { rows -> rows.firstOrNull { it.id == enrollmentId } }.filterNotNull()
-            enrollment.collect { e ->
-                val f = runCatching { c.challenges.folded(e.id) }.onFailure { _error.value = it.message }.getOrNull() ?: return@collect
+            // collectLatest: every change of the enrollment row (a new event) refolds; a plain collect would stay in the
+            // first fold's inner flow forever and show a stale status (seen on the phone after Abandon).
+            enrollment.collectLatest { e ->
+                val f = runCatching { c.challenges.folded(e.id) }.onFailure { _error.value = it.message }.getOrNull() ?: return@collectLatest
                 combine(
                     c.db.ruleEvents().observeGeneration(e.id, f.enrollment.fold_generation),
                     c.db.challengeEvents().observeHistory(e.id),
@@ -152,7 +155,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         val (_, plan) = ChallengeWeek.plan(c, f, facts)
         return plan.sessions.map { p ->
             val day = p.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.ENGLISH))
-            WeekSlotUi(p.slot, if (p.source == "done") "${p.slot} done $day" else "${p.slot} $day ${Week.localTime(p.interval.start, zone)}", p.source == "done")
+            WeekSlotUi(p.slot, if (p.source == "done") "${p.slot} done $day" else "${p.slot} $day ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}", p.source == "done")
         } + plan.droppedSlots.map { WeekSlotUi(it, "$it: no room this week", false) }
     }
 

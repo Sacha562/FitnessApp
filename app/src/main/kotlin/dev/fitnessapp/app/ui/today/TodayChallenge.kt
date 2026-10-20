@@ -127,14 +127,14 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val todaySlot = advice.slot
         if (advice.kind == "challenge" && todaySlot != null) {
             val done = plan.sessions.any { it.date == today && it.slot == todaySlot && it.source == "done" }
-            val time = advice.start?.let { Week.localTime(it, input.zone).toString() }
+            val time = advice.start?.let { ChallengeTexts.time(Week.localTime(it, input.zone)) }
             return TodayChallengeUi(
                 e.id, program, f.state.mode, if (done) "Done today: ${name(todaySlot)}" else "Today: ${name(todaySlot)}",
                 listOfNotNull(time, ChallengeTexts.mode(f.state.mode)).joinToString(" · "), if (done) null else todaySlot, false, null, habits,
             )
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
-        val nextText = next?.let { "Next: ${name(it.slot)} ${ChallengeTexts.date(it.date)} ${Week.localTime(it.interval.start, input.zone)}" }
+        val nextText = next?.let { "Next: ${name(it.slot)} ${ChallengeTexts.date(it.date)} ${ChallengeTexts.time(Week.localTime(it.interval.start, input.zone))}" }
             ?: "This week's challenge sessions are done."
         val now = TodayAdvisor.advise(def, c.params, input, plan, trainNow = true)
         val blocked = if (advice.kind == "rest") advice.reasons.firstOrNull()?.substringAfter(": ")?.let { "Rest today: $it" } else null
@@ -177,6 +177,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         _pendingQuick.value = habitId
         quickJob = viewModelScope.launch {
             kotlinx.coroutines.delay(QUICK_UNDO_MS)
+            quickEnded = habitId to System.currentTimeMillis()
             _pendingQuick.value = null
             c.appScope.launch {
                 runCatching { c.challengeSessions.quickDone(u.enrollmentId, habitId) }
@@ -188,12 +189,18 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
     fun undoQuick() {
         quickJob?.cancel()
         quickJob = null
+        _pendingQuick.value?.let { quickEnded = it to System.currentTimeMillis() }
         _pendingQuick.value = null
     }
+
+    /** When a habit's Undo window closed: a late tap on the Undo spot must not open the row (P5). */
+    private var quickEnded: Pair<String, Long>? = null
 
     /** The row or its Start chip: the home mini-session (a Live Session with `kind = home`, C34). */
     fun startHabit(habitId: String, onOpen: (String) -> Unit) {
         val day = habitDay ?: return
+        val ended = quickEnded
+        if (ended != null && ended.first == habitId && System.currentTimeMillis() - ended.second < QUICK_TAP_GUARD_MS) return
         viewModelScope.launch {
             _busy.value = true
             val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.startHabit(day, habitId, "today") } }
@@ -293,7 +300,7 @@ private fun HabitsTile(rows: List<HabitRowUi>, vm: TodayChallengeViewModel, sess
     Tile(spacing = 4.dp) {
         Text("Home", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
         rows.forEach { r ->
-            val canOpen = r.hasSession && !sessionActive && !busy
+            val canOpen = r.hasSession && !sessionActive && !busy && pending != r.habitId
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 56.dp).then(if (canOpen) Modifier.clickable { vm.startHabit(r.habitId, onOpenSession) } else Modifier),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -306,12 +313,15 @@ private fun HabitsTile(rows: List<HabitRowUi>, vm: TodayChallengeViewModel, sess
                 }
                 Column(Modifier.weight(1f)) {
                     Text(r.name + " · " + r.time, style = MaterialTheme.typography.titleSmall)
-                    val line = listOfNotNull(r.dose, r.status).joinToString(" · ")
+                    val line = listOfNotNull(r.dose, if (pending == r.habitId) "done" else r.status).joinToString(" · ")
                     if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
-                if (r.measureToday && !r.done) Pill("Measure today", container = Fit.Accent, content = Fit.OnAccent)
+                // The Undo replaces the badge in place: the rows below never move under the finger (P5).
+                when {
+                    pending == r.habitId -> LinkButton("Undo", vm::undoQuick)
+                    r.measureToday && !r.done -> Pill("Measure today", container = Fit.Accent, content = Fit.OnAccent)
+                }
             }
-            if (pending == r.habitId) LinkButton("Done · Undo", vm::undoQuick)
         }
     }
 }
@@ -387,3 +397,6 @@ fun ElbowCheckDialog(onDismiss: () -> Unit, onSubmit: (Int, List<String>) -> Uni
 
 /** The Undo window of a quick-done habit (UX 9.6 "Undo snackbar"). */
 private const val QUICK_UNDO_MS = 5_000L
+
+/** Taps on a row right after its Undo disappeared are ignored for this long (P5: nothing acts under a moving finger). */
+private const val QUICK_TAP_GUARD_MS = 1_500L

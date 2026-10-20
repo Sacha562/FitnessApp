@@ -38,6 +38,9 @@ import kotlinx.serialization.json.jsonPrimitive
  * [dev.fitnessapp.data.repo.HistoryRepository.restoreSet] as Undo (so the row syncs and `action_undone` is written):
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action restore_set --es set_id <id>
  *   adb logcat -d -s DebugRestore
+ * "reminder_probe" arms one alarm through the habit-reminder path and logs its delivery latency (ANDROID.md 17):
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action reminder_probe --ei in_s 90
+ *   adb logcat -d -s Reminders
  */
 class DebugActivity : ComponentActivity() {
     private val report = mutableStateOf("")
@@ -47,6 +50,10 @@ class DebugActivity : ComponentActivity() {
         when (intent?.getStringExtra("action")) {
             "selftest" -> runSelfTest()
             "restore_set" -> restoreSet(intent.getStringExtra("set_id"))
+            "reminder_probe" -> {
+                val mode = (application as FitnessApplication).container.reminders.probe(intent.getIntExtra("in_s", 90))
+                Log.i("Reminders", "probe armed mode=$mode")
+            }
         }
         setContent {
             FitnessTheme {

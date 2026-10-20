@@ -286,7 +286,8 @@ object Materializer {
         // Step 8: numeric fields.
         var sets = int(value(env, fields["sets"], ctx, spec.key, "sets"))
         val repsField = fields["reps"]
-        val reps = if (repsField is FieldValue.Keyword) null else int(value(env, repsField, ctx, spec.key, "reps"))
+        // A `repsRange` prescribes its lower end as the target and its upper end as `targetRepsMax`.
+        val reps = if (repsField is FieldValue.Keyword) null else int(value(env, repsField, ctx, spec.key, "reps")) ?: spec.repsRange.getOrNull(0)
         if (repsField is FieldValue.Keyword) ctx.notes += repsField.word
         val repsMax = spec.repsRange.getOrNull(1)
         val holdField = fields["hold_s"]

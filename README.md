@@ -168,7 +168,7 @@ materializer with in-session rules and Undo, the week planner with today advice,
 
 ## M2b log (in progress, from 2026-10-20)
 
-**Builds**: `gradlew check` green after M2b.3: 346 unit tests (`:algo` 166, `:sim` 40, `:data` 61, `:app` 79).
+**Builds**: `gradlew check` green after M2b.3 and the phone fixes: 349 unit tests (`:algo` 169, `:sim` 40, `:data` 61, `:app` 79).
 Room is at version 5 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`).
 How each part was built: CHALLENGE_ENGINE 16.2.
 
@@ -183,4 +183,21 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | M2b.5 Calendar | open | |
 | M2b.6 Cutover | open | With you. |
 
-**Phone checks**: none yet for M2b; the phone has not been reachable over wireless debugging since M2b.1 began.
+**Phone checks (2026-10-20/21, OnePlus CPH2747, Android 16, test data)**: the setup wizard with the import and
+all 27 proposals, the dashboard, pause (Holiday, Illness) and resume, abandon, sync of the enrollment and its events to
+the server, the Today tile and the elbow check, session C from the warm-up row (interval, notification, Done early)
+through the assisted-machine sets with the challenge rest, Finish with `session.completed`, the plank mini-session with
+the hip-rotation notice and `habit.completed`, the hang's quick-done with Undo, and the habit reminders' alarms. Found
+on the phone and fixed:
+- At every start the definition failed to load (Android's ICU regex rejects an unescaped `}`), so the Challenges tab
+  was empty; `RegexPortabilityTest` now guards every regex literal.
+- Challenge warm-up items never completed (warm-up sets did not count toward their planned sets).
+- The dashboard kept the first fold's status after a pause or abandon (a nested `collect`).
+- The rest timer used REST-1 instead of the challenge row's `rest_s`.
+- Habit reminders: OxygenOS deferred `setExactAndAllowWhileIdle` alarms by up to 1 h; they now arm in two stages
+  (a pre-alarm 15 min ahead, then the alarm clock), measured to fire 10 ms late; every recompute re-arms after a
+  reboot, update or force stop.
+- A rep range had no target (dips 8-10), the wizard review showed "Top hold 3×", the cutover checkbox's label did not
+  toggle it, Today showed "00:16:38.240", an Undo that vanished let the next tap open the habit, planks warned about
+  an uncalibrated machine, the "Up next" line read "— 20 s", the finish sheet hid its button under the gesture bar,
+  and the summary listed warm-up items as "No working sets".

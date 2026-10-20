@@ -7,7 +7,7 @@ import dev.fitnessapp.app.FitnessApplication
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-/** N-HABIT alarms and actions (ANDROID.md 17): fire, the snoozed fire, Snooze 30 min and Skip today. */
+/** N-HABIT alarms and actions (ANDROID.md 17): the pre-alarm, fire, the snoozed ones, Snooze 30 min and Skip today. */
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val c = (context.applicationContext as FitnessApplication).container
@@ -20,6 +20,8 @@ class ReminderReceiver : BroadcastReceiver() {
             try {
                 when (intent.action) {
                     ACTION_FIRE, ACTION_SNOOZE_FIRE -> c.reminders.onFire(code, habit, date, intent.getLongExtra(EXTRA_DUE, System.currentTimeMillis()))
+                    ACTION_PRE, ACTION_SNOOZE_PRE ->
+                        c.reminders.onPre(code, habit, date, intent.getLongExtra(EXTRA_DUE, System.currentTimeMillis()), intent.action == ACTION_SNOOZE_PRE)
                     ACTION_SNOOZE -> c.reminders.snooze(code, habit, date)
                     ACTION_SKIP -> c.reminders.skipToday(code, habit, date)
                 }
@@ -32,6 +34,8 @@ class ReminderReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_FIRE = "dev.fitnessapp.reminder.FIRE"
         const val ACTION_SNOOZE_FIRE = "dev.fitnessapp.reminder.SNOOZE_FIRE"
+        const val ACTION_PRE = "dev.fitnessapp.reminder.PRE"
+        const val ACTION_SNOOZE_PRE = "dev.fitnessapp.reminder.SNOOZE_PRE"
         const val ACTION_SNOOZE = "dev.fitnessapp.reminder.SNOOZE"
         const val ACTION_SKIP = "dev.fitnessapp.reminder.SKIP_TODAY"
         const val EXTRA_HABIT = "habit_id"

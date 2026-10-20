@@ -359,3 +359,6 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
 - 2026-10-20 — D34 (user): reason codes for pause and correction (contexts `pause`, `correction`; codes `holiday`,
   `illness`, `injury`, `loaded_different`, `value_wrong`); DATA_MODEL 9.1.3 seed and the migration table (021), the
   bundled `reason_codes.json`, CHALLENGE_ENGINE 16.2 "Reason codes" updated.
+- 2026-10-21 — Habit reminders arm in two stages (ANDROID 17 updated, `reminders.preLeadMin` added to 25): on the
+  phone `setExactAndAllowWhileIdle` became an inexact alarm up to 1 h late, so a 10 min-window pre-alarm 15 min
+  ahead now arms `setAlarmClock` for the reminder time; the next-alarm icon shows only for those minutes.

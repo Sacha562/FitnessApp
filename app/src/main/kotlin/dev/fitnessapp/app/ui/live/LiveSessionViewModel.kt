@@ -48,8 +48,14 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
 /** One exercise of the session with its catalog row and today's sets. */
-data class ExerciseItem(val se: SessionExerciseEntity, val ex: CatalogExercise, val sets: List<SetLogEntity>) {
-    val working: List<SetLogEntity> get() = sets.filter { it.set_kind != "warmup" }
+data class ExerciseItem(
+    val se: SessionExerciseEntity,
+    val ex: CatalogExercise,
+    val sets: List<SetLogEntity>,
+    /** A challenge warm-up item (the row, face pulls, ...): its warm-up sets are its work. */
+    val warmupItem: Boolean = false,
+) {
+    val working: List<SetLogEntity> get() = if (warmupItem) sets else sets.filter { it.set_kind != "warmup" }
     val unilateral: Boolean get() = se.side_mode != "bilateral"
     /** Working sets done; an L+R pair counts as one (C7), and the attempts of a round count as one set. */
     val workingDone: Int get() = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
@@ -210,7 +216,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private suspend fun rebuild(snap: Snapshot) {
         last = snap
         val items = snap.exs.mapNotNull { e ->
-            c.catalog.byId(e.exercise_id)?.let { ex -> ExerciseItem(e, ex, snap.sets.filter { it.session_exercise_id == e.id }.sortedBy { it.completed_at }) }
+            c.catalog.byId(e.exercise_id)?.let { ex ->
+                ExerciseItem(
+                    e, ex, snap.sets.filter { it.session_exercise_id == e.id }.sortedBy { it.completed_at },
+                    warmupItem = challenge?.item(e.challenge_item_key)?.plan?.role == "warmup",
+                )
+            }
         }
         val focus = focusOverride?.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
             ?: items.firstOrNull { it.open }?.se?.id
@@ -580,7 +591,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 setIndex = card.setIndex, side = card.side, setKind = if (card.warmup) "warmup" else "working",
                 load = if (ordinal) null else p, reps = if (card.isHold) null else card.reps, durationS = if (card.isHold) card.holdS else null,
                 rir = rir?.toDouble(), rirLowerBound = rir == 5, holdReserveS = feltReserveS, holdReserveLowerBound = feltLowerBound,
-                flags = flags.toList(), deviationReason = card.reason,
+                flags = flags.toList(), deviationReason = card.reason, countsAsWork = card.item.warmupItem,
                 planned = PlannedValues(
                     reps = card.target.reps, inputValue = p?.takeIf { card.mode != LoadMode.ASSISTED_MACHINE && !ordinal }?.let { card.target.native },
                     inputUnit = p?.takeIf { !ordinal }?.nativeUnit, assistNative = if (card.mode == LoadMode.ASSISTED_MACHINE) card.target.native else null,
@@ -653,9 +664,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         } else {
             RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), targetReps = card.target.reps), p)
         }
+        // A challenge row prescribes its own rest (`rest_s`, CHALLENGE_ENGINE 6.1); REST-1 keeps the hard maximum.
+        val planned = plannedRow(card.item, card.setIndex, card.side, card.warmup)?.restS
         c.restTimer.startAfter(
-            sessionId, setId, card.item.se.exercise_id, card.side, loggedAt, decision.timerS.toInt(), decision.hardMaxS.toInt(),
-            "rest", "rest_module",
+            sessionId, setId, card.item.se.exercise_id, card.side, loggedAt, planned ?: decision.timerS.toInt(), decision.hardMaxS.toInt(),
+            "rest", if (planned != null) "challenge" else "rest_module",
         )
     }
 
@@ -879,9 +892,15 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         Numbers.loadSecondary(card.point, card.mode, card.item.unilateral, _ui.value.session?.bodyweight_kg?.let { Scaled.toDouble(it, 2) })
 
     private fun nextLine(card: Card): String {
-        val load = if (card.mode == LoadMode.BODYWEIGHT) "BW" else Numbers.loadMain(card.point, card.mode)
+        // No load point (an equipment-free hold) shows the hold alone, not a dash.
+        val load = when {
+            card.mode == LoadMode.BODYWEIGHT -> "BW"
+            card.point == null -> null
+            else -> Numbers.loadMain(card.point, card.mode)
+        }
         val perf = if (card.isHold) (card.holdTargetS?.let { Numbers.num(it, 1) + " s" } ?: "hold") else "× ${card.reps ?: 0}"
-        return "$load $perf"
+        val side = when (card.side) { "L" -> "Left · "; "R" -> "Right · "; else -> "" }
+        return side + listOfNotNull(load, perf).joinToString(" ")
     }
 
     private fun updateNotification(s: WorkoutSessionEntity?, card: Card?) {

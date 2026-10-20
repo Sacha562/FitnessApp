@@ -42,6 +42,8 @@ data class PlatformConfig(
     /** ANDROID.md 17: habit reminders scheduled ahead, and the N-HABIT snooze. */
     val remindersHorizonH: Int = 48,
     val remindersSnoozeMin: Int = 30,
+    /** How long before a reminder its pre-alarm wakes the app to arm the alarm clock (ANDROID.md 17, two stages). */
+    val remindersPreLeadMin: Int = 15,
     val sync: SyncConfig = SyncConfig(),
 ) {
     /** Every key of the register with its value, in key order (JCS sorts again). */
@@ -74,6 +76,7 @@ data class PlatformConfig(
             "sync.staleNoticeDays" to JsonPrimitive(syncStaleNoticeDays),
             "reminders.horizonH" to JsonPrimitive(remindersHorizonH),
             "reminders.snoozeMin" to JsonPrimitive(remindersSnoozeMin),
+            "reminders.preLeadMin" to JsonPrimitive(remindersPreLeadMin),
             "sync.pushBatchRows" to JsonPrimitive(sync.pushBatchRows),
             "sync.pullPageRows" to JsonPrimitive(sync.pullPageRows),
             "sync.overlapS" to JsonPrimitive(sync.overlapS),

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -418,6 +419,9 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
                 Text("BW", style = MaterialTheme.typography.displayMedium, modifier = Modifier.weight(1f))
                 if (LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in item.ex.allowedLoadModes) LinkButton("+ Add weight", { vm.setLoadMode(LoadMode.BODYWEIGHT_PLUS_EXTERNAL) })
             }
+            // An external load without equipment (a plate on the back of a plank) has nothing to calibrate.
+            card.points.isEmpty() && item.ex.equipment.all { it == "bodyweight" || it == "other" } ->
+                card.target.native?.takeIf { it > 0 }?.let { Text("+ " + Numbers.num(it, 2) + " kg", style = MaterialTheme.typography.titleMedium) }
             card.points.isEmpty() -> Text("No loadable values known for this machine. Set them in You > Equipment.", style = MaterialTheme.typography.bodyMedium, color = Fit.Advisory)
             else -> {
                 val assisted = card.mode == LoadMode.ASSISTED_MACHINE
@@ -743,7 +747,10 @@ private fun FinishSheet(c: AppContainer, remaining: List<String>, onDismiss: () 
     val chips = remember { UiReasonChips.chipsFor(ChipContext.SESSION_END, dev.fitnessapp.app.uidet.ExerciseFlags(emptyList()), c.reasons, c.params.fork()).value }
     var reason by remember { mutableStateOf(chips.preselected ?: "no_time") }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(SheetPadding),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Text("Not done yet", style = MaterialTheme.typography.titleLarge)
             Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 4.dp) {
                 remaining.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }

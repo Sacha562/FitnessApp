@@ -83,6 +83,8 @@ data class LogSetCommand(
     val eccSTarget: Double? = null,
     /** `assisted_ordinal` (fingers of assistance, 0-4): the load point is null and this is the load. */
     val assistOrdinal: Int? = null,
+    /** A challenge warm-up item: its warm-up sets count toward its planned sets, so it completes. */
+    val countsAsWork: Boolean = false,
 )
 
 /**
@@ -476,7 +478,7 @@ class SessionRepository(
             db.setLogs().upsert(row)
             outbox.enqueue("set_logs", id, now)
             if (firstInBlock) blockEvent("block_started", cmd.sessionId, e.block_id, null)
-            val working = db.setLogs().bySession(cmd.sessionId).filter { it.session_exercise_id == e.id && it.set_kind != "warmup" }
+            val working = db.setLogs().bySession(cmd.sessionId).filter { it.session_exercise_id == e.id && (cmd.countsAsWork || it.set_kind != "warmup") }
             // The attempts of a round share their set index: a round counts once per side.
             val units = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
             val done = e.planned_sets != null && units >= e.planned_sets

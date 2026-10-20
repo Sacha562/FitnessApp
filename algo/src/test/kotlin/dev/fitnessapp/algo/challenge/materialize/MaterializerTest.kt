@@ -41,6 +41,13 @@ class MaterializerTest {
     private fun PlannedItem.pairs() = rows.mapNotNull { it.pairIndex }.distinct().size
 
     @Test
+    fun `a rep range prescribes its lower end as the target`() {
+        // B1 dips: "repsRange": [8, 10] (seen on the phone as "Dip 3x" with no target).
+        val dip = plan(normal(), "B").item("dip")
+        dip.rows.map { it.targetReps to it.targetRepsMax }.distinct() shouldBe listOf(8 to 10)
+    }
+
+    @Test
     fun `phase-1 session A in a normal week`() {
         val p = plan(normal(), "A")
         p.templateId shouldBe "A1"

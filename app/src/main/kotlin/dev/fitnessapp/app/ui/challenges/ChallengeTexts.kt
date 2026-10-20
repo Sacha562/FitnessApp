@@ -61,6 +61,9 @@ object ChallengeTexts {
 
     fun date(d: LocalDate?): String = d?.let(DAY::format) ?: "–"
 
+    /** A clock time as hours and minutes ("19:45"), also for a done session's actual start with seconds. */
+    fun time(t: java.time.LocalTime): String = t.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+
     /** Readable names of the state vars a user may correct (CHALLENGE_ENGINE 4.9); the var name otherwise. */
     fun varLabel(name: String): String = VAR_LABELS[name] ?: name
 

@@ -135,11 +135,19 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                         done.forEachIndexed { i, se ->
                             if (i > 0) TileDivider()
                             val name = c.catalog.byId(se.exercise_id)?.nameEn ?: "Exercise"
-                            val lines = working.filter { it.session_exercise_id == se.id }.sortedWith(compareBy({ it.set_index }, { it.side }, { it.id }))
+                            val own = sets.filter { it.deleted_at == null && it.session_exercise_id == se.id }
+                            // A warm-up item (the row, face pulls) has only warm-up sets: show them as such.
+                            val warmupOnly = own.isNotEmpty() && own.all { it.set_kind == "warmup" }
+                            val lines = (if (warmupOnly) own else working.filter { it.session_exercise_id == se.id })
+                                .sortedWith(compareBy({ it.set_index }, { it.side }, { it.id }))
                             Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(name, style = MaterialTheme.typography.titleMedium)
                                 Text(
-                                    if (lines.isEmpty()) "No working sets" else lines.joinToString(" · ") { setLine(it) },
+                                    when {
+                                        lines.isEmpty() -> "No working sets"
+                                        warmupOnly -> "Warm-up · " + lines.joinToString(" · ") { setLine(it) }
+                                        else -> lines.joinToString(" · ") { setLine(it) }
+                                    },
                                     style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
                                 )
                             }

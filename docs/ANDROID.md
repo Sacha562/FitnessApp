@@ -2132,9 +2132,14 @@ target guard (16.7, guard 1) refuses any other calendar.
 - Reminders are enabled only after the D4 cutover has been confirmed (setting
   `habitRemindersEnabled`, default false until cutover; until then Todoist keeps the reminders and nothing
   is duplicated).
-- Mechanism: `setExactAndAllowWhileIdle(RTC_WAKEUP, dueUtcMs, pi)` (exact enough, no alarm icon, allowed
-  by `USE_EXACT_ALARM`); `setWindow(dueUtcMs, 10 min)` if exact alarms are unavailable. `setAlarmClock` is
-  not used for reminders because it would show a misleading "next alarm".
+- Mechanism (two stages, changed 2026-10-21 after a measurement on the phone): OxygenOS turned
+  `setExactAndAllowWhileIdle` into an inexact alarm that fired at the end of a window of 0.75 x the lead time,
+  up to 1 h late, while `setWindow` and `setAlarmClock` kept their times. More than `reminders.preLeadMin`
+  (15 min) ahead, a pre-alarm `setWindow(due - 15 min, 10 min)` wakes the app 15-5 min before the time and
+  arms `setAlarmClock(due)`; closer than that, `setAlarmClock` directly. The alarm clock is never deferred;
+  its "next alarm" icon shows only for those minutes, and tapping it opens the habit's mini-session.
+  `setWindow(due, 10 min)` remains the fallback if the alarm clock is refused. Every recompute arms all
+  reminders again, because a reboot, an update or a force stop drops the alarms but keeps `scheduled_alarm`.
 - Horizon: the next `reminders.horizonH` (48 h) are scheduled; `daily-maintenance`, app start, boot,
   `TIME_SET`, `TIMEZONE_CHANGED`, package update and any challenge state change recompute the horizon and
   cancel obsolete PendingIntents (request code = 2000 + hash(reminderId) mod 1000, collision-checked).
@@ -2553,6 +2558,7 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 |-----|---------|--------|-------|--------|----------|
 | `reminders.horizonH` | 48 h | 24–96 | assumption | — | Yes: missed reminders after long offline periods |
 | `reminders.snoozeMin` | 30 min | 10–60 | assumption | — | Yes: snooze usage |
+| `reminders.preLeadMin` | 15 min | 11–30 | measured on OxygenOS (exact alarms deferred up to 1 h) | — | Yes: `notification_posted.latency_ms` of N-HABIT |
 | `reminders.inexactWindowMin` | 10 min | 5–30 | assumption | — | Yes: `latency_ms` of reminder `notification_posted` events |
 | `export.reminderDays` | 30 | 7–90 | DEFAULT | F4 | No: the reminder itself is a local on/off setting (UX 15.11, default on) |
 | `db.preMigrationBackupsKept` | 3 | 1–10 | assumption | — | No data needed |
