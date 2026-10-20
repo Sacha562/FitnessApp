@@ -45,6 +45,7 @@ contradiction between research lenses (see `docs/research/critique.md`).
 | D29 | Idle protection and review bundle | **Idle protection ships in M1b** (2026-10-11): ANDROID 11.5 was specified for M1a but not built; M1b adds N-IDLE with Finish / Keep open, the idle stop of the foreground service and `session_idle_prompted`. **The review-bundle export moves to M5** with the review tooling; the full export already contains every session, set and event. |
 | D30 | Preference changes | **No Undo snackbar for a preference change** (user, 2026-10-11): the change applies immediately and the segmented control itself is the way back (one tap). Exception to UX P6; `preference_changed` is still logged, and `action_undone` is no longer written for preferences. |
 | D31 | Visual style | **"Bento" dark design, dark only** (user, 2026-10-11, picked from four mock directions; replaces F16). Blue-black ground `#0B0D12`, layered tiles (`#151922`, inner `#1E2330`) with large soft corners (24 dp tiles, pill buttons and chips), one periwinkle accent `#A9A4FF`, advisory amber `#F5B85C`, safety red `#FF8A80`. Font: Manrope (variable, SIL OFL), bundled, tabular figures everywhere. No light theme, no dynamic colour, no System / Light / Dark setting; the `profiles.theme` and `profiles.dynamic_color` columns stay but are ignored. Compose Material 3 remains the component base (D1), restyled through the theme and a small set of Bento components. Tokens and rules: UX section 4. |
+| D32 | M2 split | **M2 is split into M2a and M2b** (user, 2026-10-20), as M1 was (D20); the total scope is unchanged. **M2a, engine core**: the pure `:algo` challenge modules `challenge.fitexpr`, `challenge.cds` (validation stages 1 and 2), `challenge.enrollment`, `challenge.eca`, `challenge.materialize`, `challenge.plan` and `challenge.contract`, plus the `:sim challenge validate` and `simulate` commands with the committed golden persona simulations (stage 3). M2a changes no screen and no database object. **M2b, app and cutover**: the setup wizard with the P01-P27 decisions and the import (D4), challenge storage and sync on the phone, the Challenges tab, the test-day wizard, the elbow check and pain protocol, habit reminders, the general warm-up block (D25, OI-27), `calendar.classify` and `challenge.calendar` with the write-back executor (D11), Today, and the cutover. The M2 done-when is checked at the end of M2b. |
 
 ---
 
@@ -325,3 +326,12 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   Found in the phone check (OnePlus, 363 x 792 dp): the set card pushed the RIR row below the fold, so the log row is
   now pinned in its own tile under the set card (hidden while a rest counts down, 500 ms input guard) and the
   exercise list only takes the height it needs (UX 4.3).
+- 2026-10-20 — D32 (user): M2 is split into M2a (the pure challenge engine in `:algo` and `:sim`) and M2b (the app,
+  calendar and cutover). Engineering defaults taken with it, all within CHALLENGE_ENGINE: validation stage 1 is a
+  strict typed decoding of the definition in Kotlin (required keys, types, enums and no unknown keys); the JSON Schema
+  file `cds.v1.schema.json` and the optional server CHECK (migration `fitness_018_jsonschema_constraint`, F5) are
+  written in M2b, when the definition is first published. The contract's coverage fields need `setcredit` and arrive
+  with it (M4); M2a exports the reserved sessions, blocked days, gap rule, protected windows, owned muscles and mode
+  effects. Items with `progression: delegate:rx` (the B row and dips) leave the materializer without a load until
+  RX-1 exists (M3); the logger prefills them from last time (D18). TIME-1 (M4) is an input of the materializer, so
+  add-on capacity is computed only when an estimate is supplied. PLAN.md 11 updated.

@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08 (see the M0 log in `README.md`). Next step: milestone M1.*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). Next step: milestone M2a (D32).*
 
 ---
 
@@ -544,19 +544,36 @@ M1 is split so that real sessions can be logged as early as possible; the total 
   The three 2026-10-09 ab-crunch sets got a test load of 30 lb in History (the data is test data in this phase), which
   cleared DQ06.
 
-### M2 — Challenge engine + your OAP program (4–6 sessions)
+### M2 — Challenge engine + your OAP program (4–6 sessions, split into M2a and M2b, D32)
 
-- Challenge definition schema + validator, FitExpr, event-sourced enrollment, staged rule engine,
-  materializer, challenge week planner and contract.
+M2 is split so that the engine can be built and simulated before any screen depends on it; the total
+scope is unchanged and the done-when is checked at the end of M2b.
+
+#### M2a — Challenge engine core
+
+- FitExpr (parser, type checker, decimal evaluator, function whitelist), the definition loader and
+  validator (stages 1 and 2, checks V01-V18), the event-sourced enrollment with tick synthesis and
+  refold, the staged rule engine (locks, first writer wins, frozen modes, injury dominance, audit rows),
+  the materializer (templates, mode transforms, per-side rows, loads through LOAD-1, in-session rules
+  with Undo, `valid()`), the challenge week planner with today advice, and the contract (reserved
+  sessions, blocked days, protected windows; coverage follows `setcredit` in M4).
+- The OAP definition v1 passes validation against the catalog and reference data.
+- `:sim challenge validate` and `:sim challenge simulate`; golden simulations of 26 weeks × personas
+  (all-success, stall, grip slips, elbow pain in week 7, missed weeks, machine busy, DST and late ticks),
+  each with all proposals approved and all declined, committed to the repo.
+- **Done when**: `gradlew :algo:test :sim:test` runs green with the GF-CE fixtures that need no app
+  (FitExpr, validator, enrollment, rule engine, materializer, planner, contract), and the persona
+  snapshots replay byte-identically.
+
+#### M2b — Your OAP program in the app
+
 - The general warm-up block (moved from M1a, D25) with the warm-up row countdown; OI-27 is decided here
   (alarm-backed `purpose = interval` or the in-app fallback).
-- OAP definition v1 with `A` and `P` rules; setup wizard with per-rule approval; import of your current
-  state; Challenges tab (gates per arm, block/week, next test, rule history); test-day wizard; elbow
-  check and pain protocol; habit reminders.
+- Setup wizard with per-proposal approval; import of your current state; challenge storage and sync;
+  Challenges tab (gates per arm, block/week, next test, rule history); test-day wizard; elbow check and
+  pain protocol; habit reminders.
 - Calendar: read + classify; auto-write challenge sessions and test days with marker; adopt existing
   events; Today shows the challenge session.
-- Golden simulations: 26 weeks × personas (all-success, stall, grip slips, elbow pain in week 7,
-  missed weeks, machine busy).
 - **Cutover** (with your confirmation): Todoist tasks retired, artifact frozen.
 - **Done when**: a real A, B, C week and a test day run fully in the app, and next week's loads match
   what the rules say.
