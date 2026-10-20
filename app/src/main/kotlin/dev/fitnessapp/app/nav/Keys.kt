@@ -66,12 +66,17 @@ object Routes {
         data object Today : Target
         data object DataSync : Target
         data object DataSyncExport : Target
+
+        /** N-HABIT Start (ANDROID.md 17): the habit's home mini-session. */
+        data class Habit(val habitId: String) : Target
     }
+
+    private val HABIT_ID = Regex("^[a-z][a-z0-9_]{0,63}$")
 
     fun parse(route: String?): Target = when (route) {
         "fitapp://session/current", "fitapp://session/current/rest" -> Target.CurrentSession
         "fitapp://you/data" -> Target.DataSync
         "fitapp://you/data/export" -> Target.DataSyncExport
-        else -> Target.Today
+        else -> route?.removePrefix("fitapp://habit/")?.takeIf { it != route && HABIT_ID.matches(it) }?.let(Target::Habit) ?: Target.Today
     }
 }

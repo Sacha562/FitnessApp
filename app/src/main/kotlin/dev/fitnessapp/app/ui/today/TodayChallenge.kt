@@ -37,6 +37,7 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.challenges.ChallengeTexts
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
+import dev.fitnessapp.app.ui.challenges.HabitDays
 import dev.fitnessapp.app.ui.common.Banner
 import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.ChipButton
@@ -120,7 +121,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val facts = c.challengeFacts.facts(def, f.state)
         val (input, plan) = ChallengeWeek.plan(c, f, facts)
         val today = Week.localDate(input.now, input.zone)
-        val habits = habits(e.id, f, today, plan, input.general.map { it.date }.toSet())
+        val habits = habits(f, today, input, plan)
         val advice = TodayAdvisor.advise(def, c.params, input, plan)
         fun name(slot: String) = Materializer.templateFor(def, f.state, slot)?.name?.get("en") ?: "Session $slot"
         val todaySlot = advice.slot
@@ -144,11 +145,10 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
 
     /** UX 9.6: today's habits with their dose, state and how they are completed. */
     private suspend fun habits(
-        enrollmentId: String, f: dev.fitnessapp.data.challenge.FoldedEnrollment, today: LocalDate,
-        plan: dev.fitnessapp.algo.challenge.plan.ChallengeWeekPlan, generalGymDates: Set<LocalDate>,
+        f: dev.fitnessapp.data.challenge.FoldedEnrollment, today: LocalDate,
+        input: dev.fitnessapp.algo.challenge.plan.PlanInput, plan: dev.fitnessapp.algo.challenge.plan.ChallengeWeekPlan,
     ): List<HabitRowUi> {
-        val slots = plan.sessions.groupBy { it.date }.mapValues { (_, l) -> l.map { it.slot } }.toSortedMap()
-        val day = c.challengeSessions.habitDay(enrollmentId, today, slots, generalGymDates)
+        val day = HabitDays.of(c, f, today, input, plan)
         habitDay = day
         return day.rows.map { r ->
             val h = f.def.doc.habits.single { it.id == r.habitId }
@@ -159,7 +159,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             val due = r.state == "DUE" || r.state == "SCALED"
             HabitRowUi(
                 habitId = r.habitId, name = h.name["en"] ?: r.habitId, time = r.time.toString(), dose = HabitTexts.dose(r.dose),
-                status = HabitTexts.status(r, slots[today].orEmpty(), f.state.vars), done = r.state == "DONE",
+                status = HabitTexts.status(r, day.input.facts.weekPlanSlots[today].orEmpty(), f.state.vars), done = r.state == "DONE",
                 action = when {
                     !due -> HabitAction.NONE
                     quick -> HabitAction.QUICK

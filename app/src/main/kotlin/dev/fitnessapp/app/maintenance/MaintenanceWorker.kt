@@ -30,6 +30,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
     suspend fun run(nowMs: Long) {
         if (c.writeContext.userId() == null) return
         runCatching { c.challenges.catchUp(java.time.Instant.ofEpochMilli(nowMs)) }
+        c.reminders.recompute()
         val today = LocalDate.now(ZONE).toString()
         val decision = Maintenance.decide(
             nowMs = nowMs,

@@ -148,6 +148,36 @@ class NotificationPresenter(private val context: Context) {
         return notify(Channels.ID_REST_DONE, n)
     }
 
+    /**
+     * N-HABIT (ANDROID.md 17, UX 18): "Two-arm hang" · "4-5 sets, 2-3 min total" with Start (the home mini-session),
+     * Snooze 30 min and Skip today; never Done. [id] is the reminder's code (13.2), shared by its actions.
+     */
+    fun postHabit(id: Int, habitId: String, date: String, title: String, text: String?): Boolean {
+        fun broadcast(action: String) = PendingIntent.getBroadcast(
+            context, id,
+            Intent(context, dev.fitnessapp.app.reminders.ReminderReceiver::class.java).setAction(action)
+                .putExtra(dev.fitnessapp.app.reminders.ReminderReceiver.EXTRA_RC, id)
+                .putExtra(dev.fitnessapp.app.reminders.ReminderReceiver.EXTRA_HABIT, habitId)
+                .putExtra(dev.fitnessapp.app.reminders.ReminderReceiver.EXTRA_DATE, date),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val start = openIntent("fitapp://habit/$habitId", "N-HABIT", Channels.HABIT_REMINDERS, id)
+        val n = NotificationCompat.Builder(context, Channels.HABIT_REMINDERS)
+            .setSmallIcon(R.drawable.ic_stat_session)
+            .setContentTitle(title)
+            .apply { text?.let { setContentText(it) } }
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(start)
+            .addAction(NotificationCompat.Action.Builder(0, "Start", start).build())
+            .addAction(NotificationCompat.Action.Builder(0, "Snooze 30 min", broadcast(dev.fitnessapp.app.reminders.ReminderReceiver.ACTION_SNOOZE)).build())
+            .addAction(NotificationCompat.Action.Builder(0, "Skip today", broadcast(dev.fitnessapp.app.reminders.ReminderReceiver.ACTION_SKIP)).build())
+            .build()
+        return notify(id, n)
+    }
+
+    fun cancelHabit(id: Int) = NotificationManagerCompat.from(context).cancel(id)
+
     /** N-IDLE (ANDROID.md 11.5, UX 18): "Session still running. Finish it?" with Finish / Keep open. */
     fun postIdle(): Boolean = notify(
         Channels.ID_IDLE,

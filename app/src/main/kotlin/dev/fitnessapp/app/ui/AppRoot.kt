@@ -32,6 +32,8 @@ import dev.fitnessapp.app.nav.Routes
 import dev.fitnessapp.app.nav.Tab
 import dev.fitnessapp.app.ui.auth.GateMessageScreen
 import dev.fitnessapp.app.ui.challenges.ChallengeDashboardRoute
+import dev.fitnessapp.app.ui.challenges.ChallengeWeek
+import dev.fitnessapp.app.ui.challenges.HabitDays
 import dev.fitnessapp.app.ui.challenges.ChallengeSetupRoute
 import dev.fitnessapp.app.ui.challenges.ChallengesRoute
 import dev.fitnessapp.app.ui.auth.LoadingScreen
@@ -112,6 +114,17 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 } else if (pending != null) {
                     push(key)
                 }
+            }
+            // N-HABIT Start (ANDROID.md 17): the habit's home mini-session; an open session wins.
+            is Routes.Target.Habit -> {
+                val p = pending as Routes.Target.Habit // a delegated property does not smart-cast
+                c.reminders.action("start")
+                val id = active?.id ?: runCatching {
+                    val now = java.time.Instant.now()
+                    val day = HabitDays.of(c, dev.fitnessapp.algo.core.clock.Week.localDate(now, ChallengeWeek.ZONE), now) ?: error("no running challenge")
+                    c.challengeSessions.startHabit(day, p.habitId, "notification").also { dev.fitnessapp.app.session.SessionService.start(c.appContext) }
+                }.getOrNull()
+                id?.let { push(AppKey.LiveSession(it)) }
             }
             Routes.Target.Today -> {}
         }

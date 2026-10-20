@@ -6,7 +6,7 @@ import android.content.Intent
 import dev.fitnessapp.app.FitnessApplication
 import kotlinx.coroutines.launch
 
-/** Rest-timer recovery after boot, app update, time and zone changes and exact-alarm permission changes (12.6). */
+/** Rest-timer recovery and the reminder horizon after boot, app update, time and zone changes and exact-alarm permission changes (12.6, 17). */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in ACTIONS) return
@@ -15,6 +15,7 @@ class BootReceiver : BroadcastReceiver() {
         c.appScope.launch {
             try {
                 c.restTimer.reconcile()
+                c.reminders.recompute() // ANDROID.md 17: boot, update, time and zone changes recompute the horizon
             } finally {
                 pending.finish()
             }

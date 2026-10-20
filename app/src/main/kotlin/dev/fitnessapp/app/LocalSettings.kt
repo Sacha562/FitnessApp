@@ -26,10 +26,29 @@ class LocalSettings(context: Context) {
         get() = prefs.getString(KEY_SYNC_NOTICE_DATE, null)
         set(v) = prefs.edit().putString(KEY_SYNC_NOTICE_DATE, v).apply()
 
+    /**
+     * Home-habit reminders (ANDROID.md 17 `habitRemindersEnabled`): off until the D4 cutover is confirmed, so Todoist
+     * and the app never remind twice.
+     */
+    var habitRemindersEnabled: Boolean
+        get() = prefs.getBoolean(KEY_HABIT_REMINDERS, false)
+        set(v) = prefs.edit().putBoolean(KEY_HABIT_REMINDERS, v).apply()
+
+    /** "Skip today" on N-HABIT: no further reminder of that habit on that date (kept for a week). */
+    fun habitSkipped(habitId: String, date: java.time.LocalDate): Boolean = "$habitId|$date" in prefs.getStringSet(KEY_HABIT_SKIPS, emptySet()).orEmpty()
+
+    fun markHabitSkipped(habitId: String, date: java.time.LocalDate) {
+        val keep = prefs.getStringSet(KEY_HABIT_SKIPS, emptySet()).orEmpty()
+            .filter { runCatching { !java.time.LocalDate.parse(it.substringAfter('|')).isBefore(date.minusDays(7)) }.getOrDefault(false) }
+        prefs.edit().putStringSet(KEY_HABIT_SKIPS, (keep + "$habitId|$date").toSet()).apply()
+    }
+
     private companion object {
         const val KEY_EXPORT_REMINDER = "export_reminder_enabled"
         const val KEY_PLATFORM_HASH = "platform_config_hash"
         const val KEY_EXPORT_REMINDER_DATE = "export_reminder_date"
         const val KEY_SYNC_NOTICE_DATE = "sync_notice_date"
+        const val KEY_HABIT_REMINDERS = "habit_reminders_enabled"
+        const val KEY_HABIT_SKIPS = "habit_skips"
     }
 }

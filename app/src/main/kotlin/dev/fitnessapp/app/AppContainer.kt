@@ -116,6 +116,8 @@ class AppContainer(private val context: Context) {
     val challenges: ChallengeRepository by lazy {
         ChallengeRepository(db, outbox, telemetry, writeContext, syncScheduler, params, challengeLibrary, challengeFacts)
     }
+    /** Home-habit reminders (ANDROID.md 17). */
+    val reminders: dev.fitnessapp.app.reminders.ReminderScheduler by lazy { dev.fitnessapp.app.reminders.ReminderScheduler(this, context) }
     val challengeSessions: ChallengeSessionRepository by lazy {
         ChallengeSessionRepository(
             db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, params, CHANGEOVER_MIN,

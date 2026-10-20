@@ -16,6 +16,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import dev.fitnessapp.app.ui.equipment.EquipmentUpgrade
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.sync.SyncWorker
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
@@ -63,6 +65,13 @@ class FitnessApplication : Application(), Configuration.Provider {
             stepS("challenge_catchup") {
                 container.challenges.ensureBundled()
                 if (container.writeContext.userId() != null) container.challenges.catchUp()
+            }
+            // ANDROID.md 17: any challenge state change (a new event moves the enrollment row) recomputes the horizon.
+            stepS("reminders") {
+                container.appScope.launch {
+                    container.challenges.observeOpen().map { l -> l.map { Triple(it.id, it.last_folded_event_id, it.status) } }.distinctUntilChanged()
+                        .collect { container.reminders.recompute() }
+                }
             }
             for ((name, e) in failed.toList()) {
                 runCatching { container.fgsEvent("app_startup_failed", mapOf("step" to name, "error_class" to (e::class.simpleName ?: "unknown"))) }

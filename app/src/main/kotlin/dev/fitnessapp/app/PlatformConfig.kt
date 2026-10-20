@@ -39,6 +39,9 @@ data class PlatformConfig(
     val exportReminderDays: Int = 30,
     /** UX 18 N-SYNC: changes waiting for upload this long post the notice. */
     val syncStaleNoticeDays: Int = 7,
+    /** ANDROID.md 17: habit reminders scheduled ahead, and the N-HABIT snooze. */
+    val remindersHorizonH: Int = 48,
+    val remindersSnoozeMin: Int = 30,
     val sync: SyncConfig = SyncConfig(),
 ) {
     /** Every key of the register with its value, in key order (JCS sorts again). */
@@ -69,6 +72,8 @@ data class PlatformConfig(
             "hold.stopGuardMs" to JsonPrimitive(holdStopGuardMs),
             "export.reminderDays" to JsonPrimitive(exportReminderDays),
             "sync.staleNoticeDays" to JsonPrimitive(syncStaleNoticeDays),
+            "reminders.horizonH" to JsonPrimitive(remindersHorizonH),
+            "reminders.snoozeMin" to JsonPrimitive(remindersSnoozeMin),
             "sync.pushBatchRows" to JsonPrimitive(sync.pushBatchRows),
             "sync.pullPageRows" to JsonPrimitive(sync.pullPageRows),
             "sync.overlapS" to JsonPrimitive(sync.overlapS),

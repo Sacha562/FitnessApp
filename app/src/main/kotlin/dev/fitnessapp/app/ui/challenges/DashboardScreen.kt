@@ -113,7 +113,10 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             u.pausedSince?.let { Banner("Paused since ${ChallengeTexts.date(it)}", BannerKind.ADVISORY, action = "Resume", onAction = { sheet = "resume" }) }
             Segmented(DashTab.entries, tab, { it.label }, { tab = it })
             when (tab) {
-                DashTab.OVERVIEW -> DashboardOverview(u, onPain = { sheet = "pain" })
+                DashTab.OVERVIEW -> {
+                    DashboardOverview(u, onPain = { sheet = "pain" })
+                    HabitRemindersTile(c)
+                }
                 DashTab.RULES -> Rules(u)
                 DashTab.HISTORY -> History(u)
                 DashTab.TESTS -> Tests(u)
@@ -142,6 +145,33 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             vm.reportPain(region, side, severity, symptoms)
         }
         "correct" -> CorrectDialog(ui?.targets.orEmpty(), onSave = { t, v, r -> vm.correct(t, v, r); sheet = null }, onDismiss = { sheet = null })
+    }
+}
+
+/**
+ * Home-habit reminders (ANDROID.md 17): off until the D4 cutover so Todoist and the app never both remind; the
+ * cutover switches them on, and this switch can turn them off again.
+ */
+@Composable
+private fun HabitRemindersTile(c: AppContainer) {
+    val scope = rememberCoroutineScope()
+    var on by remember { mutableStateOf(c.settings.habitRemindersEnabled) }
+    Tile {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                Text("Habit reminders", style = MaterialTheme.typography.titleMedium)
+                Text("A notification at each home habit's time, with Start, Snooze and Skip today.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            }
+            androidx.compose.material3.Switch(checked = on, onCheckedChange = { v ->
+                val from = on
+                on = v
+                c.settings.habitRemindersEnabled = v
+                scope.launch {
+                    c.fgsEvent("settings_changed", mapOf("key" to "habit_reminders", "from" to from, "to" to v))
+                    c.reminders.recompute()
+                }
+            })
+        }
     }
 }
 

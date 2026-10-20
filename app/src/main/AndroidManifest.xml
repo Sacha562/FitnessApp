@@ -75,6 +75,9 @@
             android:name=".notify.NotificationEventReceiver"
             android:exported="false" />
         <receiver
+            android:name=".reminders.ReminderReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".receivers.BootReceiver"
             android:exported="false">
             <intent-filter>
