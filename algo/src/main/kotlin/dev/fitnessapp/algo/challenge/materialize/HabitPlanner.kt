@@ -1,5 +1,6 @@
 package dev.fitnessapp.algo.challenge.materialize
 
+import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.challenge.cds.CompiledDefinition
 import dev.fitnessapp.algo.challenge.cds.HabitSpec
 import dev.fitnessapp.algo.challenge.cds.SemanticValidator
@@ -15,6 +16,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.StrV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.selection.catalog.CatalogDoc
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -117,6 +119,58 @@ object HabitPlanner {
         }
         return out to warnings.distinct()
     }
+
+    /**
+     * The home mini-session of a habit (UX 9.6, C34): one item from the prescription with today's [habit] dose, so the
+     * sets are logged like a challenge item (hold chips for holds, the item's flags) and `habit.completed` carries
+     * per-set rows under the prescription key. Null for a habit without an exercise (a checklist) or when the habit is
+     * not due today. Ranges prescribe their lower end (4-5 sets -> 4 rows); the rows carry no target where the
+     * prescription has none (the hang's total time is shown as a note).
+     */
+    fun plan(def: CompiledDefinition, params: ParamView, input: HabitInput, habit: HabitToday, catalog: CatalogDoc?): SessionPlan? {
+        if (habit.state != "DUE" && habit.state != "SCALED" && habit.state != "DONE") return null
+        val h = def.doc.habits.firstOrNull { it.id == habit.habitId } ?: return null
+        val p = h.prescription
+        val exKey = (p["exercise"] as? JsonPrimitive)?.contentOrNull ?: return null
+        val key = (p["key"] as? JsonPrimitive)?.contentOrNull ?: h.id
+        val env = RuleEnv(def, params, Records(params), input.state, input.date, input.facts)
+        val ex = ExerciseResolver(def, catalog, env.effectiveParams).resolve(exKey) ?: return null
+        val dose = habit.dose
+        val logMode = when (ex.logAs) {
+            "hold" -> LogMode.HOLD_CHIPS
+            "eccentric" -> LogMode.ECC_SECONDS
+            else -> LogMode.RIR_CHIPS
+        }
+        val sides = if (dose.perSide) (p["sideOrder"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }?.ifEmpty { null } ?: listOf("L", "R") else listOf("both")
+        val rest = (p["rest_s"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull()
+        val rows = ArrayList<PlannedRow>()
+        for (i in 1..(dose.sets.firstOrNull() ?: 1)) for (side in sides) {
+            rows += PlannedRow(
+                side = side, setKind = "working", setIndex = i, pairIndex = if (dose.perSide) i else null,
+                targetHoldS = dose.holdS, addedKg = dose.addedKg?.takeIf { it.signum() > 0 }, restS = rest, logMode = logMode,
+            )
+        }
+        val notes = (p["rules"] as? JsonArray)?.mapNotNull { r ->
+            (r as? kotlinx.serialization.json.JsonObject)?.mapValues { (_, v) -> (v as? JsonPrimitive)?.contentOrNull.orEmpty() }?.toSortedMap()
+        }.orEmpty()
+        val item = PlannedItem(
+            key = key, exerciseKey = ex.key, catalogSlug = ex.catalogSlug, name = h.name, role = "main", status = "planned", rows = rows,
+            flagsOffered = ex.flagsOffered,
+            stopSetOn = (p["stopSetOn"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }.orEmpty(),
+            notes = notes, progressionMode = "none",
+            inSessionRuleIds = def.inSessionRules.filter { r ->
+                (r.spec.item == key || r.spec.item == "*") && (r.spec.tag != "P" || r.spec.proposal?.let { input.state.approved(it) } == true)
+            }.map { it.id },
+        )
+        return SessionPlan(
+            slot = HOME_SLOT, templateId = "habit:${h.id}", phase = input.state.phase, mode = input.state.mode, date = input.date, kind = "home",
+            bookedMin = 0, budgetMin = 0, items = listOf(item), estMin = null, addOnCapacityMin = null, addOnOffered = false, warnings = emptyList(),
+            snapshot = PlanSnapshot(def.jcsSha256, EngineVersion.ENGINE_VERSION, params.hash, catalog?.catalogVersion, input.state.stateRev),
+        )
+    }
+
+    /** The plan slot of a home mini-session: not a challenge slot (`workout_sessions.challenge_slot` stays null). */
+    const val HOME_SLOT = "HOME"
 
     /** The days of [input]'s ISO week on which [h] is scheduled. */
     fun scheduledDays(h: HabitSpec, input: HabitInput, warnings: MutableList<String> = ArrayList()): List<LocalDate> {

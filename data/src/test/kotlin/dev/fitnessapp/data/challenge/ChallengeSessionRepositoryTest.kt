@@ -167,4 +167,42 @@ class ChallengeSessionRepositoryTest {
         events.last().event_type shouldBe EventTypes.SESSION_COMPLETED
         events.last().source_session_id shouldBe sessionId
     }
+
+    @Test
+    fun `the plank mini-session reports its rows as habit_completed and the hang is quick-done`() = blocking {
+        val enrollmentId = enroll()
+        val today = LocalDate.parse("2026-10-22")
+        val day = live.habitDay(enrollmentId, today, sortedMapOf(), emptySet())
+        day.rows.map { it.habitId to it.state } shouldBe listOf("daily_hang" to "DUE", "home_plank" to "DUE")
+
+        val sessionId = live.startHabit(day, "home_plank", "today")
+        val s = db.sessions().get(sessionId)!!
+        s.kind shouldBe "home"
+        s.template_source shouldBe "habit"
+        s.habit_id shouldBe "home_plank"
+        s.challenge_slot shouldBe null
+        s.challenge_template_id shouldBe "habit:home_plank"
+        s.gym_id shouldBe null
+        s.time_budget_min shouldBe null
+        val plank = db.sessionExercises().bySession(sessionId).single()
+        plank.challenge_item_key shouldBe "plank"
+        plank.planned_sets shouldBe 3
+        for (i in 1..3) for (side in listOf("L", "R")) {
+            now += 30_000
+            sessions.logSet(LogSetCommand(sessionId, plank.id, plank.exercise_id, i, side, "working", null, null, 20.0, null, false, 2.0, false, emptyList(), null, null, null, null, now, emptyMap()))
+        }
+        now += 60_000
+        sessions.finish(sessionId, null)
+        live.complete(sessionId)
+        val e = db.challengeEvents().forEnrollment(enrollmentId).last()
+        e.event_type shouldBe EventTypes.HABIT_COMPLETED
+        e.source_session_id shouldBe sessionId
+        val payload = kotlinx.serialization.json.Json.parseToJsonElement(e.payload) as kotlinx.serialization.json.JsonObject
+        (payload.getValue("items") as kotlinx.serialization.json.JsonObject).keys shouldBe setOf("plank")
+
+        now += 60_000
+        live.quickDone(enrollmentId, "daily_hang")
+        live.habitDay(enrollmentId, today, sortedMapOf(), emptySet()).rows.associate { it.habitId to it.state } shouldBe
+            mapOf("daily_hang" to "DONE", "home_plank" to "DONE")
+    }
 }

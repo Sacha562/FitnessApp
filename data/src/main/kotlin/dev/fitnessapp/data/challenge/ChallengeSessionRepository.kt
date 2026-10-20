@@ -8,6 +8,9 @@ import dev.fitnessapp.algo.challenge.enrollment.ItemLog
 import dev.fitnessapp.algo.challenge.enrollment.RowLog
 import dev.fitnessapp.algo.challenge.enrollment.SessionLog
 import dev.fitnessapp.algo.challenge.fitexpr.Dec
+import dev.fitnessapp.algo.challenge.materialize.HabitInput
+import dev.fitnessapp.algo.challenge.materialize.HabitPlanner
+import dev.fitnessapp.algo.challenge.materialize.HabitToday
 import dev.fitnessapp.algo.challenge.materialize.InSessionRuleRunner
 import dev.fitnessapp.algo.challenge.materialize.LiveItem
 import dev.fitnessapp.algo.challenge.materialize.MaterializeInput
@@ -55,6 +58,9 @@ import java.time.LocalDate
 import java.util.TreeMap
 import java.util.UUID
 
+/** Today's home habits of one enrollment (UX 9.6) and the planner input they came from (for the mini-session plan). */
+class HabitDay(val enrollmentId: String, val def: dev.fitnessapp.algo.challenge.cds.CompiledDefinition, val input: HabitInput, val rows: List<HabitToday>)
+
 /** The live state of one challenge session: the plan at start and the current rows per item key. */
 class ChallengeLive(val enrollmentId: String, val plan: SessionPlan, val items: Map<String, LiveItem>) {
     fun item(key: String?): LiveItem? = key?.let(items::get)
@@ -89,27 +95,72 @@ class ChallengeSessionRepository(
 
     /** Start (UX 11.1): the session, one challenge block, one session exercise per item, the local live plan. */
     suspend fun start(enrollmentId: String, slot: String): String {
+        val date = Week.localDate(Instant.ofEpochMilli(ctx.nowMs()), ctx.zone())
+        return open(enrollmentId, materialize(enrollmentId, slot, date), slot = slot, habitId = null, startedFrom = "today")
+    }
+
+    /**
+     * Home habits for [date] (UX 9.6, CHALLENGE_ENGINE 6.4): due, scaled, skipped or off, with the habits already
+     * logged today. [weekPlanSlots] (this week's planned and done slots) feeds `todayHas` and `dayBefore(...)`.
+     */
+    suspend fun habitDay(enrollmentId: String, date: LocalDate, weekPlanSlots: java.util.SortedMap<LocalDate, List<String>>, generalGymDates: Set<LocalDate>): HabitDay {
+        val f = challenges.folded(enrollmentId)
+        val done = db.challengeEvents().forEnrollment(enrollmentId)
+            .filter { it.event_type == EventTypes.HABIT_COMPLETED && it.local_date == date.toString() }
+            .mapNotNull { e -> Json.parseToJsonElement(e.payload).jsonObject["habit_id"]?.jsonPrimitive?.content }.toSet()
+        val input = HabitInput(date, f.state, facts.facts(f.def, f.state, weekPlanSlots), generalGymDates, done)
+        return HabitDay(enrollmentId, f.def, input, HabitPlanner.today(f.def, params, input).first)
+    }
+
+    /** The home mini-session of a habit (UX 9.6, C34): `kind = home`, `template_source = habit`, one challenge item. */
+    suspend fun startHabit(day: HabitDay, habitId: String, startedFrom: String): String {
+        val row = requireNotNull(day.rows.firstOrNull { it.habitId == habitId }) { "habit $habitId is not scheduled today" }
+        val plan = requireNotNull(HabitPlanner.plan(day.def, params, day.input, row, catalog.doc)) { "habit $habitId has no session" }
+        return open(day.enrollmentId, plan, slot = null, habitId = habitId, startedFrom = startedFrom)
+    }
+
+    /**
+     * Quick done (UX 9.6): the habit as prescribed, with no rows (`habit.completed` without items), for habits whose
+     * progression does not read per-set results. The caller offers Undo before this is called.
+     */
+    suspend fun quickDone(enrollmentId: String, habitId: String): ChallengeOutcome {
+        val now = ctx.nowMs()
+        val date = Week.localDate(Instant.ofEpochMilli(now), ctx.zone())
+        db.withTransaction {
+            telemetry.write(
+                EventDraft(
+                    type = "habit_toggled", entityType = "none",
+                    payload = mapOf("habit_id" to JsonPrimitive(habitId), "done" to JsonPrimitive(true), "via" to JsonPrimitive("checkbox")),
+                ),
+            )
+        }
+        return challenges.record(enrollmentId, ChallengeEventDraft(EventTypes.HABIT_COMPLETED, EventPayload.HabitCompleted(habitId, TreeMap()), Instant.ofEpochMilli(now), date))
+    }
+
+    /** Writes the session, its challenge block, one session exercise per planned item and the local live plan. */
+    private suspend fun open(enrollmentId: String, plan: SessionPlan, slot: String?, habitId: String?, startedFrom: String): String {
         val uid = ctx.requireUser()
         val now = ctx.nowMs()
         val zone = ctx.zone()
-        val date = Week.localDate(Instant.ofEpochMilli(now), zone)
+        val date = plan.date
         val f = challenges.folded(enrollmentId)
-        val plan = materialize(enrollmentId, slot, date)
+        val source = if (habitId != null) "habit" else "challenge_slot"
+        val budget = plan.budgetMin.takeIf { it > 0 }
         val id = ctx.ids.next()
         val profile = profiles.get()
         val snap = bodyweight.snapshot(
             BwSession(id, plan.kind, Instant.ofEpochMilli(now), date), profile?.bodyweight_fallback_kg?.let { Scaled.toDouble(it, 2) }, params,
         )
-        val gym = equipment.defaultGym()
+        val gym = if (plan.kind == "home") null else equipment.defaultGym()
         val s = f.state
         db.withTransaction {
             val session = WorkoutSessionEntity(
                 id = id, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
-                kind = plan.kind, status = "in_progress", template_source = "challenge_slot", enrollment_id = enrollmentId, challenge_slot = slot,
-                challenge_template_id = plan.templateId, phase = s.phase, block_index = s.block.index, block_week = s.block.week,
+                kind = plan.kind, status = "in_progress", template_source = source, enrollment_id = enrollmentId, challenge_slot = slot,
+                challenge_template_id = plan.templateId, habit_id = habitId, phase = s.phase, block_index = s.block.index, block_week = s.block.week,
                 enrollment_mode = s.mode, is_deload = s.mode in DELOAD_MODES, local_date = date.toString(), timezone = zone.id,
                 iso_week = Week.isoWeek(date), gym_id = gym?.id, started_at = now, bodyweight_kg = snap.valueKg?.let { Scaled.fromDouble(it, 2) },
-                bodyweight_source = snap.source.code, bodyweight_stale = snap.stale, time_budget_min = plan.budgetMin, time_budget_source = "default",
+                bodyweight_source = snap.source.code, bodyweight_stale = snap.stale, time_budget_min = budget, time_budget_source = budget?.let { "default" },
                 engine_version = EngineVersion.ENGINE_VERSION, params_hash = params.hash, catalog_version = catalog.version,
             )
             db.sessions().upsert(session)
@@ -117,7 +168,7 @@ class ChallengeSessionRepository(
             val block = SessionBlockEntity(
                 id = ctx.ids.next(), user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
                 session_id = id, position = 0, block_kind = "challenge", origin = "challenge_template", enrollment_id = enrollmentId,
-                challenge_template_id = plan.templateId, budget_min = plan.budgetMin, status = "active",
+                challenge_template_id = plan.templateId, budget_min = budget, status = "active",
             )
             db.blocks().upsert(block)
             outbox.enqueue("session_blocks", block.id, now)
@@ -135,8 +186,9 @@ class ChallengeSessionRepository(
                 EventDraft(
                     type = "session_started", sessionId = id, entityType = "session", entityId = id,
                     payload = mapOf(
-                        "kind" to JsonPrimitive(plan.kind), "template_source" to JsonPrimitive("challenge_slot"), "families" to JsonArray(emptyList()),
-                        "started_from" to JsonPrimitive("today"), "budget_min" to JsonPrimitive(plan.budgetMin), "budget_source" to JsonPrimitive("default"),
+                        "kind" to JsonPrimitive(plan.kind), "template_source" to JsonPrimitive(source), "families" to JsonArray(emptyList()),
+                        "started_from" to JsonPrimitive(startedFrom), "budget_min" to (budget?.let(::JsonPrimitive) ?: JsonNull),
+                        "budget_source" to (budget?.let { JsonPrimitive("default") } ?: JsonNull),
                         "params_hash" to JsonPrimitive(params.hash), "engine_version" to JsonPrimitive(EngineVersion.ENGINE_VERSION),
                         "catalog_version" to JsonPrimitive(catalog.version),
                     ),
@@ -287,6 +339,16 @@ class ChallengeSessionRepository(
                 status = status, plannedRows = plannedRows, targetReps = current.firstOrNull { it.setKind != "warmup" }?.targetReps,
                 targetHoldS = current.firstOrNull { it.setKind != "warmup" }?.targetHoldS, rows = rows,
                 statusReasonCode = se?.status_reason_code ?: item.statusReason, progressionExcluded = item.progressionExcluded,
+            )
+        }
+        // A home mini-session reports the habit (UX 9.6): its rows feed the week's habit rows, not a slot.
+        session.habit_id?.let { habitId ->
+            return challenges.record(
+                live.enrollmentId,
+                ChallengeEventDraft(
+                    EventTypes.HABIT_COMPLETED, EventPayload.HabitCompleted(habitId, items), Instant.ofEpochMilli(session.finished_at ?: ctx.nowMs()),
+                    LocalDate.parse(session.local_date), sourceSessionId = sessionId,
+                ),
             )
         }
         val log = SessionLog(

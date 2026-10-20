@@ -1,10 +1,15 @@
 package dev.fitnessapp.app.ui.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -59,6 +65,26 @@ data class TodayChallengeUi(
     val slot: String?,
     val trainNow: Boolean,
     val blocked: String?,
+    /** The HOME checklist (UX 9.6). */
+    val habits: List<HabitRowUi> = emptyList(),
+)
+
+/** How a habit row is completed (UX 9.6): quick-done by its checkbox, or through the home mini-session (Start). */
+enum class HabitAction { QUICK, START, NONE }
+
+/** One row of the home habits checklist: "[ ] 2-arm hang 17:15 4-5 sets, 2-3 min total (deload: scaled)". */
+data class HabitRowUi(
+    val habitId: String,
+    val name: String,
+    val time: String,
+    val dose: String?,
+    /** "done", "skipped: A day", "off: injury mode", "deload: scaled"; null while simply due. */
+    val status: String?,
+    val done: Boolean,
+    val action: HabitAction,
+    /** The row opens the mini-session (habits with an exercise). */
+    val hasSession: Boolean,
+    val measureToday: Boolean,
 )
 
 class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
@@ -72,6 +98,12 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
     val notice: StateFlow<Pair<String, String>?> = _notice
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy
+
+    /** A quick-done waiting out its Undo window (UX 9.6): nothing is written until it passes. */
+    private val _pendingQuick = MutableStateFlow<String?>(null)
+    val pendingQuick: StateFlow<String?> = _pendingQuick
+    private var quickJob: kotlinx.coroutines.Job? = null
+    private var habitDay: dev.fitnessapp.data.challenge.HabitDay? = null
 
     fun refresh() {
         viewModelScope.launch {
@@ -88,6 +120,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val facts = c.challengeFacts.facts(def, f.state)
         val (input, plan) = ChallengeWeek.plan(c, f, facts)
         val today = Week.localDate(input.now, input.zone)
+        val habits = habits(e.id, f, today, plan, input.general.map { it.date }.toSet())
         val advice = TodayAdvisor.advise(def, c.params, input, plan)
         fun name(slot: String) = Materializer.templateFor(def, f.state, slot)?.name?.get("en") ?: "Session $slot"
         val todaySlot = advice.slot
@@ -96,7 +129,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             val time = advice.start?.let { Week.localTime(it, input.zone).toString() }
             return TodayChallengeUi(
                 e.id, program, f.state.mode, if (done) "Done today: ${name(todaySlot)}" else "Today: ${name(todaySlot)}",
-                listOfNotNull(time, ChallengeTexts.mode(f.state.mode)).joinToString(" · "), if (done) null else todaySlot, false, null,
+                listOfNotNull(time, ChallengeTexts.mode(f.state.mode)).joinToString(" · "), if (done) null else todaySlot, false, null, habits,
             )
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
@@ -105,8 +138,73 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val now = TodayAdvisor.advise(def, c.params, input, plan, trainNow = true)
         val blocked = if (advice.kind == "rest") advice.reasons.firstOrNull()?.substringAfter(": ")?.let { "Rest today: $it" } else null
         return TodayChallengeUi(
-            e.id, program, f.state.mode, nextText, blocked, if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null, true, blocked,
+            e.id, program, f.state.mode, nextText, blocked, if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null, true, blocked, habits,
         )
+    }
+
+    /** UX 9.6: today's habits with their dose, state and how they are completed. */
+    private suspend fun habits(
+        enrollmentId: String, f: dev.fitnessapp.data.challenge.FoldedEnrollment, today: LocalDate,
+        plan: dev.fitnessapp.algo.challenge.plan.ChallengeWeekPlan, generalGymDates: Set<LocalDate>,
+    ): List<HabitRowUi> {
+        val slots = plan.sessions.groupBy { it.date }.mapValues { (_, l) -> l.map { it.slot } }.toSortedMap()
+        val day = c.challengeSessions.habitDay(enrollmentId, today, slots, generalGymDates)
+        habitDay = day
+        return day.rows.map { r ->
+            val h = f.def.doc.habits.single { it.id == r.habitId }
+            val p = h.prescription
+            val hasSession = p["exercise"] != null
+            // Per-set targets or stop flags need the per-set log (the plank, D33); otherwise the checkbox logs it as prescribed.
+            val quick = !hasSession || (p["hold_s"] == null && p["stopSetOn"] == null)
+            val due = r.state == "DUE" || r.state == "SCALED"
+            HabitRowUi(
+                habitId = r.habitId, name = h.name["en"] ?: r.habitId, time = r.time.toString(), dose = HabitTexts.dose(r.dose),
+                status = HabitTexts.status(r, slots[today].orEmpty(), f.state.vars), done = r.state == "DONE",
+                action = when {
+                    !due -> HabitAction.NONE
+                    quick -> HabitAction.QUICK
+                    else -> HabitAction.START
+                },
+                hasSession = hasSession && (due || r.state == "DONE"), measureToday = r.measureToday,
+            )
+        }
+    }
+
+    /** The checkbox (UX 9.6): logged after the Undo window, so an undone tap writes nothing. */
+    fun quickDone(habitId: String) {
+        val u = _ui.value ?: return
+        quickJob?.cancel()
+        _pendingQuick.value = habitId
+        quickJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(QUICK_UNDO_MS)
+            _pendingQuick.value = null
+            c.appScope.launch {
+                runCatching { c.challengeSessions.quickDone(u.enrollmentId, habitId) }
+                refresh()
+            }
+        }
+    }
+
+    fun undoQuick() {
+        quickJob?.cancel()
+        quickJob = null
+        _pendingQuick.value = null
+    }
+
+    /** The row or its Start chip: the home mini-session (a Live Session with `kind = home`, C34). */
+    fun startHabit(habitId: String, onOpen: (String) -> Unit) {
+        val day = habitDay ?: return
+        viewModelScope.launch {
+            _busy.value = true
+            val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.startHabit(day, habitId, "today") } }
+                .onFailure { _notice.value = "warn" to (it.message ?: "The habit could not start.") }.getOrNull()
+            _busy.value = false
+            if (id != null) {
+                SessionService.start(c.appContext)
+                onOpen(id)
+            }
+            refresh()
+        }
     }
 
     fun start(slot: String, onOpen: (String) -> Unit) {
@@ -183,7 +281,80 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
             }
         }
     }
+    if (u.habits.isNotEmpty()) HabitsTile(u.habits, vm, sessionActive, onOpenSession)
     if (elbowFor != null) ElbowCheckDialog(onDismiss = vm::cancelElbow) { score, symptoms -> vm.submitElbow(score, symptoms, onOpenSession) }
+}
+
+/** UX 9.6 HOME: one row per habit; the checkbox quick-dones, Start (or the row) opens the mini-session. */
+@Composable
+private fun HabitsTile(rows: List<HabitRowUi>, vm: TodayChallengeViewModel, sessionActive: Boolean, onOpenSession: (String) -> Unit) {
+    val pending by vm.pendingQuick.collectAsState()
+    val busy by vm.busy.collectAsState()
+    Tile(spacing = 4.dp) {
+        Text("Home", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
+        rows.forEach { r ->
+            val canOpen = r.hasSession && !sessionActive && !busy
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp).then(if (canOpen) Modifier.clickable { vm.startHabit(r.habitId, onOpenSession) } else Modifier),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val checked = r.done || pending == r.habitId
+                when (r.action) {
+                    HabitAction.QUICK -> Checkbox(checked = checked, onCheckedChange = { on -> if (on) vm.quickDone(r.habitId) else if (pending == r.habitId) vm.undoQuick() }, modifier = Modifier.size(48.dp))
+                    HabitAction.START -> ChipButton("Start", false, { if (canOpen) vm.startHabit(r.habitId, onOpenSession) })
+                    HabitAction.NONE -> Checkbox(checked = r.done, onCheckedChange = null, enabled = false, modifier = Modifier.size(48.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(r.name + " · " + r.time, style = MaterialTheme.typography.titleSmall)
+                    val line = listOfNotNull(r.dose, r.status).joinToString(" · ")
+                    if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                }
+                if (r.measureToday && !r.done) Pill("Measure today", container = Fit.Accent, content = Fit.OnAccent)
+            }
+            if (pending == r.habitId) LinkButton("Done · Undo", vm::undoQuick)
+        }
+    }
+}
+
+/** The dose and state wording of a habit row (UX 9.6). */
+internal object HabitTexts {
+    fun dose(d: dev.fitnessapp.algo.challenge.materialize.HabitDose): String? {
+        val parts = ArrayList<String>()
+        if (d.sets.isNotEmpty()) parts += d.sets.distinct().joinToString("-") + if (d.sets.max() == 1) " set" else " sets"
+        if (d.totalS.isNotEmpty()) {
+            val min = d.totalS.map { it.toDouble() / 60.0 }
+            parts += min.distinct().joinToString("-") { dev.fitnessapp.app.format.Numbers.num(it, 1) } + " min total"
+        }
+        d.holdS?.let { parts += dev.fitnessapp.app.format.Numbers.num(it.toDouble(), 1) + " s" + if (d.perSide) "/side" else "" }
+        d.addedKg?.takeIf { it.signum() > 0 }?.let { parts += "+ " + dev.fitnessapp.app.format.Numbers.num(it.toDouble(), 2) + " kg" }
+        // "4-5 sets, 2-3 min total" (a total over the sets) or "3 sets × 20 s/side" (per set).
+        return parts.joinToString(if (d.totalS.isNotEmpty()) ", " else " × ").ifEmpty { null }
+    }
+
+    fun status(r: dev.fitnessapp.algo.challenge.materialize.HabitToday, todaySlots: List<String>, vars: Map<String, dev.fitnessapp.algo.challenge.fitexpr.Value>): String? = when (r.state) {
+        "DONE" -> "done"
+        "SCALED" -> r.reason?.removePrefix("mode:")?.let { "${ChallengeTexts.mode(it).lowercase()}: scaled" }
+        "OFF" -> r.reason?.let { reason ->
+            when {
+                reason.startsWith("mode:") -> "off: " + ChallengeTexts.mode(reason.removePrefix("mode:")).lowercase()
+                reason.startsWith("status:") -> "off: " + reason.removePrefix("status:")
+                else -> "off"
+            }
+        }
+        "SKIPPED" -> "skipped: " + skipReason(r, todaySlots, vars)
+        else -> null
+    }
+
+    /** Which part of `skipIf` holds today: a `todayHas('<slot>')` with that slot today, or a true `s.<flag>`. */
+    private fun skipReason(r: dev.fitnessapp.algo.challenge.materialize.HabitToday, todaySlots: List<String>, vars: Map<String, dev.fitnessapp.algo.challenge.fitexpr.Value>): String {
+        if (r.reason?.startsWith("error:") == true) return "could not check the rule"
+        val src = r.skipIf.orEmpty()
+        Regex("todayHas\\('([A-Z0-9_]+)'\\)").findAll(src).map { it.groupValues[1] }.firstOrNull { it in todaySlots }?.let { return "$it day" }
+        Regex("s\\.([a-zA-Z0-9_]+)").findAll(src).map { it.groupValues[1] }
+            .firstOrNull { (vars[it] as? dev.fitnessapp.algo.challenge.fitexpr.BoolV)?.b == true }
+            ?.let { v -> return v.replace(Regex("([a-z])([A-Z])"), "$1 $2").lowercase() }
+        return "today"
+    }
 }
 
 /** UX 16.3 elbow check: 0-3, with the kind asked at 2 or more (C69); the stop signals start the elbow protocol. */
@@ -213,3 +384,6 @@ fun ElbowCheckDialog(onDismiss: () -> Unit, onSubmit: (Int, List<String>) -> Uni
         dismissButton = { TextButton(onDismiss) { Text("Cancel") } },
     )
 }
+
+/** The Undo window of a quick-done habit (UX 9.6 "Undo snackbar"). */
+private const val QUICK_UNDO_MS = 5_000L

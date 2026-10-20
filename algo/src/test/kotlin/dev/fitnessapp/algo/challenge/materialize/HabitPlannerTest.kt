@@ -1,7 +1,9 @@
 package dev.fitnessapp.algo.challenge.materialize
 
+import dev.fitnessapp.algo.challenge.ChallengeTestSupport
 import dev.fitnessapp.algo.challenge.OapFixture
 import dev.fitnessapp.algo.challenge.enrollment.EnrollmentState
+import dev.fitnessapp.algo.selection.catalog.CatalogDoc
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -11,6 +13,7 @@ import java.time.LocalDate
 class HabitPlannerTest {
     private val def = OapFixture.def
     private val params = OapFixture.params()
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.1.json")) }
 
     /** W42: C Wednesday, A Friday, B Sunday. */
     private val facts = OapFixture.facts.copy(
@@ -70,5 +73,38 @@ class HabitPlannerTest {
             it.reason shouldBe "mode:injury"
         }
         today(normal().copy(status = EnrollmentState.PAUSED), "2026-10-12").single().reason shouldBe "status:paused"
+    }
+
+    private fun plan(s: EnrollmentState, date: String, habit: String): SessionPlan? {
+        val input = HabitInput(LocalDate.parse(date), s, facts)
+        val row = HabitPlanner.today(def, params, input).first.single { it.habitId == habit }
+        return HabitPlanner.plan(def, params, input, row, catalog)
+    }
+
+    @Test
+    fun `the plank mini-session logs per-set holds under the prescription key`() {
+        val p = plan(normal(), "2026-10-13", "home_plank")!!
+        p.kind shouldBe "home"
+        p.slot shouldBe HabitPlanner.HOME_SLOT
+        p.templateId shouldBe "habit:home_plank"
+        val item = p.items.single()
+        item.key shouldBe "plank"
+        item.exerciseKey shouldBe "one_arm_plank"
+        item.rows.map { it.side to it.setIndex } shouldBe listOf("L" to 1, "R" to 1, "L" to 2, "R" to 2, "L" to 3, "R" to 3)
+        item.rows.all { it.targetHoldS == BigDecimal(20) && it.logMode == LogMode.HOLD_CHIPS && it.restS == 60 } shouldBe true
+        item.rows.all { it.addedKg == null } shouldBe true // no plate yet
+        item.stopSetOn shouldBe listOf("hip_rotation")
+        item.inSessionRuleIds shouldBe listOf("ins.rotationStop", "ins.plank.hipStop") // the "*" rule and the plank's own
+    }
+
+    @Test
+    fun `the hang mini-session prescribes the lower end of its ranges and no per-set target`() {
+        val item = plan(normal(), "2026-10-12", "daily_hang")!!.items.single()
+        item.key shouldBe "dhang"
+        item.rows.map { it.side } shouldBe listOf("both", "both", "both", "both")
+        item.rows.all { it.targetHoldS == null } shouldBe true
+        item.notes.size shouldBe 4
+        // A skipped habit has no session to start.
+        plan(normal(), "2026-10-16", "daily_hang") shouldBe null
     }
 }

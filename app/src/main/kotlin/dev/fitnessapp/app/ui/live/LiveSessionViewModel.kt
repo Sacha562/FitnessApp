@@ -178,7 +178,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         viewModelScope.launch {
             c.challengeSessions.observeLive(sessionId).collect { live ->
                 challenge = live
-                _ui.update { it.copy(title = live?.let { l -> "Session ${l.plan.slot}" }) }
+                // A home mini-session is named after its habit item (UX 9.6), a challenge session after its slot.
+                val title = live?.let { l ->
+                    if (l.plan.slot == dev.fitnessapp.algo.challenge.materialize.HabitPlanner.HOME_SLOT) l.plan.items.firstOrNull()?.name?.get("en") else "Session ${l.plan.slot}"
+                }
+                _ui.update { it.copy(title = title) }
                 last?.let { rebuild(it) }
             }
         }
