@@ -121,6 +121,14 @@ interface WorkoutSessionDao : SyncDao<WorkoutSessionEntity> {
 
     @Query("SELECT MIN(started_at) FROM workout_sessions WHERE deleted_at IS NULL")
     suspend fun firstStartedAt(): Long?
+
+    /** Finished sessions of one ISO week (the challenge week plan's done slots and gym anchors, CHALLENGE_ENGINE 7). */
+    @Query("SELECT * FROM workout_sessions WHERE iso_week = :isoWeek AND status = 'finished' AND deleted_at IS NULL ORDER BY started_at, id")
+    suspend fun finishedInIsoWeek(isoWeek: String): List<WorkoutSessionEntity>
+
+    /** The last finished gym session before [beforeMs] (the previous week's last gym visit for the gap rule). */
+    @Query("SELECT * FROM workout_sessions WHERE kind <> 'home' AND status = 'finished' AND deleted_at IS NULL AND started_at < :beforeMs ORDER BY started_at DESC, id DESC LIMIT 1")
+    suspend fun lastGymBefore(beforeMs: Long): WorkoutSessionEntity?
 }
 
 @Dao

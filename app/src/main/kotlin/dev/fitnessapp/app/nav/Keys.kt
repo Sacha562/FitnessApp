@@ -15,6 +15,12 @@ sealed interface AppKey {
     /** Data and sync opened from the N-EXPORT reminder: starts the monthly export right away (UX 18). */
     data object DataSyncExport : AppKey
 
+    /** The active challenge dashboard (UX 14.2). */
+    data class ChallengeDashboard(val enrollmentId: String) : AppKey
+
+    /** The challenge setup wizard for one definition (UX 14.8). */
+    data class ChallengeSetup(val definitionId: String) : AppKey
+
     companion object {
         /** Saved-state form of a key, so the back stack survives recreation and process death. */
         fun encode(k: AppKey): String = when (k) {
@@ -28,6 +34,8 @@ sealed interface AppKey {
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
             DataSyncExport -> "data_sync_export"
+            is ChallengeDashboard -> "challenge:" + k.enrollmentId
+            is ChallengeSetup -> "challenge_setup:" + k.definitionId
         }
 
         fun decode(s: String): AppKey? = when {
@@ -41,13 +49,15 @@ sealed interface AppKey {
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
             s == "data_sync_export" -> DataSyncExport
+            s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))
+            s.startsWith("challenge_setup:") -> ChallengeSetup(s.removePrefix("challenge_setup:"))
             else -> null
         }
     }
 }
 
-/** Top-level tabs; Week and Challenges arrive with their milestones. */
-enum class Tab { TODAY, EXERCISES, YOU }
+/** Top-level tabs (UX 3.1); Week arrives with M4. */
+enum class Tab { TODAY, EXERCISES, CHALLENGES, YOU }
 
 /** Internal route names of notification taps (ANDROID.md 7.4, C54): never deep links. */
 object Routes {

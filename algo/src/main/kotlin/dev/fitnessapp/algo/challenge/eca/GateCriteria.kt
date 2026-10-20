@@ -32,6 +32,11 @@ data class GateCriterion(
     val met: Boolean?,
     /** The criterion's comparison side that depends on bodyweight, as an expression source, if it has one. */
     val thresholdSource: String?,
+    /** The test metrics the criterion reads (`t.<metric>`, `m.<metric>`), bodyweight excluded, in reading order. */
+    val metrics: List<String> = emptyList(),
+    /** For a top-level ordering comparison: its right side as source and whether a higher value is better. */
+    val comparisonRhs: String? = null,
+    val higherIsBetter: Boolean = true,
 )
 
 /**
@@ -50,7 +55,48 @@ object GateCriteria {
                 test == null -> null
                 else -> evaluate(env, c, "t", RecordV("t", test.metrics))
             }
-            GateCriterion(phaseId, i, gate.labels.getOrNull(i), gate.source, met, thresholdSide(c.ast, c.source))
+            val cmp = comparison(c.ast, c.source)
+            val metrics = c.reads.filter { it.startsWith("t.") || it.startsWith("m.") }.map { it.substringAfter('.').substringBefore('.') }
+                .filter { it != "bw" }.distinct()
+            GateCriterion(phaseId, i, gate.labels.getOrNull(i), gate.source, met, thresholdSide(c.ast, c.source), metrics, cmp?.first, cmp?.second ?: true)
+        }
+    }
+
+    /** `(right side source, higher is better)` of a top-level `>=`, `>`, `<=` or `<` comparison. */
+    private fun comparison(n: Node, source: String): Pair<String, Boolean>? {
+        val b = n as? Node.Binary ?: return null
+        if (b.op !in setOf(">=", ">", "<=", "<")) return null
+        return source.substring(b.right.start, b.right.end) to (b.op == ">=" || b.op == ">")
+    }
+
+    /**
+     * The right side of criterion [index]'s comparison evaluated with `t.bw = bwKg` (any dimension, its grid), for
+     * the gate rows of UX 19.7.3; null when the criterion is not a comparison.
+     */
+    fun rhsAt(def: CompiledDefinition, params: ParamView, state: EnrollmentState, facts: EngineFacts, phaseId: Int, index: Int, bwKg: BigDecimal?): QV? {
+        val crit = criteria(def, params, state, facts, phaseId).getOrNull(index) ?: return null
+        val src = crit.comparisonRhs ?: return null
+        val inputs = Scopes.Inputs(
+            def.params.mapValues { it.value.type }, def.stateVarByName.mapValues { it.value.type },
+            def.metrics.mapValues { it.value.type }, emptyMap(), emptyList(), emptyList(),
+        )
+        val compiled = when (val r = FitExpr.compile(src, Scopes.forTest(inputs), FitExprLimits.from(params))) {
+            is CompileResult.Ok -> r.expr
+            is CompileResult.Err -> return null
+        }
+        val env = RuleEnv(def, params, Records(params), state, state.lastTickDate, facts)
+        val t = if (bwKg != null) mapOf("bw" to QV(Dim.MASS, bwKg)) else emptyMap()
+        return try {
+            (compiled.evaluate(env.roots() + ("t" to RecordV("t", t)), env.host) as? QV)?.let { v ->
+                val g = when (v.dim) {
+                    Dim.MASS -> Grid.decimal(v.v, GridKind.KG)
+                    Dim.DURATION -> Grid.decimal(v.v, GridKind.S)
+                    else -> Grid.decimal(v.v, GridKind.RATIO)
+                }
+                QV(v.dim, Dec.norm(g))
+            }
+        } catch (_: EvalError) {
+            null
         }
     }
 

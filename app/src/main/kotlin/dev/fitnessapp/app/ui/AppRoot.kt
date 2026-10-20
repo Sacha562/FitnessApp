@@ -3,6 +3,7 @@ package dev.fitnessapp.app.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Scaffold
@@ -30,6 +31,9 @@ import dev.fitnessapp.app.nav.AppKey
 import dev.fitnessapp.app.nav.Routes
 import dev.fitnessapp.app.nav.Tab
 import dev.fitnessapp.app.ui.auth.GateMessageScreen
+import dev.fitnessapp.app.ui.challenges.ChallengeDashboardRoute
+import dev.fitnessapp.app.ui.challenges.ChallengeSetupRoute
+import dev.fitnessapp.app.ui.challenges.ChallengesRoute
 import dev.fitnessapp.app.ui.auth.LoadingScreen
 import dev.fitnessapp.app.ui.auth.SignInScreen
 import dev.fitnessapp.app.ui.live.LiveSessionRoute
@@ -154,6 +158,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                         )
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) })
+                        Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
                             onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) },
@@ -193,6 +198,13 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 )
             }
             entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }) }
+            entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }) }
+            entry<AppKey.ChallengeSetup> { k ->
+                ChallengeSetupRoute(c, k.definitionId, onBack = { pop() }, onStarted = { id ->
+                    pop()
+                    push(AppKey.ChallengeDashboard(id))
+                })
+            }
         },
     )
 }
@@ -209,6 +221,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Main, null -> when (tab) {
         Tab.TODAY -> "today"
         Tab.EXERCISES -> "exercises"
+        Tab.CHALLENGES -> "challenges"
         Tab.YOU -> "you"
     }
     is AppKey.LiveSession -> "session.live"
@@ -219,6 +232,8 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.History -> "you.history"
     is AppKey.SessionDetail -> "you.session_detail"
     is AppKey.ExerciseDetail -> "exercises.detail"
+    is AppKey.ChallengeDashboard -> "challenges.dashboard"
+    is AppKey.ChallengeSetup -> "challenge.setup"
 }
 
 private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
@@ -227,6 +242,7 @@ private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
 private val NAV_ITEMS = listOf(
     NavItem("Today", Icons.Rounded.FitnessCenter),
     NavItem("Exercises", Icons.AutoMirrored.Rounded.FormatListBulleted),
+    NavItem("Challenges", Icons.Rounded.EmojiEvents),
     NavItem("You", Icons.Rounded.Person),
 )
 
