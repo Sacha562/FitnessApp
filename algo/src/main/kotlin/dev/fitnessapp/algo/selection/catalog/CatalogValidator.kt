@@ -105,7 +105,7 @@ object CatalogValidator {
             }
         }
         val exempt = e.tags.any { it in setOf("prehab", "skill", "hang") } || e.pattern == "conditioning"
-        if (!exempt && e.stimulus.values.none { it >= 0.75 }) err("V3", "no region at 0.75 or above")
+        if (!exempt && e.stimulus.values.none { it >= D.PRIMARY_COEFF }) err("V3", "no region at 0.75 or above")
         if (e.stimulus.values.any { it == 0.75 } && e.evidenceNote.isNullOrBlank()) err("V4", "a 0.75 coefficient needs an evidence_note")
 
         // V5: pattern, family, load modes, bodyweight fraction.

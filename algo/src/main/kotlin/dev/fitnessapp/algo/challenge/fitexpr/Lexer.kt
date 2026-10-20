@@ -28,7 +28,7 @@ internal class Lexer(private val src: String, private val maxStringLength: Int) 
             c in '0'..'9' -> number(start)
             c == '\'' -> string(start)
             c.isLetter() || c == '_' -> {
-                while (pos < src.length && (src[pos].isLetterOrDigit() || src[pos] == '_') && src[pos].code < 128) pos++
+                while (pos < src.length && isIdentChar(src[pos])) pos++
                 val text = src.substring(start, pos)
                 val kind = when (text) {
                     "true" -> Tok.TRUE
@@ -78,9 +78,9 @@ internal class Lexer(private val src: String, private val maxStringLength: Int) 
                 c == '\\' -> {
                     if (pos + 1 >= src.length) fail(start, pos, "unterminated escape")
                     val e = src[pos + 1]
-                    if (e != '\'' && e != '\\') fail(pos, pos + 2, "unknown escape \\$e")
+                    if (e != '\'' && e != '\\') fail(pos, pos + ESCAPE_LENGTH, "unknown escape \\$e")
                     sb.append(e)
-                    pos += 2
+                    pos += ESCAPE_LENGTH
                 }
                 else -> {
                     sb.append(c)
@@ -104,7 +104,12 @@ internal class Lexer(private val src: String, private val maxStringLength: Int) 
 
     private fun fail(s: Int, e: Int, msg: String): Nothing = throw ParseFailure(CompileError("parse", s, e, msg))
 
+    private fun isIdentChar(c: Char): Boolean = c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_'
+
     companion object {
+        /** A backslash and the escaped character. */
+        private const val ESCAPE_LENGTH = 2
+
         val UNITS = setOf("kg", "lb", "s", "min", "h", "d")
 
         /** Longest operators first, so `??` wins over `?` and `<=` over `<`. */

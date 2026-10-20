@@ -102,7 +102,7 @@ class RuleEnv(
         sessions.firstOrNull()?.let { return Week.isoWeekStart(it.date) }
         val e = event ?: return Week.isoWeekStart(today)
         // A boundary event happens on the Monday after the closed week (or of the started week).
-        return if (e.type == "week.closed") Week.isoWeekStart(e.localDate).minusDays(7) else Week.isoWeekStart(e.localDate)
+        return if (e.type == "week.closed") Week.isoWeekStart(e.localDate).minusWeeks(1) else Week.isoWeekStart(e.localDate)
     }
 
     private fun eventFields(e: ChallengeEvent): Map<String, Value> = when (val p = e.payload) {

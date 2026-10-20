@@ -25,6 +25,8 @@ import dev.fitnessapp.algo.challenge.fitexpr.RecordV
 import dev.fitnessapp.algo.challenge.fitexpr.StrV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
+import dev.fitnessapp.algo.core.det.Grid
+import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.load.LoadScheme
 import dev.fitnessapp.algo.core.load.PlateBreakdown
 import dev.fitnessapp.algo.core.params.ParamView
@@ -149,6 +151,9 @@ object Materializer {
     }
 
     private val PREF_ORDER = listOf("favorite", "like", "neutral", "dislike", "never")
+
+    /** Decimal places between a ratio and a percentage. */
+    private const val PERCENT = 2
 
     private class Ctx(val warnings: MutableList<PlanWarning> = ArrayList(), val notes: MutableList<String> = ArrayList())
 
@@ -342,7 +347,7 @@ object Materializer {
                     breakdown = PlateBreakdown.solve(Dec.toDouble(added), b.plates, b.maxItems)?.map { Dec.kg(it) }
                 }
             }
-            if (bw != null) systemLoad = ex.fBw.multiply(bw).add(added).setScale(2, RoundingMode.HALF_EVEN)
+            if (bw != null) systemLoad = Grid.decimal(ex.fBw.multiply(bw).add(added), GridKind.KG)
         }
         if (pin != null && def.machineId != null) {
             val cal = input.facts.machines[def.machineId]
@@ -362,9 +367,9 @@ object Materializer {
             val capUp = Dec.ofParam(params.double(if (ex?.compound == true) "rx.cap_up_compound" else "rx.cap_up_isolation"))
             val capDown = Dec.ofParam(params.double("rx.cap_down"))
             val ratio = systemLoad.divide(prev, MathContext.DECIMAL64)
-            val pct = ratio.subtract(BigDecimal.ONE).movePointRight(2).setScale(2, RoundingMode.HALF_EVEN)
+            val pct = Grid.decimal(ratio.subtract(BigDecimal.ONE).movePointRight(PERCENT), GridKind.KG)
             if (ratio > BigDecimal.ONE.add(capUp) || ratio < BigDecimal.ONE.subtract(capDown)) {
-                ctx.warnings += PlanWarning("WE-S2", "WARN", "${spec.key}: ${pct.toPlainString()} % system load against a ${capUp.movePointRight(2).stripTrailingZeros().toPlainString()} % cap (rule load, not clamped)")
+                ctx.warnings += PlanWarning("WE-S2", "WARN", "${spec.key}: ${pct.toPlainString()} % system load against a ${Dec.norm(capUp.movePointRight(PERCENT)).toPlainString()} % cap (rule load, not clamped)")
             }
         }
 

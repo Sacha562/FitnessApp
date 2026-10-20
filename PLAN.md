@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). Next step: milestone M2a (D32).*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. Next step: milestone M2b (D32).*
 
 ---
 
@@ -549,7 +549,7 @@ M1 is split so that real sessions can be logged as early as possible; the total 
 M2 is split so that the engine can be built and simulated before any screen depends on it; the total
 scope is unchanged and the done-when is checked at the end of M2b.
 
-#### M2a — Challenge engine core
+#### M2a — Challenge engine core — done 2026-10-20
 
 - FitExpr (parser, type checker, decimal evaluator, function whitelist), the definition loader and
   validator (stages 1 and 2, checks V01-V18), the event-sourced enrollment with tick synthesis and
@@ -564,6 +564,12 @@ scope is unchanged and the done-when is checked at the end of M2b.
 - **Done when**: `gradlew :algo:test :sim:test` runs green with the GF-CE fixtures that need no app
   (FitExpr, validator, enrollment, rule engine, materializer, planner, contract), and the persona
   snapshots replay byte-identically.
+- **Result**: both done-when checks passed on 2026-10-20 (README M2a log): 149 `:algo` and 23 `:sim` tests, 16 persona
+  snapshots that replay byte-identically and hold every global invariant. How the engine was built is
+  CHALLENGE_ENGINE 16.1. The simulations found two program issues, fixed in the unpublished `oap@1.0.0` and the engine
+  (changelog 2026-10-20): a new elbow report restarted the 14-day protocol, and a block rollover could end injury mode.
+  Moved on: the next-week projection (7.7) comes with the calendar write-back in M2b; contract coverage with
+  `setcredit` in M4.
 
 #### M2b — Your OAP program in the app
 

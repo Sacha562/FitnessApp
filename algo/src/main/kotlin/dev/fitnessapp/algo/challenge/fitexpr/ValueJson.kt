@@ -19,7 +19,7 @@ import java.math.RoundingMode
  */
 @OptIn(ExperimentalSerializationApi::class)
 object ValueJson {
-    private val DISPLAY = MathContext(15, RoundingMode.HALF_EVEN)
+    private val DISPLAY = MathContext(Canon.MAX_SIGNIFICANT_DIGITS, RoundingMode.HALF_EVEN)
 
     fun number(v: BigDecimal): JsonPrimitive = JsonUnquotedLiteral(Canon.esDecimal(v))
 

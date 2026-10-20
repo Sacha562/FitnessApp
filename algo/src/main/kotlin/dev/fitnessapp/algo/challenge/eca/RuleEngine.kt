@@ -28,6 +28,8 @@ import dev.fitnessapp.algo.challenge.fitexpr.ValueJson
 import dev.fitnessapp.algo.challenge.fitexpr.Values
 import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.det.Grid
+import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.params.DeclaresParams
 import dev.fitnessapp.algo.core.params.ParamSpec
 import dev.fitnessapp.algo.core.params.ParamType
@@ -321,9 +323,9 @@ object RuleEngine : DeclaresParams {
     fun canonical(type: Type, value: Value, env: RuleEnv): Value {
         if (value !is QV || type !is Type.Q) return value
         val v = when (type.dim) {
-            Dim.MASS -> value.v.setScale(2, RoundingMode.HALF_EVEN)
-            Dim.DURATION -> value.v.setScale(1, RoundingMode.HALF_EVEN)
-            Dim.NUM -> value.v.setScale(4, RoundingMode.HALF_EVEN)
+            Dim.MASS -> Grid.decimal(value.v, GridKind.KG)
+            Dim.DURATION -> Grid.decimal(value.v, GridKind.S)
+            Dim.NUM -> Grid.decimal(value.v, GridKind.RATIO)
             Dim.INT, Dim.DAYS -> value.v.setScale(0, RoundingMode.HALF_EVEN)
             Dim.PIN -> if (env.def.machineId != null && env.facts.machines[env.def.machineId] != null) env.host.roundPin(value.v, "nearest") else value.v
         }
@@ -448,7 +450,7 @@ object RuleEngine : DeclaresParams {
         return copy(mode = mode, modeSince = today)
     }
 
-    private fun nextMonday(d: LocalDate): LocalDate = Week.isoWeekStart(d).plusDays(7)
+    private fun nextMonday(d: LocalDate): LocalDate = Week.isoWeekStart(d).plusWeeks(1)
 
     /** The test slot's weekday (`slotWeekday`, else `testDay.weekday`) in the ISO week of [today]. */
     fun testDate(def: CompiledDefinition, today: LocalDate): LocalDate {

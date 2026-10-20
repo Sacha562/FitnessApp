@@ -1,8 +1,8 @@
 # Challenge engine specification
 
-Version of this document: 1.2 (2026-10-07; aligned with the user decisions D13-D16, the defaults
-F21-F27, the cross-document resolutions C37-C65 and the DATA_MODEL 9.8.1 event registry). Engine
-modules specified here all start at `@1.0.0`.
+Version of this document: 1.3 (2026-10-20; 1.2 of 2026-10-07 aligned with the user decisions D13-D16,
+the defaults F21-F27, the cross-document resolutions C37-C65 and the DATA_MODEL 9.8.1 event registry;
+1.3 adds section 16.1, how M2a built the engine, D32). Engine modules specified here all start at `@1.0.0`.
 
 This document specifies the generic, data-driven challenge engine: the Challenge Definition Schema
 (CDS v1), the FitExpr rule language, the event-sourced enrollment lifecycle, the staged
@@ -2312,3 +2312,27 @@ trajectories, gate dates).
 **Order of work (M2).** FitExpr (with its tests) -> CDS validator -> enrollment fold + ticks -> ECA ->
 materializer -> import + setup wizard -> plan -> contract -> calendar matching (read) -> write-back
 behind a setting (D11 auto-write after the T17 device test of ANDROID.md).
+
+### 16.1 As built in M2a (2026-10-20, D32)
+
+M2a implemented the pure modules of this specification in `dev.fitnessapp.algo.challenge` (packages
+`fitexpr`, `cds`, `enrollment`, `eca`, `materialize`, `plan`, `contract`) and stage 3 in
+`dev.fitnessapp.sim.challenge`. Where the implementation had to choose, it chose as follows; each choice
+stays inside the rules above.
+
+| Topic | As built |
+|---|---|
+| Stage 1 | A strict typed decoding of the definition (`DefinitionModel.kt`, unknown keys rejected, kotlinx paths as pointers). `cds.v1.schema.json` and the optional server CHECK follow when the definition is published (M2b). |
+| Check findings | V07 for a phase's fallback templates (`templatesIfNotApproved`), the V14 listings (`allowInFrozen` rules, snapshot writes without a `mode == 'normal'` guard, two progression rules writing one var) and region aliases (V08) are warnings; everything else fails validation. V10 counts rule writes and snapshot restores, not the import (every var is importable, so counting it would make V10 empty). |
+| Week summary | `week.closed` and `week.started` carry the ISO week only. The fold keeps the sessions of open weeks (`weekLogs`, with the rows of the items that `week.ex.*` reads), so a late session changes the summary on refold and `sessionsDone` needs no payload. A test session also writes `session.completed` for slot `TEST`, so it counts for its slot. |
+| Fold bookkeeping | Besides 4.4 the state keeps `validInBlock` counts per item, the import's pre-cutover counts, the open weeks, the observations of the current phase (`m.*`), the last pain date per body region (`daysSincePain` takes the later of that and the engine facts), the last challenge session date and the last engine facts (synthesized ticks carry the facts of their synthesis or of the last folded event). |
+| Catch-up | `EnrollmentFold.catchUp` synthesizes and folds the due ticks in order and synthesizes again when a rule moved the planned test, so a test scheduled on `week.started` still gets its `test.due` in the same catch-up. |
+| Row scopes | `ex.<key>.*` and `week.ex.<key>.*` hold working, test and attempt rows; warm-up rows are left out, so `count(ex.wpu.reps) >= ex.wpu.plannedRows` counts the prescribed work only. An item absent from a session has empty lists and zero planned rows. |
+| Audit outcome | A fired rule with at least one applied write is `applied`; a rule that only locks or notifies is `applied`; a rule whose actions resolved to nothing is `no_effect`. |
+| Injury | Besides 11.1 item 4, no rule outside the safety stage changes the mode away from `injury` (`suppressed_lock`, `suppressed_by = mode:injury`); a block rollover during injury starts the block and keeps the mode (warning `block_started_in_injury`). |
+| Materializer | `position: first` means first after the leading warm-ups (6.2 step 3). Items with `progression: delegate:rx` leave without a load until RX-1 (M3); the logger prefills them from last time (D18). TIME-1 (M4) is an input: without an estimate there is no add-on capacity. WE-S2 compares a RULE load with RX-1's `w_last` when the caller supplies it. |
+| Planner | Starts on one day do not interact with other days, so each slot-day takes its best start (preferred start bonus, after-busy penalty) and the search enumerates the days of the remaining slots. One gym visit per day also excludes days with a fixed general session. The next-week projection (7.7) is built with the calendar write-back in M2b. |
+| Contract | Coverage (8.2) arrives with `setcredit` in M4; the contract exports everything else of 8.1. |
+| Gates | `GateCriteria` gives the stored `met` per criterion (on the test-day `t.bw`, C62) and `thresholdAt(bw)` for comparison criteria (GF-CE-37). |
+| Fixtures | GF-CE-01..24b, 28 (postponement), 29-35, 37, 38 and 39 run in `:algo`; GF-CE-33 runs in `:sim` with 16 committed snapshots in `fixtures/golden/challenge/` (the elbow persona has a short and a long pain scenario). GF-CE-25..27 and the write-back part of 28 come with `challenge.calendar` in M2b; GF-CE-36 is general-engine behaviour (M4). |
+| Constants | `ChallengeConstantsLintTest` allows only 0 and 1, indices, arities, `ParamSpec` bounds and documented `const val` facts in the challenge package (section 12). |

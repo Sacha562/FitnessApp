@@ -125,3 +125,38 @@ local `89 (local)`, residue 0; advisors unchanged; probes P1-P3 unchanged, `fitn
   "Editable until ..."); the catalog list drops the Pattern filter (your calls, changelog 2026-10-11).
 - Debug builds only: `DebugActivity --es action restore_set --es set_id <id>` restores a set deleted in History
   through the same code as Undo (used once when an Undo window ran out during the adb test).
+
+## M2a log (2026-10-20)
+
+**Builds**: `gradlew check` green: 290 unit tests (`:algo` 149, `:sim` 23, `:data` 50, `:app` 68). M2a changes no
+screen and no database object (D32).
+
+**Engine** (how it was built: CHALLENGE_ENGINE 16.1): FitExpr, the definition validator (stages 1 and 2, checks
+V01-V18), the enrollment fold with tick synthesis and catch-up, the staged rule engine with audit rows, the
+materializer with in-session rules and Undo, the week planner with today advice, the contract and the gate criteria.
+`oap@1.0.0` validates with 43 rules and 9 review warnings (V14 listings and the P18 fallback, V07).
+
+```powershell
+.\gradlew.bat :sim:run --args="challenge validate docs/challenges/oap.challenge.v1.json"
+.\gradlew.bat :sim:run --args="challenge simulate --persona all --out build/sim-out"
+.\gradlew.bat :sim:test -PupdateGoldens   # rewrite the persona snapshots after a reviewed rule change
+```
+
+**Done-when checks**:
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| GF-CE fixtures that need no app | pass | GF-CE-01..24b, 28 (postponement), 29-35, 37, 38, 39 in `:algo`; calendar fixtures 25-27 follow in M2b, 36 in M4. |
+| Persona snapshots replay byte-identically | pass | 8 personas x proposals approved / declined, 26 weeks each, 16 snapshots in `fixtures/golden/challenge/`; two runs per test and a second JVM produce the same bytes. |
+| Global invariants | pass | Every load loadable, no session on an all-gym blocked day, state vars within bounds, an audit row for every changed var, the incremental fold equals a full refold, one `day.tick` per date (also across 2026-10-25). |
+
+**Found and fixed**:
+- The validator rejected `struct.resume.interrupt`: `event.gapDays >= 1` compares Days with a plain number; the
+  unpublished `oap@1.0.0` now says `1d`.
+- The elbow persona showed every new pain report restarting the 14-day protocol, so P14's extension could never
+  act; `safety.elbow.stop` now only enters injury from outside it, as OAP_CHALLENGE 4.1 describes.
+- The long elbow scenario with the proposals declined showed a block rollover taking the mode out of injury while the
+  pain persisted; the engine now keeps injury unless a safety rule ends it.
+- Catch-up folded ticks one by one and lost the `test.due` of a test scheduled on `week.started`; it now folds the
+  synthesized batch and synthesizes again only when the planned test moves.
+- A rule whose actions resolved to nothing was audited as `applied`; it is now `no_effect`.

@@ -28,6 +28,15 @@ object Grid {
 
     fun round(x: Double, kind: GridKind): Double = decimal(x, kind).toDouble()
 
+    /** The same grid for an exact decimal (FitExpr values, C22). */
+    fun decimal(x: BigDecimal, kind: GridKind): BigDecimal = when (kind) {
+        GridKind.KG -> x.setScale(2, RoundingMode.HALF_EVEN)
+        GridKind.S -> x.setScale(1, RoundingMode.HALF_EVEN)
+        GridKind.RATIO -> x.setScale(4, RoundingMode.HALF_EVEN)
+        GridKind.REP -> x.setScale(2, RoundingMode.HALF_EVEN)
+        GridKind.STAT -> x.round(STAT_MC)
+    }
+
     fun kg(x: Double): Double = round(x, GridKind.KG)
     fun s(x: Double): Double = round(x, GridKind.S)
     fun ratio(x: Double): Double = round(x, GridKind.RATIO)

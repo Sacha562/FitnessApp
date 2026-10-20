@@ -49,7 +49,7 @@ object TickSynthesizer {
             }
             d = d.plusDays(1)
         }
-        var m = state.lastWeekBoundary.plusDays(7)
+        var m = state.lastWeekBoundary.plusWeeks(1)
         while (!m.isAfter(today)) {
             val closeAt = Week.atLocal(m, LocalTime.MIDNIGHT.plusMinutes(weekCloseLocalMin.toLong()), zone)
             if (now.isBefore(closeAt)) break
@@ -62,7 +62,7 @@ object TickSynthesizer {
                 eventId(state.enrollmentId, "week.started:$started"), EventTypes.WEEK_STARTED, closeAt.plusMillis(WEEK_STARTED_AFTER_CLOSE_MS), m,
                 EventPayload.WeekBoundary(started), facts,
             )
-            m = m.plusDays(7)
+            m = m.plusWeeks(1)
         }
         return Output(out.sortedWith(ChallengeEvent.ORDER), ticks)
     }

@@ -26,6 +26,8 @@ import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.ValueJson
 import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.det.Grid
+import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.params.DeclaresParams
 import dev.fitnessapp.algo.core.params.ParamSpec
 import dev.fitnessapp.algo.core.params.ParamType
@@ -430,15 +432,17 @@ object EnrollmentFold : DeclaresParams {
     /** Observations are stored on the canonical grid of their metric type (C42). */
     private fun grid(def: CompiledDefinition, metric: String, v: Value): Value = when (v) {
         is SideV -> SideV(v.l?.let { grid(def, metric, it) }, v.r?.let { grid(def, metric, it) })
-        is QV -> {
-            val scale = when (v.dim) {
-                Dim.MASS -> 2
-                Dim.DURATION -> 1
-                Dim.NUM -> 4
-                else -> 0
-            }
-            QV(v.dim, Dec.norm(v.v.setScale(scale, RoundingMode.HALF_EVEN)))
-        }
+        is QV -> QV(
+            v.dim,
+            Dec.norm(
+                when (v.dim) {
+                    Dim.MASS -> Grid.decimal(v.v, GridKind.KG)
+                    Dim.DURATION -> Grid.decimal(v.v, GridKind.S)
+                    Dim.NUM -> Grid.decimal(v.v, GridKind.RATIO)
+                    else -> v.v.setScale(0, RoundingMode.HALF_EVEN)
+                },
+            ),
+        )
         else -> v
     }
 

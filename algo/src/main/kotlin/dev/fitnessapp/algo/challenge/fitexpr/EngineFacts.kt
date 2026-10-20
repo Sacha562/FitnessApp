@@ -1,5 +1,6 @@
 package dev.fitnessapp.algo.challenge.fitexpr
 
+import dev.fitnessapp.algo.core.det.Canon
 import dev.fitnessapp.algo.core.det.Det
 import dev.fitnessapp.algo.core.det.Grid
 import dev.fitnessapp.algo.core.det.GridKind
@@ -59,7 +60,7 @@ data class EngineFacts(
 
 /** Exact decimal helpers at the double boundary (C22: values from double modules are grid-rounded first). */
 object Dec {
-    private val PARAM_MC = MathContext(15, RoundingMode.HALF_EVEN)
+    private val PARAM_MC = MathContext(Canon.MAX_SIGNIFICANT_DIGITS, RoundingMode.HALF_EVEN)
 
     /** A params value (decimal text parsed to the nearest double) back to its decimal text. */
     fun ofParam(x: Double): BigDecimal = norm(BigDecimal(x).round(PARAM_MC))

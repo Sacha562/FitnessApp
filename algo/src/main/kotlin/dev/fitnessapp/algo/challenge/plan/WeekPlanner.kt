@@ -17,6 +17,7 @@ import dev.fitnessapp.algo.core.params.ParamSpec
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.core.registry.ModuleRef
 import dev.fitnessapp.algo.core.registry.ModuleRegistry
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -112,7 +113,8 @@ object WeekPlanner : DeclaresParams {
     )
 
     /** "Within 2 h after another busy block" (7.5): a fixed part of the scoring formula, not a tunable. */
-    private val AFTER_BUSY: Duration = Duration.ofHours(2)
+    private const val AFTER_BUSY_HOURS = 2L
+    private val AFTER_BUSY: Duration = Duration.ofHours(AFTER_BUSY_HOURS)
 
     private class Weights(p: ParamView) {
         val prefDay = p.double("challenge.plan.w_pref_day")
@@ -130,7 +132,7 @@ object WeekPlanner : DeclaresParams {
         val testSlot = def.doc.structure.block.testSlot
         if (testSlot !in base) return base
         val pt = state.plannedTest
-        val weekEnd = weekStart.plusDays(6)
+        val weekEnd = weekStart.plusWeeks(1).minusDays(1)
         val postponedHere = pt.basis == "postponed" && (pt.date == null || pt.date.isBefore(weekStart) || pt.date.isAfter(weekEnd))
         val waiting = postponedHere && postponeIf(def, params, state, facts, weekStart)
         return if (waiting) base.map { if (it == testSlot) def.doc.schedule.testDay.postponedSlotBecomes else it } else base
@@ -145,6 +147,8 @@ object WeekPlanner : DeclaresParams {
 
     private fun tagsOf(def: CompiledDefinition, state: EnrollmentState, slot: String): List<String> =
         Materializer.templateFor(def, state, slot)?.tags.orEmpty()
+
+    private fun minuteOfDay(t: LocalTime): Int = java.time.temporal.ChronoUnit.MINUTES.between(LocalTime.MIDNIGHT, t).toInt()
 
     private fun weekday(code: String): Int = SemanticValidator.WEEKDAYS.indexOf(code) + 1
 
@@ -235,9 +239,9 @@ object WeekPlanner : DeclaresParams {
             // One gym visit per day (C50): not on a day that already has a challenge or general session.
             if (fixed.any { it.date == d } || input.general.any { it.date == d }) continue
             val dow = d.dayOfWeek.value
-            val weekend = dow >= 6
+            val weekend = d.dayOfWeek >= DayOfWeek.SATURDAY
             val starts = sortedSetOf<Int>()
-            if (prefDow == dow && prefStart != null) starts += prefStart.toSecondOfDay() / 60
+            if (prefDow == dow && prefStart != null) starts += minuteOfDay(prefStart)
             if (weekend) {
                 val step = params.int("challenge.plan.weekend_step_min")
                 var m = av.weekendOpenMin
@@ -263,7 +267,7 @@ object WeekPlanner : DeclaresParams {
                 if (input.busy.any { it.overlaps(widened) }) continue
                 if (input.general.any { g -> g.interval?.overlaps(iv) == true }) continue
                 var startScore = 0.0
-                if (prefStart != null && m == prefStart.toSecondOfDay() / 60) startScore += w.prefStart
+                if (prefStart != null && m == minuteOfDay(prefStart)) startScore += w.prefStart
                 if (input.busy.any { b -> !b.end.isAfter(start) && Duration.between(b.end, start) <= AFTER_BUSY }) startScore -= w.afterBusy
                 if (bestStart == null || Det.cmpScore(startScore, bestStart.startScore) > 0) {
                     bestStart = Candidate(slot, d, iv, 0.0, startScore)
@@ -273,7 +277,7 @@ object WeekPlanner : DeclaresParams {
             var dayScore = b.startScore
             if (prefDow != null) {
                 if (dow == prefDow) dayScore += w.prefDay
-                val dist = kotlin.math.abs(dow - prefDow).let { minOf(it, 7 - it) }
+                val dist = kotlin.math.abs(dow - prefDow).let { minOf(it, DayOfWeek.entries.size - it) }
                 dayScore -= w.dayDistance * dist
             }
             if (input.runs.any { Week.localDate(it.start, input.zone) == d }) dayScore -= w.runSameDay
@@ -323,9 +327,8 @@ object WeekPlanner : DeclaresParams {
 
     /** Sum of |gap_i - mean gap| over consecutive session dates of the week (7.5). */
     private fun gapDeviation(dates: List<LocalDate>): Double {
-        val sorted = dates.distinct().sorted()
-        if (sorted.size < 3) return 0.0
-        val gaps = sorted.zipWithNext { a, b -> Week.calendarDays(a, b).toDouble() }
+        val gaps = dates.distinct().sorted().zipWithNext { a, b -> Week.calendarDays(a, b).toDouble() }
+        if (gaps.isEmpty()) return 0.0
         val mean = gaps.sum() / gaps.size
         return gaps.sumOf { kotlin.math.abs(it - mean) }
     }

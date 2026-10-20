@@ -193,7 +193,7 @@ class SemanticValidator(private val doc: DefinitionDoc, private val def: Compile
         "weighted_bodyweight_reps", "bodyweight_reps", "assisted_bodyweight_reps", "assisted_ordinal_reps", "eccentric_reps",
         "isometric_hold", "assisted_isometric_hold", "timed_hold", "attempt", "checklist",
     )
-    private val coefficients = setOf(0.0, 0.25, 0.5, 0.75, 1.0)
+    private val coefficients = (listOf(0.0) + CatalogDomains.COEFF_LEVELS).toSet()
 
     private fun v08Exercises() {
         val seen = sortedSetOf<String>()
@@ -257,7 +257,7 @@ class SemanticValidator(private val doc: DefinitionDoc, private val def: Compile
                 if (c !in coefficients) err("V08", "$ptr/regions/$region", "coefficient $c is not one of 0, 0.25, 0.5, 0.75, 1")
                 maxCoeff = maxOf(maxCoeff, c)
             }
-            if (maxCoeff < 0.75 && x.tags.none { it in setOf("prehab", "skill", "hang") }) {
+            if (maxCoeff < CatalogDomains.PRIMARY_COEFF && x.tags.none { it in setOf("prehab", "skill", "hang") }) {
                 err("V08", "$ptr/regions", "no region >= 0.75 and not tagged prehab, skill or hang")
             }
             x.requiresStation.forEach { if (it !in ctx.equipmentTypes) err("V08", "$ptr/requiresStation", "unknown station $it") }

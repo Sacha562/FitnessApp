@@ -238,7 +238,7 @@ internal class Parser(src: String, private val limits: FitExprLimits) {
         val isInt = !t.text.contains('.')
         val (value, dim) = when (t.unit) {
             null -> raw to (if (isInt) Dim.INT else Dim.NUM)
-            "%" -> raw.movePointLeft(2) to Dim.NUM
+            "%" -> raw.movePointLeft(PERCENT_DIGITS) to Dim.NUM
             "kg" -> raw to Dim.MASS
             "lb" -> raw to Dim.PIN
             "s" -> raw to Dim.DURATION
@@ -255,8 +255,11 @@ internal class Parser(src: String, private val limits: FitExprLimits) {
 
     private companion object {
         val CMP = setOf("==", "!=", "<", "<=", ">", ">=")
-        val SIXTY = BigDecimal(60)
-        val SECONDS_PER_HOUR = BigDecimal(3600)
+        const val PERCENT_DIGITS = 2
+        private const val SECONDS_PER_MINUTE_LONG = 60L
+        private const val SECONDS_PER_HOUR_LONG = 3600L
+        val SIXTY: BigDecimal = BigDecimal(SECONDS_PER_MINUTE_LONG)
+        val SECONDS_PER_HOUR: BigDecimal = BigDecimal(SECONDS_PER_HOUR_LONG)
     }
 }
 

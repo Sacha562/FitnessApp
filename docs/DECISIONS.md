@@ -335,3 +335,10 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   effects. Items with `progression: delegate:rx` (the B row and dips) leave the materializer without a load until
   RX-1 exists (M3); the logger prefills them from last time (D18). TIME-1 (M4) is an input of the materializer, so
   add-on capacity is computed only when an estimate is supplied. PLAN.md 11 updated.
+- 2026-10-20 — M2a built (D32): the challenge engine in `:algo` and the persona simulations in `:sim`; how it was
+  built is CHALLENGE_ENGINE 16.1 (version 1.3). Two corrections to the unpublished `oap@1.0.0`: `struct.resume.interrupt`
+  compares `event.gapDays >= 1d` (Days do not compare with a plain number, 3.3), and `safety.elbow.stop` only enters
+  injury from outside it, so a new stop signal during the protocol no longer restarts the 14 days; persisting pain is
+  handled by P14 (extension) as OAP_CHALLENGE 4.1 always said ("ends the protocol even if pain persists"). One engine
+  guarantee added with it: no rule outside the safety stage takes the mode out of injury, and a block rollover during
+  injury keeps the injury mode (4.8, 11.1).

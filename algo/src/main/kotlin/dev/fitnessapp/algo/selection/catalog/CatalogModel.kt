@@ -131,5 +131,8 @@ object CatalogDomains {
         "axial_heavy", "overhead_press_heavy", "unstrapped_deadlift", "no_grip",
     )
     val COEFF_LEVELS = listOf(0.25, 0.5, 0.75, 1.0)
+
+    /** CAT-1 V3: a non-exempt exercise needs one region at this coefficient or above (C10). */
+    const val PRIMARY_COEFF: Double = 0.75
     val SLUG = Regex("^[a-z][a-z0-9_]{0,63}$")
 }
