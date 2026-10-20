@@ -642,7 +642,7 @@
       "then": [ { "setMode": "deload" }, { "scheduleTest": "fixedDate" } ],
       "explain": { "en": "This week contains a test date from the fixed list: deload, test on Sunday." }, "source": "artifact section 07 table" },
     { "id": "struct.resume.interrupt", "tag": "A", "supersededBy": "P15", "stage": "structural", "prio": 11, "on": ["resume"],
-      "if": "!p.approved_P15 && event.gapDays >= 1",
+      "if": "!p.approved_P15 && event.gapDays >= 1d",
       "then": [ { "set": "s.needsCleanSession", "to": "true" }, { "notify": "info", "msg": "resume_same_week" } ],
       "explain": { "en": "Back after an interruption: you continue in the same week with the same loads; the next test waits for a normal session without complaints." }, "source": "artifact section 10 ('Bij een gemiste week ... Na een onderbreking schuift een testdag door')" },
     { "id": "struct.resume.repeat", "tag": "P", "proposal": "P15", "stage": "structural", "prio": 11, "on": ["resume"],

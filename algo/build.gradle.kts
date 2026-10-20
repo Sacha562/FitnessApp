@@ -21,3 +21,11 @@ tasks.withType<Test>().configureEach {
     inputs.files(fileTree(rootDir.resolve("app/src/main/kotlin")) { include("**/uidet/**/*.kt") })
         .withPropertyName("uidetSources")
 }
+
+// CHALLENGE_ENGINE 2.1: definitions are authored in docs/challenges and bundled under fitness/challenges.
+tasks.named<ProcessResources>("processResources") {
+    from(rootDir.resolve("docs/challenges")) {
+        include("*.challenge.v*.json")
+        into("fitness/challenges")
+    }
+}
