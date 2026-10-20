@@ -73,6 +73,10 @@ interface ChallengeEventDao : SyncDao<ChallengeEventEntity> {
     @Query("SELECT COUNT(*) FROM challenge_events WHERE enrollment_id = :enrollmentId")
     suspend fun count(enrollmentId: String): Int
 
+    /** The challenge events a session caused (`session.completed`, pain and readiness reports during it). */
+    @Query("SELECT * FROM challenge_events WHERE source_session_id = :sessionId ORDER BY occurred_at, id")
+    suspend fun bySourceSession(sessionId: String): List<ChallengeEventEntity>
+
     /** Every input event except ticks, newest first (History, UX 14.5). */
     @Query("SELECT * FROM challenge_events WHERE enrollment_id = :enrollmentId AND event_type NOT IN ('day.tick', 'week.started') ORDER BY occurred_at DESC, id DESC")
     fun observeHistory(enrollmentId: String): Flow<List<ChallengeEventEntity>>
@@ -91,6 +95,9 @@ interface ChallengeRuleEventDao : SyncDao<ChallengeRuleEventEntity> {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(rows: List<ChallengeRuleEventEntity>): List<Long>
+
+    @Query("SELECT * FROM challenge_rule_events WHERE challenge_event_id = :eventId AND fold_generation = :generation ORDER BY cascade_depth, prio DESC, rule_id")
+    suspend fun forEvent(eventId: String, generation: Int): List<ChallengeRuleEventEntity>
 
     /** The current generation's audit (History, UX 14.5; reviews use only the current generation, 9.7.2). */
     @Query("SELECT * FROM challenge_rule_events WHERE enrollment_id = :enrollmentId AND fold_generation = :generation ORDER BY id")

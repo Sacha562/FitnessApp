@@ -113,7 +113,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             u.pausedSince?.let { Banner("Paused since ${ChallengeTexts.date(it)}", BannerKind.ADVISORY, action = "Resume", onAction = { sheet = "resume" }) }
             Segmented(DashTab.entries, tab, { it.label }, { tab = it })
             when (tab) {
-                DashTab.OVERVIEW -> DashboardOverview(u)
+                DashTab.OVERVIEW -> DashboardOverview(u, onPain = { sheet = "pain" })
                 DashTab.RULES -> Rules(u)
                 DashTab.HISTORY -> History(u)
                 DashTab.TESTS -> Tests(u)
@@ -137,6 +137,10 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             confirmButton = { TextButton({ vm.abandon(); sheet = null }) { Text("Abandon", color = Fit.Safety) } },
             dismissButton = { TextButton({ sheet = null }) { Text("Cancel") } },
         )
+        "pain" -> dev.fitnessapp.app.ui.live.PainSheet(onDismiss = { sheet = null }) { region, side, severity, symptoms ->
+            sheet = null
+            vm.reportPain(region, side, severity, symptoms)
+        }
         "correct" -> CorrectDialog(ui?.targets.orEmpty(), onSave = { t, v, r -> vm.correct(t, v, r); sheet = null }, onDismiss = { sheet = null })
     }
 }
@@ -144,7 +148,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
 /** The Overview tab (UX 14.2); internal for the screenshot test. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun DashboardOverview(u: DashboardUi) {
+internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}) {
     Tile {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Pill(u.statusText, container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
@@ -172,9 +176,9 @@ internal fun DashboardOverview(u: DashboardUi) {
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         TonalButton("Log test day", {}, Modifier.weight(1f), enabled = false)
-        TonalButton("Report pain", {}, Modifier.weight(1f), enabled = false)
+        TonalButton("Report pain", onPain, Modifier.weight(1f))
     }
-    Text("The test-day wizard and the pain sheet arrive in the next steps of M2b.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+    Text("The test-day wizard arrives with step 4 of M2b.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
 }
 
 @Composable

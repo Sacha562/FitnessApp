@@ -112,6 +112,9 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, 
 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
 
+            // The challenge's session of the day (UX 9, CHALLENGE_ENGINE 7.6); hidden without an enrollment.
+            TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) })
+
             val a = active
             Tile(padding = androidx.compose.foundation.layout.PaddingValues(18.dp), spacing = 6.dp) {
                 if (a != null) {

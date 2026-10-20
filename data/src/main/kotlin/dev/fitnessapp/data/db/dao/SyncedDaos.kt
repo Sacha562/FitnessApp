@@ -263,6 +263,10 @@ interface WellnessLogDao : SyncDao<WellnessLogEntity> {
     @Query("SELECT * FROM wellness_logs WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY observed_at, id")
     fun observeBySession(sessionId: String): Flow<List<WellnessLogEntity>>
 
+    /** Readiness answers of one kind on a local date (the elbow check is asked once a day, UX 19.4). */
+    @Query("SELECT COUNT(*) FROM wellness_logs WHERE kind = :kind AND local_date = :date AND deleted_at IS NULL")
+    suspend fun countKindOn(kind: String, date: String): Int
+
     /** Every pain report (the challenge facts' last pain date per body region, CHALLENGE_ENGINE 3.9). */
     @Query("SELECT * FROM wellness_logs WHERE kind = 'pain' AND deleted_at IS NULL ORDER BY observed_at, id")
     suspend fun painLogs(): List<WellnessLogEntity>

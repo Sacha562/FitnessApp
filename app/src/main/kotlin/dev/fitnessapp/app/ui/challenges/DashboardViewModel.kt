@@ -15,11 +15,6 @@ import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.Type
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
-import dev.fitnessapp.algo.challenge.plan.DoneSession
-import dev.fitnessapp.algo.challenge.plan.GymAnchor
-import dev.fitnessapp.algo.challenge.plan.Interval
-import dev.fitnessapp.algo.challenge.plan.PlanInput
-import dev.fitnessapp.algo.challenge.plan.WeekPlanner
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.uidet.GateRows
@@ -133,7 +128,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             blockLine = "Block ${s.block.index} · week ${s.block.week}" + (blockWeeks?.let { " of $it" } ?: "") + " · " + ChallengeTexts.mode(s.mode).lowercase(),
             nextTest = nextTest,
             precondition = if (needsClean && (s.plannedTest.date != null || s.plannedTest.basis == "postponed")) "Needs a clean session first" else null,
-            week = week(def, s, facts),
+            week = week(f, facts),
             gates = UiGateRows.build(def, c.params, s, facts, facts.bwKg, emptyList()),
             rules = rules(def, s, rules),
             proposals = def.doc.proposals.map { p ->
@@ -152,28 +147,14 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     }
 
     /** This week's slots (UX 14.2 "This week"): done challenge sessions and the planner's suggestions. */
-    private suspend fun week(def: CompiledDefinition, s: EnrollmentState, facts: EngineFacts): List<WeekSlotUi> {
-        if (s.status != EnrollmentState.ACTIVE) return emptyList()
-        val now = Instant.now()
-        val today = LocalDate.now(zone)
-        val monday = Week.isoWeekStart(today)
-        val sessions = c.db.sessions().finishedInIsoWeek(Week.isoWeek(today))
-        val done = sessions.filter { it.enrollment_id == enrollmentId && it.challenge_slot != null }.map {
-            DoneSession(it.challenge_slot!!, LocalDate.parse(it.local_date), interval(it.started_at, it.finished_at))
-        }
-        val general = sessions.filter { it.enrollment_id == null && it.kind == "gym" }.map { GymAnchor(LocalDate.parse(it.local_date), interval(it.started_at, it.finished_at), emptyList()) }
-        val prev = c.db.sessions().lastGymBefore(Week.atLocal(monday, java.time.LocalTime.MIDNIGHT, zone).toEpochMilli())?.let { p ->
-            GymAnchor(LocalDate.parse(p.local_date), interval(p.started_at, p.finished_at), p.challenge_slot?.let { slot -> dev.fitnessapp.algo.challenge.materialize.Materializer.templateFor(def, s, slot)?.tags }.orEmpty())
-        }
-        val plan = WeekPlanner.plan(def, c.params, PlanInput(now, zone, s, facts, monday, done = done, previousLastGym = prev, general = general))
+    private suspend fun week(f: FoldedEnrollment, facts: EngineFacts): List<WeekSlotUi> {
+        if (f.state.status != EnrollmentState.ACTIVE) return emptyList()
+        val (_, plan) = ChallengeWeek.plan(c, f, facts)
         return plan.sessions.map { p ->
             val day = p.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.ENGLISH))
             WeekSlotUi(p.slot, if (p.source == "done") "${p.slot} done $day" else "${p.slot} $day ${Week.localTime(p.interval.start, zone)}", p.source == "done")
         } + plan.droppedSlots.map { WeekSlotUi(it, "$it: no room this week", false) }
     }
-
-    private fun interval(start: Long?, end: Long?): Interval? =
-        if (start != null && end != null && end > start) Interval(Instant.ofEpochMilli(start), Instant.ofEpochMilli(end)) else null
 
     private fun rules(def: CompiledDefinition, s: EnrollmentState, audit: List<ChallengeRuleEventEntity>): List<RuleUi> {
         val applied = audit.filter { it.outcome == "applied" }.groupBy { it.rule_id }
@@ -317,6 +298,17 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     fun abandon() = record(EventTypes.ABANDON, EventPayload.Abandon("other"))
 
     fun correct(target: String, value: Value, reasonCode: String) = record(EventTypes.OVERRIDE, EventPayload.ManualOverride(target, value, reasonCode))
+
+    /** UX 14.7 Report pain: the wellness log and `pain.reported` for every running challenge (C33). */
+    fun reportPain(region: String, side: String, severity: String, symptoms: List<String>) {
+        viewModelScope.launch {
+            runCatching {
+                val wid = c.sessionRepository.reportPain(null, null, region, side, severity, "standalone", "challenge_dashboard", symptoms)
+                val outcomes = c.challengeSessions.forwardPain(wid, region, side, severity, symptoms, null)
+                _messages.value = outcomes.flatMap { o -> o.notifications.map { it.kind to ChallengeTexts.message(o.folded.def, it) } }
+            }.onFailure { _error.value = it.message }
+        }
+    }
 
     fun clearMessages() {
         _messages.value = emptyList()

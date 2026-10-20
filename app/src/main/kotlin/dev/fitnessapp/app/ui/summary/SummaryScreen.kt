@@ -126,6 +126,8 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                     }
                 }
 
+                if (s?.enrollment_id != null) ChallengeSummaryTile(c, sessionId)
+
                 val done = exercises.filter { it.deleted_at == null }.sortedWith(compareBy({ it.position }, { it.id }))
                 if (done.isNotEmpty()) {
                     Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
