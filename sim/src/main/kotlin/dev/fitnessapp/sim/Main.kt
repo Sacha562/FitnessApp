@@ -4,6 +4,7 @@ import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.sim.challenge.ChallengeCli
 import dev.fitnessapp.sim.seedgen.CatalogSeedGen
+import dev.fitnessapp.sim.seedgen.ChallengeSeedGen
 import dev.fitnessapp.sim.seedgen.SeedGen
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -42,8 +43,21 @@ fun main(args: Array<String>) {
             println("catalog $version: ${result.exercises} exercises, ${result.stimulus} stimulus rows, " +
                 "${result.ratios} transfer ratios, jcs_sha256 ${result.jcsSha256}")
         }
+        "seedgen-challenge" -> {
+            val file = File(args.getOrElse(1) { "docs/challenges/oap.challenge.v1.json" })
+            val text = file.readText(Charsets.UTF_8)
+            val def = dev.fitnessapp.sim.challenge.SimResources.load(text).orThrow()
+            val result = ChallengeSeedGen.generate(def, Json.parseToJsonElement(text).jsonObject, args.getOrElse(2) { "fitness_016_oap_definition_v1" })
+            for ((name, sql) in result.parts) {
+                val out = File("supabase/migrations/pending/$name.sql")
+                out.parentFile.mkdirs()
+                out.writeText(sql, Charsets.UTF_8)
+                println("wrote ${out.path} (${sql.length} chars)")
+            }
+            println("${def.slug}@${def.version}: id ${result.id}, ${result.bytes} bytes, jcs_sha256 ${result.jcsSha256}, server_checksum ${result.serverChecksum}")
+        }
         else -> {
-            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version] | sim seedgen-catalog [catalog-version] | sim challenge validate|simulate ...")
+            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version] | sim seedgen-catalog [catalog-version] | sim seedgen-challenge [definition-file] [migration-name] | sim challenge validate|simulate ...")
             exitProcess(2)
         }
     }
