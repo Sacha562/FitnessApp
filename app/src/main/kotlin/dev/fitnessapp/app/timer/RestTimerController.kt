@@ -38,6 +38,8 @@ class RestTimerController(
     private val config: PlatformConfig,
     private val scheduler: SyncScheduler,
     private val selfTests: SelfTestStore,
+    /** Logs the warm-up item of an interval that ended (D33); runs under the timer mutex, so it must not call back. */
+    private val onIntervalDone: suspend (RestEffect.IntervalDone) -> Unit,
     /** Stops the test-mode session service and its notification when no real session is active. */
     private val onSelfTestEnded: suspend () -> Unit,
 ) {
@@ -68,6 +70,34 @@ class RestTimerController(
         )
         apply(tr)
         tr.timer?.id
+    }
+
+    /**
+     * Starts the countdown of a timed warm-up item (ANDROID.md 12.3 `startInterval`, UX 11.7.6, D33) at the Start tap:
+     * any active rest or interval ends first. Returns the timer id, or null when the duration is below the minimum.
+     */
+    suspend fun startInterval(
+        sessionId: String, sessionExerciseId: String, exerciseId: String, setIndex: Int, side: String, label: String,
+        durationS: Int, hardMaxS: Int, durationSource: String,
+    ): String? = mutex.withLock {
+        val now = nowWall()
+        db.restTimers().active()?.let { old -> apply(RestTimerReducer.endForInterval(old, now)) }
+        val mode = profiles.get()?.rest_alarm_mode ?: "alarm_clock"
+        val tr = RestTimerReducer.start(
+            RestTimerReducer.Start(
+                ids.next(), sessionId, "", exerciseId, side, now, device.elapsedRealtime(), device.bootCount(),
+                durationS, hardMaxS, RestTimerReducer.INTERVAL, durationSource, mode,
+                sessionExerciseId = sessionExerciseId, setIndex = setIndex, label = label,
+            ),
+            timerConfig,
+        )
+        apply(tr)
+        tr.timer?.id
+    }
+
+    /** The item's Done tap while its interval runs: logged with the measured seconds (ANDROID.md 12.3). */
+    suspend fun intervalDone(via: String) = mutex.withLock {
+        db.restTimers().active()?.let { apply(RestTimerReducer.intervalDone(it, nowWall(), via)) }
     }
 
     /**
@@ -111,7 +141,12 @@ class RestTimerController(
     suspend fun onNextSetLogged(
         sessionId: String, previousSetCompletedAt: Long?, completedAtWall: Long, firstTouchWall: Long?, holdStartWall: Long?, estSetDurationS: Double,
     ): RestColumns? = mutex.withLock {
+        // A set logged while an interval runs ends it first (its item is logged with the measured seconds).
+        db.restTimers().active()?.takeIf { it.purpose == RestTimerReducer.INTERVAL && it.session_id == sessionId }?.let {
+            apply(RestTimerReducer.intervalDone(it, nowWall(), "next_set"))
+        }
         val t = db.restTimers().latest(sessionId) ?: return@withLock null
+        if (t.purpose == RestTimerReducer.INTERVAL) return@withLock null // the first set after a warm-up interval has no rest
         if (previousSetCompletedAt == null || t.start_wall_ms != previousSetCompletedAt) return@withLock null
         val (tr, cols) = RestTimerReducer.onNextSetLogged(t, RestTimerReducer.NextSet(completedAtWall, firstTouchWall, holdStartWall, estSetDurationS, nowWall()))
         apply(tr)
@@ -174,7 +209,7 @@ class RestTimerController(
     suspend fun refreshSessionNotification(sessionId: String) = mutex.withLock {
         val t = db.restTimers().latest(sessionId)
         val n = when (t?.state) {
-            RestTimerReducer.RUNNING -> notifications.resting(t.end_wall_ms)
+            RestTimerReducer.RUNNING -> resting(t)
             RestTimerReducer.OVERTIME -> notifications.overtime(t.end_wall_ms)
             else -> notifications.session()
         }
@@ -188,13 +223,17 @@ class RestTimerController(
     suspend fun tickNotification() = mutex.withLock {
         val t = db.restTimers().active()
         when {
-            t?.state == RestTimerReducer.RUNNING -> notifications.postSession(notifications.resting(t.end_wall_ms, textFor(t)))
+            t?.state == RestTimerReducer.RUNNING -> notifications.postSession(resting(t))
             t?.state == RestTimerReducer.OVERTIME -> notifications.postSession(notifications.overtime(t.end_wall_ms, textFor(t)))
             db.sessions().active() != null -> notifications.postSession(notifications.session())
         }
     }
 
     private fun isSelfTest(t: RestTimerEntity) = t.session_id == TimerSelfTest.SESSION_ID
+
+    private fun intervalLabel(t: RestTimerEntity) = if (t.purpose == RestTimerReducer.INTERVAL) t.label ?: "Interval" else null
+
+    private fun resting(t: RestTimerEntity) = notifications.resting(t.end_wall_ms, textFor(t), interval = intervalLabel(t))
 
     private suspend fun finishSelfTest(t: RestTimerEntity, firedWall: Long, alert: Boolean) {
         db.restTimers().upsert(
@@ -232,17 +271,18 @@ class RestTimerController(
                 }
                 is RestEffect.ScheduleOvertime -> timer?.let { alarms.scheduleOvertime(e.timerId, e.atWallMs, it.alarm_mode, device.canScheduleExactAlarms()) }
                 is RestEffect.CancelAlarms -> alarms.cancel(e.timerId)
-                RestEffect.NotifyResting -> timer?.let { notifications.postSession(notifications.resting(it.end_wall_ms, textFor(it))) }
+                RestEffect.NotifyResting -> timer?.let { notifications.postSession(resting(it)) }
                 RestEffect.NotifyOvertime -> timer?.let { notifications.postSession(notifications.overtime(it.end_wall_ms, textFor(it))) }
                 // A skipped self-test has no session to return to.
                 RestEffect.NotifySession -> if (timer?.let(::isSelfTest) == true) onSelfTestEnded() else notifications.postSession(notifications.session())
                 RestEffect.Alert -> {
                     haptics.alarm(config.timerVibrationWaveformMs)
-                    if (notifications.postRestDone(timer?.let(::textFor) ?: notifications.text)) {
+                    if (notifications.postRestDone(timer?.let(::textFor) ?: notifications.text, timer?.let(::intervalLabel))) {
                         timer?.let { event(it, "notification_posted", mapOf("notification_id" to JsonPrimitive("N-REST-DONE"), "channel" to JsonPrimitive(Channels.REST_DONE))) }
                     }
                 }
                 RestEffect.ReminderBuzz -> haptics.buzz()
+                is RestEffect.IntervalDone -> onIntervalDone(e)
                 is RestEffect.Event -> timer?.let { event(it, e.type, e.payload) } ?: eventNoTimer(e)
             }
         }
@@ -254,7 +294,9 @@ class RestTimerController(
     private suspend fun event(t: RestTimerEntity, type: String, payload: Map<String, kotlinx.serialization.json.JsonElement>) {
         if (isSelfTest(t)) return
         db.withTransaction {
-            telemetry.write(EventDraft(type = type, sessionId = t.session_id, entityType = "set", entityId = t.set_log_id, payload = payload))
+            // An interval follows no set: its events point at the warm-up item.
+            val (entityType, entityId) = if (t.purpose == RestTimerReducer.INTERVAL) "session_exercise" to t.session_exercise_id else "set" to t.set_log_id
+            telemetry.write(EventDraft(type = type, sessionId = t.session_id, entityType = entityType, entityId = entityId, payload = payload))
         }
         scheduler.request()
     }

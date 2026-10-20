@@ -92,6 +92,9 @@ data class Card(
     val keypadMessage: String? = null,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
+
+    /** A timed dynamic item (the warm-up row, UX 11.7.6): a countdown instead of a hold, logged in seconds. */
+    val isTimed: Boolean get() = isHold && item.ex.contraction == "dynamic"
     val point: LoadPoint? get() = loadIndex?.let { points.getOrNull(it) }
     val setNumber: Int get() = item.workingDone + 1
     val slotKey: String get() = listOf(item.se.id, setIndex.toString(), side, mode.code, warmup.toString()).joinToString("|")
@@ -657,6 +660,22 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun adjustRest(delta: Int) = viewModelScope.launch { c.restTimer.adjust(delta, if (kotlin.math.abs(delta) > c.platformConfig.timerAdjustStepS) "long_press" else "button") }
 
     fun skipRest() = viewModelScope.launch { c.restTimer.skip("button") }
+
+    /**
+     * Start on a timed warm-up item (UX 11.7.6): its alarm-backed countdown (D33, ANDROID.md 12.3); zero logs the item
+     * done with its seconds, Done before zero with the measured seconds. Any running rest ends first.
+     */
+    fun startInterval() {
+        val card = _ui.value.card ?: return
+        val seconds = (card.holdS ?: return).toInt()
+        val source = if (challenge != null) "challenge" else "protocol"
+        c.appScope.launch {
+            c.restTimer.startInterval(
+                sessionId, card.item.se.id, card.item.se.exercise_id, card.setIndex, card.side, card.item.ex.nameEn,
+                seconds, maxOf(seconds, params.int("rest.timer_hard_max_s")), source,
+            )
+        }
+    }
 
     /** `rest_prewarn` (UX 20.6): the 10 s pre-warning shown while the app is visible (C72). */
     fun prewarned(timerId: String) = emit("rest_prewarn", null, mapOf("timer_id" to JsonPrimitive(timerId)))

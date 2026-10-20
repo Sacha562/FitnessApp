@@ -1374,6 +1374,7 @@ between consecutive `session_events` in real sessions.
 | `alarm_mode` | `alarm_clock`, `exact_idle` (the `profiles.rest_alarm_mode` codes) or the fallback `inexact` |
 | `fired_wall_ms`, `latency_ms` | When the end alarm was delivered and its lateness. |
 | `overtime_reminder_sent` | boolean |
+| `session_exercise_id`, `set_index`, `label` | Interval only (Room v5): the warm-up item it logs when it ends and the name the notification shows; null for a rest. |
 
 State is timestamps only; there is never a decrementing counter, so process death loses nothing.
 
@@ -1448,8 +1449,11 @@ onEndAlarm (interval): same alert as a rest end (vibration waveform, optional to
   and "done"); no overtime reminder; state = ended, ended_by = elapsed; the warm-up item is logged done with
   duration_s = prescribed_s (+ adjustments) and completed_at = end_wall
 done early (the item's Done tap while running): state = ended, ended_by = skipped; the item is logged with the
-  measured seconds (completed_at = tap)
-adjust, skip, remainingMs, recovery: as for a rest
+  measured seconds (completed_at = tap). Skip (the notification shows Done in its place) and a set logged while
+  the interval runs are done early too; a tap after the planned end counts as elapsed.
+recovery (elapsed while dead): state = ended, ended_by = elapsed_while_dead; the item is logged with the planned
+  seconds at end_wall; the alert plays only within timer.catchUpAlertMaxS, as for a rest
+adjust, remainingMs: as for a rest
 ```
 
 Nothing of an interval is copied into `set_logs` rest columns: the first working set after the warm-up has

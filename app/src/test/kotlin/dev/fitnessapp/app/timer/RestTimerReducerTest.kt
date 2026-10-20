@@ -136,4 +136,74 @@ class RestTimerReducerTest {
         tr.effects.filterIsInstance<RestEffect.Event>().single().payload["actual_s"].toString() shouldBe "45.0"
     }
 
+    private fun interval(d: Int = 180) = RestTimerReducer.start(
+        RestTimerReducer.Start(
+            "i1", "s", "", "rower_erg", "both", logged, 1_000_000L, 7, d, 900, RestTimerReducer.INTERVAL, "challenge", "alarm_clock",
+            sessionExerciseId = "se1", setIndex = 1, label = "Rowing machine",
+        ),
+        cfg,
+    )
+
+    @Test
+    fun `D33 an interval ends at zero with the planned seconds and has no overtime`() {
+        val started = interval()
+        started.effects.filterIsInstance<RestEffect.Event>().single().payload.containsKey("set_id") shouldBe false
+        val t = RestTimerReducer.adjust(started.timer!!, 15, "button", logged + 10_000, cfg).timer!!
+        val end = RestTimerReducer.onEndAlarm(t, "i1", t.end_wall_ms + 300, cfg)
+        end.timer!!.state shouldBe RestTimerReducer.ENDED
+        end.timer!!.ended_by shouldBe "elapsed"
+        end.timer!!.latency_ms shouldBe 300L
+        end.effects.none { it is RestEffect.ScheduleOvertime || it == RestEffect.NotifyOvertime } shouldBe true
+        end.effects.any { it == RestEffect.Alert } shouldBe true
+        val done = end.effects.filterIsInstance<RestEffect.IntervalDone>().single()
+        done.durationS shouldBe 195.0
+        done.completedAtWall shouldBe t.end_wall_ms
+        done.control shouldBe "interval_end"
+    }
+
+    @Test
+    fun `D33 Done or Skip before zero logs the measured seconds`() {
+        val t = interval().timer!!
+        val skipped = RestTimerReducer.skip(t, logged + 72_400, "notification")
+        skipped.timer!!.ended_by shouldBe "skipped"
+        skipped.effects.any { it == RestEffect.CancelAlarms("i1") } shouldBe true
+        val done = skipped.effects.filterIsInstance<RestEffect.IntervalDone>().single()
+        done.durationS shouldBe 72.4
+        done.completedAtWall shouldBe logged + 72_400
+        done.control shouldBe "done"
+        // a tap after the planned end (the alarm was late) counts as elapsed
+        val late = RestTimerReducer.intervalDone(t, t.end_wall_ms + 5_000, "button")
+        late.timer!!.ended_by shouldBe "elapsed"
+        late.effects.filterIsInstance<RestEffect.IntervalDone>().single().durationS shouldBe 180.0
+        // already ended: nothing more is logged
+        RestTimerReducer.intervalDone(skipped.timer!!, logged + 80_000, "button").effects shouldBe emptyList()
+    }
+
+    @Test
+    fun `D33 starting an interval ends a running rest as next_set_early`() {
+        val tr = RestTimerReducer.endForInterval(start(), logged + 60_000)
+        tr.timer!!.ended_by shouldBe "next_set_early"
+        tr.effects.any { it == RestEffect.CancelAlarms("t1") } shouldBe true
+        val e = tr.effects.filterIsInstance<RestEffect.Event>().single()
+        e.type shouldBe "rest_ended"
+        e.payload["end_reason"].toString() shouldBe "\"next_set_early\""
+        e.payload["actual_s"].toString() shouldBe "60.0"
+        e.payload.containsKey("rest_end_at") shouldBe false
+        // a running interval ends as an early Done
+        RestTimerReducer.endForInterval(interval().timer!!, logged + 30_000).effects
+            .filterIsInstance<RestEffect.IntervalDone>().single().durationS shouldBe 30.0
+    }
+
+    @Test
+    fun `D33 an interval that elapsed while the process was dead is logged on recovery`() {
+        val t = interval().timer!!
+        val tr = RestTimerReducer.reconcile(t, t.end_wall_ms + 20_000, 0, 8, cfg) // reboot: the wall clock decides
+        tr.timer!!.state shouldBe RestTimerReducer.ENDED
+        tr.timer!!.ended_by shouldBe "elapsed_while_dead"
+        tr.effects.any { it == RestEffect.Alert } shouldBe true
+        tr.effects.none { it is RestEffect.ScheduleOvertime } shouldBe true
+        tr.effects.filterIsInstance<RestEffect.IntervalDone>().single().completedAtWall shouldBe t.end_wall_ms
+        // missed by more than the catch-up window: logged without an alert
+        RestTimerReducer.reconcile(t, t.end_wall_ms + 120_000, 0, 8, cfg).effects.none { it == RestEffect.Alert } shouldBe true
+    }
 }

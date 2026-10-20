@@ -100,13 +100,18 @@ class NotificationPresenter(private val context: Context) {
             .build()
     }
 
-    /** Resting: countdown to the rest end with -15 s, Skip, +15 s. */
-    fun resting(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
-        return base().setContentTitle("Rest").setContentText(nextLine(t))
+    /**
+     * Resting: countdown to the rest end with -15 s, Skip, +15 s. An interval (the warm-up row, D33) shows the item
+     * ([interval] = its name) and Done instead of Skip: "Rowing machine · 1:12 left".
+     */
+    fun resting(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis(), interval: String? = null): Notification {
+        val left = RestTimerReducer.mmss((maxOf(0L, endWall - nowWall) + 999) / 1000)
+        return base().setContentTitle(interval?.let { "$it · $left left" } ?: "Rest")
+            .setContentText(if (interval != null) "Logged as done at zero" else nextLine(t))
             .setUsesChronometer(true).setChronometerCountDown(true).setWhen(endWall).setShowWhen(true)
-            .setShortCriticalText(RestTimerReducer.mmss((maxOf(0L, endWall - nowWall) + 999) / 1000))
+            .setShortCriticalText(left)
             .addAction(action(Channels.RC_MINUS_15, RestActionReceiver.MINUS_15, "-15 s"))
-            .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, "Skip"))
+            .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, if (interval != null) "Done" else "Skip"))
             .addAction(action(Channels.RC_PLUS_15, RestActionReceiver.PLUS_15, "+15 s"))
             .build()
     }
@@ -127,11 +132,11 @@ class NotificationPresenter(private val context: Context) {
         notify(Channels.ID_SESSION, n)
     }
 
-    /** Heads-up at rest end (`N-REST-DONE`), cancelled when the next set is logged. */
-    fun postRestDone(t: SessionNotificationText = text): Boolean {
+    /** Heads-up at rest end (`N-REST-DONE`), cancelled when the next set is logged; an interval says "<item> done". */
+    fun postRestDone(t: SessionNotificationText = text, interval: String? = null): Boolean {
         val n = NotificationCompat.Builder(context, Channels.REST_DONE)
             .setSmallIcon(R.drawable.ic_stat_session)
-            .setContentTitle("Rest over")
+            .setContentTitle(interval?.let { "$it done" } ?: "Rest over")
             .setContentText(listOf(t.nextTitle, t.nextLoad).filter { it.isNotBlank() }.joinToString(": "))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

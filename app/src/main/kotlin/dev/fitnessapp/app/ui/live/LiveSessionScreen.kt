@@ -155,7 +155,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         if (card == null) {
                             EmptyAction(ui, onAdd = { sheet = Sheet.Add }, onFinish = { vm.finish(null, onFinished) })
                         } else {
-                            SetCard(card, vm, onMenu = { action ->
+                            val intervalRunning = ui.rest?.let { it.purpose == "interval" && it.state == "running" } == true
+                            SetCard(card, vm, intervalRunning, onMenu = { action ->
                                 when (action) {
                                     "skip" -> sheet = Sheet.Skip(card.item.se.id)
                                     "end" -> sheet = Sheet.End(card.item.se.id)
@@ -339,9 +340,11 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
     }
     val shownAt = remember(t.id) { System.currentTimeMillis() }
     val guard = { System.currentTimeMillis() - shownAt > 500 }
+    // An interval is the countdown of a timed warm-up item (D33): its name, and Done instead of Skip.
+    val interval = t.purpose == "interval"
     Tile(radius = 28.dp, padding = PaddingValues(16.dp), spacing = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill("Rest")
+            Pill(if (interval) t.label ?: "Interval" else "Rest")
             Spacer(Modifier.weight(1f))
             if (t.alarm_mode == "inexact") Text("Alarm may be late (exact alarms off)", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
         }
@@ -362,10 +365,10 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val running = t.state == "running"
             TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
-            TonalButton("Skip", { if (guard()) vm.skipRest() }, Modifier.weight(1f), height = 64.dp)
+            TonalButton(if (interval) "Done" else "Skip", { if (guard()) vm.skipRest() }, Modifier.weight(1f), height = 64.dp)
             TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
         }
-        ui.restNext?.let {
+        ui.restNext?.takeIf { !interval }?.let {
             Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 2.dp) {
                 Text("Up next", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
                 Text(it, style = MaterialTheme.typography.titleMedium)
@@ -376,7 +379,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit) {
+private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     val item = card.item
@@ -396,8 +399,9 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
         if (card.sideCapApplied) Text("Right ≤ left: ${card.reps} clean reps", style = MaterialTheme.typography.bodySmall, color = Fit.Accent)
         if (card.deviation.fields.any { it.field == "side_rule" }) Text("Right above left", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
 
-        // Load row (UX 11.7).
+        // Load row (UX 11.7); a timed item (the warm-up row) has none.
         when {
+            card.isTimed -> {}
             card.mode == LoadMode.BODYWEIGHT -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("BW", style = MaterialTheme.typography.displayMedium, modifier = Modifier.weight(1f))
                 if (LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in item.ex.allowedLoadModes) LinkButton("+ Add weight", { vm.setLoadMode(LoadMode.BODYWEIGHT_PLUS_EXTERNAL) })
@@ -420,7 +424,7 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
             }
         }
 
-        if (card.isHold) HoldSection(card, vm) else {
+        if (card.isTimed) TimedSection(card, intervalRunning, vm) else if (card.isHold) HoldSection(card, vm) else {
             StepperRow(value = "${card.reps ?: 0} reps", secondary = null, onMinus = { vm.stepReps(false) }, onPlus = { vm.stepReps(true) })
         }
 
@@ -455,7 +459,7 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, onMenu: (String) -> Un
  */
 @Composable
 private fun LogRow(card: Card, vm: LiveSessionViewModel) {
-    if (card.isHold && card.holdPhase != HoldPhase.RESULT) return
+    if (card.isHold && !card.isTimed && card.holdPhase != HoldPhase.RESULT) return
     val haptic = LocalHapticFeedback.current
     val shownAt = remember(card.slotKey) { System.currentTimeMillis() }
     fun guarded(action: () -> Unit) {
@@ -523,6 +527,22 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, on
             DropdownMenuItem(text = { Text(label) }, onClick = { onDismiss(); vm.setLoadMode(m) })
         }
         DropdownMenuItem(text = { Text("Something hurts", color = Fit.Safety) }, onClick = { onAction("pain") })
+    }
+}
+
+/**
+ * UX 11.7.6: "Row 3:00 [Start 3:00]". Start runs the alarm-backed countdown in the rest card (D33); zero logs the item
+ * done with its seconds. Done below logs the planned seconds without a countdown.
+ */
+@Composable
+private fun TimedSection(card: Card, intervalRunning: Boolean, vm: LiveSessionViewModel) {
+    val s = card.holdS ?: return
+    val clock = Numbers.clock(s.toLong())
+    Text(card.item.ex.nameEn + " " + clock, style = MaterialTheme.typography.titleMedium)
+    if (intervalRunning) {
+        Text("Counting down: the alarm rings at zero and logs it done.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+    } else {
+        PrimaryButton("Start $clock", vm::startInterval, Modifier.fillMaxWidth(), height = 64.dp)
     }
 }
 

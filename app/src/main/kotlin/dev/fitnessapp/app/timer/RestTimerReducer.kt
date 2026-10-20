@@ -25,6 +25,12 @@ sealed interface RestEffect {
     data object Alert : RestEffect
     data object ReminderBuzz : RestEffect
     data class Event(val type: String, val payload: Map<String, JsonElement>) : RestEffect
+
+    /**
+     * An interval ended (D33): its warm-up item is logged done with [durationS] at [completedAtWall]; [control] is the
+     * `set_logged.log_control` (`interval_end` at zero, `done` for an early Done, Skip or next set).
+     */
+    data class IntervalDone(val timer: RestTimerEntity, val durationS: Double, val completedAtWall: Long, val control: String) : RestEffect
 }
 
 data class Transition(val timer: RestTimerEntity?, val effects: List<RestEffect>)
@@ -53,6 +59,7 @@ object RestTimerReducer {
     const val RUNNING = "running"
     const val OVERTIME = "overtime"
     const val ENDED = "ended"
+    const val INTERVAL = "interval"
 
     data class Start(
         val timerId: String,
@@ -68,6 +75,10 @@ object RestTimerReducer {
         val purpose: String,
         val durationSource: String,
         val alarmMode: String,
+        /** An interval's planned item (D33): what it logs when it ends, and the name the notification shows. */
+        val sessionExerciseId: String? = null,
+        val setIndex: Int? = null,
+        val label: String? = null,
     )
 
     fun start(s: Start, cfg: TimerConfig): Transition {
@@ -78,6 +89,7 @@ object RestTimerReducer {
             purpose = s.purpose, duration_source = s.durationSource, prescribed_s = d, hard_max_s = s.hardMaxS,
             start_wall_ms = s.setLoggedAtWall, start_elapsed_ms = s.nowElapsed, boot_count = s.bootCount,
             end_wall_ms = s.setLoggedAtWall + d * 1000L, state = RUNNING, alarm_mode = s.alarmMode,
+            session_exercise_id = s.sessionExerciseId, set_index = s.setIndex, label = s.label,
         )
         return Transition(
             t,
@@ -89,7 +101,7 @@ object RestTimerReducer {
                         "timer_id" to JsonPrimitive(t.id), "set_id" to JsonPrimitive(t.set_log_id), "planned_s" to JsonPrimitive(d),
                         "purpose" to JsonPrimitive(t.purpose), "duration_source" to JsonPrimitive(t.duration_source),
                         "alarm_mode" to JsonPrimitive(t.alarm_mode),
-                    ),
+                    ).filterNot { (k, _) -> k == "set_id" && t.purpose == INTERVAL }, // an interval follows no set
                 ),
             ),
         )
@@ -123,6 +135,7 @@ object RestTimerReducer {
 
     fun skip(t: RestTimerEntity, nowWall: Long, via: String): Transition {
         if (t.state == ENDED) return Transition(t, emptyList())
+        if (t.purpose == INTERVAL) return intervalDone(t, nowWall, via)
         val next = t.copy(
             state = ENDED, ended_by = if (t.state == RUNNING) "skipped" else t.ended_by ?: "elapsed", skip_at_ms = nowWall,
         )
@@ -141,6 +154,14 @@ object RestTimerReducer {
     fun onEndAlarm(t: RestTimerEntity?, timerId: String, firedWall: Long, cfg: TimerConfig): Transition {
         if (t == null || t.id != timerId || t.state != RUNNING) {
             return Transition(t, listOf(RestEffect.Event("rest_alarm_stale", mapOf("timer_id" to JsonPrimitive(timerId)))))
+        }
+        if (t.purpose == INTERVAL) {
+            // An interval has no overtime: it ends at zero and its item is logged with the planned seconds (D33).
+            val done = t.copy(state = ENDED, ended_by = "elapsed", fired_wall_ms = firedWall, latency_ms = firedWall - t.end_wall_ms)
+            return Transition(
+                done,
+                listOf(RestEffect.Persist(done), RestEffect.Alert, RestEffect.NotifySession, RestEffect.IntervalDone(done, intervalSeconds(t, t.end_wall_ms), t.end_wall_ms, "interval_end")),
+            )
         }
         val next = t.copy(state = OVERTIME, ended_by = "elapsed", fired_wall_ms = firedWall, latency_ms = firedWall - t.end_wall_ms)
         val effects = mutableListOf<RestEffect>(RestEffect.Persist(next), RestEffect.Alert, RestEffect.NotifyOvertime)
@@ -204,6 +225,58 @@ object RestTimerReducer {
         return Transition(next, effects) to cols
     }
 
+    /**
+     * An interval ended before zero (ANDROID.md 12.3 "done early"): the item's Done tap, Skip, the next set or the next
+     * interval. The item is logged with the measured seconds; a tap after the planned end counts as elapsed.
+     */
+    fun intervalDone(t: RestTimerEntity, nowWall: Long, via: String): Transition {
+        if (t.purpose != INTERVAL || t.state != RUNNING) return Transition(t, emptyList())
+        val early = nowWall < t.end_wall_ms
+        val at = if (early) nowWall else t.end_wall_ms
+        val next = t.copy(state = ENDED, ended_by = if (early) "skipped" else "elapsed", skip_at_ms = if (early) nowWall else null)
+        return Transition(
+            next,
+            listOf(
+                RestEffect.Persist(next), RestEffect.CancelAlarms(t.id), RestEffect.NotifySession,
+                RestEffect.Event(
+                    "rest_skipped",
+                    mapOf("timer_id" to JsonPrimitive(t.id), "remaining_ms" to JsonPrimitive(maxOf(0L, t.end_wall_ms - nowWall)), "via" to JsonPrimitive(via)),
+                ),
+                RestEffect.IntervalDone(next, intervalSeconds(t, at), at, if (early) "done" else "interval_end"),
+            ),
+        )
+    }
+
+    /**
+     * The active timer ends because an interval starts (ANDROID.md 12.3 `startInterval`): a rest as if its next set
+     * came (no set_logs columns), an interval as an early Done.
+     */
+    fun endForInterval(t: RestTimerEntity, nowWall: Long): Transition {
+        if (t.state == ENDED) return Transition(t, emptyList())
+        if (t.purpose == INTERVAL) return intervalDone(t, nowWall, "next_interval")
+        val endedBy = when {
+            t.state == RUNNING && nowWall < t.end_wall_ms -> "next_set_early"
+            t.state == RUNNING -> "elapsed"
+            else -> t.ended_by ?: "elapsed"
+        }
+        val next = t.copy(state = ENDED, ended_by = endedBy)
+        val adjustS = adjustments(t).sumOf { it.jsonObject.getValue("delta_s").jsonPrimitive.long.toInt() }
+        return Transition(
+            next,
+            listOf(
+                RestEffect.Persist(next), RestEffect.CancelAlarms(t.id),
+                RestEffect.Event(
+                    "rest_ended",
+                    mapOf(
+                        "timer_id" to JsonPrimitive(t.id), "end_reason" to JsonPrimitive(endedBy), "planned_s" to JsonPrimitive(t.prescribed_s),
+                        "adjust_s" to JsonPrimitive(adjustS), "actual_s" to JsonPrimitive(round1((nowWall - t.start_wall_ms) / 1000.0)),
+                        "rest_source" to JsonPrimitive("measured"), "prev_completed_at" to JsonPrimitive(t.start_wall_ms),
+                    ) + (if (t.state == OVERTIME || nowWall >= t.end_wall_ms) mapOf("rest_end_at" to JsonPrimitive(t.end_wall_ms)) else emptyMap()),
+                ),
+            ),
+        )
+    }
+
     /** The session ended while a rest was running: nothing is copied to set_logs (there is no next set). */
     fun sessionFinished(t: RestTimerEntity, nowWall: Long): Transition {
         if (t.state == ENDED) return Transition(t, emptyList())
@@ -231,6 +304,16 @@ object RestTimerReducer {
         val r = remainingMs(t, nowWall, nowElapsed, bootCount)
         return when {
             t.state == RUNNING && r > 0 -> Transition(t, listOf(RestEffect.ScheduleEnd(t.id, t.end_wall_ms), RestEffect.NotifyResting))
+            t.state == RUNNING && t.purpose == INTERVAL -> {
+                // The interval elapsed while the process was dead: its item is logged with the planned seconds.
+                val next = t.copy(state = ENDED, ended_by = "elapsed_while_dead")
+                val effects = mutableListOf<RestEffect>(RestEffect.Persist(next))
+                if (-r <= cfg.catchUpAlertMaxS * 1000L) effects += RestEffect.Alert
+                effects += RestEffect.NotifySession
+                effects += RestEffect.Event("rest_recovered", mapOf("timer_id" to JsonPrimitive(t.id), "missed_by_ms" to JsonPrimitive(-r)))
+                effects += RestEffect.IntervalDone(next, intervalSeconds(t, t.end_wall_ms), t.end_wall_ms, "interval_end")
+                Transition(next, effects)
+            }
             t.state == RUNNING -> {
                 // The end alarm can arrive in a cold process after reconcile already ran: a short miss still alerts.
                 val next = t.copy(state = OVERTIME, ended_by = "elapsed_while_dead")
@@ -277,6 +360,9 @@ object RestTimerReducer {
         val s = totalS % 60
         return m.toString() + ":" + (if (s < 10) "0" else "") + s.toString()
     }
+
+    /** The seconds an interval ran up to [atWall] (its planned end, with adjustments, when it elapsed). */
+    private fun intervalSeconds(t: RestTimerEntity, atWall: Long): Double = round1(maxOf(0L, atWall - t.start_wall_ms) / 1000.0)
 
     private fun round1(x: Double): Double = java.math.BigDecimal(x).setScale(1, java.math.RoundingMode.HALF_EVEN).toDouble()
 

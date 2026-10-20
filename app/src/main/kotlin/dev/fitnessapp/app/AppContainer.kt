@@ -135,6 +135,7 @@ class AppContainer(private val context: Context) {
         RestTimerController(
             db, AlarmGateway(context), notifications, haptics, device, telemetry, profiles, ids,
             { clock.now().toEpochMilli() }, platformConfig, syncScheduler, selfTests,
+            { done -> dev.fitnessapp.app.timer.IntervalLog.log(db, sessionRepository, done) },
         ) {
             if (sessionRepository.observeActiveOnce() == null) {
                 SessionService.stop(context)

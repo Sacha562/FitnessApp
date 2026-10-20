@@ -59,7 +59,7 @@ data class RestTimerEntity(
     val set_log_id: String,
     val exercise_id: String,
     val side: String,
-    /** `rest` or `between_sides`. */
+    /** `rest`, `between_sides` or `interval` (the countdown of a timed warm-up item, D33). */
     val purpose: String,
     /** `rest_module`, `challenge` or `protocol`. */
     val duration_source: String,
@@ -80,6 +80,11 @@ data class RestTimerEntity(
     val latency_ms: Long? = null,
     val overtime_reminder_sent: Boolean = false,
     val skip_at_ms: Long? = null,
+    /** v5: the planned item an interval counts down (session exercise and set index); null for a rest. */
+    val session_exercise_id: String? = null,
+    val set_index: Int? = null,
+    /** v5: the item name the notification shows for an interval ("Rowing machine"). */
+    val label: String? = null,
 )
 
 /** Every alarm the app scheduled, for rescheduling after boot, force-stop or update (ANDROID.md 8.3). */

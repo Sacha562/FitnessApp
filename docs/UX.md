@@ -1818,7 +1818,8 @@ the 3 rounds become 2 in the deload and test-pending weeks.
 "Row 3:00 [Start 3:00]" runs a countdown in the block card with the rest-end alert at zero. It is
 alarm-backed (D33): `RestTimerController` with `purpose = interval` (ANDROID 12.3), so the alert arrives
 with the screen off and the session notification shows "Row · 1:12 left" with −15 s / Skip / +15 s. At zero
-the row is logged done with its seconds; a Done tap before zero logs the measured seconds.
+the row is logged done with its seconds; a Done tap before zero (on the card or in the notification, where
+Done replaces Skip) logs the measured seconds, and so does logging another set while the row counts down.
 
 ### 11.8 Logging, deviation and reason chips
 
@@ -4112,7 +4113,7 @@ sent as null.
 
 | event_type | Emitted when | Entity | Payload |
 |---|---|---|---|
-| `set_logged` | RIR chip, felt chip, Record or Done tap writes a `set_logs` row (same transaction) | set | `set_id`, `session_exercise_id`, `set_index`, `side`, `set_kind`, `round_index`?, `attempt_index`?, `prefill_source` (accepted_adjustment, engine_target, last_same_index, last_prev_index, default), `side_cap_applied`, `deviation_direction` (none, up, down), `deviation_fields[]` (load, reps, hold, side_rule, rir), `input_method` (none, stepper, keypad, mixed), `taps`, `snapped`, `log_control` (rir_chip, felt_chip, record, done), `chip_value` (0-5, max, hard, ok, easy; the "`rir_chip`" of 6.2)?, `ms_from_card_shown`, `ms_from_rest_end`?, `first_touch_at`?, `completed_at` |
+| `set_logged` | RIR chip, felt chip, Record or Done tap writes a `set_logs` row (same transaction) | set | `set_id`, `session_exercise_id`, `set_index`, `side`, `set_kind`, `round_index`?, `attempt_index`?, `prefill_source` (accepted_adjustment, engine_target, last_same_index, last_prev_index, default), `side_cap_applied`, `deviation_direction` (none, up, down), `deviation_fields[]` (load, reps, hold, side_rule, rir), `input_method` (none, stepper, keypad, mixed), `taps`, `snapped`, `log_control` (rir_chip, felt_chip, record, done, interval_end: a warm-up interval reached zero, D33), `chip_value` (0-5, max, hard, ok, easy; the "`rir_chip`" of 6.2)?, `ms_from_card_shown`, `ms_from_rest_end`?, `first_touch_at`?, `completed_at` |
 | `set_undone` | Undo in the snackbar | set | `set_id`, `ms_since_logged` |
 | `set_edited` | Set edit sheet or History saves a changed field (one event per field) | set | `set_id`, `field` (load, reps, duration_s, rir, flags, reason, ecc_s, side), `from`, `to`, `surface` (set_edit_sheet, history), `ms_since_logged` |
 | `set_deleted` | Delete set | set | `set_id`, `surface` |
