@@ -47,6 +47,9 @@ data class PlannedValues(
     val effectiveKg: Double? = null,
     val durationS: Double? = null,
     val source: String,
+    /** The planned lowering of an eccentric-only set (UX 11.7.5) and the planned fingers of finger assistance. */
+    val eccS: Double? = null,
+    val assistOrdinal: Int? = null,
 )
 
 /** Everything one RIR / felt / Done tap stores (UX 11.8). [load] is the LOAD-1 point of the logged load. */
@@ -72,6 +75,14 @@ data class LogSetCommand(
     val completedAtMs: Long,
     /** The `set_logged` payload fields owned by the UI (prefill source, deviation, input method, ...). */
     val telemetry: Map<String, JsonElement>,
+    /** Top-hold rounds (UX 11.7.4): one row per attempt, `set_index` = `round_index` = the round. */
+    val roundIndex: Int? = null,
+    val attemptIndex: Int? = null,
+    /** Eccentric-only sets (UX 11.7.5, C66): the shortest lowering of the set and its target. */
+    val eccSActual: Double? = null,
+    val eccSTarget: Double? = null,
+    /** `assisted_ordinal` (fingers of assistance, 0-4): the load point is null and this is the load. */
+    val assistOrdinal: Int? = null,
 )
 
 /**
@@ -417,6 +428,9 @@ class SessionRepository(
 
     // ------------------------------------------------------------------------------------------ sets
 
+    /** Logs the rows of one tap together (the attempts of a top-hold round, UX 11.7.4) in one transaction. */
+    suspend fun logSets(cmds: List<LogSetCommand>): List<String> = db.withTransaction { cmds.map { logSet(it) } }
+
     /** Logs one set (UX 11.8): the row, the exercise status, the `set_logged` event, all in one transaction. */
     suspend fun logSet(cmd: LogSetCommand): String {
         val uid = ctx.requireUser()
@@ -432,6 +446,7 @@ class SessionRepository(
                 id = id, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
                 app_version = ctx.appVersion, session_id = cmd.sessionId, session_exercise_id = cmd.sessionExerciseId,
                 exercise_id = cmd.exerciseId, set_index = cmd.setIndex, side = cmd.side, set_kind = cmd.setKind,
+                round_index = cmd.roundIndex, attempt_index = cmd.attemptIndex,
                 planned_reps = cmd.planned?.reps,
                 planned_input_value = cmd.planned?.inputValue?.let { Scaled.fromDouble(it, 2) },
                 planned_input_unit = cmd.planned?.inputValue?.let { cmd.planned.inputUnit },
@@ -439,10 +454,13 @@ class SessionRepository(
                 planned_assist_native = cmd.planned?.assistNative?.let { Scaled.fromDouble(it, 2) },
                 planned_effective_load_kg = cmd.planned?.effectiveKg?.let { Scaled.fromDouble(it, 2) },
                 planned_duration_s = cmd.planned?.durationS?.let { Scaled.fromDouble(it, 1) },
+                planned_ecc_s = cmd.planned?.eccS?.let { Scaled.fromDouble(it, 1) },
+                planned_assist_ordinal = cmd.planned?.assistOrdinal,
                 planned_source = cmd.planned?.source,
                 load_mode = p?.mode?.code ?: e.load_mode,
                 reps = cmd.reps, duration_s = cmd.durationS?.let { Scaled.fromDouble(it, 1) },
                 hold_reserve_s = cmd.holdReserveS?.let { Scaled.fromDouble(it, 1) }, hold_reserve_is_lower_bound = cmd.holdReserveLowerBound,
+                ecc_s_target = cmd.eccSTarget?.let { Scaled.fromDouble(it, 1) }, ecc_s_actual = cmd.eccSActual?.let { Scaled.fromDouble(it, 1) },
                 rir_reported = cmd.rir?.let { Scaled.fromDouble(it, 1) }, rir_is_lower_bound = cmd.rirLowerBound,
                 rir_source = if (cmd.rir == null && cmd.holdReserveS == null) "missing" else "chip",
                 flags = cmd.flags.distinct().sorted(), deviation_reason_code = cmd.deviationReason,
@@ -451,7 +469,7 @@ class SessionRepository(
                 rest_before_s = cmd.rest?.beforeS?.let { Scaled.fromDouble(it, 1) }, rest_source = cmd.rest?.source,
                 rest_end_reason = cmd.rest?.endReason,
                 started_at = cmd.startedAtMs, completed_at = cmd.completedAtMs,
-            ).withLoad(p, e.load_mode, bw)
+            ).withLoad(p, e.load_mode, bw).let { r -> if (cmd.assistOrdinal != null) r.copy(assist_ordinal = cmd.assistOrdinal) else r }
             val firstInBlock = db.setLogs().bySession(cmd.sessionId).none { prev ->
                 db.sessionExercises().get(prev.session_exercise_id)?.block_id == e.block_id
             }
@@ -459,7 +477,8 @@ class SessionRepository(
             outbox.enqueue("set_logs", id, now)
             if (firstInBlock) blockEvent("block_started", cmd.sessionId, e.block_id, null)
             val working = db.setLogs().bySession(cmd.sessionId).filter { it.session_exercise_id == e.id && it.set_kind != "warmup" }
-            val units = working.sumOf { if (it.side == "both") 2 else 1 } / 2
+            // The attempts of a round share their set index: a round counts once per side.
+            val units = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
             val done = e.planned_sets != null && units >= e.planned_sets
             writeExercise(
                 e.copy(
@@ -476,7 +495,7 @@ class SessionRepository(
                         "set_id" to JsonPrimitive(id), "session_exercise_id" to JsonPrimitive(cmd.sessionExerciseId),
                         "set_index" to JsonPrimitive(cmd.setIndex), "side" to JsonPrimitive(cmd.side),
                         "set_kind" to JsonPrimitive(cmd.setKind), "completed_at" to JsonPrimitive(cmd.completedAtMs),
-                    ),
+                    ) + listOfNotNull(cmd.roundIndex?.let { "round_index" to JsonPrimitive(it) }, cmd.attemptIndex?.let { "attempt_index" to JsonPrimitive(it) }),
                 ),
             )
         }

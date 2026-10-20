@@ -145,5 +145,62 @@ class SessionRepositoryTest {
         sessions.sets(sid).forEach { serverChecks(it) shouldBe emptyList() }
     }
 
+    @Test
+    fun `negatives, top-hold rounds and finger assistance pass the server checks`() = blocking {
+        setUpGym()
+        bodyweight.logWeighIn(70.7)
+        now += 60_000
+        val sid = sessions.start(params)
+        fun cmd(seId: String, slug: String, p: dev.fitnessapp.algo.core.load.LoadPoint?, side: String) = LogSetCommand(
+            sid, seId, catalog.idOf(catalog.bySlug(slug)!!), 1, side, "working", p, reps = null, durationS = null, rir = null,
+            rirLowerBound = false, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(),
+            deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+        )
+        suspend fun bw(slug: String) =equipment.loadables(catalog.bySlug(slug)!!, LoadMode.BODYWEIGHT, 70.7, params).second.single()
+
+        // A negative: the shortest lowering and an effort chip, never an RIR (C66).
+        val neg = sessions.addExercise(sid, catalog.bySlug("oa_negative")!!)
+        now += 60_000
+        sessions.logSet(
+            cmd(neg, "oa_negative", bw("oa_negative"), "L").copy(
+                reps = 1, holdReserveS = 5.0, eccSActual = 5.4, eccSTarget = 5.0, flags = listOf("hand_shift"),
+                planned = PlannedValues(reps = 1, eccS = 5.0, source = "engine"),
+            ),
+        )
+        // Top-hold rounds: four attempt rows per arm and round, counted as one set per arm.
+        val top = sessions.addExercise(sid, catalog.bySlug("oa_top_hold")!!)
+        db.sessionExercises().upsert(db.sessionExercises().get(top)!!.copy(planned_sets = 3))
+        for (side in listOf("L", "R")) {
+            now += 60_000
+            sessions.logSets(
+                listOf(1.0, 0.5, 2.0, 0.0).mapIndexed { i, s ->
+                    cmd(top, "oa_top_hold", bw("oa_top_hold"), side).copy(durationS = s, holdReserveS = 2.0, roundIndex = 1, attemptIndex = i + 1)
+                },
+            )
+        }
+        // Finger assistance: the fingers are the load.
+        val fingers = sessions.addExercise(sid, catalog.bySlug("oap_finger_assisted")!!, LoadMode.ASSISTED_ORDINAL)
+        now += 60_000
+        sessions.logSet(cmd(fingers, "oap_finger_assisted", null, "L").copy(reps = 1, rir = 1.0, assistOrdinal = 2, planned = PlannedValues(reps = 1, assistOrdinal = 2, source = "engine")))
+
+        val sets = sessions.sets(sid)
+        sets.forEach { serverChecks(it) shouldBe emptyList() }
+        sets.map { listOf(it.session_exercise_id, it.set_index, it.side, it.round_index, it.attempt_index) }.distinct().size shouldBe sets.size
+        sets.first { it.session_exercise_id == neg }.let {
+            it.ecc_s_actual shouldBe 54L
+            it.ecc_s_target shouldBe 50L
+            it.planned_ecc_s shouldBe 50L
+            it.rir_reported shouldBe null
+        }
+        sets.filter { it.session_exercise_id == top }.mapNotNull { it.attempt_index }.sorted() shouldBe listOf(1, 1, 2, 2, 3, 3, 4, 4)
+        db.sessionExercises().get(top)!!.status shouldBe "active" // one round per arm is one of three sets, not four
+        sets.first { it.session_exercise_id == fingers }.let {
+            it.load_mode shouldBe "assisted_ordinal"
+            it.assist_ordinal shouldBe 2
+            it.planned_assist_ordinal shouldBe 2
+            it.effective_load_kg shouldBe null
+        }
+    }
+
     private fun serverChecks(r: SetLogEntity): List<String> = SetChecks.of(r)
 }

@@ -51,8 +51,8 @@ import kotlinx.serialization.json.JsonPrimitive
 data class ExerciseItem(val se: SessionExerciseEntity, val ex: CatalogExercise, val sets: List<SetLogEntity>) {
     val working: List<SetLogEntity> get() = sets.filter { it.set_kind != "warmup" }
     val unilateral: Boolean get() = se.side_mode != "bilateral"
-    /** Working sets done; an L+R pair counts as one (C7). */
-    val workingDone: Int get() = working.sumOf { if (it.side == "both") 2 else 1 } / 2
+    /** Working sets done; an L+R pair counts as one (C7), and the attempts of a round count as one set. */
+    val workingDone: Int get() = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
     val planned: Int get() = se.planned_sets ?: 0
     val open: Boolean get() = se.status in setOf("pending", "active", "deferred")
 }
@@ -90,8 +90,20 @@ data class Card(
     val holdTimerS: Double? = null,
     val holdTargetS: Double? = null,
     val keypadMessage: String? = null,
+    /** Eccentric-only sets (UX 11.7.5): the shortest lowering of the set ("Shortest lowering") and its target. */
+    val eccS: Double? = null,
+    val eccTargetS: Double? = null,
+    /** Top-hold rounds (UX 11.7.4): the seconds of each short attempt of the round; null for any other card. */
+    val attemptsS: List<Double>? = null,
+    /** Finger assistance (`assisted_ordinal`): the fingers used and the planned fingers. */
+    val fingers: Int? = null,
+    val plannedFingers: Int? = null,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
+
+    /** Negatives: logged by the lowering seconds and the effort chips, never an RIR chip (C66). */
+    val isEcc: Boolean get() = item.ex.contraction == "eccentric_only"
+    val isRound: Boolean get() = attemptsS != null
 
     /** A timed dynamic item (the warm-up row, UX 11.7.6): a countdown instead of a hold, logged in seconds. */
     val isTimed: Boolean get() = isHold && item.ex.contraction == "dynamic"
@@ -100,7 +112,8 @@ data class Card(
     val slotKey: String get() = listOf(item.se.id, setIndex.toString(), side, mode.code, warmup.toString()).joinToString("|")
 }
 
-data class LastLogged(val setId: String, val label: String, val at: Long)
+/** The last tap's rows for Undo: one set, or the attempts of a round ([extraIds]). */
+data class LastLogged(val setId: String, val label: String, val at: Long, val extraIds: List<String> = emptyList())
 
 data class LiveUi(
     val session: WorkoutSessionEntity? = null,
@@ -267,15 +280,26 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
         val pfv = planned ?: pf
         val idx = indexFor(points, mode, pfv.values.native, resolved.scheme)
-        val holdTarget = if (item.ex.measure == "duration") pfv.values.holdS else null
+        // A round of short attempts (UX 11.7.4): prefilled from the same arm's previous round, else 0.
+        val attempts = row?.attempts?.takeIf { it > 1 && item.ex.measure == "duration" && row.setKind != "test" }?.let { n ->
+            val prev = item.sets.filter { it.side == side && it.set_index == setIndex - 1 }.sortedBy { it.attempt_index ?: 0 }
+                .map { s -> s.duration_s?.let { Scaled.toDouble(it, 1) } ?: 0.0 }
+            List(n) { i -> prev.getOrNull(i) ?: 0.0 }
+        }
+        val holdTarget = if (item.ex.measure == "duration" && attempts == null) pfv.values.holdS else null
+        val eccTarget = row?.targetEccS?.toDouble() ?: item.se.planned_ecc_s?.let { Scaled.toDouble(it, 1) }
+        val eccPrev = todayWorking.maxByOrNull { it.set_index }?.ecc_s_actual?.let { Scaled.toDouble(it, 1) }
+        val fingers = if (mode == LoadMode.ASSISTED_ORDINAL) row?.fingers ?: todayWorking.maxByOrNull { it.set_index }?.assist_ordinal else null
         val now = System.currentTimeMillis()
         val base = Card(
             item = item, mode = mode, points = points, scheme = resolved.scheme, loadIndex = idx,
-            reps = pfv.values.reps, holdS = pfv.values.holdS, setIndex = setIndex, side = side, warmup = warmup,
+            reps = pfv.values.reps, holdS = if (attempts != null) null else pfv.values.holdS, setIndex = setIndex, side = side, warmup = warmup,
             prefillSource = pfv.source, target = pfv.values.copy(native = idx?.let { nativeOf(points[it], mode) } ?: pfv.values.native),
             sideCapApplied = pfv.sideCapApplied, deviation = Deviation.NONE, chips = null, reason = null, reasonPosition = null,
             flags = emptySet(), lastLine = lastLine(history, mode), inputMethod = "none", taps = 0, snapped = false,
             shownAt = now, firstTouchAt = null, holdTargetS = holdTarget,
+            eccS = if (item.ex.contraction == "eccentric_only") eccPrev ?: eccTarget else null, eccTargetS = eccTarget,
+            attemptsS = attempts, fingers = fingers, plannedFingers = row?.fingers,
         )
         return withDeviation(base)
     }
@@ -395,6 +419,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun stepHold(up: Boolean) = edit("stepper") { it.copy(holdS = UiPrefill.stepHold(it.holdS ?: 0.0, up, it.holdTargetS, params)) }
 
+    /** "Shortest lowering" (UX 11.7.5), on the hold step of the target. */
+    fun stepEcc(up: Boolean) = edit("stepper") { it.copy(eccS = UiPrefill.stepHold(it.eccS ?: 0.0, up, it.eccTargetS ?: it.eccS, params)) }
+
+    /** One attempt of a top-hold round (UX 11.7.4): 0.5 s steps for the short attempts. */
+    fun stepAttempt(index: Int, up: Boolean) = edit("stepper") { card ->
+        val a = card.attemptsS ?: return@edit card
+        card.copy(attemptsS = a.mapIndexed { i, s -> if (i == index) UiPrefill.stepHold(s, up, s, params) else s })
+    }
+
+    /** Fingers of assistance (`assisted_ordinal`, 0-4): fewer fingers is harder. */
+    fun stepFingers(up: Boolean) = edit("stepper") { it.copy(fingers = ((it.fingers ?: 0) + if (up) 1 else -1).coerceIn(0, MAX_FINGERS)) }
+
     /** Keypad "Set" (UX 16.7): snaps to the nearest loadable, ties to the easier load; logs `keypad_used`. */
     fun keypad(typed: Double) {
         keypadEdit(typed)
@@ -485,7 +521,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val u = _ui.value
         val card = u.card ?: return
         val s = u.session ?: return
-        if (card.isHold && card.holdS == null) return
+        if (card.isHold && !card.isRound && card.holdS == null) return
+        if (card.mode == LoadMode.ASSISTED_ORDINAL && card.fingers == null) return
         if (pendingLog != null) {
             emit("log_double_tap_dropped", null, mapOf("control" to JsonPrimitive(control), "gap_ms" to JsonPrimitive(System.currentTimeMillis() - pendingAt)))
             return
@@ -533,27 +570,34 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             card.firstTouchAt?.let { telemetry["first_touch_at"] = JsonPrimitive(it) }
             u.rest?.let { r -> if (r.state != "running") telemetry["ms_from_rest_end"] = JsonPrimitive(now - r.end_wall_ms) }
             val flags = card.flags + listOfNotNull(card.reason?.takeIf { it == "torso_rotation" || it == "technique_breakdown" })
-            val setId = c.sessionRepository.logSet(
-                LogSetCommand(
-                    sessionId = sessionId, sessionExerciseId = card.item.se.id, exerciseId = card.item.se.exercise_id,
-                    setIndex = card.setIndex, side = card.side, setKind = if (card.warmup) "warmup" else "working",
-                    load = p, reps = if (card.isHold) null else card.reps, durationS = if (card.isHold) card.holdS else null,
-                    rir = rir?.toDouble(), rirLowerBound = rir == 5, holdReserveS = feltReserveS, holdReserveLowerBound = feltLowerBound,
-                    flags = flags.toList(), deviationReason = card.reason,
-                    planned = PlannedValues(
-                        reps = card.target.reps, inputValue = p?.takeIf { card.mode != LoadMode.ASSISTED_MACHINE }?.let { card.target.native },
-                        inputUnit = p?.nativeUnit, assistNative = if (card.mode == LoadMode.ASSISTED_MACHINE) card.target.native else null,
-                        durationS = card.holdTargetS,
-                        source = when {
-                            card.prefillSource == PrefillSource.ENGINE_TARGET ->
-                                if (plannedRow(card.item, card.setIndex, card.side, card.warmup)?.changedByRule != null) "challenge_rule" else "engine"
-                            card.prefillSource == PrefillSource.DEFAULT -> "default"
-                            else -> "prefill_last"
-                        },
-                    ),
-                    rest = rest, startedAtMs = holdStart, completedAtMs = now, telemetry = telemetry,
+            val ordinal = card.mode == LoadMode.ASSISTED_ORDINAL
+            val cmd = LogSetCommand(
+                sessionId = sessionId, sessionExerciseId = card.item.se.id, exerciseId = card.item.se.exercise_id,
+                setIndex = card.setIndex, side = card.side, setKind = if (card.warmup) "warmup" else "working",
+                load = if (ordinal) null else p, reps = if (card.isHold) null else card.reps, durationS = if (card.isHold) card.holdS else null,
+                rir = rir?.toDouble(), rirLowerBound = rir == 5, holdReserveS = feltReserveS, holdReserveLowerBound = feltLowerBound,
+                flags = flags.toList(), deviationReason = card.reason,
+                planned = PlannedValues(
+                    reps = card.target.reps, inputValue = p?.takeIf { card.mode != LoadMode.ASSISTED_MACHINE && !ordinal }?.let { card.target.native },
+                    inputUnit = p?.takeIf { !ordinal }?.nativeUnit, assistNative = if (card.mode == LoadMode.ASSISTED_MACHINE) card.target.native else null,
+                    durationS = card.holdTargetS, eccS = card.eccTargetS, assistOrdinal = card.plannedFingers,
+                    source = when {
+                        card.prefillSource == PrefillSource.ENGINE_TARGET ->
+                            if (plannedRow(card.item, card.setIndex, card.side, card.warmup)?.changedByRule != null) "challenge_rule" else "engine"
+                        card.prefillSource == PrefillSource.DEFAULT -> "default"
+                        else -> "prefill_last"
+                    },
                 ),
+                rest = rest, startedAtMs = holdStart, completedAtMs = now, telemetry = telemetry,
+                eccSActual = if (card.isEcc) card.eccS else null, eccSTarget = if (card.isEcc) card.eccTargetS else null,
+                assistOrdinal = if (ordinal) card.fingers else null,
             )
+            // A round logs one row per attempt with the round's effort chip (UX 11.7.4); the rest belongs to the first.
+            val cmds = card.attemptsS?.mapIndexed { i, s ->
+                cmd.copy(durationS = s, roundIndex = card.setIndex, attemptIndex = i + 1, rest = if (i == 0) rest else null)
+            } ?: listOf(cmd)
+            val ids = c.sessionRepository.logSets(cmds)
+            val setId = ids.first()
             historyCache.remove(card.item.se.exercise_id)
             if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
             val timer = card.holdTimerS
@@ -569,9 +613,14 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             }
             if (card.reason == "pain") _ui.update { it.copy(banner = "pain") }
             val label = (if (card.side != "both") card.side + " · " else "") +
-                (if (card.isHold) Numbers.num(card.holdS ?: 0.0, 1) + " s" else "${card.reps} reps") +
+                when {
+                    card.attemptsS != null -> "round ${card.setIndex}: " + card.attemptsS.joinToString(" ") { Numbers.num(it, 1) } + " s"
+                    card.isHold -> Numbers.num(card.holdS ?: 0.0, 1) + " s"
+                    card.isEcc -> "${card.reps} reps · " + Numbers.num(card.eccS ?: 0.0, 1) + " s down"
+                    else -> "${card.reps} reps"
+                } +
                 (rir?.let { " · $it in reserve" } ?: "")
-            _ui.update { it.copy(lastLogged = LastLogged(setId, label, now)) }
+            _ui.update { it.copy(lastLogged = LastLogged(setId, label, now, ids.drop(1))) }
             startRest(card, setId, now)
         }
     }
@@ -611,7 +660,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         _ui.update { it.copy(lastLogged = null) }
         c.appScope.launch {
             c.restTimer.cancelForUndo(sessionId, l.at)
-            c.sessionRepository.undoSet(l.setId)
+            (listOf(l.setId) + l.extraIds).forEach { c.sessionRepository.undoSet(it) }
             historyCache.clear()
         }
     }
@@ -847,7 +896,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         const val DEFAULT_REPS = 8
 
         /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
-        fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {
+        /** The most fingers of assistance (`assisted_ordinal`): the other hand's four fingers. */
+private const val MAX_FINGERS = 4
+
+fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {
             if (warmup || side == "L") return false
             if (setNumber < planned) return false
             return items.none { it.se.id != seId && it.open && it.workingDone < it.planned }

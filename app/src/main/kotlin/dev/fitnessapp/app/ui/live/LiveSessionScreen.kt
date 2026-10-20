@@ -388,7 +388,12 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
             Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(item.ex.nameEn, style = MaterialTheme.typography.titleLarge)
                 val sideLabel = when (card.side) { "L" -> " · Left"; "R" -> " · Right"; else -> "" }
-                Pill((if (card.warmup) "Warm-up set" else "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}") + sideLabel)
+                val count = when {
+                    card.warmup -> "Warm-up set"
+                    card.isRound -> "Round ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}"
+                    else -> "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}"
+                }
+                Pill(count + sideLabel)
             }
             Box {
                 RoundIconButton(Icons.Rounded.MoreVert, "Exercise menu", { menu = true }, container = Fit.Raised)
@@ -402,6 +407,13 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
         // Load row (UX 11.7); a timed item (the warm-up row) has none.
         when {
             card.isTimed -> {}
+            // Finger assistance (UX 11.7): fewer fingers is harder.
+            card.mode == LoadMode.ASSISTED_ORDINAL -> StepperRow(
+                value = (card.fingers ?: 0).let { "$it finger" + if (it == 1) "" else "s" }, secondary = card.plannedFingers?.let { "planned $it" },
+                onMinus = { haptic.performHapticFeedback(HapticFeedbackType.SegmentTick); vm.stepFingers(up = false) },
+                onPlus = { haptic.performHapticFeedback(HapticFeedbackType.SegmentTick); vm.stepFingers(up = true) },
+                minusLabel = "harder", plusLabel = "easier",
+            )
             card.mode == LoadMode.BODYWEIGHT -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("BW", style = MaterialTheme.typography.displayMedium, modifier = Modifier.weight(1f))
                 if (LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in item.ex.allowedLoadModes) LinkButton("+ Add weight", { vm.setLoadMode(LoadMode.BODYWEIGHT_PLUS_EXTERNAL) })
@@ -424,8 +436,14 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
             }
         }
 
-        if (card.isTimed) TimedSection(card, intervalRunning, vm) else if (card.isHold) HoldSection(card, vm) else {
-            StepperRow(value = "${card.reps ?: 0} reps", secondary = null, onMinus = { vm.stepReps(false) }, onPlus = { vm.stepReps(true) })
+        when {
+            card.isTimed -> TimedSection(card, intervalRunning, vm)
+            card.isRound -> RoundSection(card, vm)
+            card.isHold -> HoldSection(card, vm)
+            else -> {
+                StepperRow(value = "${card.reps ?: 0} reps", secondary = null, onMinus = { vm.stepReps(false) }, onPlus = { vm.stepReps(true) })
+                if (card.isEcc) EccSection(card, vm)
+            }
         }
 
         // Reason chips: optional, only when deviating (UX 11.8).
@@ -459,7 +477,7 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
  */
 @Composable
 private fun LogRow(card: Card, vm: LiveSessionViewModel) {
-    if (card.isHold && !card.isTimed && card.holdPhase != HoldPhase.RESULT) return
+    if (card.isHold && !card.isTimed && !card.isRound && card.holdPhase != HoldPhase.RESULT) return
     val haptic = LocalHapticFeedback.current
     val shownAt = remember(card.slotKey) { System.currentTimeMillis() }
     fun guarded(action: () -> Unit) {
@@ -470,8 +488,8 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
     Tile(radius = 28.dp, padding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp), spacing = 8.dp) {
         when {
             card.warmup -> PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
-            card.isHold -> {
-                Text("How did it feel? Tap to log.", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
+            card.isHold || card.isEcc -> {
+                Text((if (card.isRound) "How did the round feel?" else "How did it feel?") + " Tap to log.", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("Max" to 0.0, "Hard" to 2.0, "OK" to 5.0, "Easy" to 10.0).forEach { (label, s) ->
                         LogChip(label, { guarded { vm.log(feltReserveS = s, feltLowerBound = s == 10.0, control = "felt_chip") } }, Modifier.weight(1f))
@@ -543,6 +561,50 @@ private fun TimedSection(card: Card, intervalRunning: Boolean, vm: LiveSessionVi
         Text("Counting down: the alarm rings at zero and logs it done.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
     } else {
         PrimaryButton("Start $clock", vm::startInterval, Modifier.fillMaxWidth(), height = 64.dp)
+    }
+}
+
+/**
+ * UX 11.7.5 negatives: "Shortest lowering" is the minimum lowering time of the set's reps (`ecc_s_actual`), because
+ * the rules compare the minimum; "Count 1 per second" paces the lowering.
+ */
+@Composable
+private fun EccSection(card: Card, vm: LiveSessionViewModel) {
+    card.eccTargetS?.let { Text("Lower in " + Numbers.num(it, 1) + " s or more", style = MaterialTheme.typography.titleMedium) }
+    StepperRow(
+        value = card.eccS?.let { Numbers.num(it, 1) + " s" } ?: "– s", secondary = "shortest lowering",
+        onMinus = { vm.stepEcc(false) }, onPlus = { vm.stepEcc(true) },
+    )
+    CountAloud("Count 1 per second")
+}
+
+/** UX 11.7.4 top-hold round: one field per short attempt (0.5 s steps), the felt chip logs them all. */
+@Composable
+private fun RoundSection(card: Card, vm: LiveSessionViewModel) {
+    val attempts = card.attemptsS ?: return
+    Text("${attempts.size} short attempts · no help", style = MaterialTheme.typography.titleMedium)
+    attempts.forEachIndexed { i, s ->
+        StepperRow(value = Numbers.num(s, 1) + " s", secondary = "attempt ${i + 1}", onMinus = { vm.stepAttempt(i, false) }, onPlus = { vm.stepAttempt(i, true) })
+    }
+    CountAloud("Count seconds aloud")
+}
+
+/** An optional beep per second while the user does the set (UX 11.7.4, 11.7.5); off by default, never logged. */
+@Composable
+private fun CountAloud(label: String) {
+    var on by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+    ChipButton(label + if (on) ": on" else ": off", on, { on = !on }, role = Role.Switch)
+    if (on) {
+        val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
+        DisposableEffect(Unit) { onDispose { tone?.release() } }
+        LaunchedEffect(Unit) {
+            while (true) {
+                tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)
+                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                delay(1000)
+            }
+        }
     }
 }
 
