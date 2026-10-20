@@ -362,9 +362,12 @@ fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, o
             sheet = null
             scope.launch { c.history.editSrpe(sessionId, v) }
         }
-        DetailSheet.Pain -> PainSheet(onDismiss = { sheet = null }) { region, side, severity ->
+        DetailSheet.Pain -> PainSheet(onDismiss = { sheet = null }) { region, side, severity, symptoms ->
             sheet = null
-            scope.launch { c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "history") }
+            scope.launch {
+                val wid = c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "history", symptoms)
+                runCatching { c.challengeSessions.forwardPain(wid, region, side, severity, symptoms, sessionId) }
+            }
         }
         DetailSheet.Note -> NoteSheet(session?.notes, onDismiss = { sheet = null }) { text ->
             sheet = null

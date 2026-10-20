@@ -106,3 +106,18 @@ data class CrashLogEntity(
     val app_version: String,
     val reported: Boolean = false,
 )
+
+/**
+ * The live plan of a challenge session (CHALLENGE_ENGINE 6.1, 6.10): the materialized plan at start and, per item
+ * key, the rows as in-session rules changed them, the rules applied and the rules undone. Never synced: the plan is
+ * reproducible from the enrollment and the logged sets, this copy only survives process death mid-session.
+ */
+@Serializable
+@Entity(tableName = "challenge_live_session")
+data class ChallengeLiveSessionEntity(
+    @PrimaryKey val session_id: String,
+    val enrollment_id: String,
+    val plan_json: String,
+    val live_json: String,
+    val updated_at_ms: Long,
+)

@@ -19,6 +19,7 @@ import dev.fitnessapp.app.uidet.ReasonVocabulary
 import dev.fitnessapp.data.challenge.ChallengeFactsProvider
 import dev.fitnessapp.data.challenge.ChallengeLibrary
 import dev.fitnessapp.data.challenge.ChallengeRepository
+import dev.fitnessapp.data.challenge.ChallengeSessionRepository
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.device.DeviceIdentity
 import dev.fitnessapp.data.ids.UuidV7Generator
@@ -114,6 +115,11 @@ class AppContainer(private val context: Context) {
     val challengeFacts: ChallengeFactsProvider by lazy { ChallengeFactsProvider(db, equipment, { catalog.doc }, params, clock::now) }
     val challenges: ChallengeRepository by lazy {
         ChallengeRepository(db, outbox, telemetry, writeContext, syncScheduler, params, challengeLibrary, challengeFacts)
+    }
+    val challengeSessions: ChallengeSessionRepository by lazy {
+        ChallengeSessionRepository(
+            db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, params, CHANGEOVER_MIN,
+        )
     }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
     val exports: ExportRepository by lazy {

@@ -110,7 +110,15 @@ data class LiveUi(
     val switchHint: Boolean = false,
     val banner: String? = null,
     val pendingCount: Int = 0,
+    /** The last in-session challenge rule that changed the remaining sets ("Rule: … · Undo", UX 11.10, D14). */
+    val ruleLine: RuleLine? = null,
+    /** A notice of an in-session rule (`notify`, for example "Hand slipped: end the set here."). */
+    val ruleNotice: String? = null,
+    /** "Session C" for a challenge session (the session notification and the header). */
+    val title: String? = null,
 )
+
+data class RuleLine(val seId: String, val app: dev.fitnessapp.algo.challenge.materialize.RuleApplication, val text: String, val at: Long)
 
 /**
  * The live session (UX 11): Room is the single source of truth; the VM keeps only the draft of the card being
@@ -137,6 +145,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** `deviation_shown` once per card slot and chip context (UX 20.3). */
     private var deviationShownKey: String? = null
 
+    /** The live plan of a challenge session (CHALLENGE_ENGINE 6.1, 6.10); null for a free session. */
+    @Volatile private var challenge: dev.fitnessapp.data.challenge.ChallengeLive? = null
+
     init {
         viewModelScope.launch {
             combine(
@@ -148,6 +159,22 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 c.sync.observePending().combine(c.sync.state) { n, st -> if (st is SyncState.Offline) n else 0 },
             ) { s, exs, sets, rest, pending -> Snapshot(s, exs, sets, rest, pending) }.collect { rebuild(it) }
         }
+        viewModelScope.launch {
+            c.challengeSessions.observeLive(sessionId).collect { live ->
+                challenge = live
+                _ui.update { it.copy(title = live?.let { l -> "Session ${l.plan.slot}" }) }
+                last?.let { rebuild(it) }
+            }
+        }
+    }
+
+    private fun planItem(item: ExerciseItem) = challenge?.item(item.se.challenge_item_key)
+
+    /** The planned row of a challenge item for the slot being logged. */
+    private fun plannedRow(item: ExerciseItem, setIndex: Int, side: String, warmup: Boolean): dev.fitnessapp.algo.challenge.materialize.PlannedRow? {
+        val live = challenge ?: return null
+        val key = item.se.challenge_item_key ?: return null
+        return c.challengeSessions.plannedRow(live, key, setIndex, side, warmup)
     }
 
     private data class Snapshot(
@@ -193,7 +220,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** Keeps the draft while the slot is the same; otherwise builds a fresh prefilled card. */
     private suspend fun buildCard(item: ExerciseItem, allSets: List<SetLogEntity>, old: Card?): Card {
         val mode = LoadMode.of(item.se.load_mode)
-        val warmup = old?.takeIf { it.item.se.id == item.se.id }?.warmup ?: false
+        val warmup = old?.takeIf { it.item.se.id == item.se.id }?.warmup ?: (planItem(item)?.plan?.role == "warmup")
         val (setIndex, side) = nextSlot(item, warmup)
         val fresh = buildFresh(item, mode, setIndex, side, warmup, allSets)
         return if (old != null && old.slotKey == fresh.slotKey) old.copy(item = item) else fresh
@@ -222,14 +249,28 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 sideRule = side == "R", leftLoggedReps = leftReps,
             ),
         ).value
-        val idx = indexFor(points, mode, pf.values.native, resolved.scheme)
-        val holdTarget = if (item.ex.measure == "duration") pf.values.holdS else null
+        // A challenge item's targets come from its plan (CHALLENGE_ENGINE 6.1), as in-session rules left them.
+        val row = plannedRow(item, setIndex, side, warmup)
+        val planned = row?.let { r ->
+            val native = when (mode) {
+                LoadMode.ASSISTED_MACHINE -> r.pin?.toDouble()
+                LoadMode.BODYWEIGHT_PLUS_EXTERNAL, LoadMode.EXTERNAL -> r.addedKg?.toDouble()
+                else -> null
+            }
+            pf.copy(
+                values = SetValues(mode, native ?: pf.values.native, r.targetReps ?: pf.values.reps, (r.targetHoldS ?: r.durationS)?.toDouble() ?: pf.values.holdS),
+                source = PrefillSource.ENGINE_TARGET, sideCapApplied = false,
+            )
+        }
+        val pfv = planned ?: pf
+        val idx = indexFor(points, mode, pfv.values.native, resolved.scheme)
+        val holdTarget = if (item.ex.measure == "duration") pfv.values.holdS else null
         val now = System.currentTimeMillis()
         val base = Card(
             item = item, mode = mode, points = points, scheme = resolved.scheme, loadIndex = idx,
-            reps = pf.values.reps, holdS = pf.values.holdS, setIndex = setIndex, side = side, warmup = warmup,
-            prefillSource = pf.source, target = pf.values.copy(native = idx?.let { nativeOf(points[it], mode) } ?: pf.values.native),
-            sideCapApplied = pf.sideCapApplied, deviation = Deviation.NONE, chips = null, reason = null, reasonPosition = null,
+            reps = pfv.values.reps, holdS = pfv.values.holdS, setIndex = setIndex, side = side, warmup = warmup,
+            prefillSource = pfv.source, target = pfv.values.copy(native = idx?.let { nativeOf(points[it], mode) } ?: pfv.values.native),
+            sideCapApplied = pfv.sideCapApplied, deviation = Deviation.NONE, chips = null, reason = null, reasonPosition = null,
             flags = emptySet(), lastLine = lastLine(history, mode), inputMethod = "none", taps = 0, snapped = false,
             shownAt = now, firstTouchAt = null, holdTargetS = holdTarget,
         )
@@ -500,12 +541,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                         reps = card.target.reps, inputValue = p?.takeIf { card.mode != LoadMode.ASSISTED_MACHINE }?.let { card.target.native },
                         inputUnit = p?.nativeUnit, assistNative = if (card.mode == LoadMode.ASSISTED_MACHINE) card.target.native else null,
                         durationS = card.holdTargetS,
-                        source = if (card.prefillSource == PrefillSource.DEFAULT) "default" else "prefill_last",
+                        source = when {
+                            card.prefillSource == PrefillSource.ENGINE_TARGET ->
+                                if (plannedRow(card.item, card.setIndex, card.side, card.warmup)?.changedByRule != null) "challenge_rule" else "engine"
+                            card.prefillSource == PrefillSource.DEFAULT -> "default"
+                            else -> "prefill_last"
+                        },
                     ),
                     rest = rest, startedAtMs = holdStart, completedAtMs = now, telemetry = telemetry,
                 ),
             )
             historyCache.remove(card.item.se.exercise_id)
+            if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
             val timer = card.holdTimerS
             if (card.isHold && timer != null && card.holdS != null && Numbers.oneDecimal(timer) != Numbers.oneDecimal(card.holdS)) {
                 val t = Numbers.oneDecimal(timer).toDouble()
@@ -567,6 +614,45 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     fun dismissUndo() = _ui.update { it.copy(lastLogged = null) }
+
+    /** 6.10: the item's in-session rules after a logged set; a change shows the rule line, a notice the banner. */
+    private suspend fun applyChallengeRules(seId: String) {
+        val apps = runCatching { c.challengeSessions.onSetLogged(sessionId, seId) }.getOrDefault(emptyList())
+        if (apps.isEmpty()) return
+        val def = challenge?.enrollmentId?.let { runCatching { c.challenges.folded(it).def }.getOrNull() }
+        fun text(msg: String?, values: Map<String, String>): String? {
+            var t = msg?.let { m -> def?.doc?.messages?.get(m)?.get("en") } ?: return msg
+            for ((k, v) in values) t = t.replace("{$k}", v)
+            return t
+        }
+        val change = apps.lastOrNull { it.kind == "suggest" }
+        val notices = apps.filter { it.kind == "notify" }.mapNotNull { text(it.msg, it.msgParams) }
+        _ui.update { u ->
+            u.copy(
+                ruleLine = change?.let { a ->
+                    val field = when (a.field) {
+                        "assistPin" -> "pin"
+                        "added" -> "load"
+                        "hold_s" -> "hold"
+                        else -> a.field ?: ""
+                    }
+                    RuleLine(seId, a, "Rule: $field ${a.from ?: "–"} → ${a.to ?: "–"}" + (text(a.msg, a.msgParams)?.let { " · $it" } ?: ""), System.currentTimeMillis())
+                } ?: u.ruleLine,
+                ruleNotice = notices.joinToString(" ").ifEmpty { null } ?: u.ruleNotice,
+            )
+        }
+    }
+
+    /** Undo of the rule line (C46): the rule's change is taken back and the reason is stored on the exercise. */
+    fun undoRule(reasonCode: String) {
+        val line = _ui.value.ruleLine ?: return
+        _ui.update { it.copy(ruleLine = null) }
+        c.appScope.launch { c.challengeSessions.undo(sessionId, line.seId, line.app, reasonCode, System.currentTimeMillis() - line.at) }
+    }
+
+    fun dismissRuleLine() = _ui.update { it.copy(ruleLine = null) }
+
+    fun dismissRuleNotice() = _ui.update { it.copy(ruleNotice = null) }
 
     fun adjustRest(delta: Int) = viewModelScope.launch { c.restTimer.adjust(delta, if (kotlin.math.abs(delta) > c.platformConfig.timerAdjustStepS) "long_press" else "button") }
 
@@ -674,9 +760,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private fun refs() = _ui.value.items.map { SessionExerciseRef(it.se.id, it.open) }
 
-    fun reportPain(region: String, side: String, severity: String) = viewModelScope.launch {
+    fun reportPain(region: String, side: String, severity: String, symptoms: List<String> = emptyList()) = viewModelScope.launch {
         val card = _ui.value.card
-        c.sessionRepository.reportPain(sessionId, card?.item?.se?.id, region, side, severity, "in_session", "set_card")
+        val wid = c.sessionRepository.reportPain(sessionId, card?.item?.se?.id, region, side, severity, "in_session", "set_card", symptoms)
+        // C33: the challenge's safety rules see every pain report.
+        runCatching { c.challengeSessions.forwardPain(wid, region, side, severity, symptoms, sessionId) }
         // UX 11.11 step 1: the current exercise ends; its remaining sets are not done, reason pain.
         card?.item?.se?.id?.let { c.sessionRepository.end(it, "pain") }
         _ui.update { it.copy(banner = "pain") }
@@ -691,6 +779,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun finish(endReason: String?, done: (String) -> Unit) = viewModelScope.launch {
         c.restTimer.sessionFinished(sessionId)
         c.sessionRepository.finish(sessionId, endReason)
+        // CHALLENGE_ENGINE 6.12: the slot's `session.completed`; the Summary reads its rule audit.
+        if (challenge != null) runCatching { c.challengeSessions.complete(sessionId) }
         stopService("finished")
         done(sessionId)
     }
@@ -723,7 +813,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     private fun updateNotification(s: WorkoutSessionEntity?, card: Card?) {
-        val title = "Free session"
+        val title = _ui.value.title ?: "Free session"
         val current = card?.let { "Set ${it.setNumber} of ${maxOf(it.item.planned, it.setNumber)} · ${it.item.ex.nameEn}" } ?: "Add an exercise"
         c.notifications.text = SessionNotificationText(
             sessionTitle = title, currentLine = current,

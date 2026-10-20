@@ -111,6 +111,7 @@ private sealed interface Sheet {
     data object Pain : Sheet
     data object Keypad : Sheet
     data object Abandon : Sheet
+    data object RuleUndo : Sheet
 }
 
 @Composable
@@ -139,6 +140,9 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                 BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
             )
             if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner)
+            ui.ruleNotice?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = vm::dismissRuleNotice) }
+            // UX 11.10 (D14): an in-session rule changed the remaining sets at once; Undo takes it back with a reason.
+            ui.ruleLine?.let { line -> Banner(line.text, BannerKind.ADVISORY, action = "Undo", onAction = { sheet = Sheet.RuleUndo }) }
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                 // The list takes what it needs, at most the top 38 % (UX 4.3); the set card gets the rest.
                 val listMax = maxHeight * 0.38f
@@ -188,11 +192,24 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             sheet = null
             vm.finish(reason, onFinished)
         }
-        Sheet.Pain -> PainSheet(onDismiss = { sheet = null }) { region, side, severity ->
-            vm.reportPain(region, side, severity)
+        Sheet.Pain -> PainSheet(onDismiss = { sheet = null }) { region, side, severity, symptoms ->
+            vm.reportPain(region, side, severity, symptoms)
             sheet = null
         }
         Sheet.Keypad -> ui.card?.let { card -> KeypadSheet(card, vm, onDismiss = { sheet = null }) }
+        Sheet.RuleUndo -> AlertDialog(
+            onDismissRequest = { sheet = null },
+            title = { Text("Undo the rule?") },
+            text = { Text("The remaining sets go back to their earlier values. Why?") },
+            confirmButton = {
+                Row {
+                    TextButton(onClick = { sheet = null; vm.undoRule("too_hard") }) { Text("Too hard") }
+                    TextButton(onClick = { sheet = null; vm.undoRule("too_easy") }) { Text("Too easy") }
+                    TextButton(onClick = { sheet = null; vm.undoRule("other") }) { Text("Other") }
+                }
+            },
+            dismissButton = { TextButton(onClick = { sheet = null }) { Text("Keep") } },
+        )
         Sheet.Abandon -> AlertDialog(
             onDismissRequest = { sheet = null },
             title = { Text("Abandon session?") },
@@ -217,7 +234,7 @@ private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onA
     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         RoundIconButton(Icons.Rounded.KeyboardArrowDown, "Minimise", onMinimise)
         Column(Modifier.weight(1f).padding(start = 2.dp)) {
-            Text("Free session", style = MaterialTheme.typography.titleMedium, color = Fit.Ink)
+            Text(ui.title ?: "Free session", style = MaterialTheme.typography.titleMedium, color = Fit.Ink)
             Text(Numbers.clock((now - started) / 1000) + " · $done of $total sets", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
         }
         if (ui.pendingCount > 0) Icon(Icons.Rounded.CloudOff, "Changes waiting to upload", tint = Fit.Muted, modifier = Modifier.size(18.dp))
@@ -661,7 +678,7 @@ private fun FinishSheet(c: AppContainer, remaining: List<String>, onDismiss: () 
 /** UX 16.2: location, side, severity (mild 2 / moderate 5 / sharp 8, C64). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit: (String, String, String) -> Unit) {
+fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit: (String, String, String, List<String>) -> Unit) {
     val regions = listOf(
         "elbow_medial" to "Elbow, inner side", "elbow_lateral" to "Elbow, outer side", "elbow_anterior" to "Elbow crease",
         "shoulder" to "Shoulder", "wrist" to "Wrist", "hand_fingers" to "Hand and fingers", "neck" to "Neck", "upper_back" to "Upper back",
@@ -670,6 +687,7 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
     var region by remember { mutableStateOf(preselectedRegion) }
     var side by remember { mutableStateOf("none") }
     var severity by remember { mutableStateOf<String?>(null) }
+    var symptoms by remember { mutableStateOf(emptySet<String>()) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(SheetPadding).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Where does it hurt?", style = MaterialTheme.typography.titleLarge)
@@ -678,8 +696,16 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
             ChoiceChips(listOf("L", "R", "both", "none"), side, { mapOf("L" to "Left", "R" to "Right", "both" to "Both", "none" to "Not sided")[it]!! }) { side = it }
             SectionLabel("How bad")
             ChoiceChips(listOf("mild", "moderate", "sharp"), severity, { it.replaceFirstChar(Char::uppercase) }) { severity = it }
+            // The kind of pain (DATA_MODEL 9.1.6): the elbow kinds are the challenge's stop signals (C33).
+            val kinds = PAIN_KINDS.filter { (_, regions, _) -> regions.isEmpty() || region in regions }
+            if (kinds.isNotEmpty()) {
+                SectionLabel("What kind")
+                kinds.forEach { (code, _, label) ->
+                    ChipButton(label, code in symptoms, { symptoms = if (code in symptoms) symptoms - code else symptoms + code }, role = androidx.compose.ui.semantics.Role.Checkbox)
+                }
+            }
             Banner("This app does not give medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY, Modifier.padding(top = 8.dp))
-            PrimaryButton("Save", { onSubmit(region!!, side, severity!!) }, Modifier.fillMaxWidth().padding(top = 4.dp), enabled = region != null && severity != null)
+            PrimaryButton("Save", { onSubmit(region!!, side, severity!!, symptoms.toList()) }, Modifier.fillMaxWidth().padding(top = 4.dp), enabled = region != null && severity != null)
         }
     }
 }
@@ -708,3 +734,15 @@ private fun KeypadSheet(card: Card, vm: LiveSessionViewModel, onDismiss: () -> U
         }
     }
 }
+
+/** `symptom_codes` (DATA_MODEL 9.1.6): code, the body regions it belongs to (empty = any), label. */
+internal val PAIN_KINDS = listOf(
+    Triple("medial_elbow_ache_after", listOf("elbow_medial"), "Ache on the inner elbow afterwards"),
+    Triple("elbow_crease_pain_on_extension", listOf("elbow_anterior"), "Pain in the elbow crease when straightening"),
+    Triple("ulnar_tingling", listOf("elbow_medial", "hand_fingers"), "Tingling in the ring and little finger"),
+    Triple("sharp_pain_during", emptyList(), "Sharp pain during the set"),
+    Triple("dull_ache_during", emptyList(), "Dull ache during the set"),
+    Triple("ache_after", emptyList(), "Ache afterwards"),
+    Triple("stiffness", emptyList(), "Stiffness"),
+    Triple("swelling", emptyList(), "Swelling"),
+)

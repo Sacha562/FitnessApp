@@ -10,6 +10,7 @@ import androidx.room.TypeConverters
 import dev.fitnessapp.data.db.dao.ChallengeDefinitionDao
 import dev.fitnessapp.data.db.dao.ChallengeEnrollmentDao
 import dev.fitnessapp.data.db.dao.ChallengeEventDao
+import dev.fitnessapp.data.db.dao.ChallengeLiveDao
 import dev.fitnessapp.data.db.dao.ChallengeRuleEventDao
 import dev.fitnessapp.data.db.dao.CrashLogDao
 import dev.fitnessapp.data.db.dao.DeadLetterDao
@@ -45,6 +46,7 @@ import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
+import dev.fitnessapp.data.db.local.ChallengeLiveSessionEntity
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.db.local.DeadLetterEntity
 import dev.fitnessapp.data.db.local.OutboxEntity
@@ -57,8 +59,8 @@ import java.io.File
  * The phone's source of truth (ANDROID.md 8). Version 1 holds the synced tables that logging needs in M1a
  * (configuration, sessions and sets, wellness, metrics, telemetry) plus the local-only tables of 8.3; version 2
  * (M1b) adds `user_exercise_prefs` and `exports`; version 3 (M2b) the challenge tables (definitions, enrollments,
- * events, rule audit). Later milestones add tables through numbered migrations, never through a destructive
- * fallback (8.5).
+ * events, rule audit) and version 4 the local live plan of a challenge session. Later milestones add tables through
+ * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
     version = FitnessDatabase.VERSION,
@@ -74,8 +76,10 @@ import java.io.File
         // v3 (M2b)
         ChallengeDefinitionEntity::class, ChallengeEnrollmentEntity::class, ChallengeEventEntity::class,
         ChallengeRuleEventEntity::class,
+        // v4 (M2b.3, local only)
+        ChallengeLiveSessionEntity::class,
     ],
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 @TypeConverters(Converters::class)
 abstract class FitnessDatabase : RoomDatabase() {
@@ -101,15 +105,16 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun enrollments(): ChallengeEnrollmentDao
     abstract fun challengeEvents(): ChallengeEventDao
     abstract fun ruleEvents(): ChallengeRuleEventDao
+    abstract fun challengeLive(): ChallengeLiveDao
 
     companion object {
-        const val VERSION = 3
+        const val VERSION = 4
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
         /**
          * Hand-written migrations of every version; [NoDestructiveMigrationTest] checks the builder uses only these.
-         * 1 -> 2 and 2 -> 3 only add tables and are [AutoMigration]s declared on the class.
+         * 1 -> 2, 2 -> 3 and 3 -> 4 only add tables and are [AutoMigration]s declared on the class.
          */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()
 

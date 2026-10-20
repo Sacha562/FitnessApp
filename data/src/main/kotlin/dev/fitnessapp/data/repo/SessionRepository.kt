@@ -249,14 +249,23 @@ class SessionRepository(
     }
 
     /** A pain report (C33, C64): severity chips map to 2 / 5 / 8 on the 0-10 scale. */
-    suspend fun reportPain(sessionId: String?, sessionExerciseId: String?, region: String, side: String, severity: String, phase: String, context: String): String {
+    suspend fun reportPain(
+        sessionId: String?,
+        sessionExerciseId: String?,
+        region: String,
+        side: String,
+        severity: String,
+        phase: String,
+        context: String,
+        symptoms: List<String> = emptyList(),
+    ): String {
         val now = ctx.nowMs()
         val score = when (severity) { "mild" -> 2; "moderate" -> 5; else -> 8 }
         lateinit var id: String
         db.withTransaction {
             val w = wellness(sessionId, "pain", phase).copy(
                 session_exercise_id = sessionExerciseId, pain_body_region = region, pain_side = side,
-                pain_severity = severity, pain_score = score,
+                pain_severity = severity, pain_score = score, symptom_codes = symptoms.distinct().sorted(),
             )
             id = w.id
             db.wellness().upsert(w)
@@ -267,7 +276,7 @@ class SessionRepository(
                     payload = mapOf(
                         "wellness_log_id" to JsonPrimitive(w.id), "body_region" to JsonPrimitive(region), "side" to JsonPrimitive(side),
                         "severity" to JsonPrimitive(severity), "pain_score" to JsonPrimitive(score),
-                        "symptom_codes" to JsonArray(emptyList()), "context" to JsonPrimitive(context),
+                        "symptom_codes" to JsonArray(symptoms.distinct().sorted().map(::JsonPrimitive)), "context" to JsonPrimitive(context),
                     ),
                 ),
             )

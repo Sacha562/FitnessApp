@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
+import dev.fitnessapp.data.db.local.ChallengeLiveSessionEntity
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.db.local.DeadLetterEntity
 import dev.fitnessapp.data.db.local.OutboxEntity
@@ -138,4 +139,16 @@ interface CrashLogDao {
 
     @Query("SELECT * FROM crash_log ORDER BY id")
     suspend fun all(): List<CrashLogEntity>
+}
+
+@Dao
+interface ChallengeLiveDao {
+    @Upsert
+    suspend fun upsert(row: ChallengeLiveSessionEntity)
+
+    @Query("SELECT * FROM challenge_live_session WHERE session_id = :sessionId")
+    suspend fun get(sessionId: String): ChallengeLiveSessionEntity?
+
+    @Query("SELECT * FROM challenge_live_session WHERE session_id = :sessionId")
+    fun observe(sessionId: String): Flow<ChallengeLiveSessionEntity?>
 }

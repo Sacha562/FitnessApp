@@ -168,10 +168,13 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     }
 
     painSheetFor?.let { chip ->
-        PainSheet(onDismiss = { painSheetFor = null }, preselectedRegion = PAIN_PRESELECT[chip]) { region, side, severity ->
+        PainSheet(onDismiss = { painSheetFor = null }, preselectedRegion = PAIN_PRESELECT[chip]) { region, side, severity, symptoms ->
             painSheetFor = null
             painReported += "$region ($severity)"
-            scope.launch { c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "summary") }
+            scope.launch {
+                val wid = c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "summary", symptoms)
+                runCatching { c.challengeSessions.forwardPain(wid, region, side, severity, symptoms, sessionId) }
+            }
         }
     }
 }
