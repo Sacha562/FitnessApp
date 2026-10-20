@@ -19,7 +19,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-/** One in-session rule outcome on a logged row (6.10); [rowsBefore] lets the logger undo a `suggest`. */
+/** One in-session rule outcome on a logged row (6.10); [rowsBefore] and [rowsAfter] let the logger undo a `suggest`. */
 data class RuleApplication(
     val ruleId: String,
     val ruleTag: String,
@@ -34,6 +34,7 @@ data class RuleApplication(
     val msgParams: Map<String, String> = emptyMap(),
     val rowsBefore: List<PlannedRow> = emptyList(),
     val evalError: String? = null,
+    val rowsAfter: List<PlannedRow> = emptyList(),
 )
 
 /** The live state of one item: its current planned rows, the rows logged so far, and its rule history. */
@@ -133,18 +134,71 @@ object InSessionRuleRunner {
                     rows = updated
                     applied = applied + r.id
                     fieldsTouched[a.field] = r.id
-                    apps += RuleApplication(r.id, r.spec.tag, r.spec.proposal, "suggest", a.field, from, to, remaining, a.msg, mapOf("value" to (to ?: "")), before)
+                    apps += RuleApplication(
+                        r.id, r.spec.tag, r.spec.proposal, "suggest", a.field, from, to, remaining, a.msg, mapOf("value" to (to ?: "")), before,
+                        rowsAfter = remaining.map { updated[it] },
+                    )
                 }
             }
         }
         return Result(item.copy(rows = rows, appliedRules = applied), apps)
     }
 
-    /** Undo restores the rows' planned values before the application; the rule does not fire again on the item. */
-    fun undo(item: LiveItem, app: RuleApplication): LiveItem {
+    /**
+     * Undo of a `suggest` takes back only that rule's change to its field; the rule does not fire again on the
+     * item. A row whose field no later rule touched gets its earlier value back; on a row a later rule changed
+     * since, only the undone rule's step is taken back (40 -> +5 -> +5 -> undo the first = 45).
+     */
+    fun undo(
+        def: CompiledDefinition,
+        params: ParamView,
+        state: EnrollmentState,
+        facts: EngineFacts,
+        date: LocalDate,
+        item: LiveItem,
+        app: RuleApplication,
+    ): LiveItem {
+        require(app.kind == "suggest") { "only a suggest can be undone, not ${app.kind}" }
+        val field = app.field ?: return item
+        val action = def.inSessionRules.firstOrNull { it.id == app.ruleId }?.actions?.filterIsInstance<InSessionAction.Suggest>()
+            ?.firstOrNull { it.field == field } ?: return item
+        val env = RuleEnv(def, params, Records(params), state, date, facts)
         val rows = item.rows.toMutableList()
-        app.rowsAffected.forEachIndexed { k, i -> if (i < rows.size && k < app.rowsBefore.size) rows[i] = app.rowsBefore[k] }
+        app.rowsAffected.forEachIndexed { k, i ->
+            val before = app.rowsBefore.getOrNull(k) ?: return@forEachIndexed
+            val after = app.rowsAfter.getOrNull(k) ?: return@forEachIndexed
+            val cur = rows.getOrNull(i) ?: return@forEachIndexed
+            rows[i] = if (fieldText(cur, field) == fieldText(after, field)) {
+                restoreField(cur, before, field)
+            } else {
+                val step = (fieldNum(after, field) ?: BigDecimal.ZERO).subtract(fieldNum(before, field) ?: BigDecimal.ZERO)
+                val now = fieldNum(cur, field) ?: return@forEachIndexed
+                change(env, cur, action.copy(op = "set"), now.subtract(step), cur.changedByRule, facts)
+            }
+        }
         return item.copy(rows = rows, undoneRules = item.undoneRules + app.ruleId)
+    }
+
+    /** The undone field's columns as they were before the rule (derived loads included); other fields stay. */
+    private fun restoreField(cur: PlannedRow, before: PlannedRow, field: String): PlannedRow = when (field) {
+        "assistPin" -> cur.copy(
+            pin = before.pin, assistKg = before.assistKg, oneArmLoadKg = before.oneArmLoadKg, systemLoadKg = before.systemLoadKg,
+            changedByRule = before.changedByRule,
+        )
+        "added" -> cur.copy(addedKg = before.addedKg, systemLoadKg = before.systemLoadKg, plateBreakdown = before.plateBreakdown, changedByRule = before.changedByRule)
+        "reps" -> cur.copy(targetReps = before.targetReps, changedByRule = before.changedByRule)
+        "hold_s" -> cur.copy(targetHoldS = before.targetHoldS, changedByRule = before.changedByRule)
+        "fingers" -> cur.copy(fingers = before.fingers, changedByRule = before.changedByRule)
+        else -> cur
+    }
+
+    private fun fieldNum(r: PlannedRow, field: String): BigDecimal? = when (field) {
+        "assistPin" -> r.pin
+        "added" -> r.addedKg
+        "reps" -> r.targetReps?.let { BigDecimal(it) }
+        "hold_s" -> r.targetHoldS
+        "fingers" -> r.fingers?.let { BigDecimal(it) }
+        else -> null
     }
 
     /** The rows of the pair the last logged row completed, in side order; null when the pair is incomplete. */
@@ -165,7 +219,7 @@ object InSessionRuleRunner {
         else -> null
     }
 
-    private fun change(env: RuleEnv, row: PlannedRow, a: InSessionAction.Suggest, v: BigDecimal, ruleId: String, facts: EngineFacts): PlannedRow {
+    private fun change(env: RuleEnv, row: PlannedRow, a: InSessionAction.Suggest, v: BigDecimal, ruleId: String?, facts: EngineFacts): PlannedRow {
         fun op(old: BigDecimal?): BigDecimal = if (a.op == "add") (old ?: BigDecimal.ZERO).add(v) else v
         return when (a.field) {
             "assistPin" -> {

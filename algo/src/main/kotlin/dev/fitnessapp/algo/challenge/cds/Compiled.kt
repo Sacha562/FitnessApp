@@ -172,6 +172,15 @@ data class ModeInfo(
 
 data class GateInfo(val phaseId: Int, val source: String, val criteria: List<CompiledExpr>, val labels: List<I18n>)
 
+/** A habit's expressions (2.4.8): conditions, the measure weekday and the prescription's state-dependent fields. */
+data class CompiledHabit(
+    val skipIf: CompiledExpr?,
+    val enabledIf: CompiledExpr?,
+    val measureWeekday: CompiledExpr?,
+    /** `prescription.hold_s` / `prescription.added` when given as expressions (OAP plank: `s.plankS`). */
+    val fields: Map<String, CompiledExpr>,
+)
+
 class CompiledDefinition(
     val doc: DefinitionDoc,
     val jcsSha256: String,
@@ -188,7 +197,7 @@ class CompiledDefinition(
     val weekCounts: CompiledExpr,
     val postponeIf: CompiledExpr,
     val hardLimits: Map<String, CompiledExpr>,
-    val habitExprs: Map<String, Pair<CompiledExpr?, CompiledExpr?>>,
+    val habits: Map<String, CompiledHabit>,
 ) {
     val slug: String get() = doc.id
     val version: String get() = doc.version

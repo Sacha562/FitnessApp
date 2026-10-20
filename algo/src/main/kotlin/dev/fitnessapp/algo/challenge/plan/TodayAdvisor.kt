@@ -25,12 +25,15 @@ object TodayAdvisor {
         val today = Week.localDate(input.now, input.zone)
         plan.sessions.firstOrNull { it.date == today }?.let { return TodayAdvice("challenge", it.slot, it.interval.start, reasons = listOf("planned:${it.source}")) }
         if (trainNow) {
+            val sequence = def.doc.schedule.order.sequence
             val remaining = plan.sessions.filter { it.source == "suggested" }.map { it.slot }
+                .sortedBy { slot -> sequence.indexOfFirst { slot in it }.let { if (it < 0) Int.MAX_VALUE else it } }
             val start = input.now.plus(Duration.ofMinutes(params.int("challenge.plan.lead_min").toLong()))
             for (slot in remaining) {
                 val dur = Duration.ofMinutes((def.doc.schedule.preferred.firstOrNull { it.slot == slot }?.durMin ?: Materializer.templateFor(def, input.state, slot)?.bookedMin ?: 0).toLong())
-                val trial = WeekPlanner.plan(def, params, input.copy(matched = input.matched + SlotAnchor(slot, Interval(start, start.plus(dur)), "suggested", null)))
-                val hard = trial.sessions.filter { it.slot == slot && it.date == today }
+                // The trial is fixed like a matched event, so every hard constraint it breaks is charged to it (7.4).
+                val trial = WeekPlanner.plan(def, params, input.copy(matched = input.matched + SlotAnchor(slot, Interval(start, start.plus(dur)), "train_now", null)))
+                val hard = trial.sessions.filter { it.slot == slot && it.date == today && it.source == "train_now" }
                 if (!trial.partial && hard.isNotEmpty() && hard.all { it.constraintWarnings.isEmpty() }) {
                     return TodayAdvice("challenge", slot, start, reasons = listOf("train_now"))
                 }

@@ -130,6 +130,39 @@ class WeekPlannerTest {
         }
         val sat = inp.copy(now = Instant.parse("2026-10-17T08:00:00Z"))
         TodayAdvisor.advise(def, params, sat, WeekPlanner.plan(def, params, sat)).kind shouldBe "rest"
+        // Train now on Tuesday: C fits today and the rest of the week still holds A and B.
+        val tue = inp.copy(now = Instant.parse("2026-10-13T08:00:00Z"))
+        TodayAdvisor.advise(def, params, tue, WeekPlanner.plan(def, params, tue), trainNow = true).let {
+            it.kind shouldBe "challenge"
+            it.slot shouldBe "C"
+            it.reasons shouldBe listOf("train_now")
+        }
+    }
+
+    @Test
+    fun `train now never breaks a hard constraint`() {
+        // Deload week: C done Wednesday, A done Friday, the test suggested for Sunday. On Saturday the test would
+        // break the Sunday weekday rule, the rest day before it and the gap after A.
+        val s = normalBlock2().copy(mode = "deload", plannedTest = PlannedTest(LocalDate.parse("2026-10-18"), "blockRelative"))
+        val inp = input(s, "2026-10-12", now = "2026-10-17T08:00:00Z").copy(
+            done = listOf(
+                DoneSession("C", LocalDate.parse("2026-10-14"), Interval(OapFixture.at("2026-10-14", "19:45"), OapFixture.at("2026-10-14", "21:15"))),
+                DoneSession("A", LocalDate.parse("2026-10-16"), Interval(OapFixture.at("2026-10-16", "19:45"), OapFixture.at("2026-10-16", "21:15"))),
+            ),
+        )
+        val plan = WeekPlanner.plan(def, params, inp)
+        plan.sessions.map { "${it.slot} ${it.source}" } shouldBe listOf("C done", "A done", "TEST suggested")
+        TodayAdvisor.advise(def, params, inp, plan, trainNow = true).kind shouldBe "rest"
+    }
+
+    @Test
+    fun `a run the day before B is a warning, not a violation`() {
+        val s = normalBlock2()
+        val run = Interval(OapFixture.at("2026-10-17", "09:00"), OapFixture.at("2026-10-17", "09:45"))
+        val plan = WeekPlanner.plan(def, params, input(s, "2026-10-12").copy(runs = listOf(run)))
+        plan.slots().last() shouldBe "B 2026-10-18 11:00"
+        plan.warnings shouldBe listOf("restBefore:run_before_B")
+        plan.sessions.all { it.constraintWarnings.isEmpty() } shouldBe true
     }
 
     @Test

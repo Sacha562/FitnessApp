@@ -48,7 +48,7 @@ class InSessionRuleTest {
         after.rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(45) }
         after.rows.drop(2).all { it.changedByRule == "ins.A.oaa.calibrate" } shouldBe true
         after.rows.take(2).map { it.pin } shouldBe listOf(BigDecimal(40), BigDecimal(40))
-        val undone = InSessionRuleRunner.undo(after, app)
+        val undone = InSessionRuleRunner.undo(def, params, s, OapFixture.facts, date, after, app)
         undone.rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(40) }
         // The undone rule does not fire again on this item, even after another weak pair.
         val (again, apps2) = pair(undone, s, 2, l = 1, r = 1, pin = "40")
@@ -70,6 +70,12 @@ class InSessionRuleTest {
         item = p3
         val (_, a4) = pair(item, s, 4, l = 1, r = 1, pin = "50")
         a4.none { it.kind == "suggest" } shouldBe true
+        // Undo of the calibration takes back its own +5 lb only; the failure rule's +5 lb stays.
+        val undone = InSessionRuleRunner.undo(def, params, s, OapFixture.facts, date, p3, a1.single { it.kind == "suggest" })
+        undone.rows.drop(6).map { it.pin } shouldBe List(4) { BigDecimal(45) }
+        undone.rows.drop(6).all { it.changedByRule == "ins.A.oaa.fail" } shouldBe true
+        undone.rows.drop(6).map { it.assistKg } shouldBe p1.rows.drop(6).map { it.assistKg }
+        undone.rows.subList(2, 6).map { it.pin } shouldBe List(4) { BigDecimal(40) }
     }
 
     @Test

@@ -27,7 +27,8 @@ internal class Lexer(private val src: String, private val maxStringLength: Int) 
         return when {
             c in '0'..'9' -> number(start)
             c == '\'' -> string(start)
-            c.isLetter() || c == '_' -> {
+            // Identifiers are ASCII only; any other letter falls through to `op` and fails as a parse error.
+            (isIdentChar(c) && c !in '0'..'9') -> {
                 while (pos < src.length && isIdentChar(src[pos])) pos++
                 val text = src.substring(start, pos)
                 val kind = when (text) {

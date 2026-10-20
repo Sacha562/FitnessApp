@@ -128,7 +128,7 @@ local `89 (local)`, residue 0; advisors unchanged; probes P1-P3 unchanged, `fitn
 
 ## M2a log (2026-10-20)
 
-**Builds**: `gradlew check` green: 290 unit tests (`:algo` 149, `:sim` 23, `:data` 50, `:app` 68). M2a changes no
+**Builds**: `gradlew check` green: 304 unit tests (`:algo` 163, `:sim` 23, `:data` 50, `:app` 68). M2a changes no
 screen and no database object (D32).
 
 **Engine** (how it was built: CHALLENGE_ENGINE 16.1): FitExpr, the definition validator (stages 1 and 2, checks
@@ -160,3 +160,8 @@ materializer with in-session rules and Undo, the week planner with today advice,
 - Catch-up folded ticks one by one and lost the `test.due` of a test scheduled on `week.started`; it now folds the
   synthesized batch and synthesizes again only when the planned test moves.
 - A rule whose actions resolved to nothing was audited as `applied`; it is now `no_effect`.
+- An independent review of the engine against the spec found six bugs, now fixed with tests: "train now" ignored
+  hard constraints on the tried slot; with P16 approved a right-arm-only rep did not pass the phase-3 gate; a late
+  `resume` revived an abandoned or completed enrollment; a non-ASCII letter hung the FitExpr lexer; Undo of an
+  in-session rule wiped a later rule's change; an amendment cycle hung the fold. Home habits for a day
+  (`HabitPlanner`: skip, deload scale, injury mute, plank days, measure day) were missing and were added.

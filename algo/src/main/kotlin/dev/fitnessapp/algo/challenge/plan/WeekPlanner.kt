@@ -1,6 +1,7 @@
 package dev.fitnessapp.algo.challenge.plan
 
 import dev.fitnessapp.algo.challenge.cds.CompiledDefinition
+import dev.fitnessapp.algo.challenge.cds.HardConstraintSpec
 import dev.fitnessapp.algo.challenge.cds.SemanticValidator
 import dev.fitnessapp.algo.challenge.eca.Records
 import dev.fitnessapp.algo.challenge.eca.RuleEnv
@@ -62,7 +63,7 @@ data class PlacedSession(
     val templateId: String?,
     val date: LocalDate,
     val interval: Interval,
-    /** `done`, `calendar_marked`, `calendar_unmarked` or `suggested` (7.1). */
+    /** `done`, `calendar_marked`, `calendar_unmarked` or `suggested` (7.1); `train_now` for the trial of 7.6. */
     val source: String,
     val eventRef: String? = null,
     val slotTypeMismatch: Boolean = false,
@@ -208,7 +209,7 @@ object WeekPlanner : DeclaresParams {
         val score = best?.sumOf { it.score }?.minus(w.gapEvenness * gapDeviation(all.map { it.date })) ?: 0.0
         return ChallengeWeekPlan(
             iso, s.mode, input.projected, withWarnings, blockedDays(def, input, all), dropped.isNotEmpty() || unplaced.isNotEmpty(),
-            dropped + unplaced, relaxations, score, warnings.map { it.first }.distinct(),
+            dropped + unplaced, relaxations, score, (warnings.map { it.first } + runWarnings(def, input, all)).distinct(),
         )
     }
 
@@ -359,16 +360,18 @@ object WeekPlanner : DeclaresParams {
                         val a = tagged[i]
                         val b = tagged[j]
                         if (onlyPlaced && !a.placed && !b.placed) continue
-                        if (kotlin.math.abs(Week.calendarDays(a.date, b.date)) < (h.days ?: 0) + 1) out += h.id to (a.slot ?: b.slot)
+                        if (kotlin.math.abs(Week.calendarDays(a.date, b.date)) < (h.days ?: 0) + 1) out += both(h.id, a, b)
                     }
                 }
                 "restDayBefore" -> for (x in all.filter { it.slot in h.slots }) {
                     val before = x.date.minusDays(1)
                     for (y in all) {
-                        if (y === x || y.date != before) continue
+                        if (y === x || y.date != before || !y.gym) continue
+                        if (h.scope == "tags" && y.tags.none { it in h.appliesToTags }) continue
                         if (onlyPlaced && !x.placed && !y.placed) continue
-                        out += h.id to x.slot
+                        out += both(h.id, x, y)
                     }
+                    if ((!onlyPlaced || x.placed) && runForbidden(h) && input.runs.any { Week.localDate(it.start, input.zone) == before }) out += h.id to x.slot
                 }
                 "maxPerWeek" -> {
                     val n = def.hardLimits[h.id]?.let { e ->
@@ -379,7 +382,10 @@ object WeekPlanner : DeclaresParams {
                         }
                     } ?: continue
                     val inWeek = all.filter { Week.isoWeek(it.date) == iso && h.sessionTag in it.tags }
-                    if (inWeek.size > n && (!onlyPlaced || inWeek.any { it.placed })) out += h.id to null
+                    if (inWeek.size > n && (!onlyPlaced || inWeek.any { it.placed })) {
+                        out += h.id to null
+                        for (x in inWeek) x.slot?.let { out += h.id to it }
+                    }
                 }
                 "slotWeekday" -> for (x in all.filter { it.slot == h.slot && (it.placed || !onlyPlaced) }) {
                     if (x.date.dayOfWeek.value != weekday(h.weekday ?: "")) out += h.id to x.slot
@@ -394,7 +400,7 @@ object WeekPlanner : DeclaresParams {
                 val b = bySlot.filter { it.slot in seq[g + 1] }
                 for (x in a) for (y in b) {
                     if (onlyPlaced && !x.placed && !y.placed) continue
-                    if (!x.date.isBefore(y.date)) out += "order" to y.slot
+                    if (!x.date.isBefore(y.date)) out += both("order", x, y)
                 }
             }
         }
@@ -416,14 +422,36 @@ object WeekPlanner : DeclaresParams {
         return out
     }
 
+    /** A violation between two sessions is charged to each challenge slot involved, so neither side looks clean. */
+    private fun both(id: String, a: Session, b: Session): List<Pair<String, String?>> =
+        listOfNotNull(a.slot, b.slot).distinct().map { id to it }.ifEmpty { listOf(id to null) }
+
+    /** 7.4: a run the day before is a violation with `runs: forbid`, or with scope `all_training` unless `runs: warn`. */
+    private fun runForbidden(h: HardConstraintSpec): Boolean =
+        h.runs == "forbid" || (h.scope == "all_training" && h.runs != "warn")
+
+    /** `restDayBefore` with `runs: warn`: a run the day before a challenge slot is reported, never a violation. */
+    private fun runWarnings(def: CompiledDefinition, input: PlanInput, all: List<PlacedSession>): List<String> {
+        val out = ArrayList<String>()
+        for (h in def.doc.schedule.hard.filter { it.type == "restDayBefore" && it.runs == "warn" }) {
+            for (x in all.filter { it.slot in h.slots }) {
+                val before = x.date.minusDays(1)
+                if (input.runs.any { Week.localDate(it.start, input.zone) == before }) out += "${h.id}:run_before_${x.slot}"
+            }
+        }
+        return out
+    }
+
     /** Hard-constraint violations among fixed sessions: reported, never moved (7.2, 9.7). */
     private fun fixedViolations(def: CompiledDefinition, params: ParamView, input: PlanInput, all: List<PlacedSession>): List<Pair<String, String?>> {
         val sessions = ArrayList<Session>()
         input.previousLastGym?.let { sessions += Session(null, it.date, it.interval, it.tags, placed = false) }
         for (g in input.general) sessions += Session(null, g.date, g.interval, g.tags, placed = false)
         for (p in all) sessions += Session(p.slot, p.date, p.interval, p.tags, placed = p.source == "suggested")
+        // Suggested sessions passed the search; a violation charged to one comes from a relaxation the plan reports.
         return violations(def, params, input, sessions, def.doc.schedule.order.strictness == "strict", onlyPlaced = false)
             .filter { v -> all.none { it.source == "suggested" && it.slot == v.second } }
+            .distinct()
     }
 
     /** Blocked days of 8.4 inside the planned ISO week. */
@@ -434,7 +462,8 @@ object WeekPlanner : DeclaresParams {
         for (h in def.doc.schedule.hard.filter { it.type == "restDayBefore" }) {
             for (x in sessions.filter { it.slot in h.slots }) {
                 val d = x.date.minusDays(1)
-                if (d in days) out[d] = BlockedDay(d, h.scope ?: "all_gym", emptyList(), "rest day before ${x.slot}", h.id)
+                val tags = if (h.scope == "tags") h.appliesToTags else emptyList()
+                if (d in days) out[d] = BlockedDay(d, h.scope ?: "all_gym", tags, "rest day before ${x.slot}", h.id)
             }
         }
         for (h in def.doc.schedule.hard.filter { it.type == "minGapDays" }) {

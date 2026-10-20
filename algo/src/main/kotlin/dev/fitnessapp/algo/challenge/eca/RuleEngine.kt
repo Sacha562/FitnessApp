@@ -94,7 +94,8 @@ object RuleEngine : DeclaresParams {
         event: ChallengeEvent,
         s0: EnrollmentState,
         depth: Int = 0,
-        seen: Set<String> = emptySet(),
+        /** Derived event types already evaluated for this root event; shared down and across the cascade. */
+        cascadeSeen: MutableSet<String> = sortedSetOf(),
     ): Result {
         val env = factory.create(s0, event)
         val hashBefore = StateJson.hash(s0)
@@ -173,6 +174,10 @@ object RuleEngine : DeclaresParams {
                     else -> {
                         applied[w.target] = w.value
                         written[w.target] = r.id
+                        // Starting or restarting a block also writes the mode (5.2): a later `$mode` write loses.
+                        if (w.target == BLOCK && (w.value as StrV).s.let { it == "restartBlock" || it.startsWith("startNewBlock:") }) {
+                            written.putIfAbsent(MODE, r.id)
+                        }
                         WriteRecord(w.target, oldText, newText, Outcome.APPLIED, null, w.notes)
                     }
                 }
@@ -222,20 +227,25 @@ object RuleEngine : DeclaresParams {
         val allAudits = ArrayList(audits.sortedWith(compareBy<AuditRow>({ Stage.of(it.stage)?.ordinal ?: 0 }, { -it.prio }, { it.ruleId })))
         val allNotifications = ArrayList(notifications)
 
-        // Bounded cascade of derived events (5.6).
+        // Bounded cascade of derived events (5.6): each derived type at most once per root event.
         val maxDepth = params.int("challenge.eca.cascade_max_depth")
         for (d in derivedEvents) {
-            if (d in seen) continue
-            val listened = def.rules.any { d in it.spec.on }
-            if (!listened) continue
+            if (!cascadeSeen.add(d)) continue
+            val listening = def.rules.filter { d in it.spec.on }
+            if (listening.isEmpty()) continue
+            val derived = ChallengeEvent(event.id, d, event.occurredAt, event.localDate, EventPayload.Empty, event.engineFacts)
             if (depth >= maxDepth) {
                 warnings += "cascade_limit:$d"
+                val cutId = Ids.fitness("challenge_eval:${event.id}:${depth + 1}:$d")
+                for (r in listening) {
+                    allAudits += row(def, env, cutId, derived, depth + 1, r, Outcome.ERROR, null, "cascade_limit", sortedMapOf(), emptyList(), null, null, hashAfter, hashAfter)
+                        .copy(derivedEventType = d)
+                }
                 continue
             }
-            val derived = ChallengeEvent(event.id, d, event.occurredAt, event.localDate, EventPayload.Empty, event.engineFacts)
-            val sub = evaluate(def, params, factory, derived, state, depth + 1, seen + d)
+            val sub = evaluate(def, params, factory, derived, state, depth + 1, cascadeSeen)
             state = sub.state
-            allAudits += sub.audits.map { it.copy(derivedEventType = d) }
+            allAudits += sub.audits.map { it.copy(derivedEventType = it.derivedEventType ?: d) }
             allNotifications += sub.notifications
             warnings += sub.warnings
         }

@@ -95,6 +95,39 @@ class EcaSnapshotSemanticsTest {
         step.notifications.map { it.kind to it.msgKey } shouldContainExactly listOf("stop" to "elbow_protocol")
     }
 
+    private fun readiness() = OapFixture.event(EventTypes.READINESS, "2026-10-08", "18:00", EventPayload.Readiness(0, emptyList()))
+
+    @Test
+    fun `5_6 each derived event type is evaluated at most once per root event`() {
+        val def = withRules(
+            """{"id": "t.r1", "tag": "E", "stage": "structural", "prio": 5, "on": ["readiness.checked"], "if": "mode == 'normal'", "then": [{"setMode": "deload"}], "explain": {"en": "r"}}""",
+            """{"id": "t.r2", "tag": "E", "stage": "structural", "prio": 5, "on": ["mode.changed"], "if": "mode == 'deload'", "then": [{"setMode": "extra_deload"}], "explain": {"en": "r"}}""",
+            """{"id": "t.r3", "tag": "E", "stage": "structural", "prio": 5, "on": ["mode.changed"], "if": "mode == 'extra_deload'", "then": [{"notify": "info", "msg": "phase_up"}], "explain": {"en": "r"}}""",
+        )
+        val s = OapFixture.start(OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false), definition = def)
+        val step = apply(def, s, readiness())
+        step.state.mode shouldBe "extra_deload"
+        rows(step, "t.r2").single().derivedEventType shouldBe "mode.changed"
+        rows(step, "t.r3") shouldBe emptyList()
+        step.notifications.none { it.msgKey == "phase_up" } shouldBe true
+    }
+
+    @Test
+    fun `starting a block writes the mode first`() {
+        val def = withRules(
+            """{"id": "t.b1", "tag": "E", "stage": "structural", "prio": 30, "on": ["readiness.checked"], "if": "true", "then": [{"startNewBlock": {"firstWeekMode": "'deload'"}}], "explain": {"en": "b"}}""",
+            """{"id": "t.b2", "tag": "E", "stage": "structural", "prio": 10, "on": ["readiness.checked"], "if": "true", "then": [{"setMode": "extra_deload"}], "explain": {"en": "b"}}""",
+        )
+        val s = OapFixture.start(OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false), definition = def)
+        val step = apply(def, s, readiness())
+        step.state.mode shouldBe "deload"
+        step.state.block.index shouldBe 2
+        rows(step, "t.b2").single().let {
+            it.outcome shouldBe Outcome.SUPPRESSED_FIRST_WRITER
+            it.suppressedBy shouldBe "t.b1"
+        }
+    }
+
     private val frozenRule =
         """{"id": "t.frozen", "tag": "E", "stage": "progression", "prio": 10, "on": ["session.completed"], "if": "sess.slot == 'C'", "then": [{"set": "s.sthS", "to": "8s"}], "explain": {"en": "f"}}"""
 

@@ -84,8 +84,9 @@ object EnrollmentFold : DeclaresParams {
         for (e in sorted) {
             val target = e.supersedesEventId ?: continue
             var root = target
-            // Follow chains of amendments to the original event.
-            while (true) {
+            // Follow chains of amendments to the original event; a cycle (corrupt data) stops at its first repeat.
+            val visited = sortedSetOf<java.util.UUID>()
+            while (visited.add(root)) {
                 val parent = sorted.firstOrNull { it.id == root }?.supersedesEventId ?: break
                 root = parent
             }
@@ -99,7 +100,10 @@ object EnrollmentFold : DeclaresParams {
         trail += created to step.state
         for (e in sorted) {
             if (e === created) continue
-            if (e.supersedesEventId != null && e.supersedesEventId in ids) continue
+            if (e.supersedesEventId != null) {
+                if (e.supersedesEventId !in ids) warnings += "orphan_amendment:${e.id}"
+                continue
+            }
             val replacement = latest[e.id.toString()]
             val effective = when {
                 replacement == null -> e
@@ -222,7 +226,9 @@ object EnrollmentFold : DeclaresParams {
     /** Re-tags an `Int` written to a `Num` var and the like; other values pass unchanged. */
     private fun coerce(t: Type, v: Value): Value = if (t is Type.Q && v is QV && v.dim != t.dim && v.dim == Dim.INT) QV(t.dim, v.v) else v
 
+    /** Folds one event onto [s0]. Amendments and retractions change history, so they need [fold] (4.11). */
     fun apply(def: CompiledDefinition, params: ParamView, s0: EnrollmentState, e: ChallengeEvent): Step {
+        require(e.supersedesEventId == null) { "${e.type} ${e.id} supersedes an event: refold instead (4.11)" }
         val records = Records(params)
         val facts = factsOf(s0, e)
         val warnings = ArrayList<String>()
@@ -240,17 +246,21 @@ object EnrollmentFold : DeclaresParams {
                 require(p.decision == "approved" || p.decision == "declined") { "decision ${p.decision}" }
                 s = s.copy(proposalDecisions = TreeMap(s.proposalDecisions).also { it[p.proposalId] = Decision(p.decision, e.localDate) })
             }
-            is EventPayload.Pause -> {
-                s = s.copy(status = EnrollmentState.PAUSED, pausedAt = e.localDate)
+            // 4.5: pause only from active, resume only from paused; completed and abandoned are final. The rules
+            // see the state before the event (5.3), the status changes after them.
+            is EventPayload.Pause -> if (s.status != EnrollmentState.ACTIVE) warnings += "ignored:${e.type}:${s.status}" else {
                 val r = rules(s)
-                s = r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
+                s = if (r.state.status == EnrollmentState.ACTIVE) r.state.copy(status = EnrollmentState.PAUSED, pausedAt = e.localDate) else r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
             }
-            is EventPayload.Resume -> {
-                s = s.copy(status = EnrollmentState.ACTIVE, pausedAt = null)
+            is EventPayload.Resume -> if (s.status != EnrollmentState.PAUSED) warnings += "ignored:${e.type}:${s.status}" else {
                 val r = rules(s)
-                s = r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
+                s = if (r.state.status == EnrollmentState.PAUSED) r.state.copy(status = EnrollmentState.ACTIVE, pausedAt = null) else r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
             }
-            is EventPayload.Abandon -> s = s.copy(status = EnrollmentState.ABANDONED)
+            is EventPayload.Abandon -> if (s.status != EnrollmentState.ACTIVE && s.status != EnrollmentState.PAUSED) {
+                warnings += "ignored:${e.type}:${s.status}"
+            } else {
+                s = s.copy(status = EnrollmentState.ABANDONED)
+            }
             is EventPayload.ManualOverride -> {
                 val (st, row) = override(def, params, s, e, p, env(s, e))
                 s = st
@@ -303,10 +313,9 @@ object EnrollmentFold : DeclaresParams {
                 }
             }
             is EventPayload.AttemptLogged -> {
-                if (p.success) {
-                    val v = SideV(if (p.side == "L" || p.side == "both") BoolV.TRUE else null, if (p.side == "R" || p.side == "both") BoolV.TRUE else null)
-                    s = s.copy(phaseObservations = observe(def, s.phaseObservations, RecordV("t", mapOf(p.metric to v))))
-                }
+                val outcome = if (p.success) BoolV.TRUE else BoolV.FALSE
+                val v = SideV(if (p.side == "L" || p.side == "both") outcome else null, if (p.side == "R" || p.side == "both") outcome else null)
+                s = s.copy(phaseObservations = observe(def, s.phaseObservations, RecordV("t", mapOf(p.metric to v))))
                 val r = rules(s)
                 s = r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
             }
@@ -349,7 +358,10 @@ object EnrollmentFold : DeclaresParams {
         return s.copy(weekLogs = logs)
     }
 
-    /** `m.*`: bool metrics OR per side, numeric metrics keep the latest value (3.7). */
+    /**
+     * `m.*`: bool metrics OR per side, numeric metrics keep the latest value (3.7). A side of a bool metric
+     * that has no true observation yet reads false, so `m.oa_rep.L || m.oa_rep.R` holds after a right-arm rep.
+     */
     private fun observe(def: CompiledDefinition, current: SortedMap<String, Value>, t: RecordV): SortedMap<String, Value> {
         val out = TreeMap(current)
         for ((k, v) in t.fields) {
@@ -361,17 +373,13 @@ object EnrollmentFold : DeclaresParams {
     }
 
     private fun mergeBool(old: Value?, new: Value): Value {
-        fun or(a: Value?, b: Value?): Value? = when {
-            a == BoolV.TRUE || b == BoolV.TRUE -> BoolV.TRUE
-            a != null || b != null -> BoolV.FALSE
-            else -> null
-        }
+        fun or(a: Value?, b: Value?): Value = if (a == BoolV.TRUE || b == BoolV.TRUE) BoolV.TRUE else BoolV.FALSE
         return when {
             new is SideV -> {
                 val o = old as? SideV
                 SideV(or(o?.l, new.l), or(o?.r, new.r))
             }
-            else -> or(old, new) ?: new
+            else -> or(old, new)
         }
     }
 
@@ -439,6 +447,8 @@ object EnrollmentFold : DeclaresParams {
                     Dim.MASS -> Grid.decimal(v.v, GridKind.KG)
                     Dim.DURATION -> Grid.decimal(v.v, GridKind.S)
                     Dim.NUM -> Grid.decimal(v.v, GridKind.RATIO)
+                    // A pin keeps its machine step (2.5 stays 2.5); the machine table already rounded it.
+                    Dim.PIN -> Grid.decimal(v.v, GridKind.KG)
                     else -> v.v.setScale(0, RoundingMode.HALF_EVEN)
                 },
             ),

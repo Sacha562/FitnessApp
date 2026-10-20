@@ -342,3 +342,12 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   handled by P14 (extension) as OAP_CHALLENGE 4.1 always said ("ends the protocol even if pain persists"). One engine
   guarantee added with it: no rule outside the safety stage takes the mode out of injury, and a block rollover during
   injury keeps the injury mode (4.8, 11.1).
+- 2026-10-20 — M2a review fixes (D32): an independent read of the engine against CHALLENGE_ENGINE found and M2a fixed:
+  "train now" could break hard constraints (the trial is now a fixed session charged with every violation it causes);
+  with P16 approved a right-arm-only rep did not pass the phase-3 gate (unseen Bool sides now read false); a late
+  `resume` could revive an abandoned or completed enrollment; a non-ASCII letter hung the FitExpr lexer; Undo of an
+  in-session rule wiped a later rule's change; an amendment cycle hung the fold. Also aligned with the spec:
+  `restDayBefore` scope and runs, derived events once per root, a block start claims the `$mode` write, `pause` rules
+  see the pre-event state, pins keep their step. Home habits for a day (`HabitPlanner`) were missing and are added.
+  The challenge modules stay at 1.0.0: nothing outside the repo has used them yet, and the persona snapshots are
+  unchanged. CHALLENGE_ENGINE 16.1 lists the choices.

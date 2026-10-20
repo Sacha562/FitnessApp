@@ -268,21 +268,22 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
         doc.schedule.hard.forEachIndexed { i, h ->
             h.n?.let { n -> expr(n, state, "/schedule/hard/$i/n", expect = Type.INT)?.let { hardLimits[h.id] = it } }
         }
-        val habitExprs = LinkedHashMap<String, Pair<CompiledExpr?, CompiledExpr?>>()
+        val habits = LinkedHashMap<String, CompiledHabit>()
         doc.habits.forEachIndexed { i, h ->
             val skip = h.skipIf?.let { expr(it, state, "/habits/$i/skipIf", bool = true) }
             val enabled = h.enabledIf?.let { expr(it, state, "/habits/$i/enabledIf", bool = true) }
-            h.measure?.let { expr(it.weekday, state, "/habits/$i/measure/weekday", expect = Type.STR) }
+            val weekday = h.measure?.let { expr(it.weekday, state, "/habits/$i/measure/weekday", expect = Type.STR) }
+            val fields = LinkedHashMap<String, CompiledExpr>()
             for (f in listOf("hold_s", "added")) {
-                TemplateResolver.str(h.prescription[f])?.let { expr(it, state, "/habits/$i/prescription/$f") }
+                TemplateResolver.str(h.prescription[f])?.let { expr(it, state, "/habits/$i/prescription/$f") }?.let { fields[f] = it }
             }
-            habitExprs[h.id] = skip to enabled
+            habits[h.id] = CompiledHabit(skip, enabled, weekday, fields)
         }
 
         if (blockWeeks == null || weekCounts == null || postponeIf == null) return null
         return CompiledDefinition(
             doc, sha, params, stateVars, metrics, derived, templates, rules, inSession, gates, modes,
-            blockWeeks, weekCounts, postponeIf, hardLimits, habitExprs,
+            blockWeeks, weekCounts, postponeIf, hardLimits, habits,
         )
     }
 

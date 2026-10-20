@@ -48,6 +48,10 @@ class FitExprParserTypeTest {
         compileError("3x").code shouldBe "parse"
         compileError("2.5d").code shouldBe "parse"
         compileError("a # b").code shouldBe "parse"
+        // A non-ASCII letter outside quotes is a parse error, not an endless empty identifier.
+        compileError("café > 1").code shouldBe "parse"
+        compileError("é").code shouldBe "parse"
+        compileError("2é").code shouldBe "parse"
     }
 
     @Test

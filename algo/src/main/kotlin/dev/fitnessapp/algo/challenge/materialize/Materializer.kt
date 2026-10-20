@@ -5,6 +5,7 @@ import dev.fitnessapp.algo.challenge.cds.CompiledDefinition
 import dev.fitnessapp.algo.challenge.cds.CompiledItem
 import dev.fitnessapp.algo.challenge.cds.ExerciseChoice
 import dev.fitnessapp.algo.challenge.cds.FieldValue
+import dev.fitnessapp.algo.challenge.cds.HabitScale
 import dev.fitnessapp.algo.challenge.cds.I18n
 import dev.fitnessapp.algo.challenge.cds.ModeInfo
 import dev.fitnessapp.algo.challenge.cds.ModeSpec
@@ -93,6 +94,10 @@ object Materializer {
         val lightRirMin: Int?,
         val lightOverrides: Map<String, Map<String, FieldValue>>,
         val keepItLightNote: Boolean,
+        /** Habit id -> sets and time factors (OAP deload: daily hang x0.5). */
+        val habitScale: Map<String, HabitScale> = emptyMap(),
+        /** Habits muted in this mode (OAP injury: daily hang). */
+        val disableHabits: List<String> = emptyList(),
     )
 
     fun transform(def: CompiledDefinition, state: EnrollmentState, mode: String): Transform {
@@ -123,6 +128,8 @@ object Materializer {
             lightRirMin = if (lbOn) lb.rirMin else null,
             lightOverrides = if (lbOn) lbInfo.lightBilateralOverrides else emptyMap(),
             keepItLightNote = lb != null && !lbOn,
+            habitScale = first { it.habitScale.takeIf { h -> h.isNotEmpty() } } ?: emptyMap(),
+            disableHabits = first { it.disableHabits.takeIf { h -> h.isNotEmpty() } } ?: emptyList(),
         )
     }
 

@@ -97,7 +97,7 @@ class SemanticValidator(private val doc: DefinitionDoc, private val def: Compile
                 (item.fields.values + item.variants.values.flatMap { it.values }).filterIsInstance<FieldValue.Expr>().forEach { list += w to it.expr }
             }
         }
-        def.habitExprs.forEach { (id, p) -> listOfNotNull(p.first, p.second).forEach { list += "habit $id" to it } }
+        def.habits.forEach { (id, h) -> listOfNotNull(h.skipIf, h.enabledIf).forEach { list += "habit $id" to it } }
         return list
     }
 
