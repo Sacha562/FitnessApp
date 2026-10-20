@@ -909,7 +909,7 @@ example of the write path.
 
 | event_type | Category | Emitted by | Payload keys (registry) and value codes (this document) |
 |------------|----------|------------|--------------|
-| `rest_started` | rest | 12.3 `start` | `timer_id`, `set_id`, `planned_s`, `purpose` (`rest`, `between_sides`; `interval` is not emitted in v1, OI-27), `duration_source` (`rest_module`, `challenge`, `protocol`), `alarm_mode` (`alarm_clock`, `exact_idle`, `inexact`) |
+| `rest_started` | rest | 12.3 `start` | `timer_id`, `set_id`, `planned_s`, `purpose` (`rest`, `between_sides`, `interval` for a timed warm-up item, D33), `duration_source` (`rest_module`, `challenge`, `protocol`), `alarm_mode` (`alarm_clock`, `exact_idle`, `inexact`) |
 | `rest_adjusted` | rest | 12.3 `adjust` | `timer_id`, `delta_s`, `new_end_wall_ms`, `capped`, `via` (`button`, `long_press`, `notification`) |
 | `rest_skipped` | rest | 12.3 `skip` | `timer_id`, `remaining_ms`, `via` (`button`, `focus_mode`, `notification`) |
 | `rest_prewarn` | rest | 12.4 pre-warning (app UI visible only, C72) | `timer_id` |
@@ -1363,7 +1363,7 @@ between consecutive `session_events` in real sessions.
 |--------|---------|
 | `id` | UUIDv7 |
 | `session_id`, `set_log_id`, `exercise_id`, `side` | What the rest follows. |
-| `purpose` | `rest` or `between_sides` (the `rest_started.purpose` codes; `interval` is not used in v1, OI-27). |
+| `purpose` | `rest`, `between_sides` or `interval` (the `rest_started.purpose` codes; `interval` is the countdown of a timed warm-up item such as the OAP row, D33). |
 | `duration_source` | `rest_module`, `challenge` or `protocol`: where the engine output says the duration came from (REST-1, a challenge rest override, a test-protocol `rest_s`). |
 | `prescribed_s` | Duration from REST-1/challenge after clamping (12.3). |
 | `start_wall_ms`, `start_elapsed_ms`, `boot_count` | Start instant in both clocks; `boot_count` = `Settings.Global.BOOT_COUNT`. |
@@ -1436,6 +1436,25 @@ remainingMs(nowWall, nowElapsed, bootCount):
   if boot_count == bootCount: start_elapsed + (end_wall − start_wall) − nowElapsed     # immune to wall-clock changes
   else: end_wall − nowWall
 ```
+
+**Interval timers (`purpose = interval`, D33).** The countdown of a timed warm-up item (UX 11.7.6, the OAP
+"Row 3:00") uses the same table, alarm path and recovery as a rest, with these differences:
+
+```
+startInterval(nowWall, nowElapsed, bootCount, d_s, hardMaxS, durationSource, sessionId, plannedRowRef):
+  any active rest or interval timer first ends (rest: ended_by = next_set_early, as onNextSetLogged without a set)
+  start(nowWall, nowElapsed, bootCount, d_s, hardMaxS, interval, durationSource)   # start_wall = the Start tap, set_log_id null
+onEndAlarm (interval): same alert as a rest end (vibration waveform, optional tone, heads-up with the item name
+  and "done"); no overtime reminder; state = ended, ended_by = elapsed; the warm-up item is logged done with
+  duration_s = prescribed_s (+ adjustments) and completed_at = end_wall
+done early (the item's Done tap while running): state = ended, ended_by = skipped; the item is logged with the
+  measured seconds (completed_at = tap)
+adjust, skip, remainingMs, recovery: as for a rest
+```
+
+Nothing of an interval is copied into `set_logs` rest columns: the first working set after the warm-up has
+no preceding rest timer (`rest_end_reason = none`). The session notification shows the item countdown
+("Row · 1:12 left") with the same −15 s / Skip / +15 s actions.
 
 `setStartEstimate` is UX §19.8's function: for holds the explicit hold start (measured); otherwise the
 earliest of the first touch on the set card after the rest ended or was skipped, the Skip tap, and the
@@ -2611,7 +2630,7 @@ Items closed by the 2026-10-07 decisions are kept for traceability and marked "R
 | OI-24 | Resolved (ALGORITHMS.md implementation notes) | The P16 scanner pattern (6.3) needs a package convention: each registry module keeps non-public helpers in an `impl` sub-package. | ALGORITHMS.md adopts the `impl` convention and marks its OI-A02 resolved; 27.1 states it. | — |
 | OI-25 | Resolved by D17 | The "full re-push" restore action (DATA_MODEL §15.4 scenario R1, its open issue 12) is not specified here. | A Sync status action "Re-push all data" that re-enqueues every local row of every pushed table in dependency order (9.2), user-triggered only; automatic detection deferred. | Specification before M1 sync code. |
 | OI-26 | Resolved (DATA_MODEL §9.7.3) | The mapping of `calendar_link.state` (16.6) onto the synced `calendar_events.write_state` (E24) and `attention` columns was not written down. | DATA_MODEL §9.7.3 now has the mapping table (following this document's proposal, with `released` → `attention = edited_externally` and the last marker kept); 16.6 references it. | — |
-| OI-27 | Open | UX asks the rest timer to support a warm-up interval countdown (`purpose = interval`, UX §11.7.6, §19.9); the reducer supports only `rest` and `between_sides`. The registry's `rest_started.purpose` key already allows the value. | Not supported in v1 of this spec; UX §11.7.6 meanwhile uses an in-app countdown that keeps the screen on and vibrates only while the app is visible. | UX/ANDROID decision before the warm-up UI is built; that UI moved to M2 (D25, 2026-10-11). |
+| OI-27 | Resolved by D33 (alarm-backed interval, 12.3) | UX asks the rest timer to support a warm-up interval countdown (`purpose = interval`, UX §11.7.6, §19.9); the reducer supports only `rest` and `between_sides`. The registry's `rest_started.purpose` key already allows the value. | Not supported in v1 of this spec; UX §11.7.6 meanwhile uses an in-app countdown that keeps the screen on and vibrates only while the app is visible. | UX/ANDROID decision before the warm-up UI is built; that UI moved to M2 (D25, 2026-10-11). |
 | OI-28 | Resolved by C72 | UX §20.1 defined `instance_key` as 16 hex characters. | Full 64-hex DATA_MODEL §9.7.3 key; UX now uses it. | — |
 | OI-29 | Resolved by C37 | The OAP definition's `writeBack.marker` template and CHALLENGE_ENGINE's marker row described the uuid as the `calendar_link` row id. | Both now use the enrollment id (`[fitapp:v1 {enrollmentId} {slug}/{slot}/{isoWeek}]`), as 16.5 does. | — |
 | OI-30 | Resolved by C72 | C54's "app/FGS in the foreground" wording for the rest pre-warning was ambiguous. | UI-visible only (12.4); the DATA_MODEL §9.8.1 `rest_prewarn` note and UX agree. | — |

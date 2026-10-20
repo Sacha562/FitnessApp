@@ -584,6 +584,26 @@ scope is unchanged and the done-when is checked at the end of M2b.
 - **Done when**: a real A, B, C week and a test day run fully in the app, and next week's loads match
   what the rules say.
 
+M2b is built in six steps (D33), each ending with a green build and checks on the phone:
+
+1. **M2b.1 Storage and sync.** The OAP definition is bundled with the app and published to the database
+   by migration 016 (shown to you before it is applied). Room gets the enrollment, event, rule-audit and
+   calendar tables with sync, the local refold after a bootstrap, and tick catch-up at app start and in
+   the daily maintenance job.
+2. **M2b.2 Challenges tab and setup wizard.** The ten wizard steps with the import and the P01-P27
+   decisions, the dashboard with gate rows, the rules, proposals, history and tests tabs, Correct a value,
+   and pause, resume and abandon with their previews.
+3. **M2b.3 Challenge sessions.** Today shows the planned challenge session; Start materializes it with the
+   warm-up block (the alarm-backed row countdown, D33), the challenge card types, in-session rules with
+   Undo, the readiness and elbow check, the pain sheet, and the home habits with their reminders.
+4. **M2b.4 Test day.** The test-day wizard in the definition's order, validity, the review screen and the
+   recalculation report.
+5. **M2b.5 Calendar.** `calendar.classify` and `challenge.calendar`: reading and classifying events,
+   matching challenge slots, Adopt, and the write-back executor, first against the sandbox calendar
+   (ANDROID 16.10); writes to your real calendar start only after those tests pass and you agree.
+6. **M2b.6 Cutover.** With your confirmation: the real import values, the Todoist tasks retired, the
+   artifact frozen, and the first real week in the app.
+
 ### M3 — General load prescription (3–4 sessions)
 
 - Load model, bodyweight, RIR bias, personal rep curve, strength estimator, fatigue model, holds,

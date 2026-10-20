@@ -1285,7 +1285,7 @@ Home habits are tiny sessions (`workout_sessions.kind = home`, C34) defined by t
     hang's progression does not depend on per-set results. Undo snackbar.
   * One-arm plank: the checkbox is replaced by a "Start" chip, because the plank progression rule
     needs per-set seconds and the hip-rotation flag (quick-done would feed the rule assumed-clean
-    data). Open issue OI-15 asks the user to confirm.
+    data). Confirmed by the user (D33).
 * Tapping the row (not the checkbox) opens the home mini-session (a Live Session with
   `kind = home`): hold timer, felt chips, flags, and no rest alarm unless the habit defines a rest.
 * Rows show the habit's state for today: due, done (time), skipped with the reason from the
@@ -1815,11 +1815,10 @@ the 3 rounds become 2 in the deload and test-pending weeks.
 
 #### 11.7.6 Timed cardio item (warm-up row)
 
-"Row 3:00 [Start 3:00]" runs a simple countdown in the block card with the rest-end alert at zero. An
-alarm-backed countdown would need `RestTimerController` with `purpose = interval`, which the ANDROID
-section 12.3 reducer does not support in v1 (its OI-27). Until it does, the row countdown is an in-app
-countdown that keeps the screen on while it runs (like the hold timer, 19.9) and vibrates at zero only
-while the app is visible (Open issue OI-27).
+"Row 3:00 [Start 3:00]" runs a countdown in the block card with the rest-end alert at zero. It is
+alarm-backed (D33): `RestTimerController` with `purpose = interval` (ANDROID 12.3), so the alert arrives
+with the screen off and the session notification shows "Row · 1:12 left" with −15 s / Skip / +15 s. At zero
+the row is logged done with its seconds; a Done tap before zero logs the measured seconds.
 
 ### 11.8 Logging, deviation and reason chips
 
@@ -3966,7 +3965,7 @@ or with hold cues off only the haptics play.
 |---|---|---|
 | Count aloud | top-hold rounds (11.7.4) | one beep per second for up to `COUNT_ALOUD_MAX_S`, started and stopped by a toggle; attempts are entered with steppers |
 | Eccentric pacing | negatives (11.7.5) | the configured lead-in, then one beep per second for up to `ECC_PACE_MAX_S`, stopped by tap; the shortest lowering is entered with its stepper |
-| Interval | the warm-up row (11.7.6) | requested: `RestTimerController` with `purpose = interval` (alarm-backed, no `set_logs` rest fields), which the ANDROID section 12.3 reducer does not support in v1; until then an in-app countdown with the screen kept on (OI-27) |
+| Interval | the warm-up row (11.7.6) | `RestTimerController` with `purpose = interval` (alarm-backed, no `set_logs` rest fields; ANDROID 12.3, D33) |
 
 **Constants.** The behaviour and the values are this document's (ANDROID section 14.2 leaves the cue
 timing to it); the keys are `PlatformConfig` keys registered in ANDROID section 25.5, outside
@@ -4787,7 +4786,7 @@ data class EventDraft(val type: String, val category: String, val screen: String
 | `SetTarget.durationLoS` (hold ranges) | `rx`, `challenge.materialize` | hold-timer range cues | none (added here) |
 | `RuleApplication` (automatic application with Undo, side cap, notify) | `challenge.eca` | "Rule: ... · Undo" line and the side-cap hint | Resolved by D14 / C46 (CHALLENGE_ENGINE section 6.10) |
 | `RestTimerControl.adjust` with ±60 s long-press steps | ANDROID.md reducer | long-press adjust | Resolved: ANDROID sections 12.3 and 25.1 (`timer.longPressStepS`) |
-| Timer `purpose = interval` | ANDROID.md | warm-up row countdown that survives screen-off | OI-27 (not in the ANDROID v1 reducer) |
+| Timer `purpose = interval` | ANDROID.md | warm-up row countdown that survives screen-off | Specified in ANDROID 12.3 (D33) |
 | Display requirements of 19.2 to 19.7 not yet in ALGORITHMS_PLANNING section 19 / 23.19 | ALGORITHMS_PLANNING | prefill details, best detection, the elbow follow-up tap, the substitute context | Resolved by C69 |
 
 ---
@@ -5474,7 +5473,7 @@ and marked "Resolved by ...".
 | OI-12 | Resolved by C64 | Pain severity mapping Mild 2 / Moderate 5 / Sharp 8. | `ui.prompts.pain_severity_map` (16.2, 19.4). | — |
 | OI-13 | Resolved by CHALLENGE_ENGINE §3.7 | Meaning of "Shortest lowering". | The minimum lowering time of the set in `ecc_s_actual` (11.7.5). | — |
 | OI-14 | Resolved by CHALLENGE_ENGINE §6.4 | Deload transform of the top-hold rounds. | Rounds are halved and rounded up (3 -> 2) (11.7.4, GF-UX-02). | — |
-| OI-15 | Open | The one-arm plank has a "Start" chip instead of quick-done, because its progression needs per-set seconds and the hip-rotation flag; the daily hang can be quick-done. | 9.6. | User confirmation. |
+| OI-15 | Resolved by D33 (Start chip) | The one-arm plank has a "Start" chip instead of quick-done, because its progression needs per-set seconds and the hip-rotation flag; the daily hang can be quick-done. | 9.6. | User confirmation. |
 | OI-16 | Resolved by C41 | Params key casing. | Lower snake_case constant names (`ui.todaycard.close_rel`, 19.0); platform keys keep their ANDROID names. | — |
 | OI-17 | Resolved by C39 | Event names had to be reconciled with the DATA_MODEL registry. | The DATA_MODEL section 9.8.1 registry is canonical; section 20 uses its names and keys (earlier names in 20.13). | — |
 | OI-18 | Resolved by C55 / C54 | Rest column names, the rest formula, the adjust steps and the minimum timer differed between this document and ANDROID. | DATA_MODEL section 9.6.4 column names (11.8, 11.13.8, 19.8); taps ±15 s, long-press ±60 s, no timer below 10 s (ANDROID sections 12.3, 25.1); the `rest_before_s` estimate of 19.8, which ANDROID section 12.3 and DATA_MODEL section 9.6.4 reference. | — |
@@ -5486,7 +5485,7 @@ and marked "Resolved by ...".
 | OI-24 | Open (informational) | Rule ids of the draft definition (`upd.*`, `guard.gripSlip`, ...) differ from `oap.challenge.v1.json` (`ins.*`, `prog.gripSlip.lock`, `prog.A.pin.gated`, `data.test.loads`, `struct.block.rollover`, ...). | The UI renders ids and texts from the definition and never hardcodes them; wireframes and fixtures now use the v1 ids. | None. |
 | OI-25 | Resolved by C62 | Gate threshold basis. | `met` on the test-day bodyweight and `thresholdAt(bw)` for the forward threshold, both exposed by CHALLENGE_ENGINE section 10.1 (14.2, 19.7.3). | — |
 | OI-26 | Resolved by C37 | Calendar marker format. | `[fitapp:v1 <uuid> <slotKey>]` as the last description line (10.4). | — |
-| OI-27 | Open | The warm-up row countdown should survive screen-off through `RestTimerController` with `purpose = interval`, which the ANDROID section 12.3 reducer does not support in v1 (ANDROID OI-27). | An in-app countdown that keeps the screen on and vibrates at zero only while the app is visible (11.7.6, 19.9). | ANDROID reducer support, or acceptance of the fallback; decided in M2 with the warm-up block (D25). |
+| OI-27 | Resolved by D33 (alarm-backed, ANDROID 12.3) | The warm-up row countdown should survive screen-off through `RestTimerController` with `purpose = interval`, which the ANDROID section 12.3 reducer does not support in v1 (ANDROID OI-27). | An in-app countdown that keeps the screen on and vibrates at zero only while the app is visible (11.7.6, 19.9). | ANDROID reducer support, or acceptance of the fallback; decided in M2 with the warm-up block (D25). |
 | OI-28 | Resolved by C63 | No "Add a set" action. | Exercise menu "Add a set", logged as `override_applied {field: sets}` (11.12). | — |
 | OI-29 | Resolved by CHALLENGE_ENGINE §4.9 and §4.11 | `manual.override` had no UI, and the pain-retraction format was undefined. | "Correct a value" in the dashboard menu writes `manual.override` (14.2); a retraction is a superseding `pain.reported` with `retracted: true` (20.11). | — |
 | OI-30 | Resolved by C54 | The ANDROID idle prompt was missing from section 18. | N-IDLE on channel `app_status`, event `session_idle_prompted` (18). | — |
