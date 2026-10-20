@@ -165,3 +165,22 @@ materializer with in-session rules and Undo, the week planner with today advice,
   `resume` revived an abandoned or completed enrollment; a non-ASCII letter hung the FitExpr lexer; Undo of an
   in-session rule wiped a later rule's change; an amendment cycle hung the fold. Home habits for a day
   (`HabitPlanner`: skip, deload scale, injury mute, plank days, measure day) were missing and were added.
+
+## M2b log (in progress, from 2026-10-20)
+
+**Builds**: `gradlew check` green after M2b.3: 346 unit tests (`:algo` 166, `:sim` 40, `:data` 61, `:app` 79).
+Room is at version 5 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`).
+How each part was built: CHALLENGE_ENGINE 16.2.
+
+**Steps**:
+
+| Step | State | What is in it |
+|------|-------|---------------|
+| M2b.1 Storage and sync | built | `oap@1.0.0` published by migration 016 (applied after you saw it), the event codec, challenge tables with sync, refold, tick catch-up at start and in maintenance. |
+| M2b.2 Challenges tab and setup wizard | built | The tab, the ten wizard steps, the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
+| M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
+| M2b.4 Test day | next | The test-day wizard with the Record and attempt cards. |
+| M2b.5 Calendar | open | |
+| M2b.6 Cutover | open | With you. |
+
+**Phone checks**: none yet for M2b; the phone has not been reachable over wireless debugging since M2b.1 began.

@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. Next step: milestone M2b (D32).*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, their phone checks pending (D32, D33).*
 
 ---
 
@@ -597,7 +597,7 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
    warm-up block (the alarm-backed row countdown, D33), the challenge card types, in-session rules with
    Undo, the readiness and elbow check, the pain sheet, and the home habits with their reminders.
 4. **M2b.4 Test day.** The test-day wizard in the definition's order, validity, the review screen and the
-   recalculation report.
+   recalculation report, with the Record and attempt cards (also used by the attempts block of phase 3).
 5. **M2b.5 Calendar.** `calendar.classify` and `challenge.calendar`: reading and classifying events,
    matching challenge slots, Adopt, and the write-back executor, first against the sandbox calendar
    (ANDROID 16.10); writes to your real calendar start only after those tests pass and you agree.
