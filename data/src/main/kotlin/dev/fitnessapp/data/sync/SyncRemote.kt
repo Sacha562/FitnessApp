@@ -57,6 +57,12 @@ interface SyncRemote {
         afterId: String?,
         limit: Int,
     ): List<JsonObject>
+
+    /**
+     * Global reference rows readable by every allowed user (`challenge_definitions`): `server_updated_at >= since`,
+     * ordered by `(server_updated_at, id)`, at most [limit] rows (a definition table stays small).
+     */
+    suspend fun pullGlobal(table: String, since: String?, limit: Int): List<JsonObject> = emptyList()
 }
 
 class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
@@ -116,6 +122,15 @@ class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
                     gte("server_updated_at", since)
                 }
             }
+            order("server_updated_at", Order.ASCENDING)
+            order("id", Order.ASCENDING)
+            limit(limit.toLong())
+        }.decodeAs<JsonArray>().map { it.jsonObject }
+    }
+
+    override suspend fun pullGlobal(table: String, since: String?, limit: Int): List<JsonObject> = call {
+        client.from(table).select {
+            filter { if (since != null) gte("server_updated_at", since) }
             order("server_updated_at", Order.ASCENDING)
             order("id", Order.ASCENDING)
             limit(limit.toLong())

@@ -2342,3 +2342,16 @@ stays inside the rules above.
 | Gates | `GateCriteria` gives the stored `met` per criterion (on the test-day `t.bw`, C62) and `thresholdAt(bw)` for comparison criteria (GF-CE-37). |
 | Fixtures | GF-CE-01..24b, 28 (postponement), 29-35, 37, 38 and 39 run in `:algo`; GF-CE-33 runs in `:sim` with 16 committed snapshots in `fixtures/golden/challenge/` (the elbow persona has a short and a long pain scenario). GF-CE-25..27 and the write-back part of 28 come with `challenge.calendar` in M2b; GF-CE-36 is general-engine behaviour (M4). |
 | Constants | `ChallengeConstantsLintTest` allows only 0 and 1, indices, arities, `ParamSpec` bounds and documented `const val` facts in the challenge package (section 12). |
+
+### 16.2 As built in M2b (from 2026-10-20, D33)
+
+M2b puts the engine into the app. This table grows with each M2b step.
+
+| Topic | As built |
+|---|---|
+| Payload format | `EventCodec` (`:algo`) writes and reads the stored payloads of 4.2: snake_case keys, rows under their `set_logs` names, the engine facts under `engine_facts`. Params, state vars, metrics and override values are plain JSON numbers read back with the definition's declared types; `onboard` values are runtime-typed and carry their dimension (`{"dim": "MASS", "v": 70.7}`). Every event of the 16 persona runs round-trips to the same fold hash. |
+| Publication | Migration 016 stages the compact definition in 30 KB chunks and checks the client `jcs_sha256` and the server checksum (`sim seedgen-challenge`, a local reproduction of `jsonb::text`). The app also ships the file and stores it as a `bundled` row until the server copy (same id) arrives. |
+| Storage | `ChallengeRepository` (`:data`) appends events, folds them, writes the audit rows (id UUIDv5 `challenge_rule_events:<evaluation_id>:<rule_id>:<fold_generation>`) and the cached enrollment row, all in one Room transaction with the outbox. An event earlier than the last folded one, an amendment, or a mismatch between the stored fold and a fresh fold of the stored events (another device, a new engine version) refolds with `fold_generation + 1`. |
+| Creation day | `enrollment.created` sets `lastTickDate` to the day before, so the creation day's `day.tick` (00:00.002) sorts before the creation. The repository synthesizes those ticks with the creation and folds everything in `(occurred_at, id)` order, so the stored order and the fold order never differ. |
+| Ticks | Synthesized ticks carry no engine facts (the fold uses the last event's). Catch-up runs at app start, in `daily-maintenance` and before every recorded event, so an event never sorts before a tick of its own day; an enrollment due for the absence prompt is skipped at app start and in maintenance until the user answers. |
+| Engine facts | `ChallengeFactsProvider` freezes the latest weigh-in, the assisted machine's calibration (the definition's defaults until calibrated), the belt's achievable loads, the available equipment and the last pain date per region into each app event. Until RCM-1 runs (M3) `userK` is the class prior `rcm.k0[curve class]` with `rcm.sigma_lnk` (C59). |

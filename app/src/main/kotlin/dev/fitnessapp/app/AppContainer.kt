@@ -16,6 +16,9 @@ import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.timer.RestTimerController
 import dev.fitnessapp.app.timer.SelfTestStore
 import dev.fitnessapp.app.uidet.ReasonVocabulary
+import dev.fitnessapp.data.challenge.ChallengeFactsProvider
+import dev.fitnessapp.data.challenge.ChallengeLibrary
+import dev.fitnessapp.data.challenge.ChallengeRepository
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.device.DeviceIdentity
 import dev.fitnessapp.data.ids.UuidV7Generator
@@ -86,7 +89,10 @@ class AppContainer(private val context: Context) {
         SyncEngine(
             db, PostgrestSyncRemote(supabase), syncTables(db), outbox, telemetry, { deviceIdentity.deviceId() },
             platformConfig.sync, { clock.now().toEpochMilli() }, platformConfig.hash,
-        )
+        ) { pulled ->
+            // Events or a newer fold from another device: refold the open enrollments (CHALLENGE_ENGINE 4.11).
+            if (pulled.keys.any { it.startsWith("challenge_") }) challenges.reconcile()
+        }
     }
 
     val catalog: CatalogRepository by lazy { CatalogRepository.bundled() }
@@ -103,6 +109,12 @@ class AppContainer(private val context: Context) {
     }
     val sync: SyncRepository by lazy { SyncRepository(db, outbox, syncEngine, syncScheduler, writeContext) }
     val preferences: PreferenceRepository by lazy { PreferenceRepository(db, outbox, telemetry, writeContext, syncScheduler) }
+    /** Challenge definitions (bundled and pulled), validated against the bundled catalog and reference data. */
+    val challengeLibrary: ChallengeLibrary by lazy { ChallengeLibrary(params, CHANGEOVER_MIN) { resource("/fitness/$it") } }
+    val challengeFacts: ChallengeFactsProvider by lazy { ChallengeFactsProvider(db, equipment, { catalog.doc }, params, clock::now) }
+    val challenges: ChallengeRepository by lazy {
+        ChallengeRepository(db, outbox, telemetry, writeContext, syncScheduler, params, challengeLibrary, challengeFacts)
+    }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
     val exports: ExportRepository by lazy {
         ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })
@@ -204,5 +216,8 @@ class AppContainer(private val context: Context) {
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
         const val PARAMS_VERSION = "1.0.1"
+
+        /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
+        const val CHANGEOVER_MIN = 5
     }
 }

@@ -2,6 +2,9 @@ package dev.fitnessapp.data.sync
 
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.dao.SyncDao
+import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
+import dev.fitnessapp.data.db.entity.ChallengeEventEntity
+import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
@@ -59,28 +62,36 @@ class SyncTable<E : SyncedRow>(
 }
 
 /**
- * Push order of DATA_MODEL 11.3 restricted to the Room tables (parents before children). `session_events`
+ * Push order of DATA_MODEL 11.3 restricted to the Room tables (parents before children: enrollments before the
+ * sessions that reference them, challenge events after the sessions and wellness logs they cite). `session_events`
  * is pushed but not pulled yet: its pull scope (11.6) only rebuilds caches that arrive with later milestones.
+ * `challenge_definitions` is pull-only and global, so [DefinitionPuller] handles it outside this list.
  */
 fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("gyms", false, true, db.gyms(), GymEntity.serializer()),
     SyncTable("gym_equipment", false, true, db.gymEquipment(), GymEquipmentEntity.serializer()),
     SyncTable("profiles", false, true, db.profiles(), ProfileEntity.serializer()),
     SyncTable("user_exercise_prefs", false, true, db.exercisePrefs(), UserExercisePrefEntity.serializer()),
+    SyncTable("challenge_enrollments", false, true, db.enrollments(), ChallengeEnrollmentEntity.serializer()),
     SyncTable("workout_sessions", false, true, db.sessions(), WorkoutSessionEntity.serializer()),
     SyncTable("session_blocks", false, true, db.blocks(), SessionBlockEntity.serializer()),
     SyncTable("session_exercises", false, true, db.sessionExercises(), SessionExerciseEntity.serializer()),
     SyncTable("set_logs", false, true, db.setLogs(), SetLogEntity.serializer()),
     SyncTable("wellness_logs", false, true, db.wellness(), WellnessLogEntity.serializer()),
     SyncTable("metric_observations", false, true, db.metrics(), MetricObservationEntity.serializer()),
+    SyncTable("challenge_events", true, true, db.challengeEvents(), ChallengeEventEntity.serializer()),
+    SyncTable("challenge_rule_events", true, true, db.ruleEvents(), ChallengeRuleEventEntity.serializer()),
     SyncTable("session_events", true, false, db.events(), SessionEventEntity.serializer()),
     SyncTable("exports", true, true, db.exports(), ExportEntity.serializer()),
 )
 
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
-    "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "workout_sessions", "session_blocks", "session_exercises",
-    "set_logs", "wellness_logs", "metric_observations", "session_events", "exports",
+    "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "challenge_enrollments", "workout_sessions", "session_blocks",
+    "session_exercises", "set_logs", "wellness_logs", "metric_observations", "challenge_events", "challenge_rule_events",
+    "session_events", "exports",
 )
 
-fun isAppendTable(table: String): Boolean = table == "session_events" || table == "exports"
+private val APPEND_TABLES = setOf("challenge_events", "challenge_rule_events", "session_events", "exports")
+
+fun isAppendTable(table: String): Boolean = table in APPEND_TABLES

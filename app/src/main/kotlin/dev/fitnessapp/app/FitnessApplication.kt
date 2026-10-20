@@ -59,6 +59,11 @@ class FitnessApplication : Application(), Configuration.Provider {
             stepS("equipment_upgrade") { EquipmentUpgrade.addMissingTypes(container.equipment) }
             stepS("idle_watch") { container.idle.start(container.appScope) }
             stepS("platform_snapshots") { platformSnapshots() }
+            // CHALLENGE_ENGINE 4.6: ticks are synthesized at app start; an absence prompt waits for the user (Challenges tab).
+            stepS("challenge_catchup") {
+                container.challenges.ensureBundled()
+                if (container.writeContext.userId() != null) container.challenges.catchUp()
+            }
             for ((name, e) in failed.toList()) {
                 runCatching { container.fgsEvent("app_startup_failed", mapOf("step" to name, "error_class" to (e::class.simpleName ?: "unknown"))) }
             }

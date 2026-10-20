@@ -1,5 +1,9 @@
 package dev.fitnessapp.data.db
 
+import dev.fitnessapp.data.db.entity.ChallengeDefinitionEntity
+import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
+import dev.fitnessapp.data.db.entity.ChallengeEventEntity
+import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
@@ -114,6 +118,42 @@ class DtoSchemaDriftTest {
         "event_type, category, occurred_at, tz_offset_min, screen, session_id, entity_type, entity_id, recommendation_id, " +
             "module_id, module_version, ui_version, payload",
         standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    // Challenge tables: migrations 011 and 014, read from information_schema on 2026-10-20 (M2b).
+    @Test
+    fun challengeEnrollments() = check(
+        ChallengeEnrollmentEntity.serializer(),
+        "definition_id, definition_slug, definition_version, definition_jcs_sha256, status, mode, phase, block_index, block_week, " +
+            "week_ordinal, params, rule_decisions, state, state_rev, state_hash, fold_generation, last_folded_event_id, engine_version, " +
+            "started_on, paused_at, completed_at, abandoned_at",
+    )
+
+    @Test
+    fun challengeEvents() = check(
+        ChallengeEventEntity.serializer(),
+        "enrollment_id, event_type, occurred_at, local_date, dedupe_key, payload, source_session_id, source_wellness_log_id, " +
+            "supersedes_event_id, definition_version, definition_jcs_sha256, engine_version",
+        standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    @Test
+    fun challengeRuleEvents() = check(
+        ChallengeRuleEventEntity.serializer(),
+        "enrollment_id, challenge_event_id, evaluation_id, fold_generation, rule_id, rule_tag, proposal_id, rule_decision, stage, " +
+            "prio, outcome, cond_value, eval_error, bindings, proposals, applied, suppressed_by, state_rev_before, state_rev_after, " +
+            "state_hash_before, state_hash_after, cascade_depth, derived_event_type, definition_slug, definition_version, " +
+            "definition_jcs_sha256, module_version, engine_version",
+        standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    /** Pull-only: the server columns minus `created_at`, `client_updated_at`, `device_id`, `app_version`, plus the local `source`. */
+    @Test
+    fun challengeDefinitions() = check(
+        ChallengeDefinitionEntity.serializer(),
+        "id, user_id, slug, version, status, schema_version, engine_range, title_en, title_nl, definition, jcs_sha256, " +
+            "server_checksum, supersedes_id, published_at, retired_at, server_updated_at, source",
+        standard = emptyList(),
     )
 
     @Test

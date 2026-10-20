@@ -3,6 +3,7 @@ package dev.fitnessapp.data.sync
 import androidx.room.withTransaction
 import dev.fitnessapp.algo.core.det.JsonNumbers
 import dev.fitnessapp.data.db.FitnessDatabase
+import dev.fitnessapp.data.db.entity.ChallengeDefinitionEntity
 import dev.fitnessapp.data.db.entity.SyncedRow
 import dev.fitnessapp.data.db.local.DeadLetterEntity
 import dev.fitnessapp.data.db.local.OutboxEntity
@@ -55,6 +56,8 @@ class SyncEngine(
     private val config: SyncConfig,
     private val nowMs: () -> Long,
     private val platformConfigHash: String,
+    /** Called after every run that pulled rows, with the counts per table (the challenge refold, 4.11). */
+    private val afterPull: suspend (Map<String, Int>) -> Unit = {},
 ) {
     private val _state = MutableStateFlow<SyncState>(SyncState.Idle)
     val state: StateFlow<SyncState> = _state
@@ -111,6 +114,13 @@ class SyncEngine(
             firstFailureAtMs = null
         }
         _state.value = finalState ?: SyncState.Synced(now)
+        if (stats.pulled.isNotEmpty()) {
+            try {
+                afterPull(stats.pulled)
+            } catch (e: Exception) {
+                logError("after_pull", null, 0, SyncErrorClass.ROW_PERMANENT, SyncFailure(null, "after_pull", message = e::class.simpleName))
+            }
+        }
 
         val after = db.outbox().depth()
         val pushedTotal = stats.pushed.values.sum()
@@ -275,11 +285,55 @@ class SyncEngine(
 
     private suspend fun pull(uid: String, stats: RunStats) {
         val device = deviceId()
+        pullDefinitions(stats)
         for (t in tables) {
             if (!t.pull) continue
             @Suppress("UNCHECKED_CAST")
             pullTable(t as SyncTable<SyncedRow>, uid, device, stats)
         }
+    }
+
+    /**
+     * DEF-PULL (DATA_MODEL 11.6): published definitions are global rows (`user_id` null), so they are pulled without
+     * the user and device filters, by their own cursor. A row arrives only once per version (immutable, 7.6); a newer
+     * version is activated only at the next session start after its hash checks (11.10).
+     */
+    private suspend fun pullDefinitions(stats: RunStats) {
+        val table = "challenge_definitions"
+        val cursor = db.cursors().get(table)
+        val since = cursor?.server_updated_at?.let { minusSeconds(it, config.overlapS.toLong()) }
+        val page = try {
+            remote.pullGlobal(table, since, config.pullPageRows)
+        } catch (ex: SyncRemoteException) {
+            val cls = ErrorClassifier.classify(ex.failure)
+            stats.error(cls)
+            when (cls) {
+                SyncErrorClass.AUTH -> throw Stop(RunOutcome.STOPPED, SyncState.NeedsSignIn)
+                SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
+                SyncErrorClass.TRANSIENT -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
+                else -> {
+                    logError(table, null, 0, cls, ex.failure)
+                    return
+                }
+            }
+        }
+        if (page.isEmpty()) return
+        var maxTs = cursor?.server_updated_at
+        db.withTransaction {
+            for (obj in page) {
+                val row = try {
+                    SyncJson.decodeFromJsonElement(ChallengeDefinitionEntity.serializer(), obj).copy(source = "server")
+                } catch (e: Exception) {
+                    logError(table, obj["id"]?.jsonPrimitive?.contentOrNull, 1, SyncErrorClass.SCHEMA_DRIFT, SyncFailure(null, "decode", message = e::class.simpleName))
+                    continue
+                }
+                db.challengeDefinitions().upsert(row)
+                val ts = row.server_updated_at
+                if (ts != null && (maxTs == null || compareTs(ts, maxTs!!) > 0)) maxTs = ts
+            }
+        }
+        stats.pulled[table] = (stats.pulled[table] ?: 0) + page.size
+        if (maxTs != null && maxTs != cursor?.server_updated_at) db.cursors().put(SyncCursorEntity(table, maxTs!!, null, nowMs()))
     }
 
     private suspend fun pullTable(t: SyncTable<SyncedRow>, uid: String, device: String, stats: RunStats) {

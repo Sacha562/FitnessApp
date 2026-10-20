@@ -18,7 +18,8 @@ import java.util.concurrent.TimeUnit
  * `daily-maintenance` (ANDROID.md 7.8) as far as M1b needs it: the monthly export reminder N-EXPORT when the last
  * full export is older than `export.reminderDays` (F4), and N-SYNC when rows were rejected or changes have waited
  * for upload longer than `sync.staleNoticeDays`. Each reminder is posted at most once per day; a late or skipped
- * run is harmless. Challenge ticks, the calendar and habit reminders join this job in later milestones.
+ * run is harmless. Challenge tick synthesis runs first (7.8, CHALLENGE_ENGINE 4.6); the calendar and habit
+ * reminders join this job later in M2b.
  */
 class MaintenanceWorker(context: Context, params: WorkerParameters, private val c: AppContainer) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -28,6 +29,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
 
     suspend fun run(nowMs: Long) {
         if (c.writeContext.userId() == null) return
+        runCatching { c.challenges.catchUp(java.time.Instant.ofEpochMilli(nowMs)) }
         val today = LocalDate.now(ZONE).toString()
         val decision = Maintenance.decide(
             nowMs = nowMs,
