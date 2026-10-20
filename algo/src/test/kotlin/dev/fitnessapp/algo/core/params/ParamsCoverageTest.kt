@@ -1,5 +1,7 @@
 package dev.fitnessapp.algo.core.params
 
+import dev.fitnessapp.algo.challenge.eca.RuleEngine
+import dev.fitnessapp.algo.challenge.enrollment.EnrollmentFold
 import dev.fitnessapp.algo.challenge.fitexpr.FitExprLimits
 import dev.fitnessapp.algo.core.bodyweight.Bodyweight
 import dev.fitnessapp.algo.core.load.LoadModel
@@ -21,7 +23,7 @@ class ParamsCoverageTest {
     /** Modules whose whole key slice is declared. WarmupRest is partial (rest keys only) until WARMUP-1. */
     private val complete: Map<String, DeclaresParams> = mapOf(
         "load" to LoadModel, "bodyweight" to Bodyweight, "rest" to RestPolicy,
-        "challenge.fitexpr" to FitExprLimits,
+        "challenge.fitexpr" to FitExprLimits, "challenge.enrollment" to EnrollmentFold, "challenge.eca" to RuleEngine,
     )
     private val all: List<DeclaresParams> = complete.values.toList() + WarmupRest
 
