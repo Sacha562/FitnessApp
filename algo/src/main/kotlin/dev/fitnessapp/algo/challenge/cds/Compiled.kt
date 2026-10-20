@@ -161,7 +161,14 @@ class ResolvedTemplate(
 )
 
 /** One mode with its inheritance resolved for both decisions of its proposal (2.4.6). */
-data class ModeInfo(val name: String, val spec: ModeSpec, val setsExpr: CompiledExpr?, val lightBilateralSets: CompiledExpr?)
+data class ModeInfo(
+    val name: String,
+    val spec: ModeSpec,
+    val setsExpr: CompiledExpr?,
+    val lightBilateralSets: CompiledExpr?,
+    /** `lightBilateral.overrides`: definition exercise key -> compiled item fields (P27). */
+    val lightBilateralOverrides: Map<String, Map<String, FieldValue>> = emptyMap(),
+)
 
 data class GateInfo(val phaseId: Int, val source: String, val criteria: List<CompiledExpr>, val labels: List<I18n>)
 

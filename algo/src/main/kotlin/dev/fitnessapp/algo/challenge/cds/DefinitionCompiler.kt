@@ -237,7 +237,11 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
             if (name !in Modes.ALL) err("V14", ptr, "unknown mode $name (v1 modes: ${Modes.ALL})")
             val sets = m.sets?.let { expr(it, Scopes.forModeTransform(inputs), "$ptr/sets") }
             val lb = m.lightBilateral?.let { expr(it.sets, Scopes.forModeTransform(inputs), "$ptr/lightBilateral/sets") }
-            modes[name] = ModeInfo(name, m, sets, lb)
+            val overrides = m.lightBilateral?.overrides.orEmpty().mapValues { (k, o) ->
+                if (doc.exercises.none { it.key == k }) err("V02", "$ptr/lightBilateral/overrides/$k", "unknown exercise $k")
+                fieldsOf(o, "$ptr/lightBilateral/overrides/$k", Scopes.forState(inputs))
+            }
+            modes[name] = ModeInfo(name, m, sets, lb, overrides)
         }
 
         val rules = doc.rules.mapIndexedNotNull { i, r -> compileRule(r, "/rules/$i", inputs) }
@@ -381,7 +385,7 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
                 expr(e.content, scope, ptr, expect = itemFieldTypes.getValue(field))?.let { FieldValue.Expr(it) }
             }
             e is JsonPrimitive && e.booleanOrNull == null -> FieldValue.Lit(QV(dim, BigDecimal(e.content)))
-            e is JsonArray && e.size == 2 && e.all { it is JsonPrimitive && !(it as JsonPrimitive).isString } ->
+            e is JsonArray && e.size == 2 && e.all { it is JsonPrimitive && !it.isString } ->
                 FieldValue.Range(QV(dim, BigDecimal((e[0] as JsonPrimitive).content)), QV(dim, BigDecimal((e[1] as JsonPrimitive).content)))
             else -> {
                 err("S1", ptr, "expected a number, a [min, max] range or an expression")
