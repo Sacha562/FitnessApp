@@ -493,7 +493,7 @@
   },
   "rules": [
     { "id": "safety.elbow.stop", "tag": "A", "stage": "safety", "prio": 100, "on": ["pain.reported", "readiness.checked"],
-      "if": "any(event.painKinds in ['medial_elbow_ache_after', 'elbow_crease_pain_on_extension', 'ulnar_tingling'])",
+      "if": "mode != 'injury' && any(event.painKinds in ['medial_elbow_ache_after', 'elbow_crease_pain_on_extension', 'ulnar_tingling'])",
       "then": [ { "setMode": "injury" }, { "set": "s.injuryStart", "to": "today" }, { "set": "s.needsCleanSession", "to": "true" }, { "set": "s.elbowTrace", "to": "true" }, { "notify": "stop", "msg": "elbow_protocol", "once": "perDay" } ],
       "explain": { "en": "Elbow stop signal reported: 14 days without unilateral work, light bilateral training, prehab doubled, daily hang dropped." }, "source": "artifact section 08 / section 10" },
     { "id": "safety.elbow.trace", "tag": "A", "stage": "safety", "prio": 95, "on": ["readiness.checked"],

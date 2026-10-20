@@ -20,3 +20,11 @@ application {
 tasks.named<JavaExec>("run") {
     workingDir = rootDir
 }
+
+tasks.withType<Test>().configureEach {
+    // ChallengePersonaGoldenTest compares fixtures/golden/challenge; -PupdateGoldens rewrites them.
+    systemProperty("fitness.repoRoot", rootDir.absolutePath)
+    systemProperty("fitness.updateGoldens", providers.gradleProperty("updateGoldens").isPresent.toString())
+    inputs.dir(rootDir.resolve("fixtures/golden")).withPropertyName("goldenFixtures").optional()
+    maxHeapSize = "2g"
+}

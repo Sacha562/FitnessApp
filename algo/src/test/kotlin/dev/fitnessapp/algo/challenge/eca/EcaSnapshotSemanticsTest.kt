@@ -133,4 +133,22 @@ class EcaSnapshotSemanticsTest {
         val undecided = apply(OapFixture.def, EnrollmentFold.fold(OapFixture.def, params, listOf(OapFixture.created(normal))).state, a)
         rows(undecided, "prog.A.pin.weekly").single().ruleDecision shouldBe "declined"
     }
+
+    @Test
+    fun `a block rollover during injury keeps the injury mode`() {
+        val s = OapFixture.start(OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false))
+            .let { st -> st.copy(mode = "injury", vars = java.util.TreeMap(st.vars).also { it["blockEndPending"] = dev.fitnessapp.algo.challenge.fitexpr.BoolV.TRUE }) }
+        val closed = OapFixture.event(EventTypes.WEEK_CLOSED, "2026-10-12", "04:00", EventPayload.WeekBoundary("2026-W41"))
+        val step = apply(OapFixture.def, s, closed)
+        step.state.block.index shouldBe 2
+        step.state.mode shouldBe "injury"
+        step.warnings shouldBe listOf("block_started_in_injury")
+    }
+
+    @Test
+    fun `a fired rule whose actions resolve to nothing has no effect`() {
+        val a = session("A", "2026-10-08", mapOf("oaa" to oaa("40", List(5) { 3 to 3 }, targetReps = 3)), time = "21:15")
+        val step = apply(OapFixture.def, OapFixture.start(), a)
+        rows(step, "prog.A.pin.gated").single().outcome shouldBe Outcome.NO_EFFECT
+    }
 }

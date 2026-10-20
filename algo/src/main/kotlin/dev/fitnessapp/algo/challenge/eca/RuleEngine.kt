@@ -160,6 +160,9 @@ object RuleEngine : DeclaresParams {
                 val rec = when {
                     injuryRule != null && r.stage == Stage.PROGRESSION ->
                         WriteRecord(w.target, oldText, newText, Outcome.SUPPRESSED_INJURY, injuryRule.rule.id, w.notes)
+                    // 4.8, 11.1: injury ends only through a safety-stage rule (the definition's exit rule).
+                    w.target == MODE && s0.mode == Modes.INJURY && r.stage != Stage.SAFETY && (w.value as StrV).s != Modes.INJURY ->
+                        WriteRecord(w.target, oldText, newText, Outcome.SUPPRESSED_LOCK, "mode:injury", w.notes)
                     frozen && r.stage == Stage.PROGRESSION && w.target.startsWith("s.") && varName in snapshotVars && !r.spec.allowInFrozen ->
                         WriteRecord(w.target, oldText, newText, Outcome.SUPPRESSED_LOCK, "mode:${s0.mode}", w.notes)
                     written.containsKey(w.target) -> WriteRecord(w.target, oldText, newText, Outcome.SUPPRESSED_FIRST_WRITER, written[w.target], w.notes)
@@ -177,7 +180,8 @@ object RuleEngine : DeclaresParams {
 
         val warnings = ArrayList<String>()
         val derivedEvents = ArrayList<String>()
-        val s1 = commit(def, params, env, event, s0, applied, derivedEvents, warnings)
+        val keepInjury = s0.mode == Modes.INJURY && written[BLOCK]?.let { id -> def.rules.first { it.id == id }.stage != Stage.SAFETY } == true
+        val s1 = commit(def, params, env, event, s0, applied, derivedEvents, warnings, keepInjury)
 
         // Notifications (5.7), deduplicated against what this enrollment already sent.
         val notifications = ArrayList<ChallengeNotification>()
@@ -201,7 +205,12 @@ object RuleEngine : DeclaresParams {
         var state = s1.copy(notificationsSent = sent)
         val hashAfter = StateJson.hash(state)
         for (a in arbitrated) {
-            val outcome = summarize(a.records)
+            // A rule that only locks or notifies has an effect; one whose actions resolved to nothing has none.
+            val outcome = if (a.records.isEmpty()) {
+                if (a.rule.locks.isNotEmpty() || a.rule.notifies.isNotEmpty()) Outcome.APPLIED else Outcome.NO_EFFECT
+            } else {
+                summarize(a.records)
+            }
             val suppressedBy = a.records.firstOrNull { it.suppressedBy != null }?.suppressedBy
             audits += row(
                 def, env, evaluationId, event, depth, a.rule.rule, outcome, true, null, a.rule.bindings, a.records, suppressedBy,
@@ -348,7 +357,6 @@ object RuleEngine : DeclaresParams {
     }
 
     private fun summarize(records: List<WriteRecord>): Outcome = when {
-        records.isEmpty() -> Outcome.APPLIED
         records.any { it.outcome == Outcome.APPLIED } -> Outcome.APPLIED
         else -> records.firstOrNull { it.outcome != Outcome.NO_EFFECT }?.outcome ?: Outcome.NO_EFFECT
     }
@@ -373,6 +381,8 @@ object RuleEngine : DeclaresParams {
         applied: Map<String, Value>,
         derived: MutableList<String>,
         warnings: MutableList<String>,
+        /** A non-safety block change during injury keeps the injury mode (4.8). */
+        keepInjury: Boolean,
     ): EnrollmentState {
         val vars = TreeMap(s0.vars)
         for ((t, v) in applied) if (t.startsWith("s.")) vars[t.removePrefix("s.")] = v
@@ -402,7 +412,8 @@ object RuleEngine : DeclaresParams {
                     }
                 }
                 how == "repeatWeek" -> Unit
-                how == "restartBlock" -> s = s.copy(block = s.block.copy(week = 1), plannedTest = PlannedTest.NONE).withMode(Modes.NORMAL, today, derived)
+                how == "restartBlock" -> s = s.copy(block = s.block.copy(week = 1), plannedTest = PlannedTest.NONE)
+                    .withMode(if (keepInjury) Modes.INJURY else Modes.NORMAL, today, derived)
                 how.startsWith("startNewBlock:") -> {
                     val first = how.removePrefix("startNewBlock:")
                     val start = if (event.type == EventTypes.WEEK_CLOSED) event.localDate else nextMonday(today)
@@ -412,7 +423,8 @@ object RuleEngine : DeclaresParams {
                     val snaps = TreeMap(s.snapshots)
                     snaps[idx] = snap
                     s = s.copy(block = BlockPos(idx, 1, start), plannedTest = PlannedTest.NONE, blockValid = sortedMapOf(), snapshots = snaps)
-                        .withMode(first, today, derived)
+                        .withMode(if (keepInjury) Modes.INJURY else first, today, derived)
+                    if (keepInjury && first != Modes.INJURY) warnings += "block_started_in_injury"
                     derived += EventTypes.BLOCK_STARTED
                 }
             }

@@ -2,6 +2,7 @@ package dev.fitnessapp.sim
 
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
+import dev.fitnessapp.sim.challenge.ChallengeCli
 import dev.fitnessapp.sim.seedgen.CatalogSeedGen
 import dev.fitnessapp.sim.seedgen.SeedGen
 import kotlinx.serialization.json.Json
@@ -19,6 +20,7 @@ fun main(args: Array<String>) {
     when (args.firstOrNull()) {
         "version" -> println("engine ${EngineVersion.ENGINE_VERSION}")
         "golden" -> exitProcess(golden(File(args.getOrElse(1) { "fixtures/golden/algo" })))
+        "challenge" -> exitProcess(ChallengeCli.run(args.drop(1)))
         "seedgen" -> {
             val parts = SeedGen.generate(File("algo/src/main/resources/fitness"), args.getOrElse(1) { "1.0.1" })
             for ((name, sql) in parts) {
@@ -41,7 +43,7 @@ fun main(args: Array<String>) {
                 "${result.ratios} transfer ratios, jcs_sha256 ${result.jcsSha256}")
         }
         else -> {
-            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version] | sim seedgen-catalog [catalog-version]")
+            println("usage: sim version | sim golden [fixtures-dir] | sim seedgen [params-version] | sim seedgen-catalog [catalog-version] | sim challenge validate|simulate ...")
             exitProcess(2)
         }
     }

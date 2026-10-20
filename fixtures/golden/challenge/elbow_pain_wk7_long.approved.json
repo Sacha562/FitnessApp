@@ -1,0 +1,2162 @@
+{
+    "persona": "elbow_pain_wk7_long",
+    "proposals": "approved",
+    "definition": "oap@1.0.0",
+    "definition_jcs_sha256": "e454a4791d4ae86eead64e0ab0b4de97111b16cc72c1cb7e3d1d611dc783397c",
+    "engine_version": "1.0.0",
+    "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
+    "events": 495,
+    "audit_rows": 397,
+    "final_state_hash": "5f9fd3756a681b53047795bd65cd4d769938c3b0364109f0ae85e03a77fc01cf",
+    "violations": [],
+    "weeks": [
+        {
+            "iso_week": "2026-W42",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "2/1 from 2026-10-12",
+            "week_ordinal": 7,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-10-07",
+                "A 2026-10-09",
+                "TEST 2026-10-11"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 39.38,
+                "e1rmAddedM110": 42.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.67,
+                "needsCleanSession": false,
+                "negB": 47.5,
+                "negReset": 45,
+                "noProgressTests": 0,
+                "oaHangS": 12,
+                "pinA": 40,
+                "pinAReportShown": false,
+                "pinC": 50,
+                "pinHold90": 35,
+                "plankLoadKg": 0,
+                "plankS": 20,
+                "stallStage": 0,
+                "sthS": 6,
+                "wpuA": 22.5,
+                "wpuB": 27.5,
+                "wpuC": 20
+            },
+            "fired": {
+                "data.test.deadStart": {
+                    "applied": 1
+                },
+                "data.test.e1rm": {
+                    "no_effect": 1
+                },
+                "data.test.hangTarget": {
+                    "applied": 1
+                },
+                "data.test.loads.curve": {
+                    "applied": 1
+                },
+                "data.test.neg.keep": {
+                    "no_effect": 1
+                },
+                "data.test.pins": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "applied": 1,
+                    "no_effect": 1
+                },
+                "struct.test.done": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2026-10-11 info:dead_start_unlocked",
+                "2026-10-11 info:test_recorded"
+            ]
+        },
+        {
+            "iso_week": "2026-W43",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "2/2 from 2026-10-12",
+            "week_ordinal": 8,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-10-14",
+                "A 2026-10-16",
+                "B 2026-10-18"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 39.38,
+                "e1rmAddedM110": 42.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.67,
+                "needsCleanSession": false,
+                "negB": 52.5,
+                "negReset": 50,
+                "noProgressTests": 0,
+                "oaHangS": 12,
+                "pinA": 30,
+                "pinAReportShown": false,
+                "pinC": 50,
+                "pinHold90": 30,
+                "plankLoadKg": 0,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 25,
+                "wpuB": 30,
+                "wpuC": 22.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.A.sth": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "applied": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2026-W44",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "2/3 from 2026-10-12",
+            "week_ordinal": 9,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-10-21",
+                "A 2026-10-23",
+                "B 2026-10-25"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 39.38,
+                "e1rmAddedM110": 42.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.67,
+                "needsCleanSession": false,
+                "negB": 57.5,
+                "negReset": 55,
+                "noProgressTests": 0,
+                "oaHangS": 12,
+                "pinA": 20,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 25
+            },
+            "fired": {
+                "data.pinA.report": {
+                    "applied": 1
+                },
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "applied": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2026-10-23 info:pin_report_baseline",
+                "2026-10-26 info:plank_plate"
+            ]
+        },
+        {
+            "iso_week": "2026-W45",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "2/4 from 2026-10-12",
+            "week_ordinal": 10,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-10-28",
+                "A 2026-10-30",
+                "B 2026-11-01"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 39.38,
+                "e1rmAddedM110": 42.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.67,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 12,
+                "pinA": 10,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 30,
+                "wpuB": 35,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2026-W46",
+            "status": "active",
+            "mode": "deload",
+            "phase": 1,
+            "block": "2/5 from 2026-10-12",
+            "week_ordinal": 11,
+            "planned_test": "blockRelative 2026-11-15",
+            "sessions": [
+                "C 2026-11-04",
+                "A 2026-11-06",
+                "B 2026-11-08"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 39.38,
+                "e1rmAddedM110": 42.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.67,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 12,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 40,
+                "pinHold90": 15,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 32.5,
+                "wpuB": 37.5,
+                "wpuC": 30
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.deload.enter": {
+                    "applied": 1
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2026-W47",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "3/1 from 2026-11-16",
+            "week_ordinal": 12,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-11-11",
+                "A 2026-11-13",
+                "TEST 2026-11-15"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 14,
+                "pinA": 35,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 30,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 25
+            },
+            "fired": {
+                "data.test.e1rm": {
+                    "applied": 1
+                },
+                "data.test.hangTarget": {
+                    "applied": 1
+                },
+                "data.test.loads.curve": {
+                    "applied": 1
+                },
+                "data.test.neg.keep": {
+                    "applied": 1
+                },
+                "data.test.pins": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "no_effect": 2
+                },
+                "struct.stall": {
+                    "no_effect": 1
+                },
+                "struct.test.done": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2026-11-15 info:test_recorded"
+            ]
+        },
+        {
+            "iso_week": "2026-W48",
+            "status": "active",
+            "mode": "injury",
+            "phase": 1,
+            "block": "3/1 from 2026-11-16",
+            "week_ordinal": 13,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-11-18",
+                "A 2026-11-20",
+                "B 2026-11-22"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": true,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": "2026-11-20",
+                "kgPerRep": 2.81,
+                "needsCleanSession": true,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 14,
+                "pinA": 35,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 30,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.stop": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "safety.elbow.traceFromPain": {
+                    "no_effect": 2,
+                    "suppressed_first_writer": 1
+                },
+                "struct.cleanSession": {
+                    "no_effect": 1
+                }
+            },
+            "notifications": [
+                "2026-11-20 stop:elbow_protocol"
+            ]
+        },
+        {
+            "iso_week": "2026-W49",
+            "status": "active",
+            "mode": "injury",
+            "phase": 1,
+            "block": "3/1 from 2026-11-16",
+            "week_ordinal": 14,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-11-25",
+                "A 2026-11-27",
+                "B 2026-11-29"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": true,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": "2026-11-20",
+                "kgPerRep": 2.81,
+                "needsCleanSession": true,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 14,
+                "pinA": 35,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 30,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "safety.elbow.traceFromPain": {
+                    "no_effect": 7
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2026-W50",
+            "status": "active",
+            "mode": "injury",
+            "phase": 1,
+            "block": "3/1 from 2026-11-16",
+            "week_ordinal": 15,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-12-02",
+                "A 2026-12-04",
+                "B 2026-12-06"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": true,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": "2026-11-27",
+                "kgPerRep": 2.81,
+                "needsCleanSession": true,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 14,
+                "pinA": 35,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 30,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "safety.elbow.traceFromPain": {
+                    "no_effect": 7
+                },
+                "safety.injury.extend": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2026-12-04 warn:pain_persists_physio"
+            ]
+        },
+        {
+            "iso_week": "2026-W51",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "4/1 from 2026-12-14",
+            "week_ordinal": 16,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-12-09",
+                "A 2026-12-11",
+                "B 2026-12-13"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.17,
+                "needsCleanSession": false,
+                "negB": 52.5,
+                "negReset": 50,
+                "noProgressTests": 0,
+                "oaHangS": 10,
+                "pinA": 30,
+                "pinAReportShown": true,
+                "pinC": 50,
+                "pinHold90": 30,
+                "plankLoadKg": 0,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 25,
+                "wpuB": 30,
+                "wpuC": 20
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.A.sth": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "applied": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "applied": 1,
+                    "no_effect": 2
+                },
+                "safety.injury.exit.painfree": {
+                    "applied": 1
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "applied": 1,
+                    "no_effect": 1
+                }
+            },
+            "notifications": [
+                "2026-12-11 info:back_to_two_blocks_ago"
+            ]
+        },
+        {
+            "iso_week": "2026-W52",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "4/2 from 2026-12-14",
+            "week_ordinal": 17,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-12-16",
+                "A 2026-12-18",
+                "B 2026-12-20"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.17,
+                "needsCleanSession": false,
+                "negB": 57.5,
+                "negReset": 55,
+                "noProgressTests": 0,
+                "oaHangS": 10,
+                "pinA": 20,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 27.5,
+                "wpuB": 32.5,
+                "wpuC": 22.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "applied": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2026-12-21 info:plank_plate"
+            ]
+        },
+        {
+            "iso_week": "2026-W53",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "4/3 from 2026-12-14",
+            "week_ordinal": 18,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-12-23",
+                "A 2026-12-25",
+                "B 2026-12-27"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.17,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 10,
+                "pinA": 10,
+                "pinAReportShown": true,
+                "pinC": 45,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 30,
+                "wpuB": 35,
+                "wpuC": 25
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "applied": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W01",
+            "status": "active",
+            "mode": "normal",
+            "phase": 1,
+            "block": "4/4 from 2026-12-14",
+            "week_ordinal": 19,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2026-12-30",
+                "A 2027-01-01",
+                "B 2027-01-03"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.17,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 10,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 40,
+                "pinHold90": 15,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 32.5,
+                "wpuB": 37.5,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W02",
+            "status": "active",
+            "mode": "deload",
+            "phase": 1,
+            "block": "4/5 from 2026-12-14",
+            "week_ordinal": 20,
+            "planned_test": "blockRelative 2027-01-17",
+            "sessions": [
+                "C 2027-01-06",
+                "A 2027-01-08",
+                "B 2027-01-10"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 42.05,
+                "e1rmAddedM110": 45.57,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.17,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 10,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 40,
+                "pinHold90": 10,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 35,
+                "wpuB": 40,
+                "wpuC": 30
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.deload.enter": {
+                    "applied": 1
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W03",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "5/1 from 2027-01-18",
+            "week_ordinal": 21,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-01-13",
+                "A 2027-01-15",
+                "TEST 2027-01-17"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 44.71,
+                "e1rmAddedM110": 48.32,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 15,
+                "pinA": 30,
+                "pinAReportShown": true,
+                "pinC": 40,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 30,
+                "wpuB": 35,
+                "wpuC": 25
+            },
+            "fired": {
+                "data.test.e1rm": {
+                    "applied": 1
+                },
+                "data.test.hangTarget": {
+                    "applied": 1
+                },
+                "data.test.loads.curve": {
+                    "applied": 1
+                },
+                "data.test.neg.keep": {
+                    "applied": 1
+                },
+                "data.test.pins": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "no_effect": 2
+                },
+                "struct.phase.gate": {
+                    "applied": 1
+                },
+                "struct.stall": {
+                    "no_effect": 1
+                },
+                "struct.test.done": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2027-01-17 info:test_recorded",
+                "2027-01-17 celebrate:phase_up"
+            ]
+        },
+        {
+            "iso_week": "2027-W04",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "5/2 from 2027-01-18",
+            "week_ordinal": 22,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-01-20",
+                "A 2027-01-22",
+                "B 2027-01-24"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 44.71,
+                "e1rmAddedM110": 48.32,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 15,
+                "pinA": 20,
+                "pinAReportShown": true,
+                "pinC": 35,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 32.5,
+                "wpuB": 37.5,
+                "wpuC": 27.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W05",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "5/3 from 2027-01-18",
+            "week_ordinal": 23,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-01-27",
+                "A 2027-01-29",
+                "B 2027-01-31"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 44.71,
+                "e1rmAddedM110": 48.32,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 15,
+                "pinA": 10,
+                "pinAReportShown": true,
+                "pinC": 35,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 35,
+                "wpuB": 40,
+                "wpuC": 30
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W06",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "5/4 from 2027-01-18",
+            "week_ordinal": 24,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-02-03",
+                "A 2027-02-05",
+                "B 2027-02-07"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 44.71,
+                "e1rmAddedM110": 48.32,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 4,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 15,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 30,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 37.5,
+                "wpuB": 42.5,
+                "wpuC": 32.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W07",
+            "status": "active",
+            "mode": "deload",
+            "phase": 2,
+            "block": "5/5 from 2027-01-18",
+            "week_ordinal": 25,
+            "planned_test": "blockRelative 2027-02-21",
+            "sessions": [
+                "C 2027-02-10",
+                "A 2027-02-12",
+                "B 2027-02-14"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 44.71,
+                "e1rmAddedM110": 48.32,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 3,
+                "injuryStart": null,
+                "kgPerRep": 2.81,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 15,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 30,
+                "pinHold90": 25,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 40,
+                "wpuB": 45,
+                "wpuC": 35
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.finger": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.deload.enter": {
+                    "applied": 1
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W08",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "6/1 from 2027-02-22",
+            "week_ordinal": 26,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-02-17",
+                "A 2027-02-19",
+                "TEST 2027-02-21"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 47.38,
+                "e1rmAddedM110": 51.07,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 3,
+                "injuryStart": null,
+                "kgPerRep": 2.96,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 18,
+                "pinA": 25,
+                "pinAReportShown": true,
+                "pinC": 35,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 35,
+                "wpuB": 40,
+                "wpuC": 30
+            },
+            "fired": {
+                "data.test.e1rm": {
+                    "applied": 1
+                },
+                "data.test.hangTarget": {
+                    "applied": 1
+                },
+                "data.test.loads.curve": {
+                    "applied": 1
+                },
+                "data.test.neg.keep": {
+                    "applied": 1
+                },
+                "data.test.pins": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "no_effect": 2
+                },
+                "struct.stall": {
+                    "no_effect": 1
+                },
+                "struct.test.done": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2027-02-21 info:test_recorded"
+            ]
+        },
+        {
+            "iso_week": "2027-W09",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "6/2 from 2027-02-22",
+            "week_ordinal": 27,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-02-24",
+                "A 2027-02-26",
+                "B 2027-02-28"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 47.38,
+                "e1rmAddedM110": 51.07,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 3,
+                "injuryStart": null,
+                "kgPerRep": 2.96,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 18,
+                "pinA": 15,
+                "pinAReportShown": true,
+                "pinC": 30,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 37.5,
+                "wpuB": 42.5,
+                "wpuC": 32.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W10",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "6/3 from 2027-02-22",
+            "week_ordinal": 28,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-03-03",
+                "A 2027-03-05",
+                "B 2027-03-07"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 47.38,
+                "e1rmAddedM110": 51.07,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 3,
+                "injuryStart": null,
+                "kgPerRep": 2.96,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 18,
+                "pinA": 5,
+                "pinAReportShown": true,
+                "pinC": 30,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 40,
+                "wpuB": 45,
+                "wpuC": 35
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W11",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "6/4 from 2027-02-22",
+            "week_ordinal": 29,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-03-10",
+                "A 2027-03-12",
+                "B 2027-03-14"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 47.38,
+                "e1rmAddedM110": 51.07,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 3,
+                "injuryStart": null,
+                "kgPerRep": 2.96,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 18,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 25,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 42.5,
+                "wpuB": 47.5,
+                "wpuC": 37.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W12",
+            "status": "active",
+            "mode": "deload",
+            "phase": 2,
+            "block": "6/5 from 2027-02-22",
+            "week_ordinal": 30,
+            "planned_test": "blockRelative 2027-03-28",
+            "sessions": [
+                "C 2027-03-17",
+                "A 2027-03-19",
+                "B 2027-03-21"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 47.38,
+                "e1rmAddedM110": 51.07,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 2,
+                "injuryStart": null,
+                "kgPerRep": 2.96,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 18,
+                "pinA": 0,
+                "pinAReportShown": true,
+                "pinC": 25,
+                "pinHold90": 20,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 45,
+                "wpuB": 50,
+                "wpuC": 40
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "no_effect": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.finger": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.deload.enter": {
+                    "applied": 1
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        },
+        {
+            "iso_week": "2027-W13",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "7/1 from 2027-03-29",
+            "week_ordinal": 31,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-03-24",
+                "A 2027-03-26",
+                "TEST 2027-03-28"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 1,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 50.05,
+                "e1rmAddedM110": 53.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 2,
+                "injuryStart": null,
+                "kgPerRep": 3.11,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 57.5,
+                "noProgressTests": 0,
+                "oaHangS": 20,
+                "pinA": 20,
+                "pinAReportShown": true,
+                "pinC": 30,
+                "pinHold90": 15,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 40,
+                "wpuB": 45,
+                "wpuC": 35
+            },
+            "fired": {
+                "data.test.e1rm": {
+                    "applied": 1
+                },
+                "data.test.hangTarget": {
+                    "applied": 1
+                },
+                "data.test.loads.curve": {
+                    "applied": 1
+                },
+                "data.test.neg.keep": {
+                    "applied": 1
+                },
+                "data.test.pins": {
+                    "applied": 1
+                },
+                "prog.A.pin.gated": {
+                    "no_effect": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.block.rollover": {
+                    "applied": 1
+                },
+                "struct.cleanSession": {
+                    "no_effect": 2
+                },
+                "struct.stall": {
+                    "no_effect": 1
+                },
+                "struct.test.done": {
+                    "applied": 1
+                }
+            },
+            "notifications": [
+                "2027-03-28 info:test_recorded"
+            ]
+        },
+        {
+            "iso_week": "2027-W14",
+            "status": "active",
+            "mode": "normal",
+            "phase": 2,
+            "block": "7/2 from 2027-03-29",
+            "week_ordinal": 32,
+            "planned_test": "none -",
+            "sessions": [
+                "C 2027-03-31",
+                "A 2027-04-02",
+                "B 2027-04-04"
+            ],
+            "vars": {
+                "aFailStreak": 0,
+                "anchorFraction": 0.8239,
+                "bVariant": "6x2",
+                "blockEndPending": false,
+                "cEasyStreak": 0,
+                "deadStartUnlocked": true,
+                "e1rmAdded": 50.05,
+                "e1rmAddedM110": 53.82,
+                "elbowTrace": false,
+                "extraDeloadPending": false,
+                "fingerLevel": 2,
+                "injuryStart": null,
+                "kgPerRep": 3.11,
+                "needsCleanSession": false,
+                "negB": 60,
+                "negReset": 60,
+                "noProgressTests": 0,
+                "oaHangS": 20,
+                "pinA": 10,
+                "pinAReportShown": true,
+                "pinC": 25,
+                "pinHold90": 15,
+                "plankLoadKg": 5,
+                "plankS": 30,
+                "stallStage": 0,
+                "sthS": 8,
+                "wpuA": 42.5,
+                "wpuB": 47.5,
+                "wpuC": 37.5
+            },
+            "fired": {
+                "prog.A.hold90": {
+                    "no_effect": 1
+                },
+                "prog.A.pin.gated": {
+                    "applied": 1
+                },
+                "prog.B.neg.up": {
+                    "no_effect": 1
+                },
+                "prog.B.negReset.follow": {
+                    "applied": 1
+                },
+                "prog.B.wpu": {
+                    "applied": 1
+                },
+                "prog.C.pin.easy": {
+                    "applied": 1
+                },
+                "prog.plank": {
+                    "no_effect": 1
+                },
+                "prog.wpu.A": {
+                    "applied": 1
+                },
+                "prog.wpu.C": {
+                    "applied": 1
+                },
+                "safety.elbow.trace": {
+                    "no_effect": 3
+                },
+                "struct.cleanSession": {
+                    "no_effect": 3
+                },
+                "struct.week.close": {
+                    "applied": 1
+                }
+            },
+            "notifications": []
+        }
+    ]
+}
