@@ -159,7 +159,18 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                             EmptyAction(ui, onAdd = { sheet = Sheet.Add }, onFinish = { vm.finish(null, onFinished) })
                         } else {
                             val intervalRunning = ui.rest?.let { it.purpose == "interval" && it.state == "running" } == true
-                            SetCard(card, vm, intervalRunning, onMenu = { action ->
+                            val attempt = card.attempt
+                            if (attempt != null) {
+                                // Phase 3's attempts block uses the test day's attempt card (UX 14.9): Clean or Not clean.
+                                dev.fitnessapp.app.ui.testday.AttemptCard(
+                                    dev.fitnessapp.app.ui.testday.CardHead(
+                                        card.item.ex.nameEn, when (card.side) { "L" -> "Left"; "R" -> "Right"; else -> null },
+                                        "Attempt ${card.setNumber} of ${maxOf(card.item.planned, card.setNumber)}",
+                                    ),
+                                    onClean = { vm.logAttempt(true) }, onFail = { vm.logAttempt(false) }, enabled = ui.rest?.state != "running",
+                                    checklist = attempt.checklist,
+                                )
+                            } else SetCard(card, vm, intervalRunning, onMenu = { action ->
                                 when (action) {
                                     "skip" -> sheet = Sheet.Skip(card.item.se.id)
                                     "end" -> sheet = Sheet.End(card.item.se.id)
@@ -170,7 +181,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         Spacer(Modifier.height(2.dp))
                     }
                     // The log row is pinned in the thumb zone (P3, D9); it waits while a rest is counting down.
-                    ui.card?.let { card -> if (ui.rest?.state != "running") LogRow(card, vm) }
+                    ui.card?.let { card -> if (ui.rest?.state != "running" && card.attempt == null) LogRow(card, vm) }
                 }
             }
             UndoBar(ui, vm)

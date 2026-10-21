@@ -292,6 +292,10 @@ interface MetricObservationDao : SyncDao<MetricObservationEntity> {
 
     @Query("SELECT * FROM metric_observations WHERE metric_code = :code AND deleted_at IS NULL ORDER BY observed_at DESC, id DESC LIMIT 1")
     fun observeLatest(code: String): Flow<MetricObservationEntity?>
+
+    /** The test-day results of one test session (UX 14.9). */
+    @Query("SELECT * FROM metric_observations WHERE test_session_id = :sessionId AND deleted_at IS NULL ORDER BY observed_at, id")
+    fun observeByTestSession(sessionId: String): Flow<List<MetricObservationEntity>>
 }
 
 @Dao
@@ -313,6 +317,9 @@ interface SessionEventDao : SyncDao<SessionEventEntity> {
 
     @Query("SELECT * FROM session_events WHERE event_type = :type ORDER BY occurred_at DESC, id DESC LIMIT :limit")
     fun observeLatest(type: String, limit: Int): Flow<List<SessionEventEntity>>
+
+    @Query("SELECT * FROM session_events WHERE session_id = :sessionId AND event_type = :type ORDER BY occurred_at, id")
+    fun observeBySessionType(sessionId: String, type: String): Flow<List<SessionEventEntity>>
 
     @Query("SELECT * FROM session_events WHERE event_type = :type ORDER BY occurred_at DESC, id DESC LIMIT :limit")
     suspend fun latest(type: String, limit: Int): List<SessionEventEntity>

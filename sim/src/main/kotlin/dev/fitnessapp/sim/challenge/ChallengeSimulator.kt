@@ -18,6 +18,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.Dim
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.LoadProfile
 import dev.fitnessapp.algo.challenge.fitexpr.MachineCalibration
+import dev.fitnessapp.algo.challenge.fitexpr.NullV
 import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.SideV
 import dev.fitnessapp.algo.challenge.fitexpr.UserKFact
@@ -125,7 +126,14 @@ class ChallengeSimulator(
     private fun mass(x: String): Value = Values.mass(x)
 
     /** The CHALLENGE_ENGINE 14.1 import: phase 1, block 1 week 5, test pending since the 4 Oct postponement. */
-    private fun import() = ImportBlock(
+    private fun import() = if (persona.testWeekStart) {
+        // The setup's test week (UX 14.8): block 1 week 1, test pending, the test on the first Sunday.
+        ImportBlock(mode = "test_pending", blockWeek = 1, plannedTestDate = firstMonday.plusDays(6))
+    } else {
+        imported()
+    }
+
+    private fun imported() = ImportBlock(
         phase = 1, blockIndex = 1, blockWeek = 5, mode = "test_pending", weekOrdinal = 6, plannedTestDate = LocalDate.parse("2026-10-11"),
         vars = TreeMap(
             mapOf(
@@ -137,7 +145,7 @@ class ChallengeSimulator(
         ),
     )
 
-    private fun onboard() = TreeMap<String, Value>(
+    private fun onboard() = if (persona.testWeekStart) TreeMap() else TreeMap<String, Value>(
         mapOf(
             "bw" to mass("70.7"), "wpu3rmAdded" to mass("32.5"), "bwMaxReps" to Values.int(18), "anchorLoad" to mass("20"),
             "pinA" to Values.pin("40"), "pinC" to Values.pin("50"), "pinHold90" to Values.pin("35"),
@@ -179,6 +187,10 @@ class ChallengeSimulator(
             val x = after.vars[v.name] as? QV ?: continue
             (v.min as? QV)?.let { if (x.v < it.v) violations += "${e.localDate} ${v.name} below min" }
             (v.max as? QV)?.let { if (x.v > it.v) violations += "${e.localDate} ${v.name} above max" }
+        }
+        // D37: after a valid test every load, pin and negative of the block snapshot has a value.
+        if (e.type == EventTypes.TEST_COMPLETED && after.validTestCount > before.validTestCount) {
+            for (name in def.snapshotVars) if (after.vars[name] == null || after.vars[name] is NullV) violations += "${e.localDate} $name empty after a valid test"
         }
         if (e.type == EventTypes.CREATED || e.type == EventTypes.OVERRIDE) return
         val written = step.audits.flatMap { a -> a.writes.filter { it.outcome == Outcome.APPLIED }.map { it.target } }.toSet()

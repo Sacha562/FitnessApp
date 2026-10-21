@@ -10,6 +10,7 @@ import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.ImportBlock
 import dev.fitnessapp.algo.challenge.enrollment.SessionLog
 import dev.fitnessapp.algo.challenge.enrollment.StateJson
+import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
 import dev.fitnessapp.algo.core.clock.Clock
@@ -112,10 +113,14 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled")
+        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
         f.state.proposalDecisions.size shouldBe 27
+        // D37: before the enrollment exists the facts resolve the grip-dependent weighted pull-up with the param defaults,
+        // so its k is there and the inits that read userK('weighted_pullup') succeed.
+        (f.state.vars["anchorFraction"] as? QV)?.v?.toPlainString() shouldBe "0.8239"
+        (f.state.vars["e1rmAdded"] as? QV)?.v?.stripTrailingZeros()?.toPlainString() shouldBe "39.38"
         // created + 27 decisions + today's day tick, which sorts first (00:00.002) and is folded after the creation
         val events = db.challengeEvents().forEnrollment(f.enrollment.id)
         events.size shouldBe 29

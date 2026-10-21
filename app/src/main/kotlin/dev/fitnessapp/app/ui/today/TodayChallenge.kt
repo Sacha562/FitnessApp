@@ -70,6 +70,8 @@ data class TodayChallengeUi(
     val habits: List<HabitRowUi> = emptyList(),
     /** The template name of [slot] for the button ("Start Heavy pulling now instead"). */
     val slotName: String? = null,
+    /** [slot] is the definition's test slot: Start opens the test-day wizard (UX 14.9). */
+    val isTest: Boolean = false,
 )
 
 /** How a habit row is completed (UX 9.6): quick-done by its checkbox, or through the home mini-session (Start). */
@@ -132,7 +134,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             val time = advice.start?.let { ChallengeTexts.time(Week.localTime(it, input.zone)) }
             return TodayChallengeUi(
                 e.id, program, f.state.mode, if (done) "Done today: ${name(todaySlot)}" else "Today: ${name(todaySlot)}",
-                time, if (done) null else todaySlot, false, null, habits,
+                time, if (done) null else todaySlot, false, null, habits, isTest = todaySlot == def.doc.structure.block.testSlot,
             )
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
@@ -275,7 +277,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (String) -> Unit) {
+fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (String) -> Unit, onOpenTest: (String) -> Unit = {}) {
     val vm: TodayChallengeViewModel = viewModel(key = "today_challenge", factory = viewModelFactory { initializer { TodayChallengeViewModel(c) } })
     val ui by vm.ui.collectAsState()
     val elbowFor by vm.elbowFor.collectAsState()
@@ -290,7 +292,9 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
         u.detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
         val slot = u.slot
         if (!sessionActive && slot != null) {
-            if (u.trainNow) {
+            if (u.isTest && !u.trainNow) {
+                PrimaryButton("Start test day", { onOpenTest(u.enrollmentId) }, Modifier.fillMaxWidth())
+            } else if (u.trainNow) {
                 LinkButton(if (busy) "Starting…" else "Start ${u.slotName ?: "a session"} now instead", { vm.start(slot, onOpenSession) }, enabled = !busy)
             } else {
                 PrimaryButton(if (busy) "Starting…" else "Start session", { vm.start(slot, onOpenSession) }, Modifier.fillMaxWidth(), enabled = !busy)

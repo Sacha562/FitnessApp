@@ -404,6 +404,20 @@ object WeekPlanner : DeclaresParams {
                 }
             }
         }
+        // D38: a slot that goes first while its condition holds (OAP: the test while there are no loads). Only suggested
+        // sessions are moved behind it; a session already done or booked earlier stays where it is.
+        for ((slot, cond) in def.orderFirst) {
+            val on = try {
+                (cond.evaluate(env.roots(), env.host) as? BoolV)?.b == true
+            } catch (_: EvalError) {
+                false
+            }
+            if (!on) continue
+            val week = all.filter { it.slot != null && Week.isoWeek(it.date) == iso }
+            for (x in week.filter { it.slot == slot }) for (y in week.filter { it.slot != slot && it.placed }) {
+                if (!x.date.isBefore(y.date)) out += both("first", x, y)
+            }
+        }
         // A fixed general session inside a hard window of a placed challenge slot (C12).
         for (pw in def.doc.integration.protectedWindows) {
             if (pw.mode != "hard") continue

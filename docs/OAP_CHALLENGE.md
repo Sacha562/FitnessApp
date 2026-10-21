@@ -2,8 +2,12 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.0.1`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
-1.0.0 with shorter user-facing texts (D35), and the frozen 1.0.0 is `oap.challenge.v1.0.0.json`). The proposal
+`docs/challenges/oap.challenge.v1.json` (`oap@1.2.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
+(D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
+`firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
+first in its week while there are no loads (D38); the frozen 1.0.0, 1.0.1, 1.1.0 and 1.2.0 are
+`oap.challenge.v1.0.0.json` to `oap.challenge.v1.2.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 

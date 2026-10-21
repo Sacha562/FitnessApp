@@ -280,10 +280,14 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
             habits[h.id] = CompiledHabit(skip, enabled, weekday, fields)
         }
 
+        val orderFirst = doc.schedule.order.first.mapIndexedNotNull { i, f ->
+            if (f.slot !in slots) err("S1", "/schedule/order/first/$i/slot", "unknown slot ${f.slot}")
+            expr(f.condition, state, "/schedule/order/first/$i/if", bool = true)?.let { f.slot to it }
+        }
         if (blockWeeks == null || weekCounts == null || postponeIf == null) return null
         return CompiledDefinition(
             doc, sha, params, stateVars, metrics, derived, templates, rules, inSession, gates, modes,
-            blockWeeks, weekCounts, postponeIf, hardLimits, habits,
+            blockWeeks, weekCounts, postponeIf, hardLimits, habits, orderFirst,
         )
     }
 
@@ -359,7 +363,7 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
         val name = (h["name"] as? JsonObject)?.mapValues { (it.value as JsonPrimitive).content } ?: emptyMap()
         val validity = TemplateResolver.str(h["validity"])?.let { expr(it, Scopes.forTest(inputs), "$ptr/validity", bool = true) }
         val state = Scopes.forState(inputs)
-        val compiled = items.mapIndexed { i, (_, spec) -> compileItem(spec, "$ptr/items/$i", state) }
+        val compiled = items.mapIndexed { i, (_, spec) -> compileItem(spec, "$ptr/items/$i", state, inputs.metrics) }
         return ResolvedTemplate(
             id = id, slot = slot, name = name, kind = kind, bookedMin = TemplateResolver.int(h["bookedMin"]) ?: 0,
             tags = TemplateResolver.strings(h["tags"]), requiresReadiness = TemplateResolver.strings(h["requiresReadiness"]),
@@ -404,7 +408,7 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
         return out
     }
 
-    private fun compileItem(spec: ItemSpec, ptr: String, scope: TypeScope): CompiledItem {
+    private fun compileItem(spec: ItemSpec, ptr: String, scope: TypeScope, metrics: Map<String, Type>): CompiledItem {
         val raw = linkedMapOf<String, JsonElement?>(
             "sets" to spec.sets, "reps" to spec.reps, "hold_s" to spec.holdS, "ecc_s_target" to spec.eccSTarget,
             "duration_s" to spec.durationS, "added" to spec.added, "assistPin" to spec.assistPin, "fingers" to spec.fingers,
@@ -418,7 +422,31 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
         val variants = spec.variants.mapValues { (v, o) -> fieldsOf(o, "$ptr/variants/$v", scope) }
         if (spec.assist != null && spec.assist != "none") err("S1", "$ptr/assist", "assist must be 'none'")
         if (spec.role !in ROLES) err("S1", "$ptr/role", "role must be one of $ROLES")
-        return CompiledItem(spec, exercise, fields, skipIf, enabledIf, position, variants)
+        val steps = spec.steps?.let { compileSteps(it, spec, "$ptr/steps", scope, metrics) }
+        val stepsIfApproved = spec.stepsIfApproved?.let { compileSteps(it, spec, "$ptr/stepsIfApproved", scope, metrics) }
+        if (spec.stepsIfApproved != null && spec.protocolProposal == null) err("S1", "$ptr/stepsIfApproved", "stepsIfApproved needs a protocolProposal")
+        return CompiledItem(spec, exercise, fields, skipIf, enabledIf, position, variants, steps, stepsIfApproved)
+    }
+
+    /**
+     * D36: a test item's structured protocol. `start` and `step` have the item metric's type (added kg or a pin),
+     * `rampOf` is a total mass, `rampFractions` a list of numbers, `rampReps` a `[min, max]` literal.
+     */
+    private fun compileSteps(o: JsonObject, spec: ItemSpec, ptr: String, scope: TypeScope, metrics: Map<String, Type>): CompiledSteps? {
+        if (spec.role != "test") err("S1", ptr, "steps belong to test items")
+        val unknown = o.keys - STEP_FIELDS
+        if (unknown.isNotEmpty()) err("S1", ptr, "unknown steps fields ${unknown.sorted()}")
+        val metricType = spec.metric?.let { metrics[it] }.let { if (it is Type.SideT) it.elem else it }
+        val loadType = metricType?.takeIf { it == Type.MASS || it == Type.PIN }
+        if (loadType == null && (o["start"] != null || o["step"] != null)) err("S1", ptr, "start and step need a mass or pin metric")
+        fun e(field: String, expect: Type?): CompiledExpr? =
+            TemplateResolver.str(o[field])?.let { expr(it, scope, "$ptr/$field", expect = expect) }
+        val reps = (o["rampReps"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content?.toIntOrNull() }.orEmpty()
+        if (o["rampReps"] != null && !(reps.size == 2 && reps[0] >= 1 && reps[1] >= reps[0])) err("S1", "$ptr/rampReps", "rampReps must be [min, max] with 1 <= min <= max")
+        return CompiledSteps(
+            rampOf = e("rampOf", Type.MASS), rampFractions = e("rampFractions", Type.ListT(Type.NUM)), rampReps = reps,
+            start = loadType?.let { e("start", it) }, step = loadType?.let { e("step", it) }, maxAttempts = e("maxAttempts", Type.INT),
+        )
     }
 
     private fun exerciseChoice(e: JsonElement, ptr: String, scope: TypeScope): ExerciseChoice? = when {
@@ -697,6 +725,7 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
         private val PARAM_NAME = Regex("^[A-Za-z][A-Za-z0-9_]{0,63}$")
         private val RULE_ID = Regex("^[A-Za-z][A-Za-z0-9_.+-]{0,79}$")
         val ROLES: List<String> = listOf("warmup", "main", "prehab", "test", "attempt")
+        val STEP_FIELDS: Set<String> = setOf("rampOf", "rampFractions", "rampReps", "start", "step", "maxAttempts")
         val NOTIFY_KINDS: List<String> = listOf("stop", "warn", "info", "celebrate", "prompt")
         val ONCE: List<String> = listOf("perDay", "perBlock", "ever")
         val SUGGEST_FIELDS: Map<String, Type> = linkedMapOf(

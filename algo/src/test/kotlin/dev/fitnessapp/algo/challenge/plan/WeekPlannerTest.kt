@@ -41,6 +41,28 @@ class WeekPlannerTest {
 
     private fun ChallengeWeekPlan.slots() = sessions.map { "${it.slot} ${it.date} ${Week.localTime(it.interval.start, zone)}" }
 
+    /** D38: a test-week start (no loads) tests first, on any day; C and A follow it with a rest day before the test. */
+    @Test
+    fun `without loads the test comes first and may fall on any day`() {
+        val created = OapFixture.event(
+            dev.fitnessapp.algo.challenge.enrollment.EventTypes.CREATED, "2026-10-21", "12:00",
+            dev.fitnessapp.algo.challenge.enrollment.EventPayload.Created(
+                OapFixture.enrollmentId, sortedMapOf(), sortedMapOf(),
+                dev.fitnessapp.algo.challenge.enrollment.ImportBlock(mode = "test_pending", blockWeek = 1, plannedTestDate = LocalDate.parse("2026-10-21")),
+                def.version, def.jcsSha256,
+            ),
+            name = "created",
+        )
+        val s = dev.fitnessapp.algo.challenge.enrollment.EnrollmentFold.fold(def, params, listOf(created) + OapFixture.decisions(true, date = "2026-10-21")).state
+        val plan = WeekPlanner.plan(def, params, input(s, "2026-10-19", now = "2026-10-21T06:00:00Z", prev = null))
+        val test = plan.sessions.single { it.slot == "TEST" }
+        plan.sessions.filter { it.slot != "TEST" }.all { it.date.isAfter(test.date) } shouldBe true
+        (test.date.dayOfWeek == java.time.DayOfWeek.SUNDAY) shouldBe false
+        // With loads (the import of 14.1) the program's order holds: C and A first, the test on its Sunday.
+        val loaded = WeekPlanner.plan(def, params, input(OapFixture.start(OapFixture.import(blockWeek = 5, needsCleanSession = false)), "2026-10-05"))
+        loaded.sessions.map { it.slot } shouldBe listOf("C", "A", "TEST")
+    }
+
     @Test
     fun `GF-CE-29 the W42 plan, blocked days and protected windows`() {
         val inp = input(normalBlock2(), "2026-10-12")

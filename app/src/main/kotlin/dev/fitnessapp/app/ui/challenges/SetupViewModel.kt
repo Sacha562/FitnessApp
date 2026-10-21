@@ -33,11 +33,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 import java.util.TreeMap
 import java.util.UUID
 
@@ -121,8 +119,19 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         def.doc.proposals.associate { p -> p.id to (d.decisions[p.id] ?: if (p.recommended == "approve") "approved" else "declined") }
 
     /** Step 2 can be left: a test week needs nothing, entered numbers need every required field. */
-    fun startComplete(ui: SetupUi): Boolean =
-        ui.draft.start == "baseline" || ui.fields.filter { it.required }.all { ui.draft.onboard[it.key]?.toBigDecimalOrNull() != null }
+    fun startComplete(ui: SetupUi): Boolean = positionValid(ui) &&
+        (ui.draft.start == "baseline" || ui.fields.filter { it.required }.all { ui.draft.onboard[it.key]?.toBigDecimalOrNull() != null })
+
+    /**
+     * "I'm mid-program": the phase exists, the block is 1 or more and the week lies within the engine's longest block
+     * (`challenge.enrollment.max_block_weeks`; the server allows 1-10), so a typo cannot create an unsyncable enrollment.
+     */
+    fun positionValid(ui: SetupUi): Boolean {
+        val d = ui.draft
+        if (d.start != "import") return true
+        val phases = ui.def?.doc?.phases?.size ?: return true
+        return d.phase in 1..phases && d.blockIndex >= 1 && d.blockWeek in 1..c.params.int("challenge.enrollment.max_block_weeks")
+    }
 
     /**
      * The onboarding fields of the definition's `baseline` step. Their dimension is the state var's of the same name,
@@ -198,7 +207,7 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         }
     }
 
-    /** The import block of the draft (D4); `baseline` starts in a test-pending week with the test this Sunday. */
+    /** The import block of the draft (D4); `baseline` starts in a test-pending week with the test due today (D38). */
     private fun importOf(def: CompiledDefinition, d: SetupDraft): ImportBlock? = when (d.start) {
         "import" -> ImportBlock(
             phase = d.phase, blockIndex = d.blockIndex, blockWeek = d.blockWeek, mode = d.mode, weekOrdinal = d.weekOrdinal,
@@ -207,7 +216,8 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         )
         "baseline" -> ImportBlock(
             mode = "test_pending", blockWeek = 1,
-            plannedTestDate = LocalDate.now(zone).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)),
+            // D38: the test can be any day and goes first while there are no loads, so it is due from today.
+            plannedTestDate = LocalDate.now(zone),
         )
         else -> null
     }
@@ -234,9 +244,12 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         viewModelScope.launch {
             val computed = withContext(Dispatchers.Default) {
                 runCatching {
-                    val facts = c.challengeFacts.facts(def, null)
                     val d = _ui.value.draft.copy(start = "known")
-                    preview(def, d, facts).vars.filterKeys { name -> def.stateVarByName[name]?.spec?.let { !it.static && it.tag != "E" } == true }
+                    val facts = c.challengeFacts.facts(def, null, setupParams = params(def, d))
+                    // Only values with a plain name (P15): engine bookkeeping such as streaks and anchorFraction stays hidden.
+                    preview(def, d, facts).vars.filterKeys { name ->
+                        def.stateVarByName[name]?.spec?.let { !it.static && it.tag != "E" } == true && ChallengeTexts.varLabel(name) != name
+                    }
                 }.getOrDefault(emptyMap())
             }
             _ui.value = _ui.value.copy(computed = computed)
@@ -249,7 +262,7 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         viewModelScope.launch {
             val lines = withContext(Dispatchers.Default) {
                 runCatching {
-                    val facts = c.challengeFacts.facts(def, null)
+                    val facts = c.challengeFacts.facts(def, null, setupParams = params(def, _ui.value.draft))
                     val s = preview(def, _ui.value.draft, facts)
                     val monday = Week.isoWeekStart(LocalDate.now(zone))
                     val out = ArrayList<ReviewWeek>()

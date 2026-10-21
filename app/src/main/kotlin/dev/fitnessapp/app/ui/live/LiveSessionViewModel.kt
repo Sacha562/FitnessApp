@@ -104,6 +104,8 @@ data class Card(
     /** Finger assistance (`assisted_ordinal`): the fingers used and the planned fingers. */
     val fingers: Int? = null,
     val plannedFingers: Int? = null,
+    /** An attempts-block row (phase 3, `LogMode.ATTEMPT_CHECKLIST`): the metric it records and the definition's checklist. */
+    val attempt: AttemptInfo? = null,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
 
@@ -117,6 +119,9 @@ data class Card(
     val setNumber: Int get() = item.workingDone + 1
     val slotKey: String get() = listOf(item.se.id, setIndex.toString(), side, mode.code, warmup.toString()).joinToString("|")
 }
+
+/** What the attempt card of a phase-3 attempts block needs (UX 14.9 attempt card). */
+data class AttemptInfo(val metric: String, val checklist: List<String>)
 
 /** The last tap's rows for Undo: one set, or the attempts of a round ([extraIds]). */
 data class LastLogged(val setId: String, val label: String, val at: Long, val extraIds: List<String> = emptyList())
@@ -315,6 +320,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             shownAt = now, firstTouchAt = null, holdTargetS = holdTarget,
             eccS = if (item.ex.contraction == "eccentric_only") eccPrev ?: eccTarget else null, eccTargetS = eccTarget,
             attemptsS = attempts, fingers = fingers, plannedFingers = row?.fingers,
+            attempt = row?.takeIf { it.logMode == dev.fitnessapp.algo.challenge.materialize.LogMode.ATTEMPT_CHECKLIST }?.let {
+                planItem(item)?.plan?.metric?.let { m -> AttemptInfo(m, attemptChecklist()) }
+            },
         )
         return withDeviation(base)
     }
@@ -532,6 +540,20 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     // ------------------------------------------------------------------------------------------------ logging
 
     /** One tap logs the set (D9): RIR chip (0-5, 5 = "5+"), felt chip for holds, or Done for warm-ups. */
+    /** The definition's attempt checklist (`challengeRules.attemptChecklist`), read once per session. */
+    private var checklist: List<String>? = null
+
+    private suspend fun attemptChecklist(): List<String> = checklist ?: runCatching {
+        val live = challenge ?: return emptyList()
+        c.challenges.folded(live.enrollmentId).def.doc.challengeRules.attemptChecklist.mapNotNull { it["en"] }
+    }.getOrDefault(emptyList()).also { checklist = it }
+
+    /** The attempt card (phase 3): a clean attempt is one rep, a failed one none (`failed_rep`); `attempt.logged` follows. */
+    fun logAttempt(success: Boolean) {
+        _ui.update { u -> u.copy(card = u.card?.copy(reps = if (success) 1 else 0, flags = if (success) emptySet() else setOf("failed_rep"))) }
+        log(control = "attempt")
+    }
+
     fun log(rir: Int? = null, feltReserveS: Double? = null, feltLowerBound: Boolean = false, control: String) {
         val u = _ui.value
         val card = u.card ?: return
@@ -615,6 +637,22 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val setId = ids.first()
             historyCache.remove(card.item.se.exercise_id)
             if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
+            // CHALLENGE_ENGINE 4.2: a phase-3 attempt is an `attempt.logged` event; the gate reads the phase's observations.
+            card.attempt?.let { a ->
+                val live = challenge
+                if (live != null) {
+                    runCatching {
+                        c.challenges.record(
+                            live.enrollmentId,
+                            dev.fitnessapp.data.challenge.ChallengeEventDraft(
+                                dev.fitnessapp.algo.challenge.enrollment.EventTypes.ATTEMPT,
+                                dev.fitnessapp.algo.challenge.enrollment.EventPayload.AttemptLogged(a.metric, card.side, card.reps == 1),
+                                java.time.Instant.ofEpochMilli(now), u.session?.local_date?.let(java.time.LocalDate::parse) ?: java.time.LocalDate.now(), sourceSessionId = sessionId,
+                            ),
+                        )
+                    }
+                }
+            }
             val timer = card.holdTimerS
             if (card.isHold && timer != null && card.holdS != null && Numbers.oneDecimal(timer) != Numbers.oneDecimal(card.holdS)) {
                 val t = Numbers.oneDecimal(timer).toDouble()

@@ -70,6 +70,8 @@ data class DashboardUi(
     val undecided: Int,
     val pausedSince: LocalDate?,
     val targets: List<CorrectTarget>,
+    /** "Log test day" shows on the planned test day and after it, and while the test is pending (UX 14.2). */
+    val testDay: Boolean = false,
 )
 
 /**
@@ -136,6 +138,8 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             undecided = def.doc.proposals.count { it.id !in s.proposalDecisions },
             pausedSince = s.pausedAt,
             targets = targets(def, s),
+            testDay = s.status == EnrollmentState.ACTIVE &&
+                (s.mode == "test_pending" || s.plannedTest.date?.let { !LocalDate.now(zone).isBefore(it) } == true),
         )
     }
 

@@ -141,6 +141,28 @@ class MaterializerTest {
     }
 
     @Test
+    fun `D36 the test protocol steps follow P21`() {
+        val approved = plan(OapFixture.start(), "TEST")
+        val str = approved.item("str").steps!!
+        // Expected 3RM total = e1RM total / (1 + 2 / k): (70.70 + 39.38) / (32 / 30) = 103.20 kg, so +32.5 kg.
+        str.start shouldBe BigDecimal("32.5")
+        str.step shouldBe BigDecimal("2.5")
+        str.maxAttempts shouldBe 3
+        str.ramp.first().addedKg shouldBe BigDecimal.ZERO
+        str.ramp.map { it.addedKg } shouldBe str.ramp.map { it.addedKg }.sorted()
+        str.ramp.all { it.addedKg < str.start!! && it.repsMin == 1 && it.repsMax == 3 } shouldBe true
+        val assist = approved.item("assist").steps!!
+        assist.start shouldBe BigDecimal("50")
+        assist.step shouldBe BigDecimal("-5")
+        assist.maxAttempts shouldBe 5
+        approved.item("hang").steps shouldBe null
+        val declined = plan(OapFixture.start(except = mapOf("P21" to false)), "TEST")
+        declined.item("str").steps shouldBe null
+        declined.item("assist").steps shouldBe null
+        PlanJson.decode(PlanJson.encode(approved)) shouldBe approved
+    }
+
+    @Test
     fun `injury mode drops unilateral and eccentric work and doubles prehab`() {
         val s = normal().copy(mode = "injury")
         val a = plan(s, "A")

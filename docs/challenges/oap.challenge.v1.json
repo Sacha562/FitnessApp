@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.0.1",
+  "version": "1.3.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -60,7 +60,7 @@
     { "id": "P18", "title": { "en": "Draft sessions for phases 2 and 3" }, "rationale": { "en": "Rough plans for the later phases, refined with you before you get there." }, "ifDeclined": { "en": "The phase 1 sessions continue until the program is updated." }, "recommended": "approve", "supersedes": [], "affects": { "templates": ["C2", "A2", "A3", "B3", "C3", "T2"], "rules": ["prog.finger"] } },
     { "id": "P19", "title": { "en": "Waiting for a test stays a deload week" }, "rationale": { "en": "When the test is postponed, the waiting week stays light so you test fresh." }, "ifDeclined": { "en": "Waiting weeks use full sessions." }, "recommended": "approve", "supersedes": [], "affects": { "modes": ["test_pending"] } },
     { "id": "P20", "title": { "en": "5 s negative right after least help on test day" }, "rationale": { "en": "Keeps it away from the hang and hold tests." }, "ifDeclined": { "en": "It stays in the same place; the test order is fixed." }, "recommended": "approve", "supersedes": [], "affects": { "templates": ["T1"] } },
-    { "id": "P21", "title": { "en": "Step-by-step test protocols" }, "rationale": { "en": "Least help: start at the A pin + 10 lb, 5 lb less after each clean rep, up to 5 tries per arm. 3RM: warm up at 50, 70 and 85 %, then +2.5 kg tries, at most 3." }, "ifDeclined": { "en": "The test only states the goal." }, "recommended": "approve", "supersedes": [], "affects": { "templates": ["T1"] } },
+    { "id": "P21", "title": { "en": "Step-by-step test protocols" }, "rationale": { "en": "Least help: start at the A pin + 10 lb, 5 lb less after each clean rep, up to 5 tries per arm. 3RM: warm up at 50, 70 and 85 %, then +2.5 kg tries, at most 3." }, "ifDeclined": { "en": "The test only states the goal." }, "recommended": "approve", "supersedes": [], "affects": { "templates": ["T1"], "params": ["testRampFractions", "testAttemptStepKg", "test3rmMaxAttempts", "testLadderOffsetLb", "testLadderMaxAttempts"] } },
     { "id": "P22", "title": { "en": "Plank plate: 5 kg" }, "rationale": { "en": "The program adds 'a plate' without saying which." }, "ifDeclined": { "en": "The app asks which plate when you get there." }, "recommended": "approve", "supersedes": [], "affects": { "params": ["plankPlateKg"], "rules": ["prog.plank"] } },
     { "id": "P23", "title": { "en": "No curls or heavy grip work for 24 h after session B" }, "rationale": { "en": "Session B is the hardest session for your elbows." }, "ifDeclined": { "en": "No rest window after session B." }, "recommended": "approve", "supersedes": [], "affects": { "integration": ["pw.afterB"] } },
     { "id": "P24", "title": { "en": "Back to 6 x 2 after progress" }, "rationale": { "en": "Ladders fix a stall; once a test shows progress, session B returns to 6 x 2." }, "ifDeclined": { "en": "Session B stays on ladders until you change it." }, "recommended": "approve", "supersedes": [], "affects": { "rules": ["struct.stall.revert"] } },
@@ -162,7 +162,13 @@
     "ladderCount": { "type": "int", "default": 3, "min": 2, "max": 5, "tag": "P", "proposal": "P17", "tunable": true, "tunedBy": "RIR on the last rung and session duration", "grade": "expert-opinion" },
     "plankPlateKg": { "type": "mass", "default": 5.0, "tag": "P", "proposal": "P22", "tunable": true, "tunedBy": "effort chips on the first loaded plank week", "grade": "expert-opinion" },
     "cleanSessionRatio": { "type": "number", "default": 0.8, "min": 0.5, "max": 1.0, "tag": "P", "proposal": "P25", "tunable": true, "tunedBy": "test results after sessions with different completion ratios", "grade": "expert-opinion" },
-    "hangMeasureWeekday": { "type": "enum", "values": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "default": "MON", "tag": "P", "proposal": "P26", "userEditable": true, "grade": "engineering-fact" }
+    "hangMeasureWeekday": { "type": "enum", "values": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "default": "MON", "tag": "P", "proposal": "P26", "userEditable": true, "grade": "engineering-fact" },
+    "testRampFractions": { "type": "list", "valueType": "number", "default": [0.5, 0.7, 0.85], "tag": "P", "proposal": "P21", "source": "proposal P21 (3RM warm-up ramp)", "grade": "expert-opinion" },
+    "testAttemptStepKg": { "type": "mass", "default": 2.5, "tag": "P", "proposal": "P21", "source": "proposal P21", "grade": "engineering-fact", "note": "Smallest belt step." },
+    "test3rmMaxAttempts": { "type": "int", "default": 3, "min": 1, "max": 5, "tag": "P", "proposal": "P21", "source": "proposal P21", "grade": "expert-opinion" },
+    "testLadderOffsetLb": { "type": "pin", "default": 10, "tag": "P", "proposal": "P21", "source": "proposal P21 (least-help ladder starts at the A pin + 10 lb)", "grade": "expert-opinion" },
+    "testLadderMaxAttempts": { "type": "int", "default": 5, "min": 1, "max": 8, "tag": "P", "proposal": "P21", "source": "proposal P21", "grade": "expert-opinion" },
+    "firstAnchorRir": { "type": "int", "default": 2, "min": 0, "max": 4, "tag": "E", "tunable": true, "tunedBy": "session C reps and RIR in the first block after a test-week start", "source": "D37 (user: 5 reps with 2 in reserve on the personal curve)", "grade": "expert-opinion" }
   },
   "equipment": {
     "required": [
@@ -237,9 +243,9 @@
   ],
   "state": {
     "vars": [
-      { "name": "e1rmAdded", "type": "mass", "init": "onboard.e1rmAdded", "tag": "D", "note": "Gate e1RM (D7) of the latest valid strength test." },
-      { "name": "e1rmAddedM110", "type": "mass", "init": "onboard.e1rmAddedM110", "tag": "A", "note": "Display only." },
-      { "name": "anchorFraction", "type": "number", "static": true, "init":"onboard.anchorFraction ?? (onboard.bw + onboard.anchorLoad) / e1rmTotal(onboard.bw + onboard.wpu3rmAdded, 3, userK('weighted_pullup'))", "tag": "P", "proposal": "P10", "note": "Frozen at enrollment/import with the D7 method so that the current anchor is reproduced (continuity)." },
+      { "name": "e1rmAdded", "type": "mass", "init": "onboard.e1rmAdded ?? e1rmTotal(onboard.bw + onboard.wpu3rmAdded, 3, userK('weighted_pullup')) - onboard.bw", "tag": "D", "note": "Gate e1RM (D7) of the latest valid strength test; at setup from the entered 3RM on the personal curve (D37)." },
+      { "name": "e1rmAddedM110", "type": "mass", "init": "onboard.e1rmAddedM110 ?? (onboard.bw + onboard.wpu3rmAdded) * p.m3 - onboard.bw", "tag": "A", "note": "Display only." },
+      { "name": "anchorFraction", "type": "number", "init":"onboard.anchorFraction ?? (onboard.bw + onboard.anchorLoad) / e1rmTotal(onboard.bw + onboard.wpu3rmAdded, 3, userK('weighted_pullup'))", "tag": "P", "proposal": "P10", "note": "Frozen at enrollment/import with the D7 method so that the current anchor is reproduced (continuity); after a test-week start, frozen by the first valid test (data.test.first, D37)." },
       { "name": "kgPerRep", "type": "mass", "init": "onboard.kgPerRep ?? onboard.wpu3rmAdded / (onboard.bwMaxReps - 3)", "tag": "A", "note": "Artifact slope 2.17 kg/rep = 32.5 / (18 - 3)." },
       { "name": "wpuC", "type": "mass", "init": "onboard.anchorLoad", "tag": "A", "note": "Measured anchor (C 4 x 5, last two sets just made)." },
       { "name": "wpuA", "type": "mass", "init": "onboard.wpuA ?? roundLoad(s.wpuC + 1 * s.kgPerRep, 'belt', 'nearest')", "tag": "A" },
@@ -369,11 +375,11 @@
       "items": [
         { "key": "bw", "metric": "bw", "role": "test", "protocol": { "en": "Weigh in before the warm-up." } },
         { "block": "warmup10" },
-        { "key": "str", "metric": "wpu_3rm_added", "exercise": "weighted_pullup", "role": "test", "record": "heaviestClean", "rest_s": 240, "protocolProposal": "P21", "protocol": { "en": "Heaviest clean triple, chosen grip, first while fresh." }, "protocolIfApproved": { "en": "Ramp 50 %, 70 %, 85 % of the expected 3RM total x 1-3 reps; then attempts in +2.5 kg steps; at most 3 working attempts; 4 min rest." } },
+        { "key": "str", "metric": "wpu_3rm_added", "exercise": "weighted_pullup", "role": "test", "record": "heaviestClean", "rest_s": 240, "protocolProposal": "P21", "protocol": { "en": "Heaviest clean triple, chosen grip, first while fresh." }, "protocolIfApproved": { "en": "Ramp 50 %, 70 %, 85 % of the expected 3RM total x 1-3 reps; then attempts in +2.5 kg steps; at most 3 working attempts; 4 min rest." }, "stepsIfApproved": { "rampOf": "loadForReps(bw + s.e1rmAdded, 3, userK('weighted_pullup'))", "rampFractions": "p.testRampFractions", "rampReps": [1, 3], "start": "roundLoad(loadForReps(bw + s.e1rmAdded, 3, userK('weighted_pullup')) - bw, 'belt', 'down')", "step": "p.testAttemptStepKg", "maxAttempts": "p.test3rmMaxAttempts" } },
         { "key": "max", "metric": "bw_max_reps", "exercise": "pullup_bw", "role": "test", "record": "max", "rest_s": 180, "position": { "expr": "p.approved_P08 ? 'last' : 'inPlace'" }, "protocol": { "en": "Max strict reps, chosen grip." } },
         { "key": "hang", "metric": "oa_hang_s", "exercise": "oa_dead_hang", "role": "test", "perSide": true, "sideOrder": ["L", "R"], "attempts": 1, "record": "max", "rest_s": 180, "protocol": { "en": "Fixed neutral handle; the clock stops when the torso starts to rotate." } },
         { "key": "top", "metric": "oa_top_hold_s", "exercise": "oa_top_hold", "role": "test", "perSide": true, "sideOrder": ["L", "R"], "attempts": 3, "record": "max", "rest_s": 120, "protocol": { "en": "Chosen grip, best attempt." } },
-        { "key": "assist", "metric": "oa_least_assist_pin", "exercise": "oap_assisted_machine", "role": "test", "perSide": true, "sideOrder": ["L", "R"], "record": "lowestClean", "rest_s": 180, "protocolProposal": "P21", "protocol": { "en": "Least assistance with which one clean rep succeeds." }, "protocolIfApproved": { "en": "Start at the A pin + 10 lb; -5 lb after each clean rep; stop at the first failure; max 5 attempts per arm; 3 min rest." } },
+        { "key": "assist", "metric": "oa_least_assist_pin", "exercise": "oap_assisted_machine", "role": "test", "perSide": true, "sideOrder": ["L", "R"], "record": "lowestClean", "rest_s": 180, "protocolProposal": "P21", "protocol": { "en": "Least assistance with which one clean rep succeeds." }, "protocolIfApproved": { "en": "Start at the A pin + 10 lb; -5 lb after each clean rep; stop at the first failure; max 5 attempts per arm; 3 min rest." }, "stepsIfApproved": { "start": "roundPin(s.pinA + p.testLadderOffsetLb, 'up')", "step": "0lb - p.pinDropLb", "maxAttempts": "p.testLadderMaxAttempts" } },
         { "key": "neg", "metric": "oa_neg5_unassisted", "exercise": "oa_negative", "role": "test", "perSide": true, "sideOrder": ["L", "R"], "attempts": 1, "record": "bool", "rest_s": 180, "skipIf": "s.elbowTrace", "position": { "expr": "p.approved_P20 ? 'after:assist' : 'inPlace'" }, "protocol": { "en": "5 s one-arm negative without any help; the hand does not shift." } }
       ] },
     "C2": { "extends": "C1", "slot": "C", "tag": "P", "proposal": "P18",
@@ -415,12 +421,12 @@
   "schedule": {
     "slotsPerWeek": { "normal": ["C", "A", "B"], "deload": ["C", "A", "TEST"], "test_pending": ["C", "A", "TEST"], "extra_deload": ["C", "A", "B"], "injury": ["C", "A", "B"] },
     "slotPriority": ["TEST", "B", "A", "C"],
-    "order": { "sequence": [["C"], ["A"], ["B", "TEST"]], "strictness": "relaxable", "tag": "A", "source": "artifact section 04 (C Wed, A Fri, B Sun; days move week to week)" },
+    "order": { "sequence": [["C"], ["A"], ["B", "TEST"]], "strictness": "relaxable", "tag": "A", "source": "artifact section 04 (C Wed, A Fri, B Sun; days move week to week)",
+      "first": [ { "slot": "TEST", "if": "!defined(s.wpuC)", "tag": "D", "source": "D38: without loads the test comes first in its week" } ] },
     "hard": [
       { "id": "gap", "type": "minGapDays", "days": 1, "appliesToTags": ["pull_heavy", "grip_heavy", "elbow_flexor_heavy"], "tag": "D", "source": "artifact section 04 + D5 + C11" },
       { "id": "restBefore", "type": "restDayBefore", "slots": ["B", "TEST"], "scope": "all_gym", "runs": "warn", "tag": "D", "source": "artifact section 04 + D5 + C11" },
-      { "id": "heavyUni", "type": "maxPerWeek", "tag": "A", "sessionTag": "heavy_unilateral", "n": "p.maxHeavyUnilateralPerWeek", "source": "artifact section 08" },
-      { "id": "testWeekday", "type": "slotWeekday", "slot": "TEST", "weekday": "SUN", "tag": "A", "source": "artifact sections 04 and 07 (test on the Sunday of the deload week)" }
+      { "id": "heavyUni", "type": "maxPerWeek", "tag": "A", "sessionTag": "heavy_unilateral", "n": "p.maxHeavyUnilateralPerWeek", "source": "artifact section 08" }
     ],
     "preferred": [
       { "slot": "C", "weekday": "WED", "start": "19:45", "durMin": 90 },
@@ -517,16 +523,46 @@
       "then": [ { "set": "s.injuryStart", "to": "today - p.injuryDays + p.injuryExtendDays" }, { "notify": "warn", "msg": "pain_persists_physio", "once": "perBlock" } ],
       "explain": { "en": "Pain in the last 3 days: the protocol runs 7 days longer; consider a physiotherapist." }, "source": "proposal P14" },
 
+    { "id": "data.test.first", "tag": "E", "stage": "data", "prio": 90, "on": ["test.completed"],
+      "if": "test.valid && defined(t.wpu_3rm_added) && !defined(s.wpuC)",
+      "let": [
+        { "name": "T1", "expr": "t.bw + t.wpu_e1rm_added" },
+        { "name": "k", "expr": "userK('weighted_pullup')" },
+        { "name": "c", "expr": "roundLoad(max(0kg, loadForReps(T1, p.anchorReps + p.firstAnchorRir, k) - bw), 'belt', 'down')" },
+        { "name": "slope", "expr": "p.approved_P10 || !defined(t.bw_max_reps) || t.bw_max_reps <= 3 ? kgPerRepAt(bw + c, p.anchorReps, k) : t.wpu_3rm_added / (t.bw_max_reps - 3)" }
+      ],
+      "then": [
+        { "set": "s.wpuC", "to": "c" },
+        { "set": "s.anchorFraction", "to": "(bw + c) / T1" },
+        { "set": "s.kgPerRep", "to": "slope" },
+        { "set": "s.wpuA", "to": "roundLoad(c + 1 * slope, 'belt', 'nearest')" },
+        { "set": "s.wpuB", "to": "roundLoad(c + 3 * slope, 'belt', 'nearest')" }
+      ],
+      "explain": { "en": "First test: session C starts at {c} kg (5 reps with 2 in reserve on your rep curve); A and B follow." }, "source": "D37" },
+    { "id": "data.test.first.neg", "tag": "E", "stage": "data", "prio": 90, "on": ["test.completed"],
+      "if": "test.valid && defined(t.wpu_3rm_added) && !defined(s.negB)",
+      "let": [ { "name": "n", "expr": "roundLoad(p.negFraction * (t.bw + t.wpu_e1rm_added) - bw, 'belt', 'down')" } ],
+      "then": [ { "set": "s.negB", "to": "n" }, { "set": "s.negReset", "to": "roundLoad(n - p.negResetStep, 'belt', 'down')" } ],
+      "explain": { "en": "First test: negatives start at 105 % of your max, rounded down to a weight you can load." }, "source": "D37 / artifact section 05" },
+    { "id": "data.test.first.pins", "tag": "E", "stage": "data", "prio": 90, "on": ["test.completed"],
+      "if": "test.valid && !p.approved_P11 && defined(t.oa_least_assist_pin) && !defined(s.pinA)",
+      "let": [ { "name": "weak", "expr": "max(t.oa_least_assist_pin)" } ],
+      "then": [
+        { "set": "s.pinA", "to": "roundPin(weak + p.pinOffsetA, 'up')" },
+        { "set": "s.pinC", "to": "roundPin(weak + p.pinOffsetA + p.pinOffsetC, 'up')" },
+        { "set": "s.pinHold90", "to": "roundPin(max(0lb, weak + p.pinOffsetA + p.pinOffsetHold90), 'up')" }
+      ],
+      "explain": { "en": "First test: machine pins start from your weaker arm's {weak} lb." }, "source": "D37 / proposal P11's formula" },
     { "id": "data.test.e1rm", "tag": "D", "stage": "data", "prio": 85, "on": ["test.completed"],
       "if": "test.valid && defined(t.wpu_3rm_added)",
       "then": [ { "set": "s.e1rmAdded", "to": "t.wpu_e1rm_added" }, { "set": "s.e1rmAddedM110", "to": "t.wpu_e1rm_added_m110" } ],
       "explain": { "en": "Your strength value comes from the test-day 3RM on your personal rep curve (the x1.10 rule gives {m110})." }, "source": "D7" },
     { "id": "data.test.loads", "tag": "A", "supersededBy": "P10", "stage": "data", "prio": 80, "on": ["test.completed"],
-      "if": "test.valid && !p.approved_P10",
+      "if": "test.valid && !p.approved_P10 && defined(s.wpuC) && defined(s.kgPerRep)",
       "then": [ { "set": "s.wpuA", "to": "roundLoad(s.wpuC + 1 * s.kgPerRep, 'belt', 'nearest')" }, { "set": "s.wpuB", "to": "roundLoad(s.wpuC + 3 * s.kgPerRep, 'belt', 'nearest')" } ],
       "explain": { "en": "Loads recalculated from session C's load: A = C + 1 rep, B = C + 3 reps ({kgPerRep} kg per rep)." }, "source": "artifact section 05 / section 10 ('elke testdag ... werkgewichten opnieuw berekend')" },
     { "id": "data.test.loads.curve", "tag": "P", "proposal": "P10", "stage": "data", "prio": 80, "on": ["test.completed"],
-      "if": "test.valid && p.approved_P10 && defined(t.wpu_3rm_added)",
+      "if": "test.valid && p.approved_P10 && defined(t.wpu_3rm_added) && defined(s.wpuC) && defined(s.anchorFraction)",
       "let": [
         { "name": "T1", "expr": "t.bw + t.wpu_e1rm_added" },
         { "name": "jump", "expr": "p.maxRecalcJumpKg" },
@@ -546,7 +582,7 @@
       "then": [ { "set": "s.negB", "to": "n" }, { "set": "s.negReset", "to": "roundLoad(n - p.negResetStep, 'belt', 'down')" } ],
       "explain": { "en": "Negatives: 105 % of your max, rounded down to a weight you can load." }, "source": "artifact section 05" },
     { "id": "data.test.neg.keep", "tag": "P", "proposal": "P09", "stage": "data", "prio": 78, "on": ["test.completed"],
-      "if": "test.valid && p.approved_P09 && defined(t.wpu_3rm_added)",
+      "if": "test.valid && p.approved_P09 && defined(t.wpu_3rm_added) && defined(s.negB)",
       "let": [
         { "name": "n", "expr": "roundLoad(p.negFraction * (t.bw + t.wpu_e1rm_added) - bw, 'belt', 'down')" },
         { "name": "jump", "expr": "p.maxRecalcJumpKg" },
@@ -831,6 +867,9 @@
     ]
   },
   "migrations": {
-    "1.0.0": {"varMap": {}, "defaults": {}, "notes": "Text only (D35): shorter, plain user-facing texts. No computed value changes."}
+    "1.0.0": {"varMap": {}, "defaults": {}, "notes": "Text only (D35), the structured test protocols of P21 (D36) and the first-test rules (D37). No state var changes."},
+    "1.0.1": {"varMap": {}, "defaults": {}, "notes": "Structured test protocols of P21 (D36) and the first-test rules (D37). No state var changes."},
+    "1.1.0": {"varMap": {}, "defaults": {}, "notes": "D37: the first valid test fills empty loads, negatives and pins; the gate e1RM is initialised from the entered 3RM. Nothing changes once every value is set."},
+    "1.2.0": {"varMap": {}, "defaults": {}, "notes": "D38: the test may fall on any day (a rest day before it stays required) and goes first in its week while there are no loads."}
   }
 }

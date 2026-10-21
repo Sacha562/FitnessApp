@@ -55,10 +55,6 @@ import dev.fitnessapp.app.ui.common.ProgressBar
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.theme.Fit
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 
 /** The challenge setup wizard (UX 14.8, D35): three steps, Start on the last. */
 @Composable
@@ -89,7 +85,12 @@ fun ChallengeSetupRoute(c: AppContainer, definitionId: String, onBack: () -> Uni
                 ui.error?.let { Banner(it, BannerKind.SAFETY) }
                 if (step < last) {
                     val canNext = step != 1 || vm.startComplete(ui)
-                    PrimaryButton(if (canNext) "Continue" else "Fill in your numbers to continue", { vm.go(step + 1) }, Modifier.fillMaxWidth(), enabled = def != null && canNext)
+                    val label = when {
+                        canNext -> "Continue"
+                        !vm.positionValid(ui) -> "Check phase, block and week to continue"
+                        else -> "Fill in your numbers to continue"
+                    }
+                    PrimaryButton(label, { vm.go(step + 1) }, Modifier.fillMaxWidth(), enabled = def != null && canNext)
                 } else {
                     PrimaryButton("Start challenge", { vm.start(onStarted) }, Modifier.fillMaxWidth(), enabled = !ui.busy)
                 }
@@ -148,8 +149,7 @@ private fun StartingPoint(def: CompiledDefinition, ui: SetupUi, vm: SetupViewMod
         if (it == "baseline") "Start with a test week" else "Enter my numbers"
     }) { v -> vm.update { it.copy(start = if (v == "baseline") "baseline" else "known") } }
     if (d.start == "baseline") {
-        val sunday = LocalDate.now(ZoneId.of("Europe/Amsterdam")).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
-        Text("Your first week ends with a test on ${ChallengeTexts.date(sunday)}. The test sets your loads.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+        Text("You start with a test day; it sets your loads.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
         return
     }
     ui.fields.filter { it.required }.forEach { f -> OnboardInput(f, ui, vm) }

@@ -51,7 +51,14 @@ object PlanJson {
             "in_session_rule_ids" to strings(i.inSessionRuleIds), "calibration_first_set" to JsonPrimitive(i.calibrationFirstSet),
             "metric" to str(i.metric), "record" to str(i.record), "substituted_from" to str(i.substitutedFrom),
             "progression_excluded" to JsonPrimitive(i.progressionExcluded), "warnings" to JsonArray(i.warnings.map(::warning)),
-            "note_codes" to strings(i.noteCodes),
+            "note_codes" to strings(i.noteCodes), "steps" to i.steps?.let(::steps),
+        ),
+    )
+
+    private fun steps(t: TestSteps): JsonObject = obj(
+        mapOf(
+            "ramp" to JsonArray(t.ramp.map { r -> obj(mapOf("added_kg" to num(r.addedKg), "reps_min" to int(r.repsMin), "reps_max" to int(r.repsMax))) }),
+            "start" to num(t.start), "step" to num(t.step), "max_attempts" to int(t.maxAttempts),
         ),
     )
 
@@ -103,6 +110,12 @@ object PlanJson {
         progressionMode = o.s("progression_mode"), inSessionRuleIds = o.list("in_session_rule_ids"), calibrationFirstSet = o.b("calibration_first_set"),
         metric = o.so("metric"), record = o.so("record"), substitutedFrom = o.so("substituted_from"), progressionExcluded = o.b("progression_excluded"),
         warnings = (o["warnings"] as? JsonArray).orEmpty().map { decodeWarning(it.jsonObject) }, noteCodes = o.list("note_codes"),
+        steps = (o["steps"] as? JsonObject)?.let { t ->
+            TestSteps(
+                ramp = (t["ramp"] as? JsonArray).orEmpty().map { r -> r.jsonObject.let { RampSet(it.d("added_kg")!!, it.i("reps_min"), it.i("reps_max")) } },
+                start = t.d("start"), step = t.d("step"), maxAttempts = t.io("max_attempts"),
+            )
+        },
     )
 
     fun decodeRows(a: JsonArray): List<PlannedRow> = a.map { decodeRow(it.jsonObject) }

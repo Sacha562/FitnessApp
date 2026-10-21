@@ -148,7 +148,7 @@ class ChallengeRepository(
         val enrollmentId = ctx.ids.next()
         val now = Instant.ofEpochMilli(ctx.nowMs())
         val today = now.atZone(ctx.zone()).toLocalDate()
-        val f = facts.facts(def, null)
+        val f = facts.facts(def, null, setupParams = enrollmentParams)
         val created = ChallengeEvent(
             UUID.fromString(ctx.ids.next()), EventTypes.CREATED, now, today,
             EventPayload.Created(UUID.fromString(enrollmentId), enrollmentParams, onboard, import, def.version, def.jcsSha256), f,

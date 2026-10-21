@@ -39,6 +39,7 @@ import dev.fitnessapp.app.ui.challenges.ChallengesRoute
 import dev.fitnessapp.app.ui.auth.LoadingScreen
 import dev.fitnessapp.app.ui.auth.SignInScreen
 import dev.fitnessapp.app.ui.live.LiveSessionRoute
+import dev.fitnessapp.app.ui.testday.TestDayRoute
 import dev.fitnessapp.app.ui.onboarding.OnboardingScreen
 import dev.fitnessapp.app.ui.summary.SummaryRoute
 import dev.fitnessapp.app.ui.today.TodayRoute
@@ -107,7 +108,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 c.fgsEvent("notification_action", mapOf("notification_id" to "N-EXPORT", "channel" to Channels.APP_STATUS, "action" to "export"))
             }
             Routes.Target.CurrentSession, null -> active?.let { a ->
-                val key = AppKey.LiveSession(a.id)
+                val key = sessionKey(a)
                 if (key !in backStack) {
                     push(key)
                     if (pending == null) restored(c, a.id) else c.sessionEvent(a.id, "session_resumed", mapOf("via" to "notification"))
@@ -144,8 +145,11 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
     }
 
     fun openSession(id: String, via: String) {
-        push(AppKey.LiveSession(id))
-        if (via != "start") scope.launch { c.sessionEvent(id, "session_resumed", mapOf("via" to via)) }
+        scope.launch {
+            // A test session (UX 14.9) resumes in its wizard, any other in the live session.
+            push(c.sessionRepository.session(id)?.let(::sessionKey) ?: AppKey.LiveSession(id))
+            if (via != "start") c.sessionEvent(id, "session_resumed", mapOf("via" to via))
+        }
     }
 
     NavDisplay(
@@ -168,6 +172,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                     when (tab) {
                         Tab.TODAY -> TodayRoute(
                             c, m, onOpenSession = { id, resumed -> openSession(id, if (resumed) "today_card" else "start") }, onOpenSync = { push(AppKey.DataSync) },
+                            onOpenTest = { push(AppKey.TestDay(it, null)) },
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                         )
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) })
@@ -211,7 +216,17 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 )
             }
             entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }) }
-            entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }) }
+            entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }, onTestDay = { push(AppKey.TestDay(k.enrollmentId, null)) }) }
+            entry<AppKey.TestDay> { k ->
+                TestDayRoute(
+                    c, k.enrollmentId, k.sessionId,
+                    onStarted = { id ->
+                        pop()
+                        push(AppKey.TestDay(k.enrollmentId, id))
+                    },
+                    onMinimise = { pop() }, onDone = { pop() },
+                )
+            }
             entry<AppKey.ChallengeSetup> { k ->
                 ChallengeSetupRoute(c, k.definitionId, onBack = { pop() }, onStarted = { id ->
                     pop()
@@ -247,6 +262,13 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     is AppKey.ExerciseDetail -> "exercises.detail"
     is AppKey.ChallengeDashboard -> "challenges.dashboard"
     is AppKey.ChallengeSetup -> "challenge.setup"
+    is AppKey.TestDay -> "test.wizard"
+}
+
+/** The screen of an open session: the test-day wizard for a `kind = test` challenge session (UX 14.9), else the live session. */
+private fun sessionKey(s: dev.fitnessapp.data.db.entity.WorkoutSessionEntity): AppKey {
+    val enrollment = s.enrollment_id
+    return if (s.kind == "test" && enrollment != null) AppKey.TestDay(enrollment, s.id) else AppKey.LiveSession(s.id)
 }
 
 private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L

@@ -66,7 +66,7 @@ private enum class DashTab(val label: String) { OVERVIEW("Overview"), RULES("Rul
 
 /** The active challenge (UX 14.2-14.7). */
 @Composable
-fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () -> Unit) {
+fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () -> Unit, onTestDay: () -> Unit = {}) {
     val vm: DashboardViewModel = viewModel(key = "dash:$enrollmentId", factory = viewModelFactory { initializer { DashboardViewModel(c, enrollmentId) } })
     val ui by vm.ui.collectAsState()
     val messages by vm.messages.collectAsState()
@@ -114,7 +114,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             Segmented(DashTab.entries, tab, { it.label }, { tab = it })
             when (tab) {
                 DashTab.OVERVIEW -> {
-                    DashboardOverview(u, onPain = { sheet = "pain" })
+                    DashboardOverview(u, onPain = { sheet = "pain" }, onTestDay = onTestDay)
                     HabitRemindersTile(c)
                 }
                 DashTab.RULES -> Rules(u)
@@ -178,7 +178,7 @@ private fun HabitRemindersTile(c: AppContainer) {
 /** The Overview tab (UX 14.2); internal for the screenshot test. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}) {
+internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}, onTestDay: () -> Unit = {}) {
     Tile {
         Pill(u.statusText, container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
         PhaseStepper(u.phases, u.phase)
@@ -201,6 +201,7 @@ internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}) {
             GateRowView(r)
         }
     }
+    if (u.testDay) PrimaryButton("Log test day", onTestDay, Modifier.fillMaxWidth())
     TonalButton("Report pain", onPain, Modifier.fillMaxWidth())
 }
 
@@ -214,7 +215,11 @@ private fun PhaseStepper(phases: List<String>, current: Int) {
                     Modifier.size(28.dp).clip(CircleShape).background(if (id <= current) Fit.Accent else Fit.Raised),
                     contentAlignment = Alignment.Center,
                 ) { Text("$id", style = MaterialTheme.typography.labelMedium, color = if (id <= current) Fit.OnAccent else Fit.Muted) }
-                Text(name, style = MaterialTheme.typography.labelSmall, color = if (id == current) Fit.Ink else Fit.Muted, maxLines = 2)
+                // Centred like its circle: a wrapped two-line name otherwise sits left of the number.
+                Text(
+                    name, style = MaterialTheme.typography.labelSmall, color = if (id == current) Fit.Ink else Fit.Muted, maxLines = 2,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
             }
         }
     }

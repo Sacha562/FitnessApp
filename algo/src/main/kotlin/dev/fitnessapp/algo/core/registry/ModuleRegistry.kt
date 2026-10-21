@@ -43,15 +43,25 @@ enum class Layer { CORE, CHALLENGE, ACCOUNTING, ESTIMATION, TARGETS, PLANNING, S
 
 /**
  * The 51 registry modules (DATA_MODEL 9.1.9, C30). Every module starts at 1.0.0; a module's version moves
- * here when its behaviour changes (ALGORITHMS.md A7), together with ENGINE_VERSION.
+ * here ([BUMPED]) when its behaviour changes (ALGORITHMS.md A7), together with ENGINE_VERSION.
  */
 object ModuleRegistry {
     data class Entry(val ref: ModuleRef, val layer: Layer)
 
     private val V1 = SemVer(1, 0, 0)
 
+    /**
+     * Modules past 1.0.0 (ALGORITHMS.md A7): structured test protocols (D36, ENGINE_VERSION 1.1.0) and a slot that goes
+     * first in its week (D38, ENGINE_VERSION 1.2.0).
+     */
+    private val BUMPED: Map<String, SemVer> = mapOf(
+        "challenge.cds" to SemVer(1, 2, 0),
+        "challenge.materialize" to SemVer(1, 1, 0),
+        "challenge.plan" to SemVer(1, 1, 0),
+    )
+
     private fun layer(layer: Layer, vararg ids: String): List<Entry> =
-        ids.map { Entry(ModuleRef(ModuleId(it), V1), layer) }
+        ids.map { Entry(ModuleRef(ModuleId(it), BUMPED[it] ?: V1), layer) }
 
     val entries: List<Entry> = listOf(
         layer(Layer.CORE, "clock", "load", "bodyweight", "calendar.classify", "safety"),

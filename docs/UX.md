@@ -2520,7 +2520,7 @@ informative windows (C59).
 | Gates | one row per criterion of the current phase's exit gate, per arm where the metric has sides, with progress bars from 0 to the threshold. Each value states its source test date. Values from tests not valid for gates are never used for the bar; the latest non-valid observation is shown on a separate muted line with its reason. | `challenge.eca` (gate evaluation), metric observations |
 | e1RM gate row (D7, C4) | Main value = the gate metric `wpu_e1rm_added` computed from the test-day 3RM through the personal rep curve (RCM-1 `k` of the weighted pull-up), shown with its `k` ("k 30, class prior" while the prior is used, C59). Next to it, labelled: the x1.10 value, the 80 % range, and the training estimate from SSE-1 (C4). | `challenge.eca` / `rcm` / `sse` (CHALLENGE_ENGINE section 10.1) |
 | Threshold text | "+43.96 kg = 65 % of 70.7 kg - 2.0 kg"; thresholds are stored as a ratio of bodyweight (C32), so the text names the bodyweight used. The met / not met tick is evaluated on the test-day bodyweight; the threshold shown is the forward threshold at the current BW(t) (C62, 19.7.3) | definition params, `bodyweight` |
-| Actions | "Log test day" (enabled on the test day and while the test is pending), "Report pain" | |
+| Actions | "Log test day" (shown on and after the planned test day and while the test is pending; opens 14.9), "Report pain" | |
 | Menu `:` | Pause, Resume, Proposals (P rules; decisions can be changed at any time, D8), Correct a value, Definition version (with "Update available" when a newer version is published), Abandon | `challenge.enrollment` (CHALLENGE_ENGINE sections 4.9, 4.12, 10.3) |
 
 **Correct a value** (CHALLENGE_ENGINE section 4.9): a sheet that lists the correctable values (state
@@ -2652,7 +2652,7 @@ for what has no default.
 | Step | Content |
 |---|---|
 | 1 Overview | The title, the first sentence of the definition's `summary`, one line "N sessions a week · about M min · short home habits", and the grip chips (the user-editable enum params; the grip is fixed for every test). A collapsed "What counts as a rep" shows the definition's attempt checklist. One safety line: "Stop at elbow pain; the app switches to a recovery protocol. Not medical advice." |
-| 2 Starting point | Two choices. **Start with a test week** (default): nothing to type; one line "Your first week ends with a test on <Sunday>. The test sets your loads." **Enter my numbers**: the onboarding values that the definition's state vars are initialised from (OAP: bodyweight, weighted 3RM, max strict pull-ups, session C load, the three assisted pins); Continue needs all of them. Collapsed: "More test values (optional)" with the other onboarding values (OAP: least assistance, one-arm hang and top hold per arm), and "I'm mid-program" (D4's import): phase, block, week of the block, mode, planned test date and the computed current loads, each editable. Past tests are imported as test values only (C59). |
+| 2 Starting point | Two choices. **Start with a test week** (default): nothing to type; one line "You start with a test day; it sets your loads." (D38: the test is due from today and comes before C and A). **Enter my numbers**: the onboarding values that the definition's state vars are initialised from (OAP: bodyweight, weighted 3RM, max strict pull-ups, session C load, the three assisted pins); Continue needs all of them. Collapsed: "More test values (optional)" with the other onboarding values (OAP: least assistance, one-arm hang and top hold per arm), and "I'm mid-program" (D4's import): phase, block, week of the block, mode, planned test date and the computed current loads, each editable. Past tests are imported as test values only (C59). |
 | 3 Your first two weeks | The current and next ISO week materialized under the chosen values and decisions: one row per session (name, theme, date and time) whose exercises open on tap, one per line with sets and starting load (warm-up first and prehab last, one line each), plus planner notes. One line "N of M recommended rule changes on · Customize" opens the proposal list (14.4). One line "Starting makes the app the source of truth for this program." and "Start challenge"; pressing it is the cutover confirmation (D4). |
 
 The equipment calibration (You → Equipment), the gate method (test-day report, 14.9), the schedule
@@ -2667,8 +2667,16 @@ duration_ms}` per step.
 ### 14.9 Test-day wizard (`test.wizard`)
 
 **Purpose.** Run the test battery in the order the definition prescribes, capture valid, comparable
-values, and show the recalculation. It is a session of `kind = test` (C34) with the same foreground
-service, rest timer, mini-bar and robustness as Live Session.
+values, and show what the test changed. It is a session of `kind = test` (C34) with the same foreground
+service, rest timer and robustness as Live Session: the current step and side are rebuilt from the
+session's logged rows, so the wizard comes back where it was after a restart, and the Today tile and
+the session notification reopen it. Built to D35 / P15 (D36, 2026-10-21): one card per step with one
+main action, protocol text folded, the review and the report in a few plain lines.
+
+**Entry.** Dashboard "Log test day" (shown on and after the planned test day and while the test is
+pending) and the Today tile's "Start test day" when today's planned slot is the test slot. Back keeps
+the session open; the menu has Report pain and Stop test (the session is abandoned and nothing reaches
+the program).
 
 **Order (F10, C65).** The wizard renders the order of the definition's test template (OAP: `T1`) and
 has no order of its own. For OAP that is the Todoist test-day order (tag A): weigh-in, warm-up,
@@ -2677,87 +2685,84 @@ least assistance for one rep L/R, plus the unassisted 5 s one-arm negative per a
 criterion 3 needs and which the program requires on a test day (C65). If proposal P08 is approved,
 max reps moves to the end. The negative follows least assistance in the template, whether P20 is
 approved or not (P20 no longer changes the order; OAP_CHALLENGE OAP-OI-14). The negative is skipped,
-with the reason shown, when an elbow trace was reported (the template's `skipIf`).
+shown as "Skipped today", when an elbow trace was reported (the template's `skipIf`). Items excluded
+by `enabledIf` are not shown. Consecutive warm-up items form one step.
 
 ```
-OVERVIEW                               STRENGTH ATTEMPTS
-| Test day · Sun 11 Oct             : | | WEIGHTED 3RM (supinated) step 3/9 |
-| This test counts for your gates.  | | Ramp: BW x3 [Done] +12.5 x2 [Done]|
-| 1 Weigh-in                    v   | |       +20 x1 [Done]               |
-| 2 Warm-up (10 min)            v   | | Attempt 1  BW + 30 kg             |
-| 3 Weighted 3RM                >   | |   reps ( - ) 3 ( + )              |
-| 4 Max strict reps                 | | [ Record clean ]  [ Not clean ]   |
-| 5 One-arm hang L / R              | | Attempt 2  BW + 32.5 kg   next    |
-| 6 One-arm top hold L / R          | | Heaviest clean 3: +30 kg          |
-| 7 Least assistance L / R          | | Rest 4:00 between attempts        |
-| 8 5 s negative, no help L / R     | |                                   |
-| 9 Review and submit               | | [========= Next step ============]|
+OVERVIEW                               STRENGTH ATTEMPTS (step 3 of 8)
+| Test day                          | | WARM-UP SETS                      |
+| This test counts for your goals.  | | BW x 1-3                   Done v |
+| 1 Weigh-in                        | | BW + 17.5 kg x 1-3           Done |
+| 2 Warm-up                         | | Weighted pull-up 3RM              |
+| 3 Weighted pull-up 3RM            | | [Attempt 2 of 3]                  |
+| 4 One-arm dead hang · L / R       | | Best so far: +32.5 kg             |
+| 5 One-arm top hold · L / R        | | ( - )   BW + 35 kg   ( + )        |
+| 6 Least assistance · L / R        | | [ Clean x 3 ]   [ Not clean ]     |
+| 7 One-arm 5 s negative · L / R    | | How                             v |
+| 8 Max strict pull-ups             | | Undo last     Skip this test      |
+| [========= Start test ==========] | | [===== Done with this test =====] |
 
-ASSISTANCE LADDER                      REVIEW
-| LEAST ASSISTANCE · LEFT   step 7/9| | Results          vs 30 Aug        |
-| Pin 50 lb  ≈ 29.2 kg assist       | | BW        70.4 kg                 |
-| Attempt 2 of max 5                | | 3RM       +32.5 kg   +6.5         |
-| One clean rep?                    | | Max reps  19         +1           |
-| [ Record clean ]  [  Failed  ]    | | Hang      L 16 s  R 21 s          |
-| Clean so far: 55 lb               | | Top hold  L 1.0  R 1.5 s          |
-| Rest 3:00 between attempts        | | Least assist L 50 lb  R 45 lb     |
-|                                   | | 5 s neg.  L yes  R no             |
-|                                   | | Gate preview: 0 of 4 would be met |
+ATTEMPT CARD                           REVIEW
+| One-arm 5 s negative, no help     | | Bodyweight              70.4 kg   |
+| [Left]                            | |   vs 30 Aug: -0.3 kg              |
+| What counts                     v | | Weighted pull-up 3RM    +35 kg    |
+| [  Clean  ]   [ Not clean ]       | |   vs 30 Aug: +2.5 kg              |
+| How                             v | | One-arm dead hang  L 16 s · R 21 s|
+| Skip this test                    | | Counts for your goals.            |
+|                                   | | Goals for phase 2 · 1 of 4 met    |
 |                                   | | [========= Submit test ==========]|
 ```
 
-(Values illustrative.)
+(Values illustrative; the screenshots `test_*.png` show the built cards.)
 
 | Step type | UI | Logged |
 |---|---|---|
-| Validity check (step 0, overview header) | "This test counts for your gates" or, from `challenge.enrollment`, "This test will not count for gates: <reason>" with "Postpone" and "Do it anyway (not valid)" | `test_validity_shown {valid, reason}` |
-| Weigh-in (required) | Keypad, kg, 0.1; "Before warming up, same scale as usual." The raw value is used for gates (C32, C62). | bodyweight observation with `context = test` |
-| Warm-up | Block card (11.5), items logged with "Done" (C63) | warm-up items |
-| Strength attempts (3RM) | Ramp sets as Done rows; attempts with belt-load stepper, reps achieved, "Record clean" / "Not clean"; the rest timer between attempts uses the protocol's rest; "Heaviest clean 3" is computed and shown. No single attempt is added (D7). | sets with `set_kind = test`, `rir_reported = 0` and `rir_source = protocol` (C63, DATA_MODEL E5); metric `wpu_3rm_added` |
-| Max reps | Large reps stepper (64 dp) and "Record" | metric `bw_max_reps` |
-| Max hold per side | Hold card in max mode (11.7.3), left then right, "Record" | metrics `oa_hang_s.L/R`, `oa_top_hold_s.L/R` |
-| Assistance ladder per side | Start pin and maximum attempts from the template's protocol (with P21 approved: the A pin + 10 lb, at most 5 attempts per arm, 3 min rest); "Record clean" lowers the pin by one step after the rest; "Failed" ends that side; records the lowest clean pin with its kg (1 decimal) | metric `oa_least_assist_pin.L/R` |
-| Unassisted 5 s negative per side (C65) | Negative card (11.7.5) without load or assistance, the protocol line "5 s one-arm negative without any help; the hand does not shift", optional "Count 1 per second" pacing, then "Record: controlled 5 s" / "Not controlled" for left, then right. Skipped with the reason when an elbow trace was reported. | metric `oa_neg5_unassisted.L/R` (yes / no) |
-| Review | Table vs the previous valid test, deltas, gate preview, "Submit test" | `test.completed` (challenge_events) |
+| Validity (overview) | "This test counts for your goals." or "This test won't count for your goals." with one line why (for example "First one normal session without pain."), from the engine's dry run of `test.completed` with today's bodyweight. The main action reads "Start test" or "Start anyway"; Back is "not now". Start asks the elbow check first when the template requires it (16.3). | `test_validity_shown {valid, reason_code?}` |
+| Weigh-in | Record card: kg stepper (0.1), prefilled with the latest weigh-in; "Record". The raw value is used for gates (C32, C62); after it the plan's protocol numbers are computed again with today's bodyweight. | `bw` observation, `source = test_day`, `test_session_id` |
+| Warm-up | The block's items, one line each with "Done" (C63); the main action "Warm-up done" logs the rest as done. | warm-up items |
+| Strength attempts | With the protocol's steps (D36; OAP: P21 approved): the ramp sets as "Done" rows, the first attempt at the expected 3RM, the next one the protocol's step heavier after a clean attempt and the same load after a miss, at most the protocol's attempts. Without steps the first attempt prefills from the previous valid test and the stepper moves one loadable point. Record card with the belt-load stepper and "Clean x 3" / "Not clean"; "Done with this test" ends early. The value is the heaviest clean attempt with the required reps (the metric's `<n>rm`). No single attempt is added (D7). | sets with `set_kind = test`, `rir_reported = 0`, `rir_source = protocol` (C63, E5), "Not clean" flagged `technique_breakdown`; metric `wpu_3rm_added` |
+| Max reps | Record card: reps stepper, "Record". | set with RIR 0 by protocol; metric `bw_max_reps` |
+| Max hold per side | Record card per side and attempt (left first): seconds stepper, "Record"; "Time it" (folded) is a stopwatch that fills the stepper. The best attempt per side counts. | metrics `oa_hang_s.L/R`, `oa_top_hold_s.L/R` |
+| Assistance ladder per side | Record card per side: pin stepper (less help / more help) with the help in kg; "Clean rep" moves the pin by the protocol's step (OAP with P21: start at the A pin + 10 lb, -5 lb, at most 5 attempts), "Failed" ends the side, as does the machine's lowest pin. The lowest clean pin counts. | metric `oa_least_assist_pin.L/R` |
+| Yes / no attempts per side (C65) | Attempt card: "Clean" / "Not clean" per side and attempt; a side ends at its first clean attempt or when its attempts are used. The same card serves phase 3's attempts block in a live session (the definition's attempt checklist folded under "What counts"), where each attempt also writes `attempt.logged`. | metric `oa_neg5_unassisted.L/R` (yes / no) |
+| Every card | The protocol text folded under "How"; "Undo last"; "Skip this test". The rest between attempts is the template's `rest_s` on the usual rest timer, shown as one line with Skip. A finished per-side step shows its result and "Next". | `test_step_completed {step, step_key, duration_ms, skipped}` |
+| Review | One line per result with its change against the previous valid test, whether the test counts (with the reason when not) and the goal count after this test (the engine's dry run); "Submit test". | `session.completed`, then `test.completed` (challenge_events); `test_submitted` |
 
-Test-day entries are metric observations, so they use a "Record" button instead of RIR chips, and the
-3RM attempt sets are stored as sets with RIR 0 by protocol (C63).
+Test-day entries are metric observations, so they use "Record" instead of RIR chips, and the 3RM
+attempt sets are stored as sets with RIR 0 by protocol (C63). On Submit every raw value becomes a
+metric observation per side with its attempt count and protocol code and `valid_for_gate` from the
+engine's validity; the derived gate values (D7) are stored once with `calc_params` when the test is
+valid (C3).
 
-**After submit: recalculation report.**
+**After Submit: recalculation report.**
 
 ```
-| Test saved · valid for gates        |
-| GATE VALUE (personal curve, k 30,   |
-|   class prior until enough data)    |
-|   +39.4 kg   (x1.10 rule: +42.8)    |
-|   80 % range +37.2 to +41.7         |
-| NEW LOADS FROM MON 12 OCT           |
-|  Session C  BW + 20   -> + 20       |
-|  Session A  BW + 22.5 -> + 22.5     |
-|  Session B  BW + 27.5 -> + 25       |
-|  Negatives  BW + 47.5 -> + 45       |
-|  Pins A 40 -> 55 lb · C 50 -> 65 lb |
-|  (changes capped at 5 kg per test)  |
-| Phase 2 gate: 0 of 4 met            |
-| Next block starts Mon 12 Oct        |
-| Next test: Sun 15 Nov (block-relat.)|
+| Test saved                          |
+| Weighted pull-up strength  +41.97 kg|
+| Other estimates                   v |
+| NEW LOADS                           |
+| Weighted pull-up, session C +22.5 kg|
+|   was +20 kg                        |
+| Assisted pin, session A      55 lb  |
+|   was 40 lb                         |
+| Goals for phase 2 · 1 of 4 met      |
+| Next test: Sun 29 Nov               |
 | [============== Done ==============]|
 ```
 
-(Values illustrative; `k` = 30 is the class prior the gate uses until RCM-1 has informative windows,
-C59.) Each line has a Why with the rule (`data.test.loads` or, with P10 approved,
-`data.test.loads.curve`; `data.test.pins`; `struct.block.rollover`) and its bindings. A recalculated
-load that jumps more than the generic load-jump cap is applied as the program says and carries the
-amber WE-S2 note (D13, C45). Fed by `challenge.eca`, `challenge.enrollment`, `rcm`, `sse`,
-`bodyweight`, `load` (belt rounding). Emits `test_step_completed {step, step_key, duration_ms,
-skipped}`, `test_submitted {valid, steps_completed, steps_skipped}`, `recalc_report_shown {lines,
-test_valid}`.
+The headline says whether the test counts ("Test saved, not counted for your goals" and the reason
+otherwise). The strength line is the gate value on the personal curve (D7); the x1.10 estimate and the
+80 % range sit under "Other estimates" (D35). New loads list every program value the test changed, new
+and old; the rule explanations stay in the dashboard's History (P15: no `k`, rule ids or validity terms
+here). Notifications of the test rules (for example a new phase) show as banners. Fed by
+`challenge.eca`, `challenge.enrollment`, `rcm`, `sse`, `bodyweight`, `load`. Emits
+`recalc_report_shown {lines, test_valid}`.
 
-**Pain during the test**: the Pain sheet; a stop-signal kind ends the test (the engine decides
-validity) and starts the protocol.
+**Pain during the test**: the Pain sheet from the menu; the report reaches the program (C33), whose
+safety rules may end the test's validity (the engine decides at Submit).
 
-**Postpone** (from Today or the overview): handled by `challenge.enrollment` / `challenge.plan`; the
-app rewrites its own calendar event (C36).
+**Postpone**: Back on the overview creates nothing, so the test stays pending; moving the test date is
+Correct a value on the dashboard until the calendar arrives (M2b.5, C36).
 
 ---
 

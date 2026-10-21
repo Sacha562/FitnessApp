@@ -123,6 +123,12 @@ class AppContainer(private val context: Context) {
             db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, params, CHANGEOVER_MIN,
         )
     }
+    /** The test-day wizard's storage (UX 14.9). */
+    val testDays: dev.fitnessapp.data.challenge.TestDayRepository by lazy {
+        dev.fitnessapp.data.challenge.TestDayRepository(
+            db, outbox, writeContext, syncScheduler, catalog, challenges, challengeSessions, sessionRepository, challengeFacts, params, CHANGEOVER_MIN,
+        )
+    }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
     val exports: ExportRepository by lazy {
         ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })

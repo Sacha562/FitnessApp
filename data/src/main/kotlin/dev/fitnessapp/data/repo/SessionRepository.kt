@@ -85,6 +85,8 @@ data class LogSetCommand(
     val assistOrdinal: Int? = null,
     /** A challenge warm-up item: its warm-up sets count toward its planned sets, so it completes. */
     val countsAsWork: Boolean = false,
+    /** E5 `rir_source` when not tapped: `protocol` for a test-day 3RM or max-reps set entered with Record (C63). */
+    val rirSource: String? = null,
 )
 
 /**
@@ -376,6 +378,15 @@ class SessionRepository(
         )
     }
 
+    /** A test-day step finished with Next (UX 14.9): the item is done with what was logged; no reason is needed. */
+    suspend fun markDone(sessionExerciseId: String) {
+        db.withTransaction {
+            val e = db.sessionExercises().get(sessionExerciseId) ?: return@withTransaction
+            if (e.status != "done") writeExercise(e.copy(status = "done", completed_at = ctx.nowMs()))
+        }
+        scheduler.request()
+    }
+
     /** Remove (only with no logged sets): a soft delete. */
     suspend fun remove(sessionExerciseId: String) = exerciseEvent(sessionExerciseId) { e, _ ->
         writeExercise(e.copy(deleted_at = ctx.nowMs()))
@@ -464,7 +475,7 @@ class SessionRepository(
                 hold_reserve_s = cmd.holdReserveS?.let { Scaled.fromDouble(it, 1) }, hold_reserve_is_lower_bound = cmd.holdReserveLowerBound,
                 ecc_s_target = cmd.eccSTarget?.let { Scaled.fromDouble(it, 1) }, ecc_s_actual = cmd.eccSActual?.let { Scaled.fromDouble(it, 1) },
                 rir_reported = cmd.rir?.let { Scaled.fromDouble(it, 1) }, rir_is_lower_bound = cmd.rirLowerBound,
-                rir_source = if (cmd.rir == null && cmd.holdReserveS == null) "missing" else "chip",
+                rir_source = if (cmd.rir == null && cmd.holdReserveS == null) "missing" else cmd.rirSource ?: "chip",
                 flags = cmd.flags.distinct().sorted(), deviation_reason_code = cmd.deviationReason,
                 rest_timer_planned_s = cmd.rest?.plannedS, rest_adjust_s = cmd.rest?.adjustS,
                 rest_timer_overridden = cmd.rest?.overridden ?: false,

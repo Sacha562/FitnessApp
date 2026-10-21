@@ -348,7 +348,17 @@ data class ScheduleSpec(
 )
 
 @Serializable
-data class OrderSpec(val sequence: List<List<String>>, val strictness: String, val tag: String? = null, val source: String? = null)
+data class OrderSpec(
+    val sequence: List<List<String>>,
+    val strictness: String,
+    val tag: String? = null,
+    val source: String? = null,
+    /** D38: a slot that goes before every other slot of its week while its condition holds. */
+    val first: List<FirstSlotSpec> = emptyList(),
+)
+
+@Serializable
+data class FirstSlotSpec(val slot: String, @SerialName("if") val condition: String, val tag: String? = null, val source: String? = null)
 
 @Serializable
 data class HardConstraintSpec(
@@ -588,6 +598,9 @@ data class ItemSpec(
     val protocol: I18n? = null,
     val protocolIfApproved: I18n? = null,
     val protocolProposal: String? = null,
+    /** Structured protocol of a test item (D36): always, or only with [protocolProposal] approved. */
+    val steps: JsonObject? = null,
+    val stepsIfApproved: JsonObject? = null,
     // ladder variant fields (B1 `ladder123`, P17)
     val ladders: JsonElement? = null,
     val rungs: List<Int> = emptyList(),

@@ -21,6 +21,9 @@ sealed interface AppKey {
     /** The challenge setup wizard for one definition (UX 14.8). */
     data class ChallengeSetup(val definitionId: String) : AppKey
 
+    /** The test-day wizard (UX 14.9): its overview before Start ([sessionId] null), then the test session. */
+    data class TestDay(val enrollmentId: String, val sessionId: String?) : AppKey
+
     companion object {
         /** Saved-state form of a key, so the back stack survives recreation and process death. */
         fun encode(k: AppKey): String = when (k) {
@@ -36,6 +39,7 @@ sealed interface AppKey {
             DataSyncExport -> "data_sync_export"
             is ChallengeDashboard -> "challenge:" + k.enrollmentId
             is ChallengeSetup -> "challenge_setup:" + k.definitionId
+            is TestDay -> "test_day:" + k.enrollmentId + ":" + (k.sessionId ?: "")
         }
 
         fun decode(s: String): AppKey? = when {
@@ -51,6 +55,7 @@ sealed interface AppKey {
             s == "data_sync_export" -> DataSyncExport
             s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))
             s.startsWith("challenge_setup:") -> ChallengeSetup(s.removePrefix("challenge_setup:"))
+            s.startsWith("test_day:") -> s.removePrefix("test_day:").split(':', limit = 2).takeIf { it.size == 2 }?.let { TestDay(it[0], it[1].ifEmpty { null }) }
             else -> null
         }
     }

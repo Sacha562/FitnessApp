@@ -29,6 +29,9 @@ data class TestResult(
  * the date and counters, so two runs are byte-identical; there is no randomness anywhere.
  */
 abstract class Persona(val id: String) {
+    /** Starts like the setup's "Start with a test week" (D35): no numbers, a test-pending first week (D37). */
+    open val testWeekStart: Boolean = false
+
     open fun appOpen(date: LocalDate): Boolean = true
 
     /** Whether the user does the planned session (the n-th of this week, 0-based). */
@@ -74,13 +77,18 @@ abstract class Persona(val id: String) {
     }
 
     companion object {
-        fun all(): List<Persona> = listOf(AllSuccess, Stall, GripSlips, ElbowPainWeek7, ElbowPainWeek7Long, MissedWeeks, MachineBusy, DstAndLateTicks)
+        fun all(): List<Persona> = listOf(AllSuccess, Stall, GripSlips, ElbowPainWeek7, ElbowPainWeek7Long, MissedWeeks, MachineBusy, DstAndLateTicks, TestWeekStart)
 
         fun byId(id: String): Persona = all().firstOrNull { it.id == id } ?: throw IllegalArgumentException("unknown persona $id")
     }
 }
 
 object AllSuccess : Persona("all_success")
+
+/** All sessions, but started with a test week and no numbers: the first test sets every load (D37). */
+object TestWeekStart : Persona("test_week_start") {
+    override val testWeekStart: Boolean = true
+}
 
 /** Sessions complete but the test metrics stay flat for four tests (2.6 `stall`). */
 object Stall : Persona("stall") {

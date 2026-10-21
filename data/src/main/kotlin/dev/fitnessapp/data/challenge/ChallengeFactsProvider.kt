@@ -7,6 +7,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.LoadProfile
 import dev.fitnessapp.algo.challenge.fitexpr.MachineCalibration
 import dev.fitnessapp.algo.challenge.fitexpr.UserKFact
+import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.materialize.ExerciseResolver
 import dev.fitnessapp.algo.core.load.ExerciseLoadAttrs
 import dev.fitnessapp.algo.core.load.Laterality
@@ -41,7 +42,17 @@ class ChallengeFactsProvider(
     private val params: ParamView,
     private val now: () -> Instant,
 ) {
-    suspend fun facts(def: CompiledDefinition, state: EnrollmentState?, weekPlanSlots: SortedMap<LocalDate, List<String>> = sortedMapOf()): EngineFacts {
+    /**
+     * Before an enrollment exists ([state] null) the grip-dependent exercises resolve with the definition's param
+     * defaults and the setup's choices ([setupParams]), so the creation's facts carry their `k` (D37: without the
+     * weighted pull-up's `k` its `anchorFraction` init failed).
+     */
+    suspend fun facts(
+        def: CompiledDefinition,
+        state: EnrollmentState?,
+        weekPlanSlots: SortedMap<LocalDate, List<String>> = sortedMapOf(),
+        setupParams: Map<String, Value> = emptyMap(),
+    ): EngineFacts {
         val rows = equipment.equipment().filter { it.available && it.deleted_at == null }
         val bw = db.metrics().byMetric("bw").filter { it.value_num != null }.maxByOrNull { it.observed_at }
             ?.let { Dec.norm(Scaled.toDecimal(it.value_num!!, 3).setScale(2, java.math.RoundingMode.HALF_EVEN)) }
@@ -71,7 +82,12 @@ class ChallengeFactsProvider(
             val d = LocalDate.parse(w.local_date)
             if (pain[region]?.isBefore(d) != false) pain[region] = d
         }
-        val resolver = ExerciseResolver(def, catalog(), state?.let { dev.fitnessapp.algo.challenge.eca.RuleEnv.effectiveParams(def, it) } ?: sortedMapOf())
+        val effective = state?.let { dev.fitnessapp.algo.challenge.eca.RuleEnv.effectiveParams(def, it) }
+            ?: TreeMap<String, Value>().apply {
+                for ((k, p) in def.params) put(k, p.default)
+                for ((k, v) in setupParams) if (def.params.containsKey(k)) put(k, v)
+            }
+        val resolver = ExerciseResolver(def, catalog(), effective)
         val userK = TreeMap<String, UserKFact>()
         val k0 = params.table("rcm.k0")
         val bySlug = catalog().exercises.associateBy { it.slug }

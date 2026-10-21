@@ -168,7 +168,8 @@ materializer with in-session rules and Undo, the week planner with today advice,
 
 ## M2b log (in progress, from 2026-10-20)
 
-**Builds**: `gradlew check` green after M2b.3 and the phone fixes: 349 unit tests (`:algo` 169, `:sim` 40, `:data` 61, `:app` 79).
+**Builds**: `gradlew test` green after M2b.4, D37 and D38: 388 unit tests (`:algo` 177, `:sim` 60, `:data` 61, `:app` 90),
+with the Roborazzi screenshots of the test-day cards (`app/src/test/screenshots/test_*.png`).
 Room is at version 5 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`).
 How each part was built: CHALLENGE_ENGINE 16.2.
 
@@ -179,9 +180,30 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | M2b.1 Storage and sync | built | `oap@1.0.0` published by migration 016 (applied after you saw it), the event codec, challenge tables with sync, refold, tick catch-up at start and in maintenance. |
 | M2b.2 Challenges tab and setup wizard | built | The tab, the setup wizard (three steps since D35: overview with grip, starting point, first two weeks with Start; proposals at their recommendation), the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
 | M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
-| M2b.4 Test day | next | The test-day wizard with the Record and attempt cards. |
-| M2b.5 Calendar | open | |
+| M2b.4 Test day | built | The test-day wizard (UX 14.9, D36): validity at the start, one card per step in the template's order (weigh-in, warm-up, strength attempts, max reps, holds and the assistance ladder per side, yes / no attempts), the review against the previous valid test, Submit with `session.completed`, `test.completed` and the observations, and the recalculation report. Structured test protocols in `oap@1.1.0` (migration 023, engine 1.1.0, migration 024); the attempt card also serves phase 3's attempts block. Entry from the dashboard and Today. |
+| M2b.5 Calendar | next | |
 | M2b.6 Cutover | open | With you. |
+
+**M2b.4 phone checks (2026-10-21, invented values)**: two full test days from the dashboard, each ending in
+`test.completed` and the report: one after "Start with a test week", one after "Enter my numbers" with "I'm
+mid-program" (test pending). The elbow check before Start, the weigh-in, the warm-up, three 3RM attempts with the
+protocol's +2.5 kg step and the challenge rest, holds with the stopwatch and typed values, the ladder from the A pin
++ 10 lb in -5 lb steps (P21, D36), yes / no negatives, max reps, the review and the report; resuming after the app was
+reinstalled mid-test; the second test's 19 sets, 15 observations, both events and the rule audit synced without a
+rejected row. Found on the phone and fixed: a logged attempt marked the step done (steps now finish only by Next or
+Skip), the weigh-in could finish the warm-up step instead (a race), bodyweight rows carried no load point and ladder
+points used the test weigh-in instead of the session's bodyweight (the server rejected them), the ladder stepper ran
+backwards, the 0.25 kg belt steps needed a typed value (tap the value), and the rule log rejected the `D` tag
+(migration 025). Not covered on the phone: phase 3's attempts block (needs phase 3).
+These checks found that a challenge started with "Start with a test week" or "Enter my numbers" kept `e1rmAdded`
+and `anchorFraction` empty, so the first test set the pins but not the weighted pull-up loads. Fixed by D37
+(`oap@1.2.0`, migration 026): the gate e1RM comes from the entered 3RM, the first valid test fills every empty load
+(session C at 5 reps with 2 in reserve on the personal curve), and the setup's facts carry the weighted pull-up's `k`
+(the creation's `userK` lacked the grip-dependent exercise). The `test_week_start` persona proves it in `:sim`. D38
+(`oap@1.3.0`, engine 1.2.0, migration 027): the test may fall on any day and comes first while there are no loads, so a
+test-week start tests on day one and C and A follow with real loads; rest days stay. Checked on the phone on 2026-10-22: a
+test-week start set every load in its first test, a numbers start recalculated them on the curve with the 3RM ramp, and
+the new test-week setup plans the test today before session A.
 
 **Phone checks (2026-10-20/21, OnePlus CPH2747, Android 16, test data)**: the setup wizard with the import and
 all 27 proposals, the dashboard, pause (Holiday, Illness) and resume, abandon, sync of the enrollment and its events to

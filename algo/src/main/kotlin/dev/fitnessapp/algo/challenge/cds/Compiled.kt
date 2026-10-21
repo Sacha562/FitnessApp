@@ -141,9 +141,26 @@ class CompiledItem(
     val position: FieldValue?,
     /** Variant value -> compiled fields of that variant (merged at materialization, 6.3 step 7). */
     val variants: Map<String, Map<String, FieldValue>>,
+    /** The test protocol's `steps` and `stepsIfApproved` (D36). */
+    val steps: CompiledSteps? = null,
+    val stepsIfApproved: CompiledSteps? = null,
 ) {
     val key: String get() = spec.key
 }
+
+/**
+ * A test item's structured protocol (D36, CHALLENGE_ENGINE 2.4.7): the warm-up ramp as fractions of [rampOf] (a total
+ * system load), the first attempt's load [start] (added kg or a pin), the signed [step] after a clean attempt and
+ * [maxAttempts]. Every field is optional.
+ */
+class CompiledSteps(
+    val rampOf: CompiledExpr?,
+    val rampFractions: CompiledExpr?,
+    val rampReps: List<Int>,
+    val start: CompiledExpr?,
+    val step: CompiledExpr?,
+    val maxAttempts: CompiledExpr?,
+)
 
 /** A template after inheritance (6.2): its own or inherited header fields and the resolved items. */
 class ResolvedTemplate(
@@ -198,6 +215,8 @@ class CompiledDefinition(
     val postponeIf: CompiledExpr,
     val hardLimits: Map<String, CompiledExpr>,
     val habits: Map<String, CompiledHabit>,
+    /** `schedule.order.first` (D38): slot -> the condition under which it goes first in its week. */
+    val orderFirst: List<Pair<String, CompiledExpr>> = emptyList(),
 ) {
     val slug: String get() = doc.id
     val version: String get() = doc.version

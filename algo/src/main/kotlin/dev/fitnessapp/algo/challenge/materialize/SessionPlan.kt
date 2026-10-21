@@ -57,13 +57,30 @@ data class PlannedItem(
     val progressionMode: String,
     val inSessionRuleIds: List<String> = emptyList(),
     val calibrationFirstSet: Boolean = false,
+    /** The test metric, or the metric an attempts block records (`records`, phase 3's `oa_rep`). */
     val metric: String? = null,
     val record: String? = null,
     val substitutedFrom: String? = null,
     val progressionExcluded: Boolean = false,
     val warnings: List<PlanWarning> = emptyList(),
     val noteCodes: List<String> = emptyList(),
+    /** A test item's evaluated protocol (D36); null when the definition gives none. */
+    val steps: TestSteps? = null,
 )
+
+/**
+ * A test item's protocol in numbers (D36): the warm-up [ramp] below the first attempt, the first attempt's load
+ * [start] (added kg, or a pin in the machine's unit), the signed [step] after a clean attempt and [maxAttempts].
+ */
+data class TestSteps(
+    val ramp: List<RampSet> = emptyList(),
+    val start: BigDecimal? = null,
+    val step: BigDecimal? = null,
+    val maxAttempts: Int? = null,
+)
+
+/** One ramp set: an added load on the belt grid (0 = bodyweight) for [repsMin]-[repsMax] reps. */
+data class RampSet(val addedKg: BigDecimal, val repsMin: Int, val repsMax: Int)
 
 /** Reproducibility snapshot of a plan (C24). */
 data class PlanSnapshot(

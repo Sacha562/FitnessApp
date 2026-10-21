@@ -78,7 +78,10 @@ import java.util.Locale
  * recommendation card arrives with M4.
  */
 @Composable
-fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {}, onHistory: () -> Unit = {}) {
+fun TodayRoute(
+    c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {},
+    onHistory: () -> Unit = {}, onOpenTest: (enrollmentId: String) -> Unit = {},
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val active by c.sessionRepository.observeActive().collectAsState(initial = null)
@@ -113,7 +116,7 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
 
             // The challenge's session of the day (UX 9, CHALLENGE_ENGINE 7.6); hidden without an enrollment.
-            TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) })
+            TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) }, onOpenTest = onOpenTest)
 
             // The open session's tile; without one, the Start button below says it all (D35).
             active?.let { a ->

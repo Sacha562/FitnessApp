@@ -3,6 +3,7 @@ package dev.fitnessapp.algo.challenge.materialize
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.challenge.cds.CompiledDefinition
 import dev.fitnessapp.algo.challenge.cds.CompiledItem
+import dev.fitnessapp.algo.challenge.cds.CompiledSteps
 import dev.fitnessapp.algo.challenge.cds.ExerciseChoice
 import dev.fitnessapp.algo.challenge.cds.FieldValue
 import dev.fitnessapp.algo.challenge.cds.HabitScale
@@ -21,6 +22,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.Dec
 import dev.fitnessapp.algo.challenge.fitexpr.Dim
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.EvalError
+import dev.fitnessapp.algo.challenge.fitexpr.ListV
 import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.RecordV
 import dev.fitnessapp.algo.challenge.fitexpr.StrV
@@ -213,7 +215,7 @@ object Materializer {
                 key = spec.key, exerciseKey = exercise?.key, catalogSlug = exercise?.catalogSlug, name = exercise?.name ?: emptyMap(),
                 role = spec.role, status = status, statusReason = reason, rows = emptyList(), rirTarget = spec.rirTarget,
                 progressionMode = spec.progression ?: if (spec.role == "test" || spec.role == "warmup") "none" else "rule",
-                metric = spec.metric, record = spec.record, warnings = ctx.warnings.toList(), noteCodes = ctx.notes.toList(),
+                metric = spec.metric ?: spec.records, record = spec.record, warnings = ctx.warnings.toList(), noteCodes = ctx.notes.toList(),
             ) to positionValue
 
         // Step 1: enabledIf.
@@ -424,6 +426,7 @@ object Materializer {
         spec.note?.let { notes += it }
         val approvedProtocol = spec.protocolProposal?.let { env.state.approved(it) } == true
         (if (approvedProtocol) spec.protocolIfApproved ?: spec.protocol else spec.protocol)?.let { notes += it }
+        val steps = (if (approvedProtocol) item.stepsIfApproved ?: item.steps else item.steps)?.let { testSteps(env, it, input, ctx, spec.key) }
         val ruleIds = def.inSessionRules.filter { r ->
             (r.spec.item == spec.key || r.spec.item == "*") && (r.spec.slots.isEmpty() || tpl.slot in r.spec.slots) &&
                 (r.spec.tag != "P" || r.spec.proposal?.let { env.state.approved(it) } == true)
@@ -432,9 +435,41 @@ object Materializer {
             key = spec.key, exerciseKey = ex?.key, catalogSlug = ex?.catalogSlug, name = ex?.name ?: emptyMap(), role = spec.role,
             status = "planned", rows = rows, rirTarget = rirTarget, flagsOffered = ex?.flagsOffered.orEmpty(), stopSetOn = spec.stopSetOn,
             notes = notes, progressionMode = spec.progression ?: if (spec.role == "test" || spec.role == "warmup") "none" else "rule",
-            inSessionRuleIds = ruleIds, calibrationFirstSet = spec.calibrationFirstSet, metric = spec.metric, record = spec.record,
+            inSessionRuleIds = ruleIds, calibrationFirstSet = spec.calibrationFirstSet, metric = spec.metric ?: spec.records, record = spec.record,
             substitutedFrom = substitutedFrom, progressionExcluded = progressionExcluded, warnings = ctx.warnings.toList(), noteCodes = ctx.notes.toList(),
+            steps = steps,
         ) to positionValue
+    }
+
+    /**
+     * D36: the test protocol's numbers. Ramp loads are `fraction * rampOf - bw` on the belt grid (nearest, at least
+     * bodyweight), without duplicates and below the first attempt. A field that cannot be computed is absent and warns.
+     */
+    private fun testSteps(env: RuleEnv, c: CompiledSteps, input: MaterializeInput, ctx: Ctx, key: String): TestSteps {
+        fun ev(e: CompiledExpr?, field: String): Value? = e?.let {
+            try {
+                eval(env, it)
+            } catch (x: EvalError) {
+                ctx.warnings += PlanWarning("could_not_compute", "WARN", "$key.steps.$field: ${x.code}")
+                null
+            }
+        }
+        val start = dec(ev(c.start, "start"))?.let(Dec::norm)
+        val total = dec(ev(c.rampOf, "rampOf"))
+        val fractions = (ev(c.rampFractions, "rampFractions") as? ListV)?.items?.mapNotNull(::dec).orEmpty()
+        val bw = input.facts.bwKg
+        val ramp = if (total == null || bw == null || !(c.rampReps.size == 2)) {
+            emptyList()
+        } else {
+            try {
+                fractions.map { f -> Dec.norm(env.host.roundLoad(f.multiply(total).subtract(bw).max(BigDecimal.ZERO), "belt", "nearest")) }
+                    .distinct().filter { start == null || it < start }.map { RampSet(it, c.rampReps[0], c.rampReps[1]) }
+            } catch (x: EvalError) {
+                ctx.warnings += PlanWarning("could_not_compute", "WARN", "$key.steps.ramp: ${x.code}")
+                emptyList()
+            }
+        }
+        return TestSteps(ramp, start, dec(ev(c.step, "step"))?.let(Dec::norm), int(ev(c.maxAttempts, "maxAttempts")))
     }
 
     private fun prefOf(ex: ResolvedExercise, input: MaterializeInput): String =
