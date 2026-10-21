@@ -145,8 +145,9 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         val (_, plan) = ChallengeWeek.plan(c, f, facts)
         return plan.sessions.map { p ->
             val day = p.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.ENGLISH))
-            WeekSlotUi(p.slot, if (p.source == "done") "${p.slot} done $day" else "${p.slot} $day ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}", p.source == "done")
-        } + plan.droppedSlots.map { WeekSlotUi(it, "$it: no room this week", false) }
+            val label = slotLabel(p.slot)
+            WeekSlotUi(p.slot, if (p.source == "done") "$label done $day" else "$label $day ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}", p.source == "done")
+        } + plan.droppedSlots.map { WeekSlotUi(it, "${slotLabel(it)}: no room this week", false) }
     }
 
     private fun rules(def: CompiledDefinition, s: EnrollmentState, audit: List<ChallengeRuleEventEntity>): List<RuleUi> {
@@ -331,4 +332,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         PauseTools.previewResume(f.def, c.params, f.state, LocalDate.now(zone), zone, f.state.lastFacts, listOf(1, 7, 28))
             .map { p -> p.gapDays to p.notifications.map { ChallengeTexts.message(f.def, it) } }
     }
+
+    /** A week pill's slot name: the program's own letters (A, B, C), "Test" for the test slot. */
+    private fun slotLabel(slot: String) = if (slot == "TEST") "Test" else slot
 }

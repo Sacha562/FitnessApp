@@ -575,7 +575,7 @@ scope is unchanged and the done-when is checked at the end of M2b.
 
 - The general warm-up block (moved from M1a, D25) with the warm-up row countdown; OI-27 is decided here
   (alarm-backed `purpose = interval` or the in-app fallback).
-- Setup wizard with per-proposal approval; import of your current state; challenge storage and sync;
+- Setup wizard with the proposals at their recommendation and a Customize list (D35, replacing per-proposal approval); import of your current state; challenge storage and sync;
   Challenges tab (gates per arm, block/week, next test, rule history); test-day wizard; elbow check and
   pain protocol; habit reminders.
 - Calendar: read + classify; auto-write challenge sessions and test days with marker; adopt existing
@@ -590,8 +590,8 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
    by migration 016 (shown to you before it is applied). Room gets the enrollment, event, rule-audit and
    calendar tables with sync, the local refold after a bootstrap, and tick catch-up at app start and in
    the daily maintenance job.
-2. **M2b.2 Challenges tab and setup wizard.** The ten wizard steps with the import and the P01-P27
-   decisions, the dashboard with gate rows, the rules, proposals, history and tests tabs, Correct a value,
+2. **M2b.2 Challenges tab and setup wizard.** The setup wizard (three steps since D35) with the import
+   and the P01-P27 decisions, the dashboard with gate rows, the rules, proposals, history and tests tabs, Correct a value,
    and pause, resume and abandon with their previews.
 3. **M2b.3 Challenge sessions.** Today shows the planned challenge session; Start materializes it with the
    warm-up block (the alarm-backed row countdown, D33), the challenge card types, in-session rules with

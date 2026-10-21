@@ -177,7 +177,7 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | Step | State | What is in it |
 |------|-------|---------------|
 | M2b.1 Storage and sync | built | `oap@1.0.0` published by migration 016 (applied after you saw it), the event codec, challenge tables with sync, refold, tick catch-up at start and in maintenance. |
-| M2b.2 Challenges tab and setup wizard | built | The tab, the ten wizard steps, the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
+| M2b.2 Challenges tab and setup wizard | built | The tab, the setup wizard (three steps since D35: overview with grip, starting point, first two weeks with Start; proposals at their recommendation), the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
 | M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
 | M2b.4 Test day | next | The test-day wizard with the Record and attempt cards. |
 | M2b.5 Calendar | open | |

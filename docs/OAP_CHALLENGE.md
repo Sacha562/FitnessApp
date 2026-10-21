@@ -990,8 +990,8 @@ k = 30 until your logged sessions give the curve informative windows.
 
 ### 11.4 Cutover steps
 
-1. Run the challenge setup (section 12) with "Import my current program state"; check every value.
-2. Decide all 27 proposals (section 6).
+1. Run the challenge setup (section 12) with "Enter my numbers" and "I'm mid-program"; check every value.
+2. Check the proposals under Customize (section 6); all 27 start on (D35).
 3. Calendar: allow calendar access; tap "Adopt" for this week's future hand-made events (A Thursday,
    test Sunday) so the app may keep them up to date (D11).
 4. Confirm the cutover. Then, and only after your explicit confirmation in chat, Claude completes or

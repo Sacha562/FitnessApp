@@ -55,7 +55,7 @@ class ChallengeScreensTest {
         phases = listOf("Heavy pulling and learning to hang", "Removing assistance", "Attempts"),
         blockLine = "Block 1 · week 5 of 5", nextTest = "Next test: Sun 11 Oct",
         precondition = "First one normal session without pain",
-        week = listOf(WeekSlotUi("C", "C done Tue", true), WeekSlotUi("A", "A Thu 19:45", false), WeekSlotUi("TEST", "TEST Sun 11:00", false)),
+        week = listOf(WeekSlotUi("C", "C done Tue", true), WeekSlotUi("A", "A Thu 19:45", false), WeekSlotUi("TEST", "Test Sun 11:00", false)),
         gates = gates, rules = emptyList(), proposals = emptyList(), history = emptyList(), tests = emptyList(), undecided = 0,
         pausedSince = null, targets = emptyList(),
     )
