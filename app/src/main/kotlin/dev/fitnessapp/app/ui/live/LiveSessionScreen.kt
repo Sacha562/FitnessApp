@@ -53,6 +53,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,6 +85,7 @@ import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.LogChip
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.ProgressBar
@@ -137,7 +139,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
             }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon })
             if (ui.banner == "pain") Banner(
-                "Pain noted. The exercise ended. If it hurts, stop and get it checked; this app does not give medical advice.",
+                "Pain noted, exercise ended. If it hurts, stop and get it checked.",
                 BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
             )
             if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner)
@@ -285,7 +287,7 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
                     modifier = Modifier.weight(1f),
                 )
                 val tail = when {
-                    skipped -> item.se.status_reason_code?.replace('_', ' ') ?: "skipped"
+                    skipped -> "skipped"
                     item.se.status == "deferred" -> "later · ${item.workingDone}/${item.planned}"
                     else -> "${item.workingDone}/${maxOf(item.planned, item.workingDone)}"
                 }
@@ -310,7 +312,6 @@ private fun EmptyAction(ui: LiveUi, onAdd: () -> Unit, onFinish: () -> Unit) {
     Tile(radius = 28.dp, padding = PaddingValues(18.dp), spacing = 12.dp) {
         if (ui.items.isEmpty()) {
             Text("Add your first exercise", style = MaterialTheme.typography.titleLarge)
-            Text("Search the catalog; each set starts from what you did last time.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             PrimaryButton("Add exercise", onAdd, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add)
         } else {
             Text("All exercises done", style = MaterialTheme.typography.titleLarge)
@@ -347,7 +348,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
         Row(verticalAlignment = Alignment.CenterVertically) {
             Pill(if (interval) t.label ?: "Interval" else "Rest")
             Spacer(Modifier.weight(1f))
-            if (t.alarm_mode == "inexact") Text("Alarm may be late (exact alarms off)", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
+            if (t.alarm_mode == "inexact") Text("Alarm may ring late", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
         }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             when (val d = display) {
@@ -384,6 +385,9 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     val item = card.item
+    // The pacing beep (UX 11.7.4, 11.7.5) is switched in the exercise menu to keep the set card short (D35).
+    val beepable = when { card.isTimed -> false; card.isRound -> true; card.isHold -> false; else -> card.isEcc }
+    var beep by remember(item.se.id) { mutableStateOf(false) }
     Tile(radius = 28.dp, padding = PaddingValues(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 16.dp), spacing = 10.dp) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -398,7 +402,10 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
             }
             Box {
                 RoundIconButton(Icons.Rounded.MoreVert, "Exercise menu", { menu = true }, container = Fit.Raised)
-                ExerciseMenu(menu, card, vm, onDismiss = { menu = false }, onAction = { menu = false; onMenu(it) })
+                ExerciseMenu(
+                    menu, card, vm, beep = beep.takeIf { beepable }, onBeep = { menu = false; beep = !beep },
+                    onDismiss = { menu = false }, onAction = { menu = false; onMenu(it) },
+                )
             }
         }
         card.lastLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
@@ -442,33 +449,39 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
 
         when {
             card.isTimed -> TimedSection(card, intervalRunning, vm)
-            card.isRound -> RoundSection(card, vm)
+            card.isRound -> RoundSection(card, vm, beep)
             card.isHold -> HoldSection(card, vm)
             else -> {
                 StepperRow(value = "${card.reps ?: 0} reps", secondary = null, onMinus = { vm.stepReps(false) }, onPlus = { vm.stepReps(true) })
-                if (card.isEcc) EccSection(card, vm)
+                if (card.isEcc) EccSection(card, vm, beep)
             }
         }
 
-        // Reason chips: optional, only when deviating (UX 11.8).
-        card.chips?.let { chips ->
-            Text("Why the change? (optional)", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
-            var more by remember { mutableStateOf(false) }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                (chips.visible + if (more) chips.more else emptyList()).forEach { chip ->
-                    ChipButton(chip.label, selected = card.reason == chip.code, onClick = {
-                        vm.chooseReason(chip.code, chip.position, chip.position >= chips.visible.size)
-                        if (chip.code == "pain") onPainReason()
-                    })
+        // Reason chips and flags are optional (D35): collapsed for each new set, open when one is already chosen.
+        key(card.slotKey) {
+            // Reason chips: optional, only when deviating (UX 11.8).
+            card.chips?.let { chips ->
+                MoreSection("Why the change?", initiallyOpen = card.reason != null) {
+                    var more by remember { mutableStateOf(false) }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        (chips.visible + if (more) chips.more else emptyList()).forEach { chip ->
+                            ChipButton(chip.label, selected = card.reason == chip.code, onClick = {
+                                vm.chooseReason(chip.code, chip.position, chip.position >= chips.visible.size)
+                                if (chip.code == "pain") onPainReason()
+                            })
+                        }
+                        if (!more && chips.more.isNotEmpty()) LinkButton("More", { more = true })
+                    }
                 }
-                if (!more && chips.more.isNotEmpty()) LinkButton("More", { more = true })
             }
-        }
 
-        // Flags offered by the exercise (C74, UX 11.9).
-        if (item.ex.flagsOffered.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            item.ex.flagsOffered.forEach { f ->
-                ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox)
+            // Flags offered by the exercise (C74, UX 11.9).
+            if (item.ex.flagsOffered.isNotEmpty()) MoreSection("Flag something", initiallyOpen = card.flags.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item.ex.flagsOffered.forEach { f ->
+                        ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox)
+                    }
+                }
             }
         }
 
@@ -493,7 +506,7 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
         when {
             card.warmup -> PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
             card.isHold || card.isEcc -> {
-                Text((if (card.isRound) "How did the round feel?" else "How did it feel?") + " Tap to log.", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
+                Text("How did it feel?", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("Max" to 0.0, "Hard" to 2.0, "OK" to 5.0, "Easy" to 10.0).forEach { (label, s) ->
                         LogChip(label, { guarded { vm.log(feltReserveS = s, feltLowerBound = s == 10.0, control = "felt_chip") } }, Modifier.weight(1f))
@@ -501,10 +514,8 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
                 }
             }
             else -> {
-                Text(
-                    (if (card.side != "both") (if (card.side == "L") "Left · " else "Right · ") else "") + "Reps left in the tank? Tap to log.",
-                    style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp),
-                )
+                // The side is on the set card's pill.
+                Text("Reps left in the tank?", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (0..5).forEach { r ->
                         LogChip(if (r == 5) "5+" else r.toString(), { guarded { vm.log(rir = r, control = "rir_chip") } }, Modifier.weight(1f))
@@ -515,7 +526,8 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
     }
 }
 
-private fun flagLabel(f: String) = when (f) {
+/** The readable label of an exercise flag code (C74); History and the set edit sheet use it too. */
+internal fun flagLabel(f: String) = when (f) {
     "grip_slip_before_last" -> "Grip slipped before last rep"
     "torso_rotation" -> "Torso rotated"
     "jerky" -> "Jerky lowering"
@@ -528,7 +540,7 @@ private fun flagLabel(f: String) = when (f) {
 }
 
 @Composable
-private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, onDismiss: () -> Unit, onAction: (String) -> Unit) {
+private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, beep: Boolean?, onBeep: () -> Unit, onDismiss: () -> Unit, onAction: (String) -> Unit) {
     val se = card.item.se
     DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
         if (card.item.workingDone == 0) DropdownMenuItem(text = { Text("Skip") }, onClick = { onAction("skip") })
@@ -548,6 +560,8 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, on
             }
             DropdownMenuItem(text = { Text(label) }, onClick = { onDismiss(); vm.setLoadMode(m) })
         }
+        // The optional beep per second; null when this set has none.
+        beep?.let { on -> DropdownMenuItem(text = { Text(if (on) "Stop the beep" else "Beep each second") }, onClick = onBeep) }
         DropdownMenuItem(text = { Text("Something hurts", color = Fit.Safety) }, onClick = { onAction("pain") })
     }
 }
@@ -561,53 +575,49 @@ private fun TimedSection(card: Card, intervalRunning: Boolean, vm: LiveSessionVi
     val s = card.holdS ?: return
     val clock = Numbers.clock(s.toLong())
     Text(card.item.ex.nameEn + " " + clock, style = MaterialTheme.typography.titleMedium)
-    if (intervalRunning) {
-        Text("Counting down: the alarm rings at zero and logs it done.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-    } else {
-        PrimaryButton("Start $clock", vm::startInterval, Modifier.fillMaxWidth(), height = 64.dp)
-    }
+    // While it runs, the rest card above shows the countdown.
+    if (!intervalRunning) PrimaryButton("Start $clock", vm::startInterval, Modifier.fillMaxWidth(), height = 64.dp)
 }
 
 /**
  * UX 11.7.5 negatives: "Shortest lowering" is the minimum lowering time of the set's reps (`ecc_s_actual`), because
- * the rules compare the minimum; "Count 1 per second" paces the lowering.
+ * the rules compare the minimum; the optional beep (exercise menu) paces the lowering.
  */
 @Composable
-private fun EccSection(card: Card, vm: LiveSessionViewModel) {
+private fun EccSection(card: Card, vm: LiveSessionViewModel, beep: Boolean) {
     card.eccTargetS?.let { Text("Lower in " + Numbers.num(it, 1) + " s or more", style = MaterialTheme.typography.titleMedium) }
     StepperRow(
         value = card.eccS?.let { Numbers.num(it, 1) + " s" } ?: "– s", secondary = "shortest lowering",
         onMinus = { vm.stepEcc(false) }, onPlus = { vm.stepEcc(true) },
     )
-    CountAloud("Count 1 per second")
+    if (beep) CountAloud()
 }
 
 /** UX 11.7.4 top-hold round: one field per short attempt (0.5 s steps), the felt chip logs them all. */
 @Composable
-private fun RoundSection(card: Card, vm: LiveSessionViewModel) {
+private fun RoundSection(card: Card, vm: LiveSessionViewModel, beep: Boolean) {
     val attempts = card.attemptsS ?: return
     Text("${attempts.size} short attempts · no help", style = MaterialTheme.typography.titleMedium)
     attempts.forEachIndexed { i, s ->
         StepperRow(value = Numbers.num(s, 1) + " s", secondary = "attempt ${i + 1}", onMinus = { vm.stepAttempt(i, false) }, onPlus = { vm.stepAttempt(i, true) })
     }
-    CountAloud("Count seconds aloud")
+    if (beep) CountAloud()
 }
 
-/** An optional beep per second while the user does the set (UX 11.7.4, 11.7.5); off by default, never logged. */
+/**
+ * The optional beep per second while the user does the set (UX 11.7.4, 11.7.5): switched in the exercise menu, off by
+ * default, never logged. Composed only while on.
+ */
 @Composable
-private fun CountAloud(label: String) {
-    var on by remember { mutableStateOf(false) }
+private fun CountAloud() {
     val haptic = LocalHapticFeedback.current
-    ChipButton(label + if (on) ": on" else ": off", on, { on = !on }, role = Role.Switch)
-    if (on) {
-        val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
-        DisposableEffect(Unit) { onDispose { tone?.release() } }
-        LaunchedEffect(Unit) {
-            while (true) {
-                tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)
-                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                delay(1000)
-            }
+    val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
+    DisposableEffect(Unit) { onDispose { tone?.release() } }
+    LaunchedEffect(Unit) {
+        while (true) {
+            tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)
+            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            delay(1000)
         }
     }
 }
@@ -768,11 +778,7 @@ private fun FinishSheet(c: AppContainer, remaining: List<String>, onDismiss: () 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit: (String, String, String, List<String>) -> Unit) {
-    val regions = listOf(
-        "elbow_medial" to "Elbow, inner side", "elbow_lateral" to "Elbow, outer side", "elbow_anterior" to "Elbow crease",
-        "shoulder" to "Shoulder", "wrist" to "Wrist", "hand_fingers" to "Hand and fingers", "neck" to "Neck", "upper_back" to "Upper back",
-        "lower_back" to "Lower back", "hip" to "Hip", "knee" to "Knee", "ankle_foot" to "Ankle and foot", "other" to "Other",
-    )
+    val regions = PAIN_REGIONS
     var region by remember { mutableStateOf(preselectedRegion) }
     var side by remember { mutableStateOf("none") }
     var severity by remember { mutableStateOf<String?>(null) }
@@ -782,7 +788,7 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
             Text("Where does it hurt?", style = MaterialTheme.typography.titleLarge)
             ChoiceChips(regions.map { it.first }, region, { code -> regions.first { it.first == code }.second }) { region = it }
             SectionLabel("Side")
-            ChoiceChips(listOf("L", "R", "both", "none"), side, { mapOf("L" to "Left", "R" to "Right", "both" to "Both", "none" to "Not sided")[it]!! }) { side = it }
+            ChoiceChips(listOf("L", "R", "both", "none"), side, { mapOf("L" to "Left", "R" to "Right", "both" to "Both", "none" to "No side")[it]!! }) { side = it }
             SectionLabel("How bad")
             ChoiceChips(listOf("mild", "moderate", "sharp"), severity, { it.replaceFirstChar(Char::uppercase) }) { severity = it }
             // The kind of pain (DATA_MODEL 9.1.6): the elbow kinds are the challenge's stop signals (C33).
@@ -793,7 +799,7 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
                     ChipButton(label, code in symptoms, { symptoms = if (code in symptoms) symptoms - code else symptoms + code }, role = androidx.compose.ui.semantics.Role.Checkbox)
                 }
             }
-            Banner("This app does not give medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY, Modifier.padding(top = 8.dp))
+            Banner("Not medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY, Modifier.padding(top = 8.dp))
             PrimaryButton("Save", { onSubmit(region!!, side, severity!!, symptoms.toList()) }, Modifier.fillMaxWidth().padding(top = 4.dp), enabled = region != null && severity != null)
         }
     }
@@ -823,6 +829,16 @@ private fun KeypadSheet(card: Card, vm: LiveSessionViewModel, onDismiss: () -> U
         }
     }
 }
+
+/** Body regions of the Pain sheet (UX 16.2): code and label. */
+internal val PAIN_REGIONS = listOf(
+    "elbow_medial" to "Elbow, inner side", "elbow_lateral" to "Elbow, outer side", "elbow_anterior" to "Elbow crease",
+    "shoulder" to "Shoulder", "wrist" to "Wrist", "hand_fingers" to "Hand and fingers", "neck" to "Neck", "upper_back" to "Upper back",
+    "lower_back" to "Lower back", "hip" to "Hip", "knee" to "Knee", "ankle_foot" to "Ankle and foot", "other" to "Other",
+)
+
+/** The readable label of a pain region code, for lines that show a saved report. */
+internal fun painRegionLabel(code: String): String = PAIN_REGIONS.firstOrNull { it.first == code }?.second ?: code.replace('_', ' ')
 
 /** `symptom_codes` (DATA_MODEL 9.1.6): code, the body regions it belongs to (empty = any), label. */
 internal val PAIN_KINDS = listOf(

@@ -29,9 +29,11 @@ data class GateRow(
     val met: Boolean?,
     val target: String?,
     val sides: List<GateSide>,
-    /** Value, `k`, test date and the D7 extras (x1.10, 80 % range) of a single-valued metric. */
+    /** The test date of a single-valued metric (its value is on the bar line). */
     val detail: String?,
     val muted: String?,
+    /** The D7 extras (x1.10 estimate, 80 % range), shown behind a tap (D35). */
+    val more: String? = null,
 )
 
 data class GateRows(val header: String, val met: Int, val total: Int, val rows: List<GateRow>)
@@ -41,11 +43,10 @@ data class GateRows(val header: String, val met: Int, val total: Int, val rows: 
  * metric has sides. Bars run from 0 to the forward threshold at today's bodyweight (C32), the tick is the engine's
  * evaluation on the test day (C62), values from tests not valid for gates never fill a bar and the newest one is
  * shown on a muted line. Display conventions for derived metrics: `<metric>_m110` is the x1.10 rule and
- * `<metric>_lo` / `_hi` the 80 % range (D7); a mass metric named `*_added` is shown with a sign.
+ * `<metric>_lo` / `_hi` the 80 % range (D7), both in [GateRow.more]; a mass metric named `*_added` is shown with a sign.
  */
 object UiGateRows {
     private val DAY = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
-    private val USER_K = Regex("""userK\('([a-z_]+)'\)""")
 
     fun build(
         def: CompiledDefinition,
@@ -58,7 +59,7 @@ object UiGateRows {
         val criteria = GateCriteria.criteria(def, params, state, facts)
         val phase = def.doc.phases.firstOrNull { it.id == state.phase }
         val next = def.doc.phases.firstOrNull { it.id == state.phase + 1 }
-        val header = if (phase?.onExit == "complete" || next == null) "Gate to completion" else "Gate to phase ${next.id}"
+        val header = if (phase?.onExit == "complete" || next == null) "Goals to finish" else "Goals for phase ${next.id}"
         val test = state.lastValidTest
         val rows = criteria.map { c ->
             val metric = c.metrics.firstOrNull()
@@ -75,31 +76,27 @@ object UiGateRows {
                 info.sided -> listOf("L", "R").map { side -> side(side, (value as? SideV)?.let { if (side == "L") it.l else it.r }, thr, c.higherIsBetter, c.met, info.type, metric) }
                 else -> listOf(side("none", value, thr, c.higherIsBetter, c.met, info.type, metric))
             }
-            val title = (c.label?.get("en") ?: "Criterion ${c.index + 1}").replace(">=", "≥").replace("<=", "≤")
+            val title = (c.label?.get("en") ?: "Goal ${c.index + 1}").replace(">=", "≥").replace("<=", "≤")
             val target = thr?.let { t ->
                 val bwText = if (c.thresholdSource != null && bwNow != null) " at ${fmt(bwNow)} kg bodyweight" else ""
                 "Target ${if (c.higherIsBetter) "≥" else "≤"} ${text(t, metric, precise = true)}$bwText"
             }
-            val detail = if (info != null && !info.sided && value != null && test != null && metric != null) {
-                val parts = ArrayList<String>()
-                val k = def.metrics[metric]?.spec?.derived?.let { USER_K.find(it)?.groupValues?.get(1) }?.let { facts.userK[it] }
-                parts += text(value, metric) + (k?.let { " (k ${fmt(it.k)}${if (it.informativeWindows == 0) ", class prior" else ""})" } ?: "")
-                parts += "test ${DAY.format(test.date)}"
-                test.metrics["${metric}_m110"]?.let { parts += "x1.10 rule ${text(it, metric)}" }
-                val lo = test.metrics["${metric}_lo"]
-                val hi = test.metrics["${metric}_hi"]
-                if (lo != null && hi != null) parts += "80 % range ${text(lo, metric)} to ${text(hi, metric)}"
-                parts.joinToString(" · ")
-            } else {
-                null
+            val tested = if (info != null && !info.sided && value != null && test != null && metric != null) test else null
+            val detail = tested?.let { "Tested ${DAY.format(it.date)}" }
+            val more = ArrayList<String>()
+            tested?.let { t ->
+                t.metrics["${metric}_m110"]?.let { more += "×1.10 estimate ${text(it, metric)}" }
+                val lo = t.metrics["${metric}_lo"]
+                val hi = t.metrics["${metric}_hi"]
+                if (lo != null && hi != null) more += "80 % range ${text(lo, metric)} to ${text(hi, metric)}"
             }
             val muted = metric?.let { m ->
                 nonValid.filter { it.metric == m && (test == null || it.date.isAfter(test.date) || m in test.notComparable) }.maxByOrNull { it.date }?.let { o ->
-                    val extra = o.extras["${m}_m110"]?.let { " (x1.10 ${text(it, m)})" } ?: ""
-                    "Latest, not valid for gates (${DAY.format(o.date)}, ${o.reason}): ${text(o.value, m)}$extra"
+                    o.extras["${m}_m110"]?.let { more += "${DAY.format(o.date)}: ×1.10 estimate ${text(it, m)}" }
+                    "Newer result, not counted (${DAY.format(o.date)}, ${o.reason}): ${text(o.value, m)}"
                 }
             }
-            GateRow(c.index, title, c.met, target, sides, detail, muted)
+            GateRow(c.index, title, c.met, target, sides, detail, muted, more.joinToString(" · ").ifEmpty { null })
         }
         return GateRows("$header · ${rows.count { it.met == true }} of ${rows.size} met", rows.count { it.met == true }, rows.size, rows)
     }
@@ -116,7 +113,7 @@ object UiGateRows {
         val label = if (side == "none") "" else "$side "
         val text = when {
             v == null && (type as? Type.SideT)?.elem == Type.BoolT || v == null && type == Type.BoolT -> "${label}not tested"
-            v == null -> "${label}no valid value"
+            v == null -> "${label}no result yet"
             v is BoolV -> label + if (v.b) "done" else "not yet"
             thr != null -> "$label${text(v, metric)} of ${text(thr, metric, precise = true)}"
             else -> label + text(v, metric)

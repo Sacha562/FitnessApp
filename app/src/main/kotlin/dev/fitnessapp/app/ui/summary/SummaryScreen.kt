@@ -33,12 +33,14 @@ import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
 import dev.fitnessapp.app.ui.common.TileLabel
 import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.live.PainSheet
+import dev.fitnessapp.app.ui.live.painRegionLabel
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.telemetry.EventDraft
 import kotlinx.coroutines.launch
@@ -155,20 +157,22 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                     }
                 }
 
+                // The quick check is optional (D35): collapsed until the user opens it.
                 Tile(spacing = 10.dp) {
-                    TileLabel("Quick check (optional)")
-                    Text("Whole session effort, 0-10", style = MaterialTheme.typography.titleMedium)
-                    ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
-                    Text("Any joint pain?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp))
-                    ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
-                        pain = code
-                        if (code != "none") painSheetFor = code
+                    MoreSection("Add effort, pain or a note") {
+                        Text("Session effort, 0-10", style = MaterialTheme.typography.titleMedium)
+                        ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
+                        Text("Any joint pain?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp))
+                        ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
+                            pain = code
+                            if (code != "none") painSheetFor = code
+                        }
+                        FitTextField(
+                            value = note, onValueChange = { note = it.take(2000) }, label = "Note",
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp), minLines = 2,
+                        )
                     }
                     if (painReported.isNotEmpty()) Text("Pain saved: " + painReported.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Fit.Safety)
-                    FitTextField(
-                        value = note, onValueChange = { note = it.take(2000) }, label = "Note",
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp), minLines = 2,
-                    )
                 }
             }
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -180,7 +184,7 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     painSheetFor?.let { chip ->
         PainSheet(onDismiss = { painSheetFor = null }, preselectedRegion = PAIN_PRESELECT[chip]) { region, side, severity, symptoms ->
             painSheetFor = null
-            painReported += "$region ($severity)"
+            painReported += "${painRegionLabel(region)} ($severity)"
             scope.launch {
                 val wid = c.sessionRepository.reportPain(sessionId, null, region, side, severity, "post", "summary", symptoms)
                 runCatching { c.challengeSessions.forwardPain(wid, region, side, severity, symptoms, sessionId) }

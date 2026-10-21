@@ -68,6 +68,8 @@ data class TodayChallengeUi(
     val blocked: String?,
     /** The HOME checklist (UX 9.6). */
     val habits: List<HabitRowUi> = emptyList(),
+    /** The template name of [slot] for the button ("Start Heavy pulling now instead"). */
+    val slotName: String? = null,
 )
 
 /** How a habit row is completed (UX 9.6): quick-done by its checkbox, or through the home mini-session (Start). */
@@ -79,7 +81,7 @@ data class HabitRowUi(
     val name: String,
     val time: String,
     val dose: String?,
-    /** "done", "skipped: A day", "off: injury mode", "deload: scaled"; null while simply due. */
+    /** "done", "skipped: session A today", "off: elbow protocol", "deload: scaled"; null while simply due. */
     val status: String?,
     val done: Boolean,
     val action: HabitAction,
@@ -130,16 +132,23 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             val time = advice.start?.let { ChallengeTexts.time(Week.localTime(it, input.zone)) }
             return TodayChallengeUi(
                 e.id, program, f.state.mode, if (done) "Done today: ${name(todaySlot)}" else "Today: ${name(todaySlot)}",
-                listOfNotNull(time, ChallengeTexts.mode(f.state.mode)).joinToString(" · "), if (done) null else todaySlot, false, null, habits,
+                time, if (done) null else todaySlot, false, null, habits,
             )
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
         val nextText = next?.let { "Next: ${name(it.slot)} ${ChallengeTexts.date(it.date)} ${ChallengeTexts.time(Week.localTime(it.interval.start, input.zone))}" }
             ?: "This week's challenge sessions are done."
         val now = TodayAdvisor.advise(def, c.params, input, plan, trainNow = true)
-        val blocked = if (advice.kind == "rest") advice.reasons.firstOrNull()?.substringAfter(": ")?.let { "Rest today: $it" } else null
+        // The planner's reason reads "rest day before <slot>"; shown with the session's name (D35: no codes).
+        val blocked = if (advice.kind == "rest") {
+            advice.reasons.firstOrNull()?.substringAfter(": ")?.substringAfter("rest day before ", "")?.takeIf { it.isNotEmpty() }
+                ?.let { "Rest today, before ${name(it)}" } ?: "Rest today"
+        } else {
+            null
+        }
+        val nowSlot = if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null
         return TodayChallengeUi(
-            e.id, program, f.state.mode, nextText, blocked, if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null, true, blocked, habits,
+            e.id, program, f.state.mode, nextText, blocked, nowSlot, true, blocked, habits, slotName = nowSlot?.let(::name)?.substringBefore(':'),
         )
     }
 
@@ -282,9 +291,9 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
         val slot = u.slot
         if (!sessionActive && slot != null) {
             if (u.trainNow) {
-                LinkButton(if (busy) "Starting…" else "Start session $slot now instead", { vm.start(slot, onOpenSession) }, enabled = !busy)
+                LinkButton(if (busy) "Starting…" else "Start ${u.slotName ?: "a session"} now instead", { vm.start(slot, onOpenSession) }, enabled = !busy)
             } else {
-                PrimaryButton(if (busy) "Starting…" else "Start session $slot", { vm.start(slot, onOpenSession) }, Modifier.fillMaxWidth(), enabled = !busy)
+                PrimaryButton(if (busy) "Starting…" else "Start session", { vm.start(slot, onOpenSession) }, Modifier.fillMaxWidth(), enabled = !busy)
             }
         }
     }
@@ -347,7 +356,7 @@ internal object HabitTexts {
         "OFF" -> r.reason?.let { reason ->
             when {
                 reason.startsWith("mode:") -> "off: " + ChallengeTexts.mode(reason.removePrefix("mode:")).lowercase()
-                reason.startsWith("status:") -> "off: " + reason.removePrefix("status:")
+                reason.startsWith("status:") -> "off: " + ChallengeTexts.status(reason.removePrefix("status:")).lowercase()
                 else -> "off"
             }
         }
@@ -359,7 +368,7 @@ internal object HabitTexts {
     private fun skipReason(r: dev.fitnessapp.algo.challenge.materialize.HabitToday, todaySlots: List<String>, vars: Map<String, dev.fitnessapp.algo.challenge.fitexpr.Value>): String {
         if (r.reason?.startsWith("error:") == true) return "could not check the rule"
         val src = r.skipIf.orEmpty()
-        Regex("todayHas\\('([A-Z0-9_]+)'\\)").findAll(src).map { it.groupValues[1] }.firstOrNull { it in todaySlots }?.let { return "$it day" }
+        Regex("todayHas\\('([A-Z0-9_]+)'\\)").findAll(src).map { it.groupValues[1] }.firstOrNull { it in todaySlots }?.let { return if (it == "TEST") "test day" else "session $it today" }
         Regex("s\\.([a-zA-Z0-9_]+)").findAll(src).map { it.groupValues[1] }
             .firstOrNull { (vars[it] as? dev.fitnessapp.algo.challenge.fitexpr.BoolV)?.b == true }
             ?.let { v -> return v.replace(Regex("([a-z])([A-Z])"), "$1 $2").lowercase() }

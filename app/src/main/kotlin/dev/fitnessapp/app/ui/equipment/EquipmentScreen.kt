@@ -30,6 +30,7 @@ import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileLabel
 import dev.fitnessapp.app.ui.theme.Fit
@@ -63,7 +64,7 @@ class EquipmentViewModel(private val c: AppContainer) : ViewModel() {
     }
 }
 
-/** UX 8.7 checklist content in Bento tiles (D31); the caller adds the Confirm / Later buttons. */
+/** UX 8.7 checklist content in Bento tiles (D31); the caller adds the Confirm / Later buttons. Everything with a default sits behind a [MoreSection] (D35). */
 @Composable
 fun EquipmentContent(state: Checklist, vm: EquipmentViewModel) {
     val labels = vm.types.associate { it.key to it.labelEn }
@@ -75,56 +76,57 @@ fun EquipmentContent(state: Checklist, vm: EquipmentViewModel) {
         }
 
         Tile(spacing = 0.dp) {
-            TileLabel("Stations (untick what's missing)", Modifier.padding(bottom = 4.dp))
-            state.stations.forEach { (key, on) ->
-                CheckRow(labels[key] ?: key, on) { v -> vm.edit { it.copy(stations = (it.stations + (key to v)).toSortedMap()) } }
+            TileLabel("Customize", Modifier.padding(bottom = 4.dp))
+            MoreSection("Stations") {
+                Column {
+                    Hint("Untick what your gym doesn't have.")
+                    state.stations.forEach { (key, on) ->
+                        CheckRow(labels[key] ?: key, on) { v -> vm.edit { it.copy(stations = (it.stations + (key to v)).toSortedMap()) } }
+                    }
+                }
             }
-        }
 
-        Tile(spacing = 6.dp) {
-            TileLabel("Plates")
-            NumberListField("Plate sizes (kg)", state.plates.sortedDescending()) { v -> vm.edit { it.copy(plates = v.sortedDescending()) } }
-            Hint("Add 1.25 if your gym has it. Plates are assumed unlimited.")
-            NumberField("Barbell (kg)", state.barKg) { v -> vm.edit { it.copy(barKg = v) } }
-        }
-
-        Tile(spacing = 6.dp) {
-            TileLabel("Dumbbells (per hand)")
-            NumberListField("Values (kg)", state.dumbbells) { v -> vm.edit { it.copy(dumbbells = v) } }
-        }
-
-        Tile(spacing = 8.dp) {
-            TileLabel("Machine stacks")
-            ChoiceChips(listOf("lb", "kg"), state.stackUnit, { it }) { u ->
-                vm.edit { if (it.stackUnit == u) it else it.copy(stackUnit = u, stackStep = Checklist.defaultStackStep(u)) }
+            MoreSection("Plates and barbell") {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    NumberListField("Plate sizes (kg)", state.plates.sortedDescending()) { v -> vm.edit { it.copy(plates = v.sortedDescending()) } }
+                    Hint("Add 1.25 if your gym has it.")
+                    NumberField("Barbell (kg)", state.barKg) { v -> vm.edit { it.copy(barKg = v) } }
+                }
             }
-            key(state.stackUnit) {
-                NumberField("Step (${state.stackUnit})", state.stackStep) { v -> if (v > 0) vm.edit { it.copy(stackStep = v) } }
-            }
-            val u = state.stackUnit
-            Hint(
-                (if (u == "lb") "${Numbers.num(state.stackStep)} lb ≈ ${Numbers.oneDecimal(state.stackStep * Checklist.LB_KG)} kg; the set card shows both. " else "") +
-                    "Leg press, hack squat, calf and hip-thrust machines go to ${Numbers.num(state.stackMaxNative(state.heavyStackMaxKg))} $u, " +
-                    "others to ${Numbers.num(state.stackMaxNative(state.stackMaxKg))} $u.",
-            )
-            Hint("Smith machine: plates only; the bar weight is asked later.")
-        }
 
-        Tile(spacing = 6.dp) {
-            TileLabel("Assisted pull-up machine")
-            NumberField("Highest pin (lb), empty = ask later", state.assistedMaxPinLb, allowEmpty = true) { v -> vm.edit { it.copy(assistedMaxPinLb = v.takeIf { x -> x > 0 }) } }
-            NumberField("Help at pin 0 (kg)", state.assistedOffsetKg) { v -> vm.edit { it.copy(assistedOffsetKg = v) } }
-            Hint("assist = pin × 0.4536 × ${Numbers.num(state.assistedRatio)} + ${Numbers.num(state.assistedOffsetKg)} kg; at pin 0 the machine still helps about ${Numbers.num(state.assistedOffsetKg)} kg.")
-        }
-
-        Tile(spacing = 0.dp) {
-            TileLabel("Your own", Modifier.padding(bottom = 4.dp))
-            CheckRow("Dip belt", state.ownDipBelt) { v -> vm.edit { it.copy(ownDipBelt = v) } }
-            if (state.ownDipBelt) {
-                NumberField("Belt maximum (kg)", state.beltMaxKg) { v -> vm.edit { it.copy(beltMaxKg = v) } }
-                NumberField("Items on the belt at most", state.beltMaxItems.toDouble()) { v -> vm.edit { it.copy(beltMaxItems = v.toInt().coerceIn(1, 8)) } }
+            MoreSection("Dumbbells") {
+                NumberListField("Dumbbells per hand (kg)", state.dumbbells) { v -> vm.edit { it.copy(dumbbells = v) } }
             }
-            CheckRow("Chalk", state.chalk) { v -> vm.edit { it.copy(chalk = v) } }
+
+            MoreSection("Machine stacks") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ChoiceChips(listOf("lb", "kg"), state.stackUnit, { it }) { u ->
+                        vm.edit { if (it.stackUnit == u) it else it.copy(stackUnit = u, stackStep = Checklist.defaultStackStep(u)) }
+                    }
+                    key(state.stackUnit) {
+                        NumberField("Step (${state.stackUnit})", state.stackStep) { v -> if (v > 0) vm.edit { it.copy(stackStep = v) } }
+                    }
+                    if (state.stackUnit == "lb") Hint("${Numbers.num(state.stackStep)} lb ≈ ${Numbers.oneDecimal(state.stackStep * Checklist.LB_KG)} kg; the set card shows both.")
+                }
+            }
+
+            MoreSection("Assisted pull-up machine") {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    NumberField("Highest pin (lb), optional", state.assistedMaxPinLb, allowEmpty = true) { v -> vm.edit { it.copy(assistedMaxPinLb = v.takeIf { x -> x > 0 }) } }
+                    NumberField("Help at pin 0 (kg)", state.assistedOffsetKg) { v -> vm.edit { it.copy(assistedOffsetKg = v) } }
+                }
+            }
+
+            MoreSection("Dip belt and chalk") {
+                Column {
+                    CheckRow("Own dip belt", state.ownDipBelt) { v -> vm.edit { it.copy(ownDipBelt = v) } }
+                    if (state.ownDipBelt) {
+                        NumberField("Belt maximum (kg)", state.beltMaxKg) { v -> vm.edit { it.copy(beltMaxKg = v) } }
+                        NumberField("Items on the belt at most", state.beltMaxItems.toDouble()) { v -> vm.edit { it.copy(beltMaxItems = v.toInt().coerceIn(1, 8)) } }
+                    }
+                    CheckRow("Own chalk", state.chalk) { v -> vm.edit { it.copy(chalk = v) } }
+                }
+            }
         }
     }
 }

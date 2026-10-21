@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.FgsType
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.theme.Fit
@@ -83,33 +84,34 @@ fun AlarmLatencyCard(c: AppContainer) {
                     Level.RED -> Triple(Icons.Rounded.Error, Fit.Safety, "Unreliable")
                 }
                 Icon(icon, contentDescription = label, tint = tint)
-                Text("Rest alarm latency", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                Text("Rest alarm timing", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
                 Pill(label, content = tint)
             }
             if (stats.n == 0) {
-                Text("No rest alarms yet. They are measured during sessions.", style = MaterialTheme.typography.bodyMedium)
+                Text("No rest alarms measured yet.", style = MaterialTheme.typography.bodyMedium)
             } else {
                 Text(
-                    "Last ${stats.n} alarms: median ${ms(stats.p50!!)}, 95 % within ${ms(stats.p95!!)}, slowest ${ms(stats.max!!)}.",
+                    "Last ${stats.n} alarms: usually ${ms(stats.p50!!)} late, slowest ${ms(stats.max!!)}.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             if (stats.recoveredDead > 0) {
                 Text(
-                    "${stats.recoveredDead} rest${if (stats.recoveredDead == 1) "" else "s"} in the last 14 days ended while the app was stopped. " +
-                        "Check the phone-maker settings above.",
+                    "${stats.recoveredDead} rest${if (stats.recoveredDead == 1) "" else "s"} ended while the app was stopped (last 14 days).",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             val fgs = FgsType.code(Build.VERSION.SDK_INT, c.device.activityRecognitionGranted())
-            Text(
-                "Session service type: " + when (fgs) {
-                    "health" -> "fitness (health)"
-                    "special_use" -> "special use (allow Physical activity for the fitness type)"
-                    else -> "standard"
-                },
-                style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-            )
+            MoreSection("Details") {
+                Text(
+                    "Background mode: " + when (fgs) {
+                        "health" -> "fitness"
+                        "special_use" -> "basic (allow Physical activity for fitness mode)"
+                        else -> "standard"
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+                )
+            }
         }
     }
 }

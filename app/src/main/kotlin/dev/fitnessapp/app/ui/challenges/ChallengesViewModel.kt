@@ -91,9 +91,9 @@ class ChallengesViewModel(private val c: AppContainer) : ViewModel() {
         val facts = c.challengeFacts.facts(f.def, s)
         val met = GateCriteria.criteria(f.def, c.params, s, facts)
         val lines = listOfNotNull(
-            "Phase ${s.phase} of ${f.def.doc.phases.size} · Block ${s.block.index} · Week ${s.block.week}",
-            s.plannedTest.date?.let { "Next test: ${ChallengeTexts.date(it)}" } ?: if (s.plannedTest.basis == "postponed") "Test postponed: waits for a clean session" else null,
-            "Gates ${met.count { it.met == true }} of ${met.size} met",
+            "Phase ${s.phase} of ${f.def.doc.phases.size} · block ${s.block.index}, week ${s.block.week}",
+            s.plannedTest.date?.let { "Next test: ${ChallengeTexts.date(it)}" } ?: if (s.plannedTest.basis == "postponed") "Test postponed" else null,
+            "${met.count { it.met == true }} of ${met.size} goals met",
         )
         return ChallengeCard(e.id, e.definition_id, ChallengeTexts.title(f.def), if (s.status == EnrollmentState.ACTIVE) ChallengeTexts.mode(s.mode) else ChallengeTexts.status(s.status), lines)
     }
@@ -103,8 +103,7 @@ class ChallengesViewModel(private val c: AppContainer) : ViewModel() {
         val minutes = d.templates.values.filter { it.slot in d.doc.schedule.slotsPerWeek["normal"].orEmpty() }.mapNotNull { it.bookedMin }.maxOrNull()
         return ChallengeCard(
             null, id, ChallengeTexts.title(d), null,
-            listOfNotNull(d.doc.summary["en"], "$slots sessions a week" + (minutes?.let { " · about $it min" } ?: "")),
-            d.doc.provenance.evidenceNote,
+            listOfNotNull(ChallengeTexts.tagline(d), "$slots sessions a week" + (minutes?.let { " · about $it min" } ?: "")),
         )
     }
 

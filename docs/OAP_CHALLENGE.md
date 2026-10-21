@@ -2,14 +2,16 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.0.0`, schema `fitapp.challenge/1`, still unpublished).
+`docs/challenges/oap.challenge.v1.json` (`oap@1.0.1`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+1.0.0 with shorter user-facing texts (D35), and the frozen 1.0.0 is `oap.challenge.v1.0.0.json`). The proposal
+rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
 This document is for you to read and approve. It describes your one-arm pull-up program ("Van
 twaalf naar één") exactly as the app will execute it once you switch over (D4), shows where every
 rule comes from, and lists every proposal the app makes on top of your program. Each proposal has a
-checkbox: you approve or decline each one individually (D8). Nothing tagged P runs until you approve
-it.
+switch. Setup turns on every proposal the definition recommends (D35, today all 27); you can switch
+any of them off in setup ("Customize") or later on the Proposals screen (D8).
 
 ---
 
@@ -433,8 +435,8 @@ them):
 
 ## 6. Proposals: your decisions (D8)
 
-There are 27 proposals. Each is approved or declined as a whole; there is no "accept all". Your
-decision is stored per proposal id, so one approval switches every rule, template or definition the
+There are 27 proposals, all recommended, so setup starts with all of them on (D35). Each is approved
+or declined as a whole. Your decision is stored per proposal id, so one approval switches every rule, template or definition the
 proposal lists (C48). An undecided proposal is inactive, so the program runs exactly as written for
 that part. You can change a decision later in the challenge's Proposals screen; it applies from then
 on. All proposals are expert opinion or engineering choices unless noted; none comes from research

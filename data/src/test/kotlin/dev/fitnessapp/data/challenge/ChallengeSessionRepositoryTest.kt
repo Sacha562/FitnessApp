@@ -105,7 +105,7 @@ class ChallengeSessionRepositoryTest {
     private suspend fun enroll(except: Map<String, String> = emptyMap()): String {
         gym()
         challenges.ensureBundled()
-        val defId = db.challengeDefinitions().all().single().id
+        val defId = db.challengeDefinitions().all().maxBy { it.version }.id
         val def = challenges.definition(defId)
         val onboard = TreeMap<String, Value>(
             mapOf(

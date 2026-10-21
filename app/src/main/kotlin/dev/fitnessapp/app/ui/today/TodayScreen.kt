@@ -115,20 +115,12 @@ fun TodayRoute(c: AppContainer, modifier: Modifier, onOpenSession: (id: String, 
             // The challenge's session of the day (UX 9, CHALLENGE_ENGINE 7.6); hidden without an enrollment.
             TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) })
 
-            val a = active
-            Tile(padding = androidx.compose.foundation.layout.PaddingValues(18.dp), spacing = 6.dp) {
-                if (a != null) {
+            // The open session's tile; without one, the Start button below says it all (D35).
+            active?.let { a ->
+                Tile(padding = androidx.compose.foundation.layout.PaddingValues(18.dp), spacing = 6.dp) {
                     val mins = a.started_at?.let { (System.currentTimeMillis() - it) / 60_000 } ?: 0
-                    Pill("In progress · started $mins min ago")
+                    Pill("Started $mins min ago")
                     Text("Session in progress", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 4.dp))
-                    Text("Pick up at the set you were on.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-                } else {
-                    Pill("Free session")
-                    Text("Train today", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 4.dp))
-                    Text(
-                        "Start a session and add exercises as you go. Each set starts from what you did last time.",
-                        style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
-                    )
                 }
             }
 
@@ -235,10 +227,10 @@ private fun WeekTile(recent: List<WorkoutSessionEntity>, today: LocalDate, modif
             Text(count.toString(), style = MaterialTheme.typography.headlineMedium)
             Text(if (count == 1) "session" else "sessions", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(bottom = 4.dp))
         }
-        Text(
-            finished.firstOrNull()?.let { "Last: " + LocalDate.parse(it.local_date).format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)) } ?: "No sessions yet",
-            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-        )
+        // The week strip above shows this week's days; the last session is named only when it was before this week.
+        finished.firstOrNull()?.let { LocalDate.parse(it.local_date) }?.takeIf { it.isBefore(monday) }?.let {
+            Text("Last: " + it.format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+        }
     }
 }
 
@@ -266,10 +258,10 @@ private fun StatusRow(c: AppContainer, pending: PendingStatus, dead: Int, sync: 
         dead > 0 -> "$dead changes could not be uploaded"
         sync is SyncState.NeedsSignIn -> "Sign in again to upload your data"
         sync is SyncState.NotAllowed -> "This account is not enabled for upload"
-        sync is SyncState.SchemaNotExposed -> "Server not configured (fitness schema not exposed)"
+        sync is SyncState.SchemaNotExposed -> "Can't reach the server; changes are kept on this phone."
         sync is SyncState.SchemaDrift -> "Server update needed"
-        sync is SyncState.ServerReadOnly -> "Server storage is full (read-only). Your data is safe on this phone."
-        sync is SyncState.Unreachable -> "Server unreachable, the project may be paused"
+        sync is SyncState.ServerReadOnly -> "Server is full; changes are kept on this phone."
+        sync is SyncState.Unreachable -> "Can't reach the server; changes are kept on this phone."
         else -> pendingLine(pending)
     }
     val line = problems.firstOrNull() ?: syncText ?: return

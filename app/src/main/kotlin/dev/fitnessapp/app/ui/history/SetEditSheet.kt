@@ -35,10 +35,12 @@ import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
 import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.StepperRow
 import dev.fitnessapp.app.ui.common.TonalButton
+import dev.fitnessapp.app.ui.live.flagLabel
 import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.uidet.SnapResult
 import dev.fitnessapp.app.uidet.UiPrefill
@@ -157,14 +159,15 @@ fun SetEditSheet(
                     ChoiceChips((0..5).toList(), rir, { if (it == 5) "5+" else it.toString() }) { rir = if (rir == it) null else it }
                 }
             }
-            SectionLabel("Reason (optional)")
-            val reasons = c.reasons.rows.filter { r -> r.active && r.uiContexts.any { it == "easier" || it == "harder" } }
-            ChoiceChips(reasons.map { it.code }, reason, { code -> reasons.first { it.code == code }.labelEn }) { reason = if (reason == it) null else it }
-            if (ex.flagsOffered.isNotEmpty()) {
-                SectionLabel("Flags")
+            // Reason and flags are optional (D35): collapsed unless the set already has one.
+            MoreSection("Why the change?", initiallyOpen = set?.deviation_reason_code != null) {
+                val reasons = c.reasons.rows.filter { r -> r.active && r.uiContexts.any { it == "easier" || it == "harder" } }
+                ChoiceChips(reasons.map { it.code }, reason, { code -> reasons.first { it.code == code }.labelEn }) { reason = if (reason == it) null else it }
+            }
+            if (ex.flagsOffered.isNotEmpty()) MoreSection("Flag something", initiallyOpen = !set?.flags.isNullOrEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ex.flagsOffered.forEach { f ->
-                        ChipButton(f.replace('_', ' '), selected = f in flags, onClick = { flags = if (f in flags) flags - f else flags + f }, role = Role.Checkbox)
+                        ChipButton(flagLabel(f), selected = f in flags, onClick = { flags = if (f in flags) flags - f else flags + f }, role = Role.Checkbox)
                     }
                 }
             }

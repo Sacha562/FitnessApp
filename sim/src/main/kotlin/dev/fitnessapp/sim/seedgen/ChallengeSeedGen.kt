@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.math.BigDecimal
 
 /**
- * Migration 016 (DATA_MODEL 13.2): publishes a validated challenge definition as a global row of
+ * Migrations 016 and 022 (DATA_MODEL 13.2): each publishes a validated challenge definition as a global row of
  * `fitness.challenge_definitions`. The definition text is too large for one MCP call, so the parts stage
  * ~30 KB chunks of the compact JSON in `fitness_private.challenge_definition_staging` and the last part
  * inserts the row, asserts both hashes and drops the staging table:
@@ -56,6 +56,8 @@ object ChallengeSeedGen {
                 "on conflict (part) do update set txt = excluded.txt;\n"
             parts += "${migration}_part$n" to sql
         }
+        // The migration number ("016" of fitness_016_...) prefixes its error messages.
+        val tag = migration.removePrefix("fitness_").substringBefore('_')
         val finalSql = header(migration, total, total, def, id) + """
             |insert into fitness.challenge_definitions
             |  (id, user_id, slug, version, status, schema_version, engine_range, title_en, title_nl, definition,
@@ -73,13 +75,13 @@ object ChallengeSeedGen {
             |begin
             |  select * into r from fitness.challenge_definitions where id = '$id';
             |  if r.id is null then
-            |    raise exception '016: ${def.slug}@${def.version} was not inserted (staging incomplete?)';
+            |    raise exception '${tag}: ${def.slug}@${def.version} was not inserted (staging incomplete?)';
             |  end if;
             |  if r.status <> 'published' or r.jcs_sha256 <> '${def.jcsSha256}' then
-            |    raise exception '016: unexpected status % or jcs_sha256 %', r.status, r.jcs_sha256;
+            |    raise exception '${tag}: unexpected status % or jcs_sha256 %', r.status, r.jcs_sha256;
             |  end if;
             |  if r.server_checksum <> '$checksum' then
-            |    raise exception '016: stored definition differs from the file (server_checksum %)', r.server_checksum;
+            |    raise exception '${tag}: stored definition differs from the file (server_checksum %)', r.server_checksum;
             |  end if;
             |end;
             |$$;

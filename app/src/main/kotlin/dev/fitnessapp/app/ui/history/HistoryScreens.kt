@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -64,11 +63,12 @@ import dev.fitnessapp.app.ui.common.RoundIconButton
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
-import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.showUndo
 import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.live.AddExerciseSheet
 import dev.fitnessapp.app.ui.live.PainSheet
+import dev.fitnessapp.app.ui.live.flagLabel
+import dev.fitnessapp.app.ui.live.painRegionLabel
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
@@ -111,7 +111,7 @@ fun HistoryRoute(c: AppContainer, onBack: () -> Unit, onOpen: (String) -> Unit) 
     FitScaffold("History", onBack) { pad ->
         val list = rows
         if (list != null && list.isEmpty()) {
-            Text("No sessions yet. Finished and abandoned sessions appear here.", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(pad).padding(20.dp))
+            Text("No sessions yet.",style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(pad).padding(20.dp))
         }
         LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val weeks = list.orEmpty().groupBy { it.session.iso_week }
@@ -167,8 +167,9 @@ private sealed interface DetailSheet {
 }
 
 /**
- * Quick check (UX 15.3): the same rows before and after the 24 h edit window; only the links and the "Editable until"
- * hint go away when it closes. Pain is add-only here (a report is retracted only by its 10 s Undo, C33).
+ * Quick check (UX 15.3), as its own tile: the answered rows before and after the 24 h edit window; only the links and
+ * the "Editable until" hint go away when it closes, and the tile with them when nothing was answered. Pain is add-only
+ * here (a report is retracted only by its 10 s Undo, C33).
  */
 @Composable
 internal fun QuickCheck(
@@ -189,17 +190,25 @@ internal fun QuickCheck(
         }
     }
     val editable = editableUntil != null && now < editableUntil
-    SectionLabel("Quick check")
-    CheckRow("Session effort: " + (srpe?.toString() ?: "not answered"), "Change".takeIf { editable }, onEffort)
-    val painLines = pains.map { "Pain: ${it.pain_body_region?.replace('_', ' ')} (${it.pain_severity})" }.ifEmpty { listOf("Pain: none") }
-    painLines.forEachIndexed { i, line -> CheckRow(line, "Add pain".takeIf { editable && i == painLines.lastIndex }, onPain) }
-    CheckRow("Note: " + (note ?: "none"), "Change".takeIf { editable }, onNote)
-    if (editable && editableUntil != null) {
-        val at = Instant.ofEpochMilli(editableUntil).atZone(ZONE)
-        Text(
-            "Editable until ${DAY.format(at)} ${TIME.format(at)}",
-            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-        )
+    // Empty answers are not shown (D35): an "Add" link while editable, nothing once the window closed.
+    if (!editable && srpe == null && pains.isEmpty() && note == null) return
+    Tile(spacing = 0.dp) {
+        SectionLabel("Quick check")
+        srpe?.let { CheckRow("Session effort: $it", "Change".takeIf { editable }, onEffort) }
+        pains.forEach { CheckRow("Pain: ${painRegionLabel(it.pain_body_region ?: "other")} (${it.pain_severity})", null, onPain) }
+        note?.let { CheckRow("Note: $it", "Change".takeIf { editable }, onNote) }
+        if (editable && editableUntil != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (srpe == null) LinkButton("Add effort", onEffort)
+                LinkButton("Add pain", onPain)
+                if (note == null) LinkButton("Add note", onNote)
+            }
+            val at = Instant.ofEpochMilli(editableUntil).atZone(ZONE)
+            Text(
+                "Editable until ${DAY.format(at)} ${TIME.format(at)}",
+                style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+            )
+        }
     }
 }
 
@@ -313,19 +322,16 @@ fun SessionDetailRoute(c: AppContainer, sessionId: String, onBack: () -> Unit, o
             exercises.filter { it.status != "removed" }.forEach { se ->
                 ExerciseBlock(c, se, live.filter { it.session_exercise_id == se.id }, onOpenExercise, onEdit = { sheet = DetailSheet.Edit(it) }, onAdd = { sheet = DetailSheet.Add(se.id) })
             }
-            TonalButton("Add a forgotten exercise", { sheet = DetailSheet.AddExercise }, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add, container = Fit.Tile)
-
-            Tile(spacing = 0.dp) {
-                QuickCheck(
-                    srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe,
-                    pains = wellness.filter { it.kind == "pain" },
-                    note = s.notes?.takeIf { it.isNotBlank() },
-                    editableUntil = (s.finished_at ?: s.started_at)?.let { it + QUICK_CHECK_EDIT_MS },
-                    onEffort = { sheet = DetailSheet.Effort },
-                    onPain = { sheet = DetailSheet.Pain },
-                    onNote = { sheet = DetailSheet.Note },
-                )
-            }
+            // A forgotten exercise is added from the session menu ("Add exercise"): one control (D35).
+            QuickCheck(
+                srpe = wellness.firstOrNull { it.kind == "srpe" }?.srpe,
+                pains = wellness.filter { it.kind == "pain" },
+                note = s.notes?.takeIf { it.isNotBlank() },
+                editableUntil = (s.finished_at ?: s.started_at)?.let { it + QUICK_CHECK_EDIT_MS },
+                onEffort = { sheet = DetailSheet.Effort },
+                onPain = { sheet = DetailSheet.Pain },
+                onNote = { sheet = DetailSheet.Note },
+            )
         }
     }
 
@@ -428,7 +434,7 @@ private fun SetRow(c: AppContainer, label: String, s: SetLogEntity, onClick: () 
                 SetLines.effort(s), planned,
                 s.deviation_reason_code?.let { reasonLabel(c, it) },
                 // A reason that implies its flag (torso rotation, technique breakdown) is shown once.
-                s.flags.filter { it != s.deviation_reason_code }.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.replace('_', ' ') },
+                s.flags.filter { it != s.deviation_reason_code }.takeIf { it.isNotEmpty() }?.joinToString(", ") { flagLabel(it) },
                 s.rest_before_s?.let { "rest " + Numbers.clock((it / 10)) },
             )
             if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)

@@ -73,15 +73,16 @@ class GateRowsGoldenTest {
             NonValidObservation("oa_hang_s", LocalDate.parse("2026-09-29"), SideV(Values.duration("15"), Values.duration("20")), "not a test day"),
         )
         val g = UiGateRows.build(def, params, state, facts, BigDecimal("70.7"), nonValid)
-        g.header shouldBe "Gate to phase 2 · 0 of 4 met"
+        g.header shouldBe "Goals for phase 2 · 0 of 4 met"
         val (e1rm, hang, neg, top) = g.rows
         e1rm.met shouldBe false
         e1rm.target shouldBe "Target ≥ +43.96 kg at 70.7 kg bodyweight"
-        e1rm.detail shouldBe "+32.5 kg (k 30, class prior) · test 30 Aug · x1.10 rule +35.7 kg · 80 % range +30.9 kg to +33.8 kg"
+        e1rm.detail shouldBe "Tested 30 Aug"
+        e1rm.more shouldBe "×1.10 estimate +35.7 kg · 80 % range +30.9 kg to +33.8 kg · 19 Sep: ×1.10 estimate +42.8 kg"
         e1rm.sides.single().fraction shouldBe 0.7386
-        e1rm.muted shouldBe "Latest, not valid for gates (19 Sep, 3RM only): +39.4 kg (x1.10 +42.8 kg)"
-        hang.sides.map { it.text to it.fraction } shouldBe listOf("L no valid value" to 0.0, "R no valid value" to 0.0)
-        hang.muted shouldBe "Latest, not valid for gates (29 Sep, not a test day): L 15 s · R 20 s"
+        e1rm.muted shouldBe "Newer result, not counted (19 Sep, 3RM only): +39.4 kg"
+        hang.sides.map { it.text to it.fraction } shouldBe listOf("L no result yet" to 0.0, "R no result yet" to 0.0)
+        hang.muted shouldBe "Newer result, not counted (29 Sep, not a test day): L 15 s · R 20 s"
         neg.sides.map { it.text } shouldBe listOf("L not tested", "R not tested")
         top.sides.map { it.text to it.fraction } shouldBe listOf("L 0.5 s of 8 s" to 0.0625, "R 1 s of 8 s" to 0.125)
     }

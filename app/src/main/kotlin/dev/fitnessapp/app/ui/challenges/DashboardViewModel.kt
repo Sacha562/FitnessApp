@@ -44,7 +44,7 @@ import java.time.temporal.ChronoUnit
 
 data class WeekSlotUi(val slot: String, val text: String, val done: Boolean)
 data class RuleUi(val id: String, val stage: String, val tag: String, val text: String, val status: String, val via: String?, val fired: Int, val lastFired: String?, val source: String)
-data class ProposalUi(val id: String, val title: String, val rationale: String, val ifDeclined: String, val switches: String?, val decision: String?)
+data class ProposalUi(val id: String, val title: String, val rationale: String, val ifDeclined: String, val decision: String?)
 data class HistoryUi(val header: String, val lines: List<Pair<String, Boolean>>)
 data class TestUi(val date: String, val lines: List<String>, val valid: String)
 
@@ -113,11 +113,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         val blockWeeks = (def.blockWeeks.evaluate(env.roots(), env.host) as? QV)?.v?.toInt()
         val needsClean = (s.vars["needsCleanSession"] as? dev.fitnessapp.algo.challenge.fitexpr.BoolV)?.b == true
         val nextTest = when {
-            s.plannedTest.date != null -> "Next test: ${ChallengeTexts.date(s.plannedTest.date)}" + when (s.plannedTest.basis) {
-                "blockRelative" -> " · block-relative"
-                "fixedList" -> " · fixed table"
-                else -> ""
-            }
+            s.plannedTest.date != null -> "Next test: ${ChallengeTexts.date(s.plannedTest.date)}"
             s.plannedTest.basis == "postponed" -> "Test postponed"
             else -> null
         }
@@ -128,19 +124,13 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             mode = s.mode,
             phase = s.phase,
             phases = def.doc.phases.map { it.name["en"] ?: "Phase ${it.id}" },
-            blockLine = "Block ${s.block.index} · week ${s.block.week}" + (blockWeeks?.let { " of $it" } ?: "") + " · " + ChallengeTexts.mode(s.mode).lowercase(),
+            blockLine = "Block ${s.block.index} · week ${s.block.week}" + (blockWeeks?.let { " of $it" } ?: ""),
             nextTest = nextTest,
-            precondition = if (needsClean && (s.plannedTest.date != null || s.plannedTest.basis == "postponed")) "Needs a clean session first" else null,
+            precondition = if (needsClean && (s.plannedTest.date != null || s.plannedTest.basis == "postponed")) "First one normal session without pain" else null,
             week = week(f, facts),
             gates = UiGateRows.build(def, c.params, s, facts, facts.bwKg, emptyList()),
             rules = rules(def, s, rules),
-            proposals = def.doc.proposals.map { p ->
-                ProposalUi(
-                    p.id, p.title["en"] ?: p.id, p.rationale["en"] ?: "", p.ifDeclined["en"] ?: "",
-                    listOf(p.supersedes.joinToString(", "), (p.affects.rules + p.affects.inSessionRules).joinToString(", ")).filter { it.isNotEmpty() }.joinToString(" -> ").ifEmpty { null },
-                    s.proposalDecisions[p.id]?.decision,
-                )
-            },
+            proposals = def.doc.proposals.map { p -> proposalUi(p, s.proposalDecisions[p.id]?.decision) },
             history = history(def, rules, events),
             tests = tests(s),
             undecided = def.doc.proposals.count { it.id !in s.proposalDecisions },
@@ -167,46 +157,56 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             val status = when {
                 r.tag == "P" -> when (s.proposalDecisions[r.proposal]?.decision) {
                     "approved" -> "Active"
-                    "declined" -> "Not approved: your program's rule applies"
+                    "declined" -> "Off: your program's rule applies"
                     else -> "Waiting for your decision"
                 }
-                r.supersededBy != null && s.approved(r.supersededBy!!) -> "Replaced by ${r.supersededBy}"
+                r.supersededBy != null && s.approved(r.supersededBy!!) -> "Replaced by a recommended change"
                 else -> "Active"
             }
             val fired = applied[r.id].orEmpty()
             RuleUi(
                 r.id, r.stage, if (r.uses.isNotEmpty() && r.tag == "A") "A+P" else r.tag, r.explain["en"] ?: r.id, status,
-                proposal?.let { "via $it" }, fired.size, null, r.condition,
+                proposal?.let { proposalTitle(def, it) }, fired.size, null, r.condition,
             )
         }
         val inSession = def.doc.inSessionRules.map { r ->
             val status = if (r.tag == "P") when (s.proposalDecisions[r.proposal]?.decision) {
                 "approved" -> "Active"
-                "declined" -> "Not approved"
+                "declined" -> "Off"
                 else -> "Waiting for your decision"
             } else "Active"
-            RuleUi(r.id, "in_session", r.tag, r.then.joinToString("; ") { it.keys.first() } + " during " + (r.slots.ifEmpty { listOf("any session") }).joinToString(", "), status, r.proposal?.let { "via $it" }, 0, null, r.condition)
+            RuleUi(r.id, "in_session", r.tag, inSessionText(def, r), status, r.proposal?.let { proposalTitle(def, it) }, 0, null, r.condition)
         }
         return out + inSession
+    }
+
+    /** The part of the program a rule belongs to, by the proposal's title (D35: no ids). */
+    private fun proposalTitle(def: CompiledDefinition, id: String): String? = def.doc.proposals.firstOrNull { it.id == id }?.title?.get("en")
+
+    /** An in-session rule as its message reads ("Hand slipped: end the set here."), with the sessions it runs in. */
+    private fun inSessionText(def: CompiledDefinition, r: dev.fitnessapp.algo.challenge.cds.InSessionRuleSpec): String {
+        val msg = r.then.firstNotNullOfOrNull { it["msg"]?.jsonPrimitive?.contentOrNull }?.let { def.doc.messages[it]?.get("en") }
+        val text = msg ?: if (r.then.any { "capTarget" in it }) "The next set's target is capped at the reps you did." else "Adjusts the remaining sets."
+        return if (r.slots.isEmpty()) text else text + " (session ${r.slots.joinToString(", ")})"
     }
 
     private fun history(def: CompiledDefinition, audit: List<ChallengeRuleEventEntity>, events: List<ChallengeEventEntity>): List<HistoryUi> {
         val byEvent = audit.groupBy { it.challenge_event_id }
         return events.mapNotNull { e ->
             val rows = byEvent[e.id].orEmpty().sortedWith(compareBy({ it.cascade_depth }, { -it.prio }, { it.rule_id }))
-            val label = eventLabel(e)
+            val label = eventLabel(def, e)
             if (label == null && rows.isEmpty()) return@mapNotNull null
             val lines = rows.mapNotNull { r ->
                 val changes = changes(r.applied)
                 when (r.outcome) {
                     "applied" -> (ChallengeTexts.ruleExplain(def, r.rule_id) + if (changes.isNotEmpty()) " ($changes)" else "") to false
                     "no_effect" -> null
-                    "error" -> "${r.rule_id}: could not be evaluated (${r.eval_error ?: "error"})" to true
-                    else -> "${ChallengeTexts.ruleExplain(def, r.rule_id)}: not applied (${r.suppressed_by ?: r.outcome.replace('_', ' ')})" to true
+                    "error" -> "${ChallengeTexts.ruleExplain(def, r.rule_id)}: could not be checked" to true
+                    else -> "${ChallengeTexts.ruleExplain(def, r.rule_id)}: not applied, ${ChallengeTexts.outcome(r.outcome)}" to true
                 }
             }
             if (label == null && lines.isEmpty()) return@mapNotNull null
-            HistoryUi("${ChallengeTexts.date(LocalDate.parse(e.local_date))} · ${label ?: e.event_type}", lines)
+            HistoryUi("${ChallengeTexts.date(LocalDate.parse(e.local_date))} · ${label ?: ChallengeTexts.eventType(e.event_type)}", lines)
         }
     }
 
@@ -219,18 +219,26 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         }
     }.getOrDefault("")
 
-    private fun eventLabel(e: ChallengeEventEntity): String? {
+    private fun eventLabel(def: CompiledDefinition, e: ChallengeEventEntity): String? {
         val p = runCatching { Json.parseToJsonElement(e.payload).jsonObject }.getOrNull()
         return when (e.event_type) {
             EventTypes.CREATED -> "Challenge started"
-            EventTypes.APPROVAL -> "${p?.get("proposal_id")?.jsonPrimitive?.contentOrNull} ${p?.get("decision")?.jsonPrimitive?.contentOrNull}"
+            EventTypes.APPROVAL -> {
+                val id = p?.get("proposal_id")?.jsonPrimitive?.contentOrNull
+                val title = id?.let { proposalTitle(def, it) } ?: "Recommended change"
+                when (p?.get("decision")?.jsonPrimitive?.contentOrNull) {
+                    "approved" -> "On: $title"
+                    "declined" -> "Off: $title"
+                    else -> "Changed: $title"
+                }
+            }
             EventTypes.SESSION_COMPLETED -> "Session ${p?.get("slot")?.jsonPrimitive?.contentOrNull ?: ""}"
             EventTypes.SESSION_AMENDED -> "Session edited"
             EventTypes.TEST_COMPLETED -> "Test day"
             EventTypes.TEST_DUE -> null
             EventTypes.PAIN -> if (p?.get("retracted")?.jsonPrimitive?.contentOrNull == "true") "Pain report withdrawn" else "Pain reported"
             EventTypes.READINESS -> null
-            EventTypes.WEEK_CLOSED -> "Week ${p?.get("iso_week")?.jsonPrimitive?.contentOrNull ?: ""} closed"
+            EventTypes.WEEK_CLOSED -> "Week ${p?.get("iso_week")?.jsonPrimitive?.contentOrNull?.substringAfter('W')?.trimStart('0') ?: ""} closed"
             EventTypes.PAUSE -> "Paused"
             EventTypes.RESUME -> "Resumed after ${p?.get("gap_days")?.jsonPrimitive?.contentOrNull ?: "?"} days"
             EventTypes.ABANDON -> "Abandoned"
@@ -245,9 +253,9 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         val t = s.lastValidTest ?: return emptyList()
         val lines = t.metrics.entries.filter { !it.key.endsWith("_lo") && !it.key.endsWith("_hi") }.map { (k, v) ->
             val note = if (k in t.notComparable) " (not comparable)" else ""
-            "$k: ${ChallengeTexts.value(v, k)}$note"
+            "${ChallengeTexts.metricLabel(k)}: ${ChallengeTexts.value(v, k)}$note"
         }
-        return listOf(TestUi(ChallengeTexts.date(t.date), lines, "Valid for gates"))
+        return listOf(TestUi(ChallengeTexts.date(t.date), lines, "Counts for the goals"))
     }
 
     /** CHALLENGE_ENGINE 4.9: state vars that hold loads, pins, holds and switches, the block week and the planned test date. */

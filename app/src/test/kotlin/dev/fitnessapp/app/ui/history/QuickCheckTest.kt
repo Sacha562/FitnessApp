@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.ZonedDateTime
 
-/** UX 15.3 quick check: the same rows before and after the 24 h window; only the links and the hint disappear. */
+/** UX 15.3 quick check: the answered rows before and after the 24 h window; empty ones show only an Add link; the links and the hint disappear. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
@@ -54,10 +54,11 @@ class QuickCheckTest {
     fun editableShowsLinksAndHint() {
         show(ZonedDateTime.parse("2099-10-12T11:10:00+02:00[Europe/Amsterdam]").toInstant().toEpochMilli(), "editable")
         compose.onNodeWithText("Session effort: 9").assertIsDisplayed()
-        compose.onNodeWithText("Pain: elbow lateral (moderate)").assertIsDisplayed()
-        compose.onNodeWithText("Note: none").assertIsDisplayed()
-        compose.onAllNodesWithText("Change").assertCountEquals(2)
+        compose.onNodeWithText("Pain: Elbow, outer side (moderate)").assertIsDisplayed()
+        compose.onAllNodesWithText("Note", substring = true).assertCountEquals(0)
+        compose.onAllNodesWithText("Change").assertCountEquals(1)
         compose.onNodeWithText("Add pain").assertIsDisplayed()
+        compose.onNodeWithText("Add note").assertIsDisplayed()
         compose.onNodeWithText("Editable until Mon 12 Oct 11:10").assertIsDisplayed()
     }
 
@@ -65,8 +66,8 @@ class QuickCheckTest {
     fun lockedKeepsTheRowsWithoutLinks() {
         show(ZonedDateTime.parse("2026-10-10T11:10:00+02:00[Europe/Amsterdam]").toInstant().toEpochMilli(), "locked")
         compose.onNodeWithText("Session effort: 9").assertIsDisplayed()
-        compose.onNodeWithText("Pain: elbow lateral (moderate)").assertIsDisplayed()
-        compose.onNodeWithText("Note: none").assertIsDisplayed()
+        compose.onNodeWithText("Pain: Elbow, outer side (moderate)").assertIsDisplayed()
+        compose.onAllNodesWithText("Note", substring = true).assertCountEquals(0)
         compose.onAllNodesWithText("Change").assertCountEquals(0)
         compose.onAllNodesWithText("Add pain").assertCountEquals(0)
         compose.onAllNodesWithText("Editable until", substring = true).assertCountEquals(0)

@@ -31,18 +31,19 @@ class ChallengeScreensTest {
     val compose = createComposeRule()
 
     private val gates = GateRows(
-        "Gate to phase 2 · 0 of 4 met", 0, 4,
+        "Goals for phase 2 · 0 of 4 met", 0, 4,
         listOf(
             GateRow(
                 0, "Weighted 1RM ≥ 0.65 x BW - 2 kg (gate e1RM, personal curve)", false, "Target ≥ +43.96 kg at 70.7 kg bodyweight",
                 listOf(GateSide("none", "+32.5 kg of +43.96 kg", 0.7386)),
-                "+32.5 kg (k 30, class prior) · test 30 Aug · x1.10 rule +35.7 kg · 80 % range +30.9 kg to +33.8 kg",
-                "Latest, not valid for gates (19 Sep, 3RM only): +39.4 kg (x1.10 +42.8 kg)",
+                "Tested 30 Aug",
+                "Newer result, not counted (19 Sep, 3RM only): +39.4 kg",
+                "×1.10 estimate +35.7 kg · 80 % range +30.9 kg to +33.8 kg · 19 Sep: ×1.10 estimate +42.8 kg",
             ),
             GateRow(
                 1, "One-arm dead hang ≥ 20 s, both arms, fresh, neutral handle", false, "Target ≥ 20 s",
-                listOf(GateSide("L", "L no valid value", 0.0), GateSide("R", "R no valid value", 0.0)), null,
-                "Latest, not valid for gates (29 Sep, not a test day): L 15 s · R 20 s",
+                listOf(GateSide("L", "L no result yet", 0.0), GateSide("R", "R no result yet", 0.0)), null,
+                "Newer result, not counted (29 Sep, not a test day): L 15 s · R 20 s",
             ),
             GateRow(2, "5 s one-arm negative without help, both arms", null, null, listOf(GateSide("L", "L not tested", 0.0), GateSide("R", "R not tested", 0.0)), null, null),
             GateRow(3, "One-arm top hold ≥ 8 s, both arms", false, "Target ≥ 8 s", listOf(GateSide("L", "L 0.5 s of 8 s", 0.0625), GateSide("R", "R 1 s of 8 s", 0.125)), null, null),
@@ -52,8 +53,8 @@ class ChallengeScreensTest {
     private val ui = DashboardUi(
         title = "One-arm pull-up", status = "active", statusText = "Test pending", mode = "test_pending", phase = 1,
         phases = listOf("Heavy pulling and learning to hang", "Removing assistance", "Attempts"),
-        blockLine = "Block 1 · week 5 of 5 · test pending", nextTest = "Next test: Sun 11 Oct · block-relative",
-        precondition = "Needs a clean session first",
+        blockLine = "Block 1 · week 5 of 5", nextTest = "Next test: Sun 11 Oct",
+        precondition = "First one normal session without pain",
         week = listOf(WeekSlotUi("C", "C done Tue", true), WeekSlotUi("A", "A Thu 19:45", false), WeekSlotUi("TEST", "TEST Sun 11:00", false)),
         gates = gates, rules = emptyList(), proposals = emptyList(), history = emptyList(), tests = emptyList(), undecided = 0,
         pausedSince = null, targets = emptyList(),
@@ -82,7 +83,7 @@ class ChallengeScreensTest {
                                 "P01", "Gate the weekly session-A pin decrease",
                                 "An unconditional -5 lb per week is about +4.9 % one-arm load per week; gating it on completed sets and adding +5 lb after two failed weeks mirrors the program's own 90-degree-hold logic.",
                                 "The pin drops 5 lb (10 lb after a controlled calibration negative) after every session A in a normal week, as written.",
-                                "prog.A.pin.weekly -> prog.A.pin.gated", "approved",
+                                "approved",
                             ),
                             onDecide = { _, _ -> }, onViewed = {},
                         )

@@ -66,10 +66,7 @@ fun SignInScreen(busy: Boolean, error: String?, onSignIn: (String, String) -> Un
                 isError = error != null,
                 supportingText = error?.let { { Text(it, color = Fit.Safety) } },
             )
-            Text(
-                "You need internet for the first sign-in. After that the app works offline.",
-                style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
-            )
+            Text("First sign-in needs internet; after that it works offline.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             if (busy) {
                 Box(Modifier.fillMaxWidth().height(58.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp) }
             } else {

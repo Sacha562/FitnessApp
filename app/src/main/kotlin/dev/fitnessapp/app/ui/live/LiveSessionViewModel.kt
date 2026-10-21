@@ -703,6 +703,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                         "assistPin" -> "pin"
                         "added" -> "load"
                         "hold_s" -> "hold"
+                        "targetReps" -> "reps"
                         else -> a.field ?: ""
                     }
                     RuleLine(seId, a, "Rule: $field ${a.from ?: "–"} → ${a.to ?: "–"}" + (text(a.msg, a.msgParams)?.let { " · $it" } ?: ""), System.currentTimeMillis())

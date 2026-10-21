@@ -1,13 +1,13 @@
 {
     "persona": "all_success",
     "proposals": "approved",
-    "definition": "oap@1.0.0",
-    "definition_jcs_sha256": "e454a4791d4ae86eead64e0ab0b4de97111b16cc72c1cb7e3d1d611dc783397c",
+    "definition": "oap@1.0.1",
+    "definition_jcs_sha256": "8f1b6522d4d0d0c1698db97dc4828d84a4df5401bf96c25e8a77229acf44a600",
     "engine_version": "1.0.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 480,
     "audit_rows": 416,
-    "final_state_hash": "59935ce778de127fecf5a65d1ac119f40aa52da5750faf0abff6afb97a5674e0",
+    "final_state_hash": "147a3afc801c100f5aee399eef63d27bc7ce997d77447f90f33343f1c231ed5b",
     "violations": [],
     "weeks": [
         {

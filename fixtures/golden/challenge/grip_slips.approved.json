@@ -1,13 +1,13 @@
 {
     "persona": "grip_slips",
     "proposals": "approved",
-    "definition": "oap@1.0.0",
-    "definition_jcs_sha256": "e454a4791d4ae86eead64e0ab0b4de97111b16cc72c1cb7e3d1d611dc783397c",
+    "definition": "oap@1.0.1",
+    "definition_jcs_sha256": "8f1b6522d4d0d0c1698db97dc4828d84a4df5401bf96c25e8a77229acf44a600",
     "engine_version": "1.0.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 480,
     "audit_rows": 438,
-    "final_state_hash": "8a1fcb8c1f8104f81e244b2d9c19484eea01226fe5494cad6de0ea33183da267",
+    "final_state_hash": "1b75f17549af815cd5af590d6f1cb04cd2b77373f1613a0fb631c7496d3b3225",
     "violations": [],
     "weeks": [
         {

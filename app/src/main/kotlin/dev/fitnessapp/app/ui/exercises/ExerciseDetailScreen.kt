@@ -40,7 +40,7 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
 import dev.fitnessapp.app.ui.common.FitScaffold
-import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Segmented
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
@@ -60,8 +60,8 @@ import kotlinx.serialization.json.JsonPrimitive
 fun preferenceHelp(p: String): String = when (p) {
     "favorite" -> "Picked first whenever it fits the session."
     "like" -> "Preferred over similar exercises."
-    "dislike" -> "Avoided. Still used if it is the only good way to train a muscle you want to train."
-    "never" -> "Never suggested. You can still add it yourself. If this leaves a muscle without options, you'll see a warning."
+    "dislike" -> "Avoided unless it's the only good option."
+    "never" -> "Never suggested; you can still add it yourself."
     else -> "No preference."
 }
 
@@ -78,7 +78,6 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
     val history by remember(exerciseId) { c.sessionRepository.observeExerciseHistory(exerciseId, 200) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var tapped by remember { mutableStateOf<String?>(null) }
-    var showRegions by remember { mutableStateOf(false) }
 
     LaunchedEffect(exerciseId) {
         c.sessionRepository.event(
@@ -91,6 +90,8 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
     val groups = catalog.taxonomy.activeGroups.map { it to catalog.groupCoeff(ex, it.id) }.filter { it.second > 0.0 }
         .sortedWith(compareByDescending<Pair<dev.fitnessapp.algo.selection.catalog.MuscleGroup, Double>> { it.second }.thenBy { it.first.sort })
     val coeffs = groups.associate { it.first.id to it.second }
+    val stationLabels = remember { c.equipment.types.associate { it.key to it.labelEn } }
+    fun station(code: String) = stationLabels[code] ?: code.replace('_', ' ')
 
     FitScaffold(ex.nameEn, onBack) { pad ->
         Column(
@@ -98,7 +99,7 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                listOfNotNull(ex.nameNl?.takeIf { dutch && it != ex.nameEn }, equipmentLine(ex), CatalogQuery.patternLabel(ex.pattern)).joinToString(" · "),
+                listOfNotNull(ex.nameNl?.takeIf { dutch && it != ex.nameEn }, ex.equipment.joinToString(", ", transform = ::station), CatalogQuery.patternLabel(ex.pattern)).joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(horizontal = 4.dp),
             )
             Tile(spacing = 6.dp) {
@@ -106,18 +107,24 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
                 MuscleMap(coeffs, Modifier.padding(vertical = 8.dp).heightIn(max = 320.dp)) { tapped = it }
                 tapped?.let { g ->
                     val label = catalog.taxonomy.activeGroups.firstOrNull { it.id == g }?.labelEn ?: g
-                    val regions = catalog.taxonomy.regionsOf(g).map { it.labelEn + " " + Numbers.num(ex.stimulus[it.id] ?: 0.0) }
-                    Text("$label: " + regions.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Fit.Ink)
+                    val regions = catalog.taxonomy.regionsOf(g).filter { (ex.stimulus[it.id] ?: 0.0) > 0.0 }.map { it.labelEn }
+                    Text(if (regions.isEmpty()) label else "$label: " + regions.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = Fit.Ink)
                 }
-                groups.forEach { (g, coef) -> CoefficientRow(g.labelEn, coef) }
-                if (groups.isEmpty()) Text("No muscle coefficients (skill or conditioning item).", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-                LinkButton(if (showRegions) "Hide regions" else "Show regions", { showRegions = !showRegions })
-                if (showRegions) {
-                    catalog.taxonomy.activeRegions.filter { (ex.stimulus[it.id] ?: 0.0) > 0.0 }.forEach { r ->
-                        Text(r.labelEn + " · " + Numbers.num(ex.stimulus.getValue(r.id)), style = MaterialTheme.typography.bodySmall)
+                // The group names are the map's accessible equivalent; bars, numbers and regions sit behind "Muscle details" (D35).
+                if (groups.isEmpty()) {
+                    Text("No muscle map for this exercise.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                } else {
+                    Text(groups.joinToString(", ") { it.first.labelEn }, style = MaterialTheme.typography.bodyMedium)
+                    MoreSection("Muscle details") {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            groups.forEach { (g, coef) -> CoefficientRow(g.labelEn, coef) }
+                            catalog.taxonomy.activeRegions.filter { (ex.stimulus[it.id] ?: 0.0) > 0.0 }.forEach { r ->
+                                Text(r.labelEn + " · " + Numbers.num(ex.stimulus.getValue(r.id)), style = MaterialTheme.typography.bodySmall)
+                            }
+                            ex.evidenceNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+                            Text("Expert estimates.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                        }
                     }
-                    ex.evidenceNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
-                    Text("Coefficients are expert estimates (catalog ${c.catalog.version}).", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
             }
 
@@ -151,7 +158,7 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
 
             Tile(spacing = 4.dp) {
                 TileLabel("Loading")
-                Text(loadingLine(ex), style = MaterialTheme.typography.bodyMedium)
+                Text(loadingLine(ex, ::station), style = MaterialTheme.typography.bodyMedium)
                 TileLabel("Rest", Modifier.padding(top = 8.dp))
                 val rest = remember(ex.restClass) { RestPolicy.decide(RestInput(RestClass.of(ex.restClass)), c.params.fork()).timerS.toLong() }
                 Text("About ${Numbers.clock(rest)} (${restClassLabel(ex.restClass)})", style = MaterialTheme.typography.bodyMedium)
@@ -185,9 +192,7 @@ private fun shortPref(p: String) = when (p) {
     else -> prefLabel(p)
 }
 
-private fun equipmentLine(e: CatalogExercise): String = e.equipment.joinToString(", ") { it.replace('_', ' ') }
-
-private fun loadingLine(e: CatalogExercise): String {
+private fun loadingLine(e: CatalogExercise, station: (String) -> String): String {
     val mode = LoadMode.of(e.loadMode)
     val base = when (mode) {
         LoadMode.BODYWEIGHT -> "Bodyweight, counts ${Numbers.num(e.bwFraction * 100, 0)} % of bodyweight"
@@ -199,7 +204,7 @@ private fun loadingLine(e: CatalogExercise): String {
     val extra = buildList {
         if ("bodyweight_plus_external" in e.allowedLoadModes && mode != LoadMode.BODYWEIGHT_PLUS_EXTERNAL) add("can be loaded with the dip belt")
         if ("assisted_machine" in e.allowedLoadModes && mode != LoadMode.ASSISTED_MACHINE) add("can be assisted")
-        if (e.requiresStation.isNotEmpty()) add("needs " + e.requiresStation.joinToString(", ") { it.replace('_', ' ') })
+        if (e.requiresStation.isNotEmpty()) add("needs " + e.requiresStation.joinToString(", ", transform = station))
     }
     return (listOf(base) + extra).joinToString("; ")
 }
@@ -208,7 +213,7 @@ private fun restClassLabel(c: String) = when (c) {
     "strength_heavy" -> "heavy strength"
     "compound_lower" -> "lower compound"
     "compound_upper" -> "upper compound"
-    else -> c
+    else -> c.replace('_', ' ')
 }
 
 private fun flagText(f: String) = when (f) {

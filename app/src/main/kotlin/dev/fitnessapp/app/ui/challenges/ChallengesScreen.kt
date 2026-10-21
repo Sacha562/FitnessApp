@@ -45,11 +45,7 @@ fun ChallengesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Uni
         ui.absence?.let { (_, last) ->
             Tile {
                 Text("Were you away?", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Your last challenge session was ${ChallengeTexts.date(last)}. Mark the time since then as a pause, so the program " +
-                        "resumes the way a pause does? Otherwise every empty week counts as a missed week (same loads, no advance).",
-                    style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
-                )
+                Text("No challenge session since ${ChallengeTexts.date(last)}. Count it as a pause?", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PrimaryButton("Yes, I was away", vm::acceptAbsence, Modifier.weight(1f), height = 48.dp)
                     TonalButton("No", vm::declineAbsence, Modifier.weight(1f), height = 48.dp)
@@ -61,7 +57,7 @@ fun ChallengesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Uni
             return@Column
         }
         if (ui.active.isEmpty() && ui.past.isEmpty()) {
-            Text("No challenge running. Challenges are programs with goals, like the one-arm pull-up.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            Text("No challenge running.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
         }
         if (ui.active.isNotEmpty()) {
             SectionLabel("Active")

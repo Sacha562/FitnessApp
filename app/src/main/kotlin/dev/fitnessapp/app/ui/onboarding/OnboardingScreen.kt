@@ -34,10 +34,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.fitnessapp.app.AppContainer
-import dev.fitnessapp.app.ui.common.Banner
-import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.ProgressBar
 import dev.fitnessapp.app.ui.common.Tile
@@ -80,7 +79,7 @@ fun OnboardingScreen(c: AppContainer, onDone: () -> Unit) {
                     },
                 ) {
                     Text("Make the rest timer reliable", style = MaterialTheme.typography.headlineMedium)
-                    Text("Your phone is among the most aggressive at stopping apps in the background. Each step is optional, but the timer is only as reliable as these settings.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                    Text("Optional, but the timer is only as reliable as these settings.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                     ReliabilityContent(c)
                 }
                 Step.EQUIPMENT -> {
@@ -108,8 +107,7 @@ fun OnboardingScreen(c: AppContainer, onDone: () -> Unit) {
                 }) {
                     Text("You're set.", style = MaterialTheme.typography.headlineLarge)
                     Tile(spacing = 8.dp) {
-                        Text("Today is where you start a session. Add exercises as you go; the app remembers what you did last time and fills it in.", style = MaterialTheme.typography.bodyLarge)
-                        Text("Weights are in kilograms. Machines marked in pounds (like the assisted pull-up machine) are shown in pounds with kilograms next to them.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                        Text("Start a session on Today; the app fills in what you did last time.", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -138,20 +136,18 @@ private fun Scrolling(
     }
 }
 
-/** UX 8.4: three short paragraphs and the disclaimer checkbox. */
+/** UX 8.4, shortened by D35: one line and the disclaimer checkbox (the checkbox carries the disclaimer once). */
 @Composable
 private fun AboutStep(onContinue: () -> Unit) {
     var checked by rememberSaveable { mutableStateOf(false) }
     Scrolling(primary = "Continue", onPrimary = onContinue, enabled = checked) {
         Text("About this app", style = MaterialTheme.typography.headlineLarge)
         Tile(spacing = 10.dp) {
-            Text("The app plans your week, picks exercises and suggests weights from what you log. Every recommendation can be explained (tap Why) and overridden.", style = MaterialTheme.typography.bodyLarge)
-            Text("It is offline-first: everything is saved on this phone and uploaded when you have internet.", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted)
+            Text("Plans your week and suggests weights from what you log. Tap Why on any suggestion; you can always change it.", style = MaterialTheme.typography.bodyLarge)
         }
-        Banner("This app does not give medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY)
         Row(Modifier.fillMaxWidth().clickable { checked = !checked }, verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = checked, onCheckedChange = { checked = it })
-            Text("I understand this is not medical advice.", style = MaterialTheme.typography.bodyLarge)
+            Text("I understand this app does not give medical advice. If something hurts, I stop.", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
@@ -180,15 +176,19 @@ private fun ProfileStep(c: AppContainer, onContinue: () -> Unit) {
         FitTextField(
             value = bw, onValueChange = { bw = it }, label = "Bodyweight (kg)", singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
-            supportingText = { Text("Needed for pull-ups, dips and assisted machines (system load).") },
+            supportingText = { Text("Used for pull-ups, dips and assisted machines.") },
         )
         Text("Training experience", style = MaterialTheme.typography.titleMedium)
         ChoiceChips(experience.map { it.first }, age, { code -> experience.first { it.first == code }.second }) { age = it }
-        FitTextField(
-            value = birthYear, onValueChange = { birthYear = it.filter(Char::isDigit).take(4) }, label = "Birth year (optional)", singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
-            supportingText = { Text("Only used to adjust maintenance volume if you are 60 or older.") },
-        )
-        FitTextField(value = name, onValueChange = { name = it.take(60) }, label = "Display name (optional)", singleLine = true, modifier = Modifier.fillMaxWidth())
+        MoreSection("Birth year and name (optional)") {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FitTextField(
+                    value = birthYear, onValueChange = { birthYear = it.filter(Char::isDigit).take(4) }, label = "Birth year", singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
+                    supportingText = { Text("Only used if you are 60 or older.") },
+                )
+                FitTextField(value = name, onValueChange = { name = it.take(60) }, label = "Display name", singleLine = true, modifier = Modifier.fillMaxWidth())
+            }
+        }
     }
 }

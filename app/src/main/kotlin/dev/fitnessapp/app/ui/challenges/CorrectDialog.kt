@@ -56,11 +56,11 @@ fun CorrectDialog(targets: List<CorrectTarget>, onSave: (String, Value, String) 
                         if (i > 0) TileDivider()
                         Column(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { picked = x; value = x.current; dateText = (x.current as? DateV)?.d?.toString() ?: "" }.padding(vertical = 6.dp)) {
                             Text(x.label, style = MaterialTheme.typography.bodyMedium)
-                            Text(ChallengeTexts.value(x.current), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                            Text(shown(x.current), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                         }
                     }
                 } else {
-                    Text("Now: ${ChallengeTexts.value(t.current)}", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    Text("Now: ${shown(t.current)}", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                     when {
                         t.type is Type.Q && t.step != null -> {
                             val q = (value as? QV) ?: QV((t.type as Type.Q).dim, BigDecimal.ZERO)
@@ -70,7 +70,7 @@ fun CorrectDialog(targets: List<CorrectTarget>, onSave: (String, Value, String) 
                                 onPlus = { value = QV(q.dim, Dec.norm(q.v.add(t.step))) },
                             )
                         }
-                        t.type is Type.EnumT -> ChoiceChips(t.values, (value as? StrV)?.s, { it }) { value = StrV(it) }
+                        t.type is Type.EnumT -> ChoiceChips(t.values, (value as? StrV)?.s, ChallengeTexts::enumValue) { value = StrV(it) }
                         t.type == Type.BoolT -> ChoiceChips(listOf(true, false), (value as? BoolV)?.b, { if (it) "Yes" else "No" }) { value = BoolV.of(it) }
                         t.type == Type.DateT -> FitTextField(
                             dateText, { dateText = it; value = runCatching { DateV(LocalDate.parse(it.trim())) }.getOrNull() },
@@ -92,6 +92,9 @@ fun CorrectDialog(targets: List<CorrectTarget>, onSave: (String, Value, String) 
         dismissButton = { TextButton(onClick = { if (picked != null) picked = null else onDismiss() }) { Text(if (picked != null) "Back" else "Cancel") } },
     )
 }
+
+/** A current value as the dialog shows it: enum values by their readable name (D35). */
+private fun shown(v: Value?): String = (v as? StrV)?.let { ChallengeTexts.enumValue(it.s) } ?: ChallengeTexts.value(v)
 
 /** Reason chips of a correction and their DATA_MODEL 9.1.3 codes (context `correction`, D34). */
 private val OVERRIDE_REASONS = listOf("Loaded a different weight" to "loaded_different", "The value was wrong" to "value_wrong", "Too hard" to "too_hard", "Too easy" to "too_easy")

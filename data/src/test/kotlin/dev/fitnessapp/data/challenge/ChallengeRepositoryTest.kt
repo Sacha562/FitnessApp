@@ -96,7 +96,7 @@ class ChallengeRepositoryTest {
 
     private suspend fun start(): FoldedEnrollment {
         repo.ensureBundled()
-        val defId = db.challengeDefinitions().all().single().id
+        val defId = db.challengeDefinitions().all().maxBy { it.version }.id
         val def = repo.definition(defId)
         return repo.create(
             defId, sortedMapOf(), onboard,
@@ -112,7 +112,7 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().single().source shouldBe "bundled"
+        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
         f.state.proposalDecisions.size shouldBe 27

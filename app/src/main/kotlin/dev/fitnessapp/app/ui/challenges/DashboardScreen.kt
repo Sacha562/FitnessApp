@@ -37,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -48,6 +47,7 @@ import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitScaffold
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.ProgressBar
@@ -78,7 +78,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
 
     if (proposals) {
         BackHandler { proposals = false }
-        ProposalsScreen(ui, onBack = { proposals = false }, onDecide = vm::decide, onViewed = { id -> c.appScope.launch { c.fgsEvent("challenge_proposal_viewed", mapOf("proposal_id" to id)) } })
+        ProposalsScreen(ui?.proposals.orEmpty(), onBack = { proposals = false }, onDecide = vm::decide, onViewed = { id -> c.appScope.launch { c.fgsEvent("challenge_proposal_viewed", mapOf("proposal_id" to id)) } })
         return
     }
 
@@ -109,7 +109,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
                 Text("Loading…", color = Fit.Muted)
                 return@Column
             }
-            if (u.undecided > 0) Banner("${u.undecided} proposals waiting for your decision", BannerKind.ADVISORY, action = "Review", onAction = { proposals = true })
+            if (u.undecided > 0) Banner("${u.undecided} new rule changes are off until you decide", BannerKind.ADVISORY, action = "Review", onAction = { proposals = true })
             u.pausedSince?.let { Banner("Paused since ${ChallengeTexts.date(it)}", BannerKind.ADVISORY, action = "Resume", onAction = { sheet = "resume" }) }
             Segmented(DashTab.entries, tab, { it.label }, { tab = it })
             when (tab) {
@@ -129,14 +129,14 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
         "resume" -> AlertDialog(
             onDismissRequest = { sheet = null },
             title = { Text("Resume?") },
-            text = { Text("The definition's resume rules decide what happens after the pause (repeat the week, or restart the block after a long pause).") },
+            text = { Text("After a longer break the week may repeat or the block restart.") },
             confirmButton = { TextButton({ vm.resume(); sheet = null }) { Text("Resume") } },
             dismissButton = { TextButton({ sheet = null }) { Text("Cancel") } },
         )
         "abandon" -> AlertDialog(
             onDismissRequest = { sheet = null },
             title = { Text("Abandon ${ui?.title}?") },
-            text = { Text("Your history is kept. Future calendar events the app created will be removed. You can restart later from your last block's loads.") },
+            text = { Text("Your history is kept; the app's future calendar events are removed.") },
             confirmButton = { TextButton({ vm.abandon(); sheet = null }) { Text("Abandon", color = Fit.Safety) } },
             dismissButton = { TextButton({ sheet = null }) { Text("Cancel") } },
         )
@@ -160,7 +160,7 @@ private fun HabitRemindersTile(c: AppContainer) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(end = 12.dp)) {
                 Text("Habit reminders", style = MaterialTheme.typography.titleMedium)
-                Text("A notification at each home habit's time, with Start, Snooze and Skip today.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                Text("A notification at each habit's time.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
             }
             androidx.compose.material3.Switch(checked = on, onCheckedChange = { v ->
                 val from = on
@@ -180,10 +180,7 @@ private fun HabitRemindersTile(c: AppContainer) {
 @Composable
 internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}) {
     Tile {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill(u.statusText, container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
-            Text("Phase ${u.phase} of ${u.phases.size}", style = MaterialTheme.typography.labelLarge, color = Fit.Muted)
-        }
+        Pill(u.statusText, container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
         PhaseStepper(u.phases, u.phase)
         Text(u.blockLine, style = MaterialTheme.typography.bodyLarge)
         u.nextTest?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
@@ -204,11 +201,7 @@ internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}) {
             GateRowView(r)
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        TonalButton("Log test day", {}, Modifier.weight(1f), enabled = false)
-        TonalButton("Report pain", onPain, Modifier.weight(1f))
-    }
-    Text("The test-day wizard arrives with step 4 of M2b.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+    TonalButton("Report pain", onPain, Modifier.fillMaxWidth())
 }
 
 @Composable
@@ -241,13 +234,14 @@ private fun GateRowView(r: GateRow) {
         }
         r.detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
         r.muted?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted.copy(alpha = 0.7f)) }
+        r.more?.let { MoreSection("Other estimates") { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) } }
     }
 }
 
 @Composable
 private fun Rules(u: DashboardUi) {
     var open by remember { mutableStateOf<String?>(null) }
-    val stages = listOf("safety" to "Safety", "data" to "Data", "structural" to "Structure", "progression" to "Progression", "in_session" to "In-session")
+    val stages = listOf("safety" to "Safety", "data" to "Data", "structural" to "Structure", "progression" to "Progression", "in_session" to "During a session")
     for ((stage, label) in stages) {
         val rows = u.rules.filter { it.stage == stage }
         if (rows.isEmpty()) continue
@@ -255,14 +249,19 @@ private fun Rules(u: DashboardUi) {
         Tile(spacing = 6.dp) {
             rows.forEachIndexed { i, r ->
                 if (i > 0) TileDivider()
+                // D35: the explanation only; where the rule comes from and how often it ran open on tap.
                 Column(Modifier.fillMaxWidth().clickable { open = if (open == r.id) null else r.id }.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Pill(r.tag)
-                        Text(r.id, style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace), color = Fit.Muted, modifier = Modifier.weight(1f))
-                    }
                     Text(r.text, style = MaterialTheme.typography.bodyMedium)
-                    Text(listOfNotNull(r.status, r.via, if (r.fired > 0) "applied ${r.fired}×" else null).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = if (r.status.startsWith("Waiting")) Fit.Advisory else Fit.Muted)
-                    if (open == r.id) Text(r.source, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace), color = Fit.Muted)
+                    if (r.status != "Active") Text(r.status, style = MaterialTheme.typography.bodySmall, color = if (r.status.startsWith("Waiting")) Fit.Advisory else Fit.Muted)
+                    if (open == r.id) {
+                        val origin = when (r.tag) {
+                            "P" -> "A recommended change"
+                            "A+P" -> "Your program's rule, with a recommended change"
+                            else -> "Your program's rule"
+                        }
+                        val used = if (r.fired > 0) "used ${r.fired} ${if (r.fired == 1) "time" else "times"}" else "not used yet"
+                        Text(listOfNotNull(origin, r.via, used).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    }
                 }
             }
         }
@@ -282,7 +281,7 @@ private fun History(u: DashboardUi) {
 
 @Composable
 private fun Tests(u: DashboardUi) {
-    if (u.tests.isEmpty()) Text("No valid test yet.", color = Fit.Muted)
+    if (u.tests.isEmpty()) Text("No test yet.", color = Fit.Muted)
     u.tests.forEach { t ->
         Tile(spacing = 4.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -294,45 +293,39 @@ private fun Tests(u: DashboardUi) {
     }
 }
 
-/** UX 14.4: every proposal decided on its own, no "approve all"; a decision can change any time (D8). */
+/** UX 14.4 (D35): one switch per proposal; the details open on tap. A decision can change any time (D8). */
 @Composable
-fun ProposalsScreen(ui: DashboardUi?, onBack: () -> Unit, onDecide: (String, String) -> Unit, onViewed: (String) -> Unit) {
+fun ProposalsScreen(proposals: List<ProposalUi>, onBack: () -> Unit, onDecide: (String, String) -> Unit, onViewed: (String) -> Unit) {
     FitScaffold("Proposals", onBack) { pad ->
         Column(
             Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                "A rule from your program runs as written unless you approve the proposal that replaces it. An undecided proposal is inactive.",
-                style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
-            )
-            ui?.proposals?.forEach { p -> ProposalTile(p, onDecide, onViewed) }
+            Text("Recommended changes to your program. Switch one off to run that part as written.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            proposals.forEach { p -> ProposalTile(p, onDecide, onViewed) }
         }
     }
 }
 
 @Composable
 fun ProposalTile(p: ProposalUi, onDecide: (String, String) -> Unit, onViewed: (String) -> Unit) {
-    LaunchedEffect(p.id) { onViewed(p.id) }
+    var open by remember { mutableStateOf(false) }
     Tile(spacing = 6.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill("${p.id} · P")
-            p.decision?.let { Pill(if (it == "approved") "Approved" else "Declined", container = if (it == "approved") Fit.Accent else Fit.Raised, content = if (it == "approved") Fit.OnAccent else Fit.Ink) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f).clickable { open = !open; if (open) onViewed(p.id) }) {
+                Text(p.title, style = MaterialTheme.typography.titleSmall)
+                if (p.decision == null) Text("Not decided yet: off", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
+            }
+            androidx.compose.material3.Switch(checked = p.decision == "approved", onCheckedChange = { on -> onDecide(p.id, if (on) "approved" else "declined") })
         }
-        Text(p.title, style = MaterialTheme.typography.titleMedium)
-        Text(p.rationale, style = MaterialTheme.typography.bodyMedium)
-        Text("If you decline: ${p.ifDeclined}", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-        p.switches?.let { Text("Switches: $it", style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace), color = Fit.Muted) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (p.decision == "approved") TonalButton("Approved", {}, Modifier.weight(1f), height = 44.dp, container = Fit.Accent, content = Fit.OnAccent)
-            else TonalButton("Approve", { onDecide(p.id, "approved") }, Modifier.weight(1f), height = 44.dp)
-            if (p.decision == "declined") TonalButton("Declined", {}, Modifier.weight(1f), height = 44.dp, container = Fit.Accent, content = Fit.OnAccent)
-            else TonalButton("Decline", { onDecide(p.id, "declined") }, Modifier.weight(1f), height = 44.dp)
+        if (open) {
+            Text(p.rationale, style = MaterialTheme.typography.bodySmall)
+            Text("If off: ${p.ifDeclined}", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
         }
     }
 }
 
-/** UX 14.7 pause sheet: reason chips and the resume preview of CHALLENGE_ENGINE 10.5. */
+/** UX 14.7 pause sheet: reason chips; the resume preview of CHALLENGE_ENGINE 10.5 behind "More" (D35). */
 @Composable
 private fun PauseDialog(vm: DashboardViewModel, onDone: () -> Unit) {
     val scope = rememberCoroutineScope()
@@ -345,8 +338,10 @@ private fun PauseDialog(vm: DashboardViewModel, onDone: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ChoiceChips(PAUSE_REASONS, PAUSE_REASONS.firstOrNull { it.first == reason }, { it.first }) { reason = it.first }
-                preview.forEach { (days, notes) ->
-                    Text("Back after $days ${if (days == 1L) "day" else "days"}: " + notes.ifEmpty { listOf("nothing changes.") }.joinToString(" "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                if (preview.isNotEmpty()) MoreSection("When you come back") {
+                    preview.forEach { (days, notes) ->
+                        Text("After $days ${if (days == 1L) "day" else "days"}: " + notes.ifEmpty { listOf("nothing changes.") }.joinToString(" "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    }
                 }
             }
         },

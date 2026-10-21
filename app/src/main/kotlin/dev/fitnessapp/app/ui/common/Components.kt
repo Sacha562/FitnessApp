@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -22,9 +24,14 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -115,5 +122,24 @@ private fun StepButton(label: String?, fallback: String, icon: androidx.compose.
 fun <T> ChoiceChips(options: List<T>, selected: T?, label: (T) -> String, modifier: Modifier = Modifier, onSelect: (T) -> Unit) {
     FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { o -> ChipButton(label(o), selected = o == selected, onClick = { onSelect(o) }) }
+    }
+}
+
+/**
+ * A collapsed section for everything a user who keeps the defaults never needs (D35): a 48 dp row with the
+ * [title] and a chevron; [content] shows only while it is open.
+ */
+@Composable
+fun MoreSection(title: String, modifier: Modifier = Modifier, initiallyOpen: Boolean = false, content: @Composable () -> Unit) {
+    var open by rememberSaveable(title) { mutableStateOf(initiallyOpen) }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { open = !open },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, style = MaterialTheme.typography.labelLarge, color = Fit.Accent, modifier = Modifier.weight(1f))
+            Icon(if (open) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (open) "Hide" else "Show", tint = Fit.Accent)
+        }
+        if (open) content()
     }
 }

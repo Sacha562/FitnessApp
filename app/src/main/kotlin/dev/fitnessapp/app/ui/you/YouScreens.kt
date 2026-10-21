@@ -48,6 +48,7 @@ import dev.fitnessapp.app.ui.AppViewModel
 import dev.fitnessapp.app.ui.auth.mask
 import dev.fitnessapp.app.ui.common.DockedBar
 import dev.fitnessapp.app.ui.common.FitScaffold
+import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
@@ -113,7 +114,7 @@ fun YouRoute(
                 else -> "Everything uploaded"
             }, onDataSync)
             TileDivider(Modifier.padding(horizontal = 10.dp))
-            NavRow("Equipment", "Your gym, plates, dumbbells, machines, dip belt", onEquipment)
+            NavRow("Equipment", "Your gym and what it has", onEquipment)
             TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Rest timer reliability", "Permissions, phone settings, alarm test", onReliability)
             TileDivider(Modifier.padding(horizontal = 10.dp))
@@ -127,9 +128,10 @@ fun YouRoute(
             })
         }
         Tile(spacing = 4.dp) {
-            TileLabel("About")
-            Text("App ${BuildConfig.VERSION_NAME} · engine ${EngineVersion.ENGINE_VERSION} · catalog ${c.catalog.version}", style = MaterialTheme.typography.bodySmall)
-            Text("This app does not give medical advice. If something hurts, stop and get it checked.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            Text("This app does not give medical advice.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            MoreSection("About") {
+                Text("App ${BuildConfig.VERSION_NAME} · engine ${EngineVersion.ENGINE_VERSION} · catalog ${c.catalog.version}", style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
     if (weighIn) WeighInDialog(onDismiss = { weighIn = false }) { kg ->
@@ -139,7 +141,7 @@ fun YouRoute(
     if (signOutBlocked) AlertDialog(
         onDismissRequest = { signOutBlocked = false },
         title = { Text("Not uploaded yet") },
-        text = { Text("Some changes are not on the server yet. Signing out now would lose them. Sync first (You > Data and sync).") },
+        text = { Text("Some changes aren't uploaded yet and would be lost. Sync first.") },
         confirmButton = { TextButton(onClick = { signOutBlocked = false; c.sync.syncNow() }) { Text("Sync now") } },
         dismissButton = { TextButton(onClick = { signOutBlocked = false }) { Text("Cancel") } },
     )
@@ -188,9 +190,9 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
                     val built = c.exports.build(exportKind)
                     requireNotNull(context.contentResolver.openOutputStream(uri, "wt")) { "no output stream" }.use { it.write(built.bytes) }
                     c.exports.record(built, "device_storage")
-                    "Exported ${built.rows} rows (${(built.bytes.size + 1023) / 1024} KB)."
+                    "Export saved (${(built.bytes.size + 1023) / 1024} KB)."
                 }
-            }.getOrElse { "Export failed (${it::class.simpleName}). Nothing was recorded; try again." }
+            }.getOrElse { "Export failed. Nothing was saved; try again." }
             exporting = false
         }
     }
@@ -213,7 +215,6 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
                 (pendingLine(pending) ?: "All changes uploaded") + if (dead > 0) " · $dead could not be uploaded" else "",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Text("Everything is saved on this phone first and uploaded when there is a connection.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
             PrimaryButton("Sync now", {
                 scope.launch {
                     c.fgsEvent("sync_now_tapped", mapOf("outbox_depth" to outbox.first))
@@ -224,11 +225,7 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
         }
         Tile(spacing = 8.dp) {
             TileLabel("Backup")
-            Text(
-                "Your data are on this phone and uploaded to your server when you are online. The monthly export is your " +
-                    "offline copy. After a reinstall, signing in restores everything that was uploaded.",
-                style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-            )
+            Text("The export is your offline copy; signing in after a reinstall restores the rest.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
             val last = lastExport?.period_end
             Text(
                 if (last == null) "No export yet" else lastExportLine(last, System.currentTimeMillis()),
@@ -251,21 +248,24 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
             Text("Storage on this phone: " + phoneStorage(context), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
         }
         Tile(spacing = 8.dp) {
-            TileLabel("Recovery")
-            Text("If the server lost data (for example after a restore), upload every row on this phone again. Rows the server already has are left as they are.", style = MaterialTheme.typography.bodyMedium)
-            TonalButton("Re-push all data", { confirmRepush = true }, Modifier.fillMaxWidth())
+            MoreSection("Recovery") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Only if the server lost data: upload everything on this phone again.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    TonalButton("Upload everything again", { confirmRepush = true }, Modifier.fillMaxWidth())
+                }
+            }
             message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
     }
     if (confirmRepush) AlertDialog(
         onDismissRequest = { confirmRepush = false },
-        title = { Text("Re-push all data?") },
-        text = { Text("Every local row is queued for upload again, in order. This is safe: the server keeps the newest version of each row.") },
+        title = { Text("Upload everything again?") },
+        text = { Text("Safe to do: the server keeps the newest version of everything.") },
         confirmButton = {
             TextButton(onClick = {
                 confirmRepush = false
-                scope.launch { message = "${c.sync.rePushAll()} rows queued." }
-            }) { Text("Re-push") }
+                scope.launch { message = "${c.sync.rePushAll()} changes queued for upload." }
+            }) { Text("Upload") }
         },
         dismissButton = { TextButton(onClick = { confirmRepush = false }) { Text("Cancel") } },
     )
@@ -293,16 +293,16 @@ internal fun lastExportLine(lastMs: Long, nowMs: Long): String {
 }
 
 private fun describe(s: SyncState): String = when (s) {
-    SyncState.Idle -> "Not synced yet in this run"
+    SyncState.Idle -> "Not synced yet"
     SyncState.Running -> "Syncing…"
     is SyncState.Synced -> "Synced at " + DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochMilli(s.atMs).atZone(ZoneId.of("Europe/Amsterdam")))
     SyncState.Offline -> "Offline, will retry"
-    is SyncState.Unreachable -> "Server unreachable, the Supabase project may be paused"
+    is SyncState.Unreachable -> "Can't reach the server; changes are kept on this phone."
     SyncState.NeedsSignIn -> "Sign in again to upload"
-    SyncState.NotAllowed -> "This account is not enabled for the fitness app"
-    SyncState.SchemaNotExposed -> "Server not configured: the fitness schema is not exposed"
-    is SyncState.SchemaDrift -> "Server update needed (${s.table})"
-    SyncState.ServerReadOnly -> "Server storage is full (read-only). Your data is safe on this phone."
+    SyncState.NotAllowed -> "This account can't use this app yet"
+    SyncState.SchemaNotExposed -> "Server needs an update."
+    is SyncState.SchemaDrift -> "Server needs an update."
+    SyncState.ServerReadOnly -> "Server storage is full; your data is safe on this phone."
 }
 
 @Composable

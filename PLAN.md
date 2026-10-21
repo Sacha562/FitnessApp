@@ -317,7 +317,7 @@ general engine, progression/safety rules, in-session rules and onboarding steps.
   ±5 lb, the −10 lb bonus after a controlled calibration negative, session C's +5 lb when below 4
   reps, straight-arm hold 6 → 8 s, plank 20 → 30 s → plate, test order). Where one of your rules raises
   the load faster than the app's generic safety cap, your rule still runs and the app shows a warning.
-- **Proposals need your approval** (tag `P`, D8). The most important ones:
+- **Proposals** (tag `P`, D8) start at the recommendation and can be switched off one by one (D35). The most important ones:
   - session A's assisted pin drops 5 lb **only when all 5×3/arm were completed** (+5 lb after two
     failed weeks) instead of every week regardless — the unconditional version means roughly +4.9 %
     one-arm load per week, faster than strength can adapt, and the elbow pays;

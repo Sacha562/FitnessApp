@@ -44,10 +44,12 @@ import java.util.UUID
 /** The wizard's saved progress (UX 14.8: each step saves; the wizard can be left and resumed). Values are decimal text. */
 @Serializable
 data class SetupDraft(
+    /** [SetupViewModel.LAYOUT] of the wizard that saved it; a draft of the old ten-step wizard (0) is dropped. */
+    val layout: Int = 0,
     val step: Int = 0,
     val params: Map<String, String> = emptyMap(),
-    /** `import`, `known` or `baseline` (UX 14.8 step 4). */
-    val start: String = "import",
+    /** `baseline`, `known` or `import` ("Enter my numbers" with "I'm mid-program", UX 14.8 step 2). */
+    val start: String = "baseline",
     val onboard: Map<String, String> = emptyMap(),
     val phase: Int = 1,
     val blockIndex: Int = 1,
@@ -56,12 +58,21 @@ data class SetupDraft(
     val weekOrdinal: Int = 1,
     val plannedTestDate: String? = null,
     val vars: Map<String, String> = emptyMap(),
+    /** Proposal decisions changed under Customize; the others follow the definition's recommendation (D35). */
     val decisions: Map<String, String> = emptyMap(),
-    val cutover: Boolean = false,
 )
 
-/** One onboarding value: the `onboard.<name>` key, its label and its inferred dimension. */
-data class OnboardField(val key: String, val label: String, val dim: Dim, val side: String?)
+/** One onboarding value: the `onboard.<name>` key, its label, its inferred dimension and whether a state var's init reads it. */
+data class OnboardField(val key: String, val label: String, val dim: Dim, val side: String?, val required: Boolean)
+
+/** One exercise row of a reviewed session: its name and "5×3 · pin 40 lb". */
+data class ReviewExercise(val name: String, val detail: String)
+
+/** One planned session of the setup review: "Session A", its theme, "Fri 23 Oct · 19:45" and its exercises. */
+data class ReviewSession(val name: String, val theme: String?, val whenText: String, val exercises: List<ReviewExercise>)
+
+/** One week of the setup review (UX 14.8 step 3): its sessions and the planner's notes. */
+data class ReviewWeek(val title: String, val sessions: List<ReviewSession>, val notes: List<String> = emptyList())
 
 data class SetupUi(
     val def: CompiledDefinition? = null,
@@ -69,7 +80,7 @@ data class SetupUi(
     val fields: List<OnboardField> = emptyList(),
     /** Init values computed from the onboarding values, shown and editable in import mode. */
     val computed: Map<String, Value> = emptyMap(),
-    val review: List<String> = emptyList(),
+    val review: List<ReviewWeek> = emptyList(),
     val busy: Boolean = false,
     val error: String? = null,
 )
@@ -91,24 +102,36 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         viewModelScope.launch {
             val def = withContext(Dispatchers.Default) { c.challenges.definition(definitionId) }
             val saved = prefs.getString(definitionId, null)?.let { runCatching { json.decodeFromString(SetupDraft.serializer(), it) }.getOrNull() }
-            val draft = saved ?: defaults(def)
+            val draft = saved?.takeIf { it.layout == LAYOUT } ?: defaults(def)
             _ui.value = SetupUi(def, draft, fields(def))
             refreshComputed()
+            // A draft resumed on the last step needs its review; go() computes it only when the step changes.
+            if (draft.step == STEPS.lastIndex) refreshReview()
         }
     }
 
     private fun defaults(def: CompiledDefinition): SetupDraft {
         val params = def.doc.params.filter { (k, p) -> p.userEditable && !k.startsWith("approved_") && p.type == "enum" }
             .mapValues { (_, p) -> (p.default as? kotlinx.serialization.json.JsonPrimitive)?.content ?: "" }
-        return SetupDraft(params = params)
+        return SetupDraft(layout = LAYOUT, params = params)
     }
+
+    /** Every proposal's decision: the one changed under Customize, else the definition's recommendation (D35). */
+    fun decisions(def: CompiledDefinition, d: SetupDraft): Map<String, String> =
+        def.doc.proposals.associate { p -> p.id to (d.decisions[p.id] ?: if (p.recommended == "approve") "approved" else "declined") }
+
+    /** Step 2 can be left: a test week needs nothing, entered numbers need every required field. */
+    fun startComplete(ui: SetupUi): Boolean =
+        ui.draft.start == "baseline" || ui.fields.filter { it.required }.all { ui.draft.onboard[it.key]?.toBigDecimalOrNull() != null }
 
     /**
      * The onboarding fields of the definition's `baseline` step. Their dimension is the state var's of the same name,
      * else read from the name (`bw`, `*Added`, `*Load` mass; `*Reps` count; `*Pin*` machine pin; holds seconds).
+     * A field is required when a state var's `init` reads it.
      */
     private fun fields(def: CompiledDefinition): List<OnboardField> {
         val step = def.doc.onboarding.steps.firstOrNull { it.id == "baseline" } ?: return emptyList()
+        val inits = def.doc.state.vars.map { it.init }
         return step.fields.filter { it.startsWith("onboard.") }.map { f ->
             val path = f.removePrefix("onboard.")
             val name = path.substringBefore('.')
@@ -119,12 +142,13 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
                 name.contains("Pin") -> Dim.PIN
                 else -> Dim.DURATION
             }
-            OnboardField(path, label(name) + (side?.let { " ($it)" } ?: ""), dim, side)
+            val read = Regex("""\bonboard\.$name\b""")
+            OnboardField(path, label(name) + (side?.let { " ($it)" } ?: ""), dim, side, inits.any { read.containsMatchIn(it) })
         }
     }
 
     private fun label(name: String) = mapOf(
-        "bw" to "Bodyweight (kg)", "wpu3rmAdded" to "Weighted 3RM, added kg", "bwMaxReps" to "Max strict pull-ups", "anchorLoad" to "Session C weighted load (anchor, kg)",
+        "bw" to "Bodyweight (kg)", "wpu3rmAdded" to "Weighted 3RM, added kg", "bwMaxReps" to "Max strict pull-ups", "anchorLoad" to "Session C weighted load (kg)",
         "pinA" to "Assisted pin, session A (lb)", "pinC" to "Assisted pin, session C (lb)", "pinHold90" to "Assisted pin, 90-degree hold (lb)",
         "leastAssistPin" to "Least assistance pin (lb)", "hang" to "One-arm hang (s)", "topHold" to "One-arm top hold (s)",
     )[name] ?: name
@@ -142,8 +166,8 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         update { it.copy(step = step) }
         viewModelScope.launch {
             c.fgsEvent("challenge_setup_step", mapOf("step" to from + 1, "step_key" to STEPS[from], "duration_ms" to ms, "action" to if (step > from) "next" else "back"))
-            if (step == 3) refreshComputed()
-            if (step == 8) refreshReview()
+            if (step == 1) refreshComputed()
+            if (step == 2) refreshReview()
         }
     }
 
@@ -198,8 +222,9 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
             UUID(0, 1), EventTypes.CREATED, now, LocalDate.now(zone),
             EventPayload.Created(UUID(0, 2), params(def, d), onboard(def, d), importOf(def, d), def.version, def.jcsSha256), facts,
         )
+        val all = decisions(def, d)
         val decisions = def.doc.proposals.mapIndexed { i, p ->
-            ChallengeEvent(UUID(0, 3L + i), EventTypes.APPROVAL, now.plusMillis(1L + i), LocalDate.now(zone), EventPayload.ApprovalChanged(p.id, d.decisions[p.id] ?: "declined"), facts)
+            ChallengeEvent(UUID(0, 3L + i), EventTypes.APPROVAL, now.plusMillis(1L + i), LocalDate.now(zone), EventPayload.ApprovalChanged(p.id, all.getValue(p.id)), facts)
         }
         return EnrollmentFold.fold(def, c.params, listOf(created) + decisions).state
     }
@@ -218,7 +243,7 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         }
     }
 
-    /** UX 14.8 step 9: the current and next ISO week, materialized from the dry-run state. */
+    /** UX 14.8 step 3: the current and next ISO week, materialized from the dry-run state. */
     private fun refreshReview() {
         val def = _ui.value.def ?: return
         viewModelScope.launch {
@@ -227,61 +252,80 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
                     val facts = c.challengeFacts.facts(def, null)
                     val s = preview(def, _ui.value.draft, facts)
                     val monday = Week.isoWeekStart(LocalDate.now(zone))
-                    val out = ArrayList<String>()
+                    val out = ArrayList<ReviewWeek>()
                     for (w in 0..1) {
                         val start = monday.plusWeeks(w.toLong())
                         val plan = WeekPlanner.plan(def, c.params, PlanInput(Instant.now(), zone, s, facts, start, projected = w == 1))
-                        out += "Week ${Week.isoWeek(start)} · ${ChallengeTexts.mode(s.mode)}"
-                        for (p in plan.sessions) {
+                        val sessions = plan.sessions.map { p ->
                             val sp = Materializer.materialize(def, c.params, MaterializeInput(p.slot, p.date, s, facts, c.catalog.doc, changeoverMin = AppContainer.CHANGEOVER_MIN))
-                            out += "  ${p.slot} ${ChallengeTexts.date(p.date)} ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}: " +
-                                sp.items.filter { it.status == "planned" && it.role != "warmup" }.joinToString("; ") { item -> itemLine(item) }
+                            val planned = sp.items.filter { it.status == "planned" }
+                            val main = planned.filter { it.role != "warmup" && it.role != "prehab" }.map { item ->
+                                // A test item reads as what it measures ("Max strict pull-ups"), without a set count.
+                                val metric = item.metric
+                                if (item.role == "test" && metric != null) {
+                                    ReviewExercise(if (metric == "bw") "Weigh-in" else ChallengeTexts.metricLabel(metric), if (item.rows.any { it.side == "L" || it.side == "R" }) "each arm" else "")
+                                } else {
+                                    ReviewExercise(item.name["en"] ?: item.key, detailOf(item))
+                                }
+                            }
+                            val name = def.templates.values.firstOrNull { it.slot == p.slot }?.name?.get("en")
+                            ReviewSession(
+                                slotName(def, p.slot), name?.substringAfter(':', "")?.trim()?.ifEmpty { null }?.replaceFirstChar { it.uppercase() },
+                                "${ChallengeTexts.date(p.date)} · ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}",
+                                listOfNotNull(ReviewExercise("Warm-up", "").takeIf { planned.any { it.role == "warmup" } }) + main +
+                                    listOfNotNull(ReviewExercise("Prehab", "").takeIf { planned.any { it.role == "prehab" } }),
+                            )
                         }
-                        plan.droppedSlots.forEach { out += "  $it: no room in this week" }
-                        plan.warnings.forEach { out += "  Note: $it" }
+                        val notes = plan.droppedSlots.map { "${slotName(def, it)}: no room this week" } + plan.warnings
+                        out += ReviewWeek((if (w == 0) "This week" else "Next week") + " · " + ChallengeTexts.mode(s.mode), sessions, notes)
                     }
                     out
-                }.getOrElse { listOf("Preview failed: ${it.message}") }
+                }.getOrElse { listOf(ReviewWeek("Preview failed", emptyList(), listOf(it.message ?: it::class.simpleName.orEmpty()))) }
             }
             _ui.value = _ui.value.copy(review = lines)
         }
     }
 
-    private fun itemLine(item: dev.fitnessapp.algo.challenge.materialize.PlannedItem): String {
-        val r = item.rows.firstOrNull() ?: return item.name["en"] ?: item.key
-        val sets = item.rows.count { it.side == "L" || it.side == "both" || it.side == "none" }.coerceAtLeast(1)
-        val pin = r.pin
-        val added = r.addedKg
-        val load = when {
-            pin != null -> "pin ${pin.stripTrailingZeros().toPlainString()} lb"
-            added != null && added.signum() > 0 -> "+${added.stripTrailingZeros().toPlainString()} kg"
-            else -> null
-        }
+    /** A slot's session name: its template's name up to the colon ("Session A"). */
+    private fun slotName(def: CompiledDefinition, slot: String): String =
+        def.templates.values.firstOrNull { it.slot == slot }?.name?.get("en")?.substringBefore(':') ?: if (slot == "TEST") "Test day" else "Session $slot"
+
+    /** "5×3 · pin 40 lb", "3 rounds × 4 tries", "3×6-8 s · pin 35 lb", "1×1 · 5 s down" for one planned item. */
+    private fun detailOf(item: dev.fitnessapp.algo.challenge.materialize.PlannedItem): String {
+        val r = item.rows.firstOrNull() ?: return ""
         fun n(x: java.math.BigDecimal) = x.stripTrailingZeros().toPlainString()
+        val sets = item.rows.count { it.side == "L" || it.side == "both" || it.side == "none" }.coerceAtLeast(1)
         val attempts = r.attempts
         val volume = when {
             // Top-hold rounds (UX 11.7.4): rounds of short attempts, no per-attempt target.
-            attempts != null && attempts > 1 && r.targetReps == null && r.targetHoldS == null -> "$sets rounds × $attempts attempts"
+            attempts != null && attempts > 1 && r.targetReps == null && r.targetHoldS == null -> "$sets rounds × $attempts tries"
             r.targetReps != null && r.targetRepsMax != null && r.targetRepsMax != r.targetReps -> "$sets×${r.targetReps}-${r.targetRepsMax}"
             r.targetReps != null -> "$sets×${r.targetReps}"
             r.targetHoldS != null -> "$sets×" + n(r.targetHoldS!!) + (r.targetHoldMaxS?.let { "-" + n(it) } ?: "") + " s"
             r.durationS != null -> n(r.durationS!!) + " s"
             else -> "$sets sets"
         }
-        val ecc = r.targetEccS?.let { " · lower in " + n(it) + " s" } ?: ""
-        return "${item.name["en"] ?: item.key} $volume$ecc" + (load?.let { " $it" } ?: "")
+        val pin = r.pin
+        val added = r.addedKg
+        val load = when {
+            pin != null -> "pin ${n(pin)} lb"
+            added != null && added.signum() > 0 -> "+${n(added)} kg"
+            r.targetEccS != null -> n(r.targetEccS!!) + " s down"
+            else -> null
+        }
+        return volume + (load?.let { " · $it" } ?: "")
     }
 
-    /** UX 14.8 step 10: creates the enrollment, clears the draft and returns its id. */
+    /** UX 14.8 step 3: Start is the cutover confirmation (D4); creates the enrollment, clears the draft and returns its id. */
     fun start(onStarted: (String) -> Unit) {
         val def = _ui.value.def ?: return
         val d = _ui.value.draft
-        if (!d.cutover || def.doc.proposals.any { it.id !in d.decisions }) return
+        if (!startComplete(_ui.value)) return
         _ui.value = _ui.value.copy(busy = true)
         viewModelScope.launch {
             runCatching {
                 withContext(Dispatchers.Default) {
-                    c.challenges.create(definitionId, params(def, d), onboard(def, d), importOf(def, d), d.decisions)
+                    c.challenges.create(definitionId, params(def, d), onboard(def, d), importOf(def, d), decisions(def, d))
                 }
             }.onSuccess { f ->
                 prefs.edit().remove(definitionId).apply()
@@ -292,6 +336,9 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
     }
 
     companion object {
-        val STEPS = listOf("overview", "rules", "equipment", "starting_point", "gate_method", "schedule", "calendar", "proposals", "review", "cutover")
+        val STEPS = listOf("overview", "starting_point", "review")
+
+        /** The wizard layout saved drafts belong to (D35: three steps). */
+        const val LAYOUT = 2
     }
 }

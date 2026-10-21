@@ -130,6 +130,7 @@ and nothing on the screen is decoration.
 | P12 | Determinism | Everything the UI decides (ordering of chips, card state, which banner shows) is a pure function of logged inputs and versioned constants, so a review can replay exactly what the user saw. | engineering-fact | C22, C24, C30 |
 | P13 | Calm motion | Standard M3 springs. Expressive bounce only on two moments: set logged and challenge gate achieved. Honour "remove animations". | moderate | Google M3 Expressive research (restraint in utility contexts) |
 | P14 | Ask little, ask once | At most 6 taps per session outside set logging (F15). Prompts that the user keeps skipping are shown less often, except safety prompts. | strong (that subjective measures are useful); expert-opinion (the budget) | Saw, Main & Gastin 2016; Foster 2001; F15 |
+| P15 | Defaults first, little text (D35) | A screen asks only for what has no sensible default; optional inputs and tuning sit behind a collapsed "More" or "Customize" row (`MoreSection`). Helper text is at most one short line and never repeats what the screen already shows. User-visible text never shows decision, rule or proposal ids, raw codes or engine terms; those stay in the Why sheet layer 2 (P7) or the trace export. Where a wireframe in this document shows longer text, P15 wins. | (decision) | D35 |
 
 ---
 
@@ -1126,7 +1127,7 @@ and P10 (logging is never blocked).
 | | Other options >                 | |
 | +---------------------------------+ |
 | HOME                                |
-| [-] 2-arm hang   skipped: A day     |
+| [-] 2-arm hang   skipped: session A |
 | [Start] 1-arm plank 17:30 3x20 s/sd |
 | WEEK  M  T  W  T  F  S  S           |
 |       -  v  -  *  -  x  T           |
@@ -1289,7 +1290,7 @@ Home habits are tiny sessions (`workout_sessions.kind = home`, C34) defined by t
 * Tapping the row (not the checkbox) opens the home mini-session (a Live Session with
   `kind = home`): hold timer, felt chips, flags, and no rest alarm unless the habit defines a rest.
 * Rows show the habit's state for today: due, done (time), skipped with the reason from the
-  definition ("skipped: A day", "off: elbow protocol"), or scaled ("deload: half").
+  definition ("skipped: session A today", "off: elbow protocol"), or scaled ("deload: half").
 * A weekly "measure your best time fresh" instance of the hang (from the Todoist rule imported in
   D4) shows a "Measure today" badge on the day the definition schedules it.
 * Fed by: `challenge.materialize` (habits for today, skip and scale rules), `safety` (disabled in
@@ -1846,7 +1847,7 @@ the target, or the side rule broken. When the user changes a value so that the s
 chips appear above the flags, ordered by `ui.reasonchips` (section 19.3):
 
 ```
-| Why the change? (optional)          |
+| > Why the change?                   |
 | [Too easy] [Feeling good] [Other]   |
 ```
 
@@ -2553,35 +2554,30 @@ help") and an entry in History.
 * A banner "2 proposals waiting for your decision" links to the proposal list (14.4) while any P
   item is undecided.
 
-### 14.4 Proposal list (P rules, D8)
+### 14.4 Proposal list (P rules, D8, D35)
 
-Each P proposal is decided individually; there is no "approve all". Per D8 (corrected wording) and
-C48, a rule tagged `A` runs exactly as written unless the user approves the `P` proposal that replaces
-it, and an undecided proposal is inactive. Decisions are stored per proposal id; one proposal may
-switch several rules and parameters.
+Proposals start at the definition's recommendation (D35); this list is where a user who wants to
+change one does so. It opens from "Customize" in setup step 3 and from Proposals in the dashboard
+menu. Per C48 a rule tagged `A` runs exactly as written unless the `P` proposal that replaces it is
+approved, and an undecided proposal (one added by a later definition version) is inactive. Decisions
+are stored per proposal id; one proposal may switch several rules and parameters.
 
 ```
-| PROPOSAL P01 (P)                    |
-| Gate the weekly session-A pin       |
-| decrease                            |
-| The pin drops 5 lb only after a     |
-| session A with completed sets, and  |
-| goes back up 5 lb after two failed  |
-| weeks.                              |
-| If you decline: the pin drops 5 lb  |
-| after every session A (10 lb after  |
-| a controlled calibration negative), |
-| as your program says.               |
-| Why proposed: -5 lb every week adds |
-| about 4.9 % one-arm load per week.  |
-| Switches: prog.A.pin.weekly ->      |
-|   prog.A.pin.gated                  |
-| Evidence: expert opinion            |
-|        [ Approve ]  [ Decline ]     |
+| Proposals                           |
+| Recommended changes are on. Switch  |
+| one off to run your program as      |
+| written for that part.              |
+|                                     |
+| Gate the weekly session-A      [ON] |
+| pin decrease                        |
+| Definition of a missed week    [ON] |
+| ...                                 |
+| (tap a title: the rationale and     |
+|  "If off: ..." expand under it)     |
 ```
 
-* Groups: Safety, Progression, Structure, Test day (F9 block-relative test dates, F10 max reps
-  moved to the end), Later phases (draft templates for phases 2 and 3).
+* One line per proposal: title and a switch. Rule ids, proposal ids and the evidence tag are not
+  shown (D35).
 * The list is rendered from the definition's proposals (`id`, title, rationale, `ifDeclined`,
   `supersedes`, `affects`); this document does not fix its content. The wireframe text paraphrases
   P01 of `oap.challenge.v1.json`.
@@ -2649,27 +2645,24 @@ Rows are tappable: test detail and the recalculation report of that test (old ->
 
 ### 14.8 Challenge setup (`challenge.setup`)
 
-A full-screen wizard following the definition's onboarding steps plus the user decisions D4, D7, D8
-and D11. Each step saves; the enrollment is created only at the end.
+A full-screen wizard of three steps (D35) covering the user decisions D4, D7, D8 and D11. Each step
+saves; the wizard can be left and resumed, and the enrollment is created only at Start. It asks only
+for what has no default.
 
 | Step | Content |
 |---|---|
-| 1 Overview | What the challenge is, sessions per week, typical length, the evidence note, the safety summary (elbow stop signals and the 14-day protocol), the disclaimer |
-| 2 Rules and parameters | Grip (supinated), completion arms (P item, decided in step 8) |
-| 3 Equipment | Assisted machine calibration (unit lb, step 5, offset 6.5 kg, ratio 1.0) with the tip "To check the offset, stand on a bathroom scale on the platform at pin 0"; belt plates; wide bar (no -> typewriters excluded); dip belt; fixed neutral handle |
-| 4 Starting point | Three choices: "Import my current program state" (D4), "Enter known values", "Schedule a baseline test". Import shows every value prefilled from the definition's import data and editable: phase 1, block 1, week 5, mode test pending, planned test Sun 11 Oct 13:00; loads C 20 kg, A 22.5 kg, B 27.5 kg, negatives 47.5 kg (reset 45 kg); pins A 40 lb, C 50 lb, 90-degree hold 35 lb; plank 20 s; one-arm hang 10 s; past tests with validity flags (30 Aug valid for gates, hang values "old protocol, not comparable", least assistance recorded without an arm and imported for both arms (C59); 19 Sep 3RM only, not valid; 29 Sep hang L 15 / R 20 s, not a test day, not valid). Past tests are imported as metric observations only; no historical set rows are created, so the strength gate uses the class prior `k` = 30 until the app's own logs give RCM-1 informative windows (C59; the step says so in one line). "Confirm values". |
-| 5 Gate method (D7, information only) | "Your strength gate uses your personal rep curve, fitted to your weighted pull-up data and applied to the test-day 3RM. The x1.10 value and an 80 % range are shown next to it. No extra single is added to test days." |
-| 6 Schedule | Preferred day and time per slot (definition defaults: C Wed 19:45, A Fri 19:45, B and Test Sun 11:00; editable), habit times (hang 17:15, plank Tue/Thu 17:30), reminders on/off |
-| 7 Calendar (D11) | "The app adds challenge sessions and test days for this week and next to your primary calendar and keeps them up to date. It only edits events with its marker. Titles follow your existing style, for example 'Gym — sessie C (volume en techniek)'; if you edit an event's time, title or text, your edit wins." (F25, C37). The titles come from the definition's title template (Dutch by default for OAP); a switch "Calendar titles in English" changes the template language for this enrollment (the definition's `calendar.titleLocale` setup option, default `nl`); descriptions are always English. Lists this week's matching events; "Adopt" per event (needed once for the events created by hand) |
-| 8 Proposals (D8) | The proposal list (14.4). Continue is enabled only when every proposal has a decision, so nothing is left implicit at the start (an undecided proposal would simply be inactive, C48). |
-| 9 Review | The next two weeks materialized (current and next ISO week) with loads, pins, holds and rests; warnings from `challenge.contract` and `warnings` (for example "Pull, grip and elbow-flexor work stays inside challenge sessions; legs and push are allowed on any gap day, including the day before A, but not the day before B or a test", D5, D15) |
-| 10 Cutover (D4) | "From now on the app is the source of truth for this program." Checklist: the Todoist session tasks will be retired (outside the app; Claude does it after your confirmation); the program page is frozen as a reference; home habits now come from this app. Checkbox "I confirm the cutover", then "Start challenge". |
+| 1 Overview | The title, the first sentence of the definition's `summary`, one line "N sessions a week · about M min · short home habits", and the grip chips (the user-editable enum params; the grip is fixed for every test). A collapsed "What counts as a rep" shows the definition's attempt checklist. One safety line: "Stop at elbow pain; the app switches to a recovery protocol. Not medical advice." |
+| 2 Starting point | Two choices. **Start with a test week** (default): nothing to type; one line "Your first week ends with a test on <Sunday>. The test sets your loads." **Enter my numbers**: the onboarding values that the definition's state vars are initialised from (OAP: bodyweight, weighted 3RM, max strict pull-ups, session C load, the three assisted pins); Continue needs all of them. Collapsed: "More test values (optional)" with the other onboarding values (OAP: least assistance, one-arm hang and top hold per arm), and "I'm mid-program" (D4's import): phase, block, week of the block, mode, planned test date and the computed current loads, each editable. Past tests are imported as test values only (C59). |
+| 3 Your first two weeks | The current and next ISO week materialized under the chosen values and decisions: one row per session (name, theme, date and time) whose exercises open on tap, one per line with sets and starting load (warm-up first and prehab last, one line each), plus planner notes. One line "N of M recommended rule changes on · Customize" opens the proposal list (14.4). One line "Starting makes the app the source of truth for this program." and "Start challenge"; pressing it is the cutover confirmation (D4). |
+
+The equipment calibration (You → Equipment), the gate method (test-day report, 14.9), the schedule
+(dashboard) and calendar access (calendar setup) are no longer setup steps (D35).
 
 Start creates `enrollment.created` (challenge_events), followed by one `rules.approval_changed` per
-proposal decided in step 8 (CHALLENGE_ENGINE section 10.2), and emits `challenge_cutover_confirmed
-{definition_id, version, sha256}` (telemetry). Until the cutover is confirmed the existing chat workflow stays in
-use (D4); the wizard can be left and resumed. Emits `challenge_setup_step {step, duration_ms}` per
-step.
+proposal (its current decision: the recommendation unless changed under Customize; CHALLENGE_ENGINE
+section 10.2), and emits `challenge_cutover_confirmed {definition_id, version, sha256}` (telemetry).
+Until Start the existing chat workflow stays in use (D4). Emits `challenge_setup_step {step,
+duration_ms}` per step.
 
 ### 14.9 Test-day wizard (`test.wizard`)
 
@@ -2857,11 +2850,11 @@ Emits `progress_viewed {exercise_id, metric, axis, range}`, `progress_axis_toggl
 * Session detail: every exercise with targets vs actuals per set (load, reps or seconds, RIR, reason,
   flags, rest), pre- and post-session answers, the note, the calendar link, and a Why per exercise
   (the recommendation that prescribed it).
-* Actions: edit a set (Set edit sheet), add a forgotten set, add a forgotten exercise with its sets
+* Actions: edit a set (Set edit sheet), add a forgotten set, add a forgotten exercise with its sets (session menu "Add exercise")
   (D28; it stays "not done" until a set is added), delete a set (undo), change the calendar link,
   edit the quick check (within 24 h), reopen an abandoned session (same local date), delete the
   session (undo, 10 s).
-* Quick check: one layout before and after the 24 h window. "Session effort: 7" (or "not answered")
+* Quick check: one layout before and after the 24 h window; empty values are not shown (D35), and while the window is open "Add effort", "Add pain" and "Add note" links fill them. "Session effort: 7"
   with a "Change" link that opens the 0-10 chips; each pain report as "Pain: elbow lateral (moderate)"
   with "Add pain" (the Pain sheet, context `history`); the note with "Change"; and the hint "Editable
   until Mon 12 Oct 11:10". After 24 h the links and the hint disappear and the values stay as text.
@@ -4119,7 +4112,7 @@ sent as null.
 | `set_deleted` | Delete set | set | `set_id`, `surface` |
 | `set_added_later` | a forgotten set added in History | set | `set_id`, `hours_after_session` |
 | `log_double_tap_dropped` | a second tap within 300 ms (`ui.doubleTapDebounceMs`) on a log control is ignored | none | `control` (rir_chip, felt_chip, record, done, button), `gap_ms` |
-| `deviation_shown` | reason chips appear (19.3) | set or session_exercise | `context`, `direction`, `fields[]`, `codes_shown[]`, `visible_count` |
+| `deviation_shown` | reason chips become available (19.3; since D35 they sit in the collapsed "Why the change?" row, so this no longer means the user saw them) | set or session_exercise | `context`, `direction`, `fields[]`, `codes_shown[]`, `visible_count` |
 | `reason_selected` | a reason chip is tapped | set or session_exercise | `reason_code`, `context`, `chip_position`, `via_more` |
 | `flag_toggled` | a flag chip changes | session_exercise | `flag` (E6), `on` |
 | `keypad_used` | the Keypad sheet sets a value | session_exercise | `field` (load, reps, hold_s, ecc_s, bodyweight), `typed`, `snapped_to`, `changed` |
@@ -4175,7 +4168,7 @@ sent as null.
 | `warning_use_suggested` | warning | "Use suggested" (D10) | none | `rule_id`, `entity`, `field`, `from`, `to` |
 | `warning_use_mine_toggled` | warning | "Use mine anyway" switched | none | `rule_id`, `entity`, `on` |
 | `safety_acknowledged` | warning | "Understood" on a SAFETY warning (7.3) | none | `rule_id`, `entity` |
-| `prompt_shown` | prompt | a prompt item is displayed (19.4) | session | `prompt` (readiness, elbow_check, soreness, srpe, joint_pain, weigh_in), `group`?, `phase` (pre, post, standalone), `position`, `budget_used`, `reduced` |
+| `prompt_shown` | prompt | a prompt item is displayed (19.4; on the Summary the srpe and joint-pain prompts sit in the collapsed "Add effort, pain or a note" row since D35, so the event marks availability) | session | `prompt` (readiness, elbow_check, soreness, srpe, joint_pain, weigh_in), `group`?, `phase` (pre, post, standalone), `position`, `budget_used`, `reduced` |
 | `prompt_answered` | prompt | an answer is saved | wellness_log | `prompt`, `group`?, `value_code` (for example worse, 2, still_sore, 7, elbow), `latency_ms`, `wellness_log_id`? or `observation_id`? |
 | `prompt_skipped` | prompt | not answered when the sheet closes, or not shown | session | `prompt`, `group`?, `cause` (user, budget, reduced) |
 
@@ -4259,7 +4252,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 
 | event_type | Emitted when | Entity | Payload |
 |---|---|---|---|
-| `challenge_setup_step` | each setup step is left (14.8) | enrollment | `step` (1-10), `step_key`, `duration_ms`, `action` (next, back, leave) |
+| `challenge_setup_step` | each setup step is left (14.8) | enrollment | `step` (1-3), `step_key`, `duration_ms`, `action` (next, back, leave) |
 | `challenge_cutover_confirmed` | Start challenge after the cutover checkbox (D4) | enrollment | `definition_id`, `version`, `sha256` |
 | `challenge_proposal_viewed` | a proposal is opened (14.4) | enrollment | `proposal_id` |
 | `challenge_proposal_decided` | Approve or Decline on a proposal (D8, C48) | enrollment | `proposal_id`, `decision` (approved, declined), `previous`? |
@@ -4284,7 +4277,7 @@ challenge scheduler, not by a user action.
 | challenge_event | UI trigger | Main fields (owner: CHALLENGE_ENGINE section 4.2) |
 |---|---|---|
 | `enrollment.created` | Challenge setup step 10 "Start challenge" (D4) | `params`, onboarding values, the `import` block (D4: baseline state and imported tests with validity flags, C59), `definition_version`, `jcs_sha256`; no proposal decisions (those are the separate events below) |
-| `rules.approval_changed` | Approve / Decline on a proposal (setup step 8: one event per proposal right after `enrollment.created`; later from the Proposals screen of the dashboard menu) (D8) | `proposal_id`, `decision` (`approved`, `declined`), `previous?`, `decided_at`; one event per proposal, not per rule (C48) |
+| `rules.approval_changed` | Approve / Decline on a proposal (setup Start: one event per proposal right after `enrollment.created`; later from the Proposals screen of the dashboard menu) (D8) | `proposal_id`, `decision` (`approved`, `declined`), `previous?`, `decided_at`; one event per proposal, not per rule (C48) |
 | `session.started` | Start of a session with a challenge slot (C35) | `session_id`, `slot`, `template_id`, `mode`, `local_date`, `started_at` |
 | `session.completed` | Finish of that session (fires on the template slot, C35) | `session_id`, `slot`, `template_id`, `kind`, `local_date`, `completion_ratio`, `pain_reported`, the logged rows per item key under their `set_logs` column names (CHALLENGE_ENGINE section 6.12), `engine_facts` |
 | `session.amended` | an edit in History to a session whose `session.completed` exists | same as `session.completed`, plus `supersedes_event_id` |

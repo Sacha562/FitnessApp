@@ -182,7 +182,8 @@ Rules for interaction:
 ### 2.1 Lifecycle of a definition
 
 1. **Authoring.** Definitions are JSON files in the repo (`docs/challenges/<slug>.challenge.v<major>.json`
-   during design; the build copies them to `algo/src/main/resources/fitness/challenges/`, next to the
+   holds the current version; a published earlier version of the same major is frozen as
+   `<slug>.challenge.v<version>.json`, for example `oap.challenge.v1.0.0.json`, and stays bundled; the build copies them to `algo/src/main/resources/fitness/challenges/`, next to the
    bundled params in `algo/src/main/resources/fitness/params/`; ANDROID.md 4, C40). Claude Code
    authors and reviews them; the user approves content. There is no in-app editor in v1.
 2. **Validation.** Three stages (section 2.6): structural JSON Schema, semantic validator, golden
@@ -2040,28 +2041,23 @@ The screens are specified in UX.md section 14; this section fixes the engine beh
 
 ### 10.2 Enable wizard
 
-The wizard renders the definition's `onboarding.steps` in order, adding the app-level steps
-"gate method" (D7 information), "calendar" (D11) and "cutover" (D4). Each step saves locally; the
-enrollment is created only at the end.
+The wizard has three steps (D35, UX 14.8) and asks only for what has no default. It reads the
+definition's `onboarding.steps` for the fields it needs; the definition's equipment and schedule
+steps are satisfied by their defaults (calibration records, `schedule.preferred`, habit times),
+which the user changes where they are used. Each step saves locally; the enrollment is created only
+at Start.
 
 | Step | Engine behaviour |
 |---|---|
-| Overview | Shows `summary`, `challengeRules`, the provenance evidence note and the safety summary with the not-medical-advice disclaimer (C33). |
-| Rules / params | User-editable params (`userEditable: true`), for example `grip`. Stored in `challenge_enrollments.params`. |
-| Equipment | Confirms the calibration records bound by `equipment.required[].binding` (machine `{unit, step, min, max, offsetKg, ratio}`, belt plate inventory). Missing optional equipment excludes the items it unlocks. |
-| Starting point | Three modes: import current state (D4, validated against `importSpec`), enter known values (baseline fields), or schedule a baseline test (materializes the test template as the first session). |
-| Gate method | Information only (D7): the gate uses the personal curve; no extra single is added to test days. |
-| Schedule | `schedule.preferred` per slot, habit times, reminders. |
-| Calendar | Permission request (READ + WRITE together); shows this week's matched events with "Adopt"; title locale (default from the definition, Dutch for OAP, F25). |
-| Proposals | Every proposal listed individually with title, rationale, what happens if declined, recommendation and evidence; Continue only when every proposal has a decision (D8). Each decision is one per proposal and applies to every rule the proposal switches (C48). |
-| Review | The current and next ISO week materialized under the chosen decisions; contract warnings (for example the D5 gap-day rule in plain words). |
-| Cutover | Confirmation checklist (D4). "Start" writes `enrollment.created`, then one `rules.approval_changed` per proposal, in that order, with the same `occurred_at` base and increasing ids. |
+| Overview | Shows the first sentence of `summary`, sessions per week, the safety line with the not-medical-advice disclaimer (C33), and the user-editable enum params (`userEditable: true`, for example `grip`), stored in `challenge_enrollments.params`. `challengeRules.attemptChecklist` sits behind a collapsed row. |
+| Starting point | Two modes: a baseline test (`test_pending` with the test this Sunday) or known values (the `baseline` step's `onboard.*` fields). The fields that a state var's `init` reads are required; the others are optional. "I'm mid-program" adds the import block (D4, validated against `importSpec` by the fold). |
+| Review and Start | The current and next ISO week materialized under the chosen values and decisions; planner warnings. Every proposal has a decision, taken from its `recommended` field unless the user changed it under Customize, so `requiresDecisionOnEveryProposal` holds. "Start" is the cutover confirmation (D4) and writes `enrollment.created`, then one `rules.approval_changed` per proposal, in that order, with the same `occurred_at` base and increasing ids. |
 
 ### 10.3 Proposal decisions after start
 
 The Proposals screen (dashboard menu) lets the user change any decision at any time (D8). A change
-writes `rules.approval_changed` and takes effect for later events. The screen shows, per proposal,
-which rules it switches, which A rule it replaces, and how often those rules fired.
+writes `rules.approval_changed` and takes effect for later events. The screen shows one switch per
+proposal with its title; the rationale and what happens when it is off expand on tap (D35).
 
 ### 10.4 Starting a second challenge
 

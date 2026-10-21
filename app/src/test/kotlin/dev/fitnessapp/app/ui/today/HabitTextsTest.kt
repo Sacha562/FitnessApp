@@ -23,7 +23,7 @@ class HabitTextsTest {
 
     @Test
     fun `a skipped habit names the part of its condition that holds`() {
-        HabitTexts.status(hang, listOf("A"), emptyMap()) shouldBe "skipped: A day"
+        HabitTexts.status(hang, listOf("A"), emptyMap()) shouldBe "skipped: session A today"
         HabitTexts.status(hang, emptyList(), mapOf("elbowTrace" to BoolV.of(true))) shouldBe "skipped: elbow trace"
         HabitTexts.status(hang, emptyList(), mapOf("elbowTrace" to BoolV.of(false))) shouldBe "skipped: today"
         HabitTexts.status(hang.copy(reason = "error:missing"), emptyList(), emptyMap()) shouldBe "skipped: could not check the rule"

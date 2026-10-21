@@ -52,9 +52,9 @@ private suspend fun load(c: AppContainer, sessionId: String): List<Pair<String, 
             }
         }.getOrDefault("")
         when (r.outcome) {
-            "applied" -> (if (changes.isNotEmpty()) "$changes · " else "") + ChallengeTexts.ruleExplain(def, r.rule_id) + " (${r.rule_id})" to false
+            "applied" -> (if (changes.isNotEmpty()) "$changes · " else "") + ChallengeTexts.ruleExplain(def, r.rule_id) to false
             "no_effect", "error" -> null
-            else -> "Not applied: ${ChallengeTexts.ruleExplain(def, r.rule_id)} · ${r.suppressed_by ?: r.outcome.replace('_', ' ')}" to true
+            else -> "Not applied: ${ChallengeTexts.ruleExplain(def, r.rule_id)} · ${ChallengeTexts.outcome(r.outcome)}" to true
         }
     }
 }

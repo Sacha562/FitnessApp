@@ -67,15 +67,15 @@ fun AppRoot(c: AppContainer, route: MutableStateFlow<Routes.Target?>) {
         Gate.STARTING, Gate.CHECKING -> LoadingScreen(if (state.gate == Gate.CHECKING) "Checking your account…" else "")
         Gate.SIGNED_OUT -> SignInScreen(state.busy, state.error, vm::signIn)
         Gate.NOT_ALLOWED -> GateMessageScreen(
-            "This account isn't enabled for the fitness app yet.",
-            "Your sign-in worked, but the app is limited to invited accounts. Ask the owner to add this email to the allowlist.",
+            "This account can't use the app yet",
+            "The app is invite-only. Ask the owner to add this email.",
             state.email, "Check again", vm::check, "Sign out", vm::signOut,
         )
         Gate.SCHEMA_NOT_EXPOSED -> GateMessageScreen(
-            "Server not configured", "The fitness schema is not exposed in the Data API yet.", state.email, "Check again", vm::check, null, {},
+            "Server needs an update", "The app can't use the server yet. Try again later.", state.email, "Check again", vm::check, null, {},
         )
         Gate.OFFLINE -> GateMessageScreen(
-            "No connection", state.error ?: "The first sign-in needs a connection.", state.email, "Try again", vm::check, null, {},
+            "No connection", state.error ?: "The first sign-in needs internet.", state.email, "Try again", vm::check, null, {},
         )
         Gate.ONBOARDING -> OnboardingScreen(c, vm::onboardingDone)
         Gate.READY -> MainNav(c, vm, route)

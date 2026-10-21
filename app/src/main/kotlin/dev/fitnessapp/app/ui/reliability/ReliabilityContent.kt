@@ -39,7 +39,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.SessionService
-import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TonalButton
@@ -51,17 +50,17 @@ import kotlinx.coroutines.launch
 enum class Maker(val label: String, val steps: List<String>, val intents: List<Pair<String, String>>) {
     XIAOMI(
         "Xiaomi",
-        listOf("Settings > Apps > Manage apps > FitnessApp > Autostart: on.", "Battery saver: No restrictions.", "Notifications: allow floating and lock-screen notifications.", "Recents: lock the app card."),
+        listOf("Apps > Manage apps > FitnessApp > Autostart: on.", "Battery saver: No restrictions.", "Notifications: allow floating and lock screen.", "Recents: lock the app card."),
         listOf("com.miui.securitycenter" to "com.miui.permcenter.autostart.AutoStartManagementActivity"),
     ),
     ONEPLUS(
         "OnePlus",
         listOf(
-            "Settings > Battery > Battery optimisation > FitnessApp: Don't optimise.",
-            "Advanced optimisation: switch off Deep optimisation and Sleep standby optimisation.",
-            "App info > Battery usage: allow background activity and auto-launch.",
+            "Battery > Battery optimisation > FitnessApp: Don't optimise.",
+            "Advanced optimisation: Deep and Sleep standby optimisation off.",
+            "App info > Battery usage: allow background and auto-launch.",
             "Recents: lock the app card.",
-            "Check again after every system update.",
+            "Recheck after system updates.",
         ),
         listOf(
             "com.oneplus.security" to "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity",
@@ -71,14 +70,14 @@ enum class Maker(val label: String, val steps: List<String>, val intents: List<P
     ),
     OPPO(
         "Oppo / Realme",
-        listOf("App info > Allow auto-launch.", "Battery usage: allow background activity, do not optimise.", "Recents: lock the app card.", "Notifications: allow banners and lock screen."),
+        listOf("App info: allow auto-launch.", "Battery usage: allow background, don't optimise.", "Recents: lock the app card.", "Notifications: allow banners and lock screen."),
         listOf(
             "com.coloros.safecenter" to "com.coloros.safecenter.permission.startup.StartupAppListActivity",
             "com.coloros.safecenter" to "com.coloros.safecenter.startupapp.StartupAppListActivity",
             "com.oppo.safe" to "com.oppo.safe.permission.startup.StartupAppListActivity",
         ),
     ),
-    OTHER("Your phone", listOf("If your phone has its own battery manager, allow this app to run in the background."), emptyList());
+    OTHER("Your phone", listOf("If your phone has its own battery manager, let this app run in the background."), emptyList());
 
     companion object {
         fun detect(): Maker = when (Build.MANUFACTURER.lowercase()) {
@@ -132,7 +131,7 @@ fun ReliabilityContent(c: AppContainer, showStats: Boolean = false) {
     key(tick) { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (showStats) AlarmLatencyCard(c)
         Row1(
-            "Notifications", "Shows the rest countdown on the lock screen and alerts you when rest is over.",
+            "Notifications", "Rest countdown on the lock screen and the end-of-rest alert.",
             c.device.notificationsAllowed(), if (Build.VERSION.SDK_INT >= 33) "Allow" else null,
         ) {
             scope.launch { c.fgsEvent("permission_requested", mapOf("permission" to "post_notifications")) }
@@ -143,7 +142,7 @@ fun ReliabilityContent(c: AppContainer, showStats: Boolean = false) {
         }
         if (Build.VERSION.SDK_INT >= 34) {
             Row1(
-                "Physical activity", "Lets the workout session run as a fitness session in the background. The app does not count steps or read sensors.",
+                "Physical activity", "Keeps the session running in the background. No step counting.",
                 c.device.activityRecognitionGranted(), "Allow",
             ) {
                 scope.launch { c.fgsEvent("permission_requested", mapOf("permission" to "activity_recognition")) }
@@ -168,7 +167,6 @@ fun ReliabilityContent(c: AppContainer, showStats: Boolean = false) {
         var confirmed by remember { mutableStateOf(prefs.getBoolean("oem_confirmed", false)) }
         Tile(spacing = 6.dp) {
             StatusTitle(maker.label + " settings", confirmed)
-            Text("Your phone has its own battery manager that can stop apps even when the steps above are done.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             maker.steps.forEachIndexed { i, s -> Text("${i + 1}. $s", style = MaterialTheme.typography.bodyMedium) }
             TonalButton("Open settings", {
                 val ok = openOemSettings(context, maker)
@@ -205,12 +203,12 @@ private fun SelfTestCard(c: AppContainer) {
             val r = result
             val latency = r?.firedAt?.let { it - r.scheduledEnd }
             StatusTitle("Test the rest alarm", latency != null && latency <= c.platformConfig.timerExactIdleP95MaxMs)
-            Text("Start, then lock your phone and put it away. It should vibrate in 20 seconds.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            Text("Start, then lock your phone. It should vibrate in 20 s.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             if (running) Text("Waiting for the alarm…", style = MaterialTheme.typography.bodyMedium)
             if (blocked) Text("Finish your session first, then run the test.", style = MaterialTheme.typography.bodyMedium)
             if (latency != null) {
                 Text(
-                    if (latency <= 2000) "The alarm was on time (${latency} ms)." else "The alarm was ${latency / 1000} s late. Check the phone-maker settings above.",
+                    if (latency <= 2000) "On time (${latency} ms)." else "${latency / 1000} s late. Check the phone settings above.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (!answered) {
@@ -280,6 +278,5 @@ private fun StatusTitle(title: String, ok: Boolean) {
             tint = if (ok) Fit.Accent else Fit.Advisory,
         )
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
-        Pill(if (ok) "Allowed" else "Not yet", content = if (ok) Fit.Ink else Fit.Advisory)
     }
 }
