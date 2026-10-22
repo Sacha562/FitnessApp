@@ -2761,8 +2761,9 @@ here). Notifications of the test rules (for example a new phase) show as banners
 **Pain during the test**: the Pain sheet from the menu; the report reaches the program (C33), whose
 safety rules may end the test's validity (the engine decides at Submit).
 
-**Postpone**: Back on the overview creates nothing, so the test stays pending; moving the test date is
-Correct a value on the dashboard until the calendar arrives (M2b.5, C36).
+**Postpone**: Back on the overview creates nothing, so the test stays pending; moving the test day is
+done by moving its calendar event (the planner keeps the moved time, C36, M2b.5) or with Correct a value on the
+dashboard.
 
 ---
 

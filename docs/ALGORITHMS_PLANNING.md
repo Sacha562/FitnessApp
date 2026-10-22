@@ -324,7 +324,7 @@ automatically) and by the `:app` calendar writer for general sessions accepted w
 
 | Input | Description |
 |---|---|
-| `instances` | `CalendarContract.Instances` rows for the window `[Monday 00:00 of the current ISO week − 1 day, Sunday 24:00 of the next ISO week + 1 day)` in the user zone, converted to Instants. Fields: `beginUtc, endUtc, eventId, calendarId, calendarName, calendarAccountType, calendarIsPrimary, title, description, location, allDay, status, selfAttendeeStatus, availability`. Recurring events arrive as instances (the Instances table expands recurrence rules and exceptions). |
+| `instances` | `CalendarContract.Instances` rows for the window `[Monday 00:00 of the current ISO week − 1 day, Sunday 24:00 of the next ISO week + 1 day)` in the user zone, converted to Instants (as built in M2b.5 the app reads ANDROID 16.4's wider window, Monday − 7 days to Monday + 14 days, so last week's sessions can be linked, C35). Fields: `beginUtc, endUtc, eventId, calendarId, calendarName, calendarAccountType, calendarIsPrimary, title, description, location, allDay, status, selfAttendeeStatus, availability`. Recurring events arrive as instances (the Instances table expands recurrence rules and exceptions). |
 | `allowlist` | Calendar ids to read. Default (D11, `profiles.calendar_scope = primary_only`): the primary calendar only (`IS_PRIMARY = 1` on a `com.google` account; fallback `OWNER_ACCOUNT == ACCOUNT_NAME`). With `selected`, the user's chosen calendars. |
 | `ignoreCalendarNamePatterns` | `profiles.calendar_ignore_name_patterns`, default `(?i)todoist` (D11): the Todoist calendar is ignored even if the user adds it to the allowlist. |
 | `ignoreAllDay` | `profiles.calendar_ignore_all_day`, default `true` (D11). |

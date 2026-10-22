@@ -993,7 +993,7 @@ this section applies.
 | `dead_letter` | `id PK`, `table_name`, `row_id`, `http_status`, `error_code`, `message`, `payload_json`, `first_failed_at_ms`, `attempts` | Rows the server rejected permanently (9.5). |
 | `rest_timer` | see 12.2 | Active and last rest timer per session. |
 | `calendar_link` | see 16.6 | Mapping between app-written calendar events and slots. Rebuildable from the markers. |
-| `calendar_instance` | `instance_key PK` (DATA_MODEL §9.7.3 definition), `series_key`, `calendar_identity_sha256`, `event_id`, `begin_ms`, `end_ms`, `title`, `location`, `all_day`, `status`, `self_attendee_status`, `classified_kind` (incl. `busy`), `score`, `features_json`, `last_seen_ms` | Full local calendar cache of the read window, including busy and ignored events, which are never uploaded (16.4). Rows older than 60 days are purged. |
+| `calendar_instance` | `instance_key PK` (DATA_MODEL §9.7.3 definition), `series_key`, `calendar_identity_sha256`, `calendar_id`, `event_id`, `begin_ms`, `end_ms`, `title`, `description`, `location`, `all_day`, `status`, `declined`, `classified_kind` (incl. `busy`), `slot`, `method`, `score`, `match_milli`, `gym_type`, `attention`, `needs_confirm`, `features_json`, `last_seen_ms` (Room v6, M2b.5) | Full local cache of the read window, including busy and ignored events, which are never uploaded (16.4); the description stays on the phone for the event sheet and the marker scan. Rows older than 60 days are purged. |
 | `scheduled_alarm` | `request_code PK`, `kind`, `ref_id`, `trigger_at_wall_ms`, `mode`, `created_at_ms` | Every alarm the app has scheduled (rest, overtime, reminders, idle prompt), for rescheduling after boot, force-stop or update. |
 | `params_cache` | `params_version PK`, `params_json`, `params_hash`, `source` (`bundled`, `server`), `fetched_at_ms` | Effective-params fallback before the first pull and cache of pulled params (7.6). |
 | `warning_dismissal` | `rule_id`, `entity_key`, `dismissed_at_ms`, `magnitude_at_dismiss`, `use_mine_anyway`; PK `(rule_id, entity_key)` | UI-10 dismissal store; rebuildable from `session_events`. |
@@ -1861,7 +1861,7 @@ Checklist (pass criteria in brackets; each result is recorded in the test log of
 | T14 | Determinism self-test | All golden hashes equal |
 | T15 | Audio hardening test (API 37 phone or `set-enable-hardening enable`) | Tone plays while session FGS runs; skipped gracefully otherwise |
 | T16 | Habit reminder at a set time with screen off | Delivered within 1 min |
-| T17 | Calendar write in the sandbox local test calendar, then (after user OK) the primary calendar for one week | Events appear in Google Calendar on the web within a few minutes; markers present; no unmarked event changed |
+| T17 | Calendar write in the sandbox local test calendar, then (after user OK) the primary calendar for one week | Events appear in Google Calendar on the web within a few minutes; markers present; no unmarked event changed. Test-calendar half passed on 2026-10-22 (README M2b log); the primary-calendar week waits for the user's OK. |
 
 ---
 
@@ -2118,8 +2118,11 @@ prompt to adopt or rename.
 
 ### 16.10 Sandbox local test calendar
 
-The `sandbox` build (and a debug-menu switch in `debug`) can create a device-only calendar "FitnessApp TEST"
-using sync-adapter mode for `ACCOUNT_TYPE_LOCAL` (allowed for local accounts), and redirect all writes there.
+The app can create a device-only calendar "FitnessApp TEST" using sync-adapter mode for `ACCOUNT_TYPE_LOCAL`
+(allowed for local accounts), and redirect all writes there. As built in M2b.5 (D39): You → Calendars has "Create
+test calendar"; in `debug` every write goes to it until the user switches on "Write to my own calendar" (stored on the
+device, `LocalSettings.calendarRealWrites`, off by default), and the debug menu's `calendar_*` actions seed, edit and
+dump test events (ANDROID 7 debug menu, `CalendarDebug`).
 This lets Claude and the user test the write path without touching the real Google calendar. In `sandbox`
 this redirection is fixed: calendar writes to the user's calendars are disabled (F27), and the executor's
 target guard (16.7, guard 1) refuses any other calendar.

@@ -568,7 +568,7 @@ scope is unchanged and the done-when is checked at the end of M2b.
   snapshots that replay byte-identically and hold every global invariant. How the engine was built is
   CHALLENGE_ENGINE 16.1. The simulations found two program issues, fixed in the unpublished `oap@1.0.0` and the engine
   (changelog 2026-10-20): a new elbow report restarted the 14-day protocol, and a block rollover could end injury mode.
-  Moved on: the next-week projection (7.7) comes with the calendar write-back in M2b; contract coverage with
+  Moved on: the next-week projection (7.7) comes with the calendar write-back in M2b (built in M2b.5); contract coverage with
   `setcredit` in M4.
 
 #### M2b — Your OAP program in the app
@@ -735,6 +735,10 @@ the OnePlus battery guidance applies; the application id `dev.fitnessapp` is con
 - Muscle goals (set in onboarding, D6).
 - Approve/decline each OAP `P` rule (M2 setup).
 - Whether the Todoist tasks are completed or deleted at cutover, and when.
+- Real calendar writes (D39): switched on by you in You → Calendars after the primary-calendar week of T17; until
+  then the app writes only to the test calendar on the phone.
+- Editing the challenge schedule (preferred days and times) and the habit times: moved out of setup by D35 and not
+  built yet; needed before or at the cutover (M2b.6).
 - Health Connect, widget, GitHub Actions + Obtainium (M6).
 - Adding your friend as a user (allowlist row + onboarding pass).
 
