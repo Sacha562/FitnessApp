@@ -31,6 +31,8 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
         if (c.writeContext.userId() == null) return
         runCatching { c.challenges.catchUp(java.time.Instant.ofEpochMilli(nowMs)) }
         c.reminders.recompute()
+        // ANDROID 16.4: the 05:00 run reads the calendar and writes the (possibly new) current and next week.
+        runCatching { c.calendar.refresh("maintenance") }
         val today = LocalDate.now(ZONE).toString()
         val decision = Maintenance.decide(
             nowMs = nowMs,

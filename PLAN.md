@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36).*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39).*
 
 ---
 
@@ -602,6 +602,23 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
 5. **M2b.5 Calendar.** `calendar.classify` and `challenge.calendar`: reading and classifying events,
    matching challenge slots, Adopt, and the write-back executor, first against the sandbox calendar
    (ANDROID 16.10); writes to your real calendar start only after those tests pass and you agree.
+   The UI and test scope are fixed by D39. M2b.5 is built in five parts, each with a green build:
+   - **5a Pure engine (`:algo`).** The shared `core.calendar` package (the C37 `Marker`, the title normalisation,
+     the instance and series keys, the provider row type), `calendar.classify` with its four stages and the
+     lexicons from params, and `challenge.calendar` with `matchSlots`, the desired events of the current and next
+     ISO week, the write-plan diff, Adopt and the C36 slot-type rewrite, plus the post-hoc session link (C35).
+     Tests: ALGORITHMS_PLANNING 1.7, fixture F-CAL-41, and GF-CE-25 to 28.
+   - **5b Storage.** Room v6 with the local `calendar_instance` cache and `calendar_link` table and the synced
+     `calendar_events` table (the server table exists since migration 014), sync and the drift test.
+   - **5c Reading.** The calendar permissions, the provider gateway (calendars, instances), the device-only
+     "FitnessApp TEST" calendar, the refresh controller (app start, a debounced observer, daily maintenance, after
+     challenge changes), the stored classification and its telemetry, and the planner fed with matched slots, busy
+     blocks and runs; a matched event also sets the session's time budget.
+   - **5d Writing.** The event descriptions from the materialized sessions, the executor with the six guards of
+     ANDROID 16.7 in one `applyBatch`, the link states and their synced mapping, Adopt, and the redirect to the
+     test calendar.
+   - **5e Screens and checks.** You → Calendars, the event sheet with corrections, the dashboard's This week row,
+     the degraded banner; then the phone checks against the test calendar (ANDROID T17, first half).
 6. **M2b.6 Cutover.** With your confirmation: the real import values, the Todoist tasks retired, the
    artifact frozen, and the first real week in the app.
 

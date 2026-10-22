@@ -42,7 +42,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-data class WeekSlotUi(val slot: String, val text: String, val done: Boolean)
+/** One slot of This week; [calendar] is its calendar status (D39) and [instanceKey] the matched event, for the event sheet. */
+data class WeekSlotUi(val slot: String, val text: String, val done: Boolean, val calendar: String? = null, val instanceKey: String? = null)
 data class RuleUi(val id: String, val stage: String, val tag: String, val text: String, val status: String, val via: String?, val fired: Int, val lastFired: String?, val source: String)
 data class ProposalUi(val id: String, val title: String, val rationale: String, val ifDeclined: String, val decision: String?)
 data class HistoryUi(val header: String, val lines: List<Pair<String, Boolean>>)
@@ -100,7 +101,9 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
                 combine(
                     c.db.ruleEvents().observeGeneration(e.id, f.enrollment.fold_generation),
                     c.db.challengeEvents().observeHistory(e.id),
-                ) { rules, events -> rules to events }.collect { (rules, events) ->
+                    // The This week row shows the calendar status (D39): rebuild on every calendar refresh.
+                    c.calendar.snapshot,
+                ) { rules, events, _ -> rules to events }.collect { (rules, events) ->
                     _ui.value = withContext(Dispatchers.Default) { runCatching { build(f, rules, events) }.onFailure { _error.value = it.message }.getOrNull() }
                 }
             }
@@ -114,11 +117,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
         val env = RuleEnv(def, c.params, Records(c.params), s, LocalDate.now(zone), facts)
         val blockWeeks = (def.blockWeeks.evaluate(env.roots(), env.host) as? QV)?.v?.toInt()
         val needsClean = (s.vars["needsCleanSession"] as? dev.fitnessapp.algo.challenge.fitexpr.BoolV)?.b == true
-        val nextTest = when {
-            s.plannedTest.date != null -> "Next test: ${ChallengeTexts.date(s.plannedTest.date)}"
-            s.plannedTest.basis == "postponed" -> "Test postponed"
-            else -> null
-        }
+        val nextTest = ChallengeWeek.nextTestText(c, f, facts)
         return DashboardUi(
             title = ChallengeTexts.title(def),
             status = s.status,
@@ -147,10 +146,28 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     private suspend fun week(f: FoldedEnrollment, facts: EngineFacts): List<WeekSlotUi> {
         if (f.state.status != EnrollmentState.ACTIVE) return emptyList()
         val (_, plan) = ChallengeWeek.plan(c, f, facts)
+        val cal = c.calendar.snapshot.value
         return plan.sessions.map { p ->
             val day = p.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.ENGLISH))
             val label = slotLabel(p.slot)
-            WeekSlotUi(p.slot, if (p.source == "done") "$label done $day" else "$label $day ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}", p.source == "done")
+            val anchor = p.eventRef?.let { k -> cal.anchors.firstOrNull { it.instanceKey == k } }
+            val status = when {
+                p.source == "done" || cal.status != "ok" -> null
+                anchor?.marker != null -> cal.links.firstOrNull { it.markerUuid == f.enrollment.id && it.slotKey == anchor.marker!!.slotKey }?.state.let {
+                    when (it) {
+                        dev.fitnessapp.algo.challenge.calendar.CalendarLink.USER_MOVED -> "moved by you"
+                        dev.fitnessapp.algo.challenge.calendar.CalendarLink.USER_EDITED -> "edited by you"
+                        else -> "in calendar"
+                    }
+                }
+                anchor != null -> if (cal.prompts.any { (it.prompt as? dev.fitnessapp.algo.challenge.calendar.WritePrompt.Adopt)?.instanceKey == anchor.instanceKey }) "adopt?" else "in calendar"
+                cal.writeOff != null || cal.target == null -> "not in calendar"
+                else -> null
+            }
+            WeekSlotUi(
+                p.slot, if (p.source == "done") "$label done $day" else "$label $day ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}", p.source == "done",
+                status, anchor?.instanceKey,
+            )
         } + plan.droppedSlots.map { WeekSlotUi(it, "${slotLabel(it)}: no room this week", false) }
     }
 

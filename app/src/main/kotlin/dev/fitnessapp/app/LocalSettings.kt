@@ -43,7 +43,40 @@ class LocalSettings(context: Context) {
         prefs.edit().putStringSet(KEY_HABIT_SKIPS, (keep + "$habitId|$date").toSet()).apply()
     }
 
+    /** The write target and default read calendar by identity `(ACCOUNT_NAME|ACCOUNT_TYPE|OWNER_ACCOUNT)` (ANDROID 16.3). */
+    var calendarPrimaryIdentity: String?
+        get() = prefs.getString(KEY_CAL_PRIMARY, null)
+        set(v) = prefs.edit().putString(KEY_CAL_PRIMARY, v).apply()
+
+    /** Further calendars the user added to the read set (never written). */
+    var calendarExtraIdentities: Set<String>
+        get() = prefs.getStringSet(KEY_CAL_EXTRA, emptySet()).orEmpty().toSortedSet()
+        set(v) = prefs.edit().putStringSet(KEY_CAL_EXTRA, v).apply()
+
+    /**
+     * Writes to the user's own calendar (D39): off until the user allows them after the test-calendar checks (T17);
+     * until then every write goes to the device-only test calendar. The sandbox build never writes there (F27).
+     */
+    var calendarRealWrites: Boolean
+        get() = prefs.getBoolean(KEY_CAL_REAL_WRITES, false)
+        set(v) = prefs.edit().putBoolean(KEY_CAL_REAL_WRITES, v).apply()
+
+    /** Series keys whose override applies to the whole series (D39 scope "the whole series"). */
+    var calendarSeriesOverrides: Set<String>
+        get() = prefs.getStringSet(KEY_CAL_SERIES, emptySet()).orEmpty().toSortedSet()
+        set(v) = prefs.edit().putStringSet(KEY_CAL_SERIES, v).apply()
+
+    /** The degraded-mode reason last logged (`calendar_unavailable` is logged when it changes). */
+    var calendarUnavailableReason: String?
+        get() = prefs.getString(KEY_CAL_UNAVAILABLE, null)
+        set(v) = prefs.edit().putString(KEY_CAL_UNAVAILABLE, v).apply()
+
     private companion object {
+        const val KEY_CAL_PRIMARY = "calendar_primary_identity"
+        const val KEY_CAL_EXTRA = "calendar_extra_identities"
+        const val KEY_CAL_REAL_WRITES = "calendar_real_writes"
+        const val KEY_CAL_SERIES = "calendar_series_overrides"
+        const val KEY_CAL_UNAVAILABLE = "calendar_unavailable_reason"
         const val KEY_EXPORT_REMINDER = "export_reminder_enabled"
         const val KEY_PLATFORM_HASH = "platform_config_hash"
         const val KEY_EXPORT_REMINDER_DATE = "export_reminder_date"

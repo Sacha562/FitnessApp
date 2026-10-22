@@ -88,15 +88,20 @@ class ChallengeSessionRepository(
     private val changeoverMin: Int,
 ) {
     /** The plan of [slot] on [date] for the enrollment's current state (Today preview and Start). */
-    suspend fun materialize(enrollmentId: String, slot: String, date: LocalDate): SessionPlan {
+    suspend fun materialize(enrollmentId: String, slot: String, date: LocalDate, eventMin: Int? = null): SessionPlan {
         val f = challenges.folded(enrollmentId)
-        return Materializer.materialize(f.def, params, MaterializeInput(slot, date, f.state, facts.facts(f.def, f.state), catalog.doc, changeoverMin = changeoverMin))
+        return Materializer.materialize(
+            f.def, params, MaterializeInput(slot, date, f.state, facts.facts(f.def, f.state), catalog.doc, changeoverMin = changeoverMin, bookedMin = eventMin),
+        )
     }
 
-    /** Start (UX 11.1): the session, one challenge block, one session exercise per item, the local live plan. */
-    suspend fun start(enrollmentId: String, slot: String): String {
+    /**
+     * Start (UX 11.1): the session, one challenge block, one session exercise per item, the local live plan. [eventMin]
+     * is the matched calendar event's length: the budget is then that minus the changeover (C49, `calendar`).
+     */
+    suspend fun start(enrollmentId: String, slot: String, eventMin: Int? = null): String {
         val date = Week.localDate(Instant.ofEpochMilli(ctx.nowMs()), ctx.zone())
-        return open(enrollmentId, materialize(enrollmentId, slot, date), slot = slot, habitId = null, startedFrom = "today")
+        return open(enrollmentId, materialize(enrollmentId, slot, date, eventMin), slot = slot, habitId = null, startedFrom = "today", budgetSource = if (eventMin != null) "calendar" else "default")
     }
 
     /**
@@ -138,7 +143,7 @@ class ChallengeSessionRepository(
     }
 
     /** Writes the session, its challenge block, one session exercise per planned item and the local live plan. */
-    private suspend fun open(enrollmentId: String, plan: SessionPlan, slot: String?, habitId: String?, startedFrom: String): String {
+    private suspend fun open(enrollmentId: String, plan: SessionPlan, slot: String?, habitId: String?, startedFrom: String, budgetSource: String = "default"): String {
         val uid = ctx.requireUser()
         val now = ctx.nowMs()
         val zone = ctx.zone()
@@ -160,7 +165,7 @@ class ChallengeSessionRepository(
                 challenge_template_id = plan.templateId, habit_id = habitId, phase = s.phase, block_index = s.block.index, block_week = s.block.week,
                 enrollment_mode = s.mode, is_deload = s.mode in DELOAD_MODES, local_date = date.toString(), timezone = zone.id,
                 iso_week = Week.isoWeek(date), gym_id = gym?.id, started_at = now, bodyweight_kg = snap.valueKg?.let { Scaled.fromDouble(it, 2) },
-                bodyweight_source = snap.source.code, bodyweight_stale = snap.stale, time_budget_min = budget, time_budget_source = budget?.let { "default" },
+                bodyweight_source = snap.source.code, bodyweight_stale = snap.stale, time_budget_min = budget, time_budget_source = budget?.let { budgetSource },
                 engine_version = EngineVersion.ENGINE_VERSION, params_hash = params.hash, catalog_version = catalog.version,
             )
             db.sessions().upsert(session)
@@ -188,7 +193,7 @@ class ChallengeSessionRepository(
                     payload = mapOf(
                         "kind" to JsonPrimitive(plan.kind), "template_source" to JsonPrimitive(source), "families" to JsonArray(emptyList()),
                         "started_from" to JsonPrimitive(startedFrom), "budget_min" to (budget?.let(::JsonPrimitive) ?: JsonNull),
-                        "budget_source" to (budget?.let { JsonPrimitive("default") } ?: JsonNull),
+                        "budget_source" to (budget?.let { JsonPrimitive(budgetSource) } ?: JsonNull),
                         "params_hash" to JsonPrimitive(params.hash), "engine_version" to JsonPrimitive(EngineVersion.ENGINE_VERSION),
                         "catalog_version" to JsonPrimitive(catalog.version),
                     ),

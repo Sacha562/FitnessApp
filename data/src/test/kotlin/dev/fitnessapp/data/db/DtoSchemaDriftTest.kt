@@ -1,5 +1,6 @@
 package dev.fitnessapp.data.db
 
+import dev.fitnessapp.data.db.entity.CalendarEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeDefinitionEntity
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
@@ -145,6 +146,16 @@ class DtoSchemaDriftTest {
             "state_hash_before, state_hash_after, cascade_depth, derived_event_type, definition_slug, definition_version, " +
             "definition_jcs_sha256, module_version, engine_version",
         standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    // calendar_events: migration 014, read from information_schema on 2026-10-22 (M2b.5).
+    @Test
+    fun calendarEvents() = check(
+        CalendarEventEntity.serializer(),
+        "provider, instance_key, series_key, source_device_id, classified_kind, title, location, starts_at, ends_at, all_day, " +
+            "local_date, timezone, iso_week, provider_status, challenge_slot, enrollment_id, planned_families, run_intensity, " +
+            "run_minutes, classifier_version, match_method, score, features, override_kind, override_slot, override_at, app_written, " +
+            "marker, adopted_at, write_state, attention, linked_session_id, link_method, recommendation_id, last_seen_at, missing_since",
     )
 
     /** Pull-only: the server columns minus `created_at`, `client_updated_at`, `device_id`, `app_version`, plus the local `source`. */

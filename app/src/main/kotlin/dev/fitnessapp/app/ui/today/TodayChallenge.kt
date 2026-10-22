@@ -264,7 +264,13 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
     private suspend fun launchSession(slot: String, onOpen: (String) -> Unit) {
         val u = _ui.value ?: return
         _busy.value = true
-        val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.start(u.enrollmentId, slot) } }
+        // C49: a calendar event matched to this slot today sets the time budget (its length minus the changeover).
+        val today = java.time.LocalDate.now(ChallengeWeek.ZONE)
+        val event = c.calendar.snapshot.value.anchors.firstOrNull {
+            it.kind == dev.fitnessapp.algo.core.calendar.AnchorKind.CHALLENGE_SESSION && it.enrollmentId == u.enrollmentId && it.slot == slot && it.localDate == today
+        }
+        val eventMin = event?.let { java.time.Duration.between(it.beginUtc, it.endUtc).toMinutes().toInt() }?.takeIf { it > AppContainer.CHANGEOVER_MIN }
+        val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.start(u.enrollmentId, slot, eventMin) } }
             .onFailure { _notice.value = "warn" to (it.message ?: "The session could not start.") }.getOrNull()
         _busy.value = false
         if (id != null) {

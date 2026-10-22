@@ -1930,8 +1930,8 @@ val projection = arrayOf(
     Instances.EVENT_ID, Instances.BEGIN, Instances.END, Instances.CALENDAR_ID, Instances.TITLE,
     Instances.DESCRIPTION, Instances.EVENT_LOCATION, Instances.ALL_DAY, Instances.STATUS,
     Instances.SELF_ATTENDEE_STATUS, Instances.EVENT_TIMEZONE,
-    "_sync_id")                                       // event sync id for the instance key; verify the column
-                                                      // is exposed by the Instances view at scaffold, else read Events by id
+)                                                    // the event's _SYNC_ID for the instance key is read from
+                                                      // Events by id (as built in M2b.5); null -> the provider _ID
 val selection = "${Instances.CALENDAR_ID} IN (${ids.joinToString { "?" }})"
 val sortOrder = "${Instances.BEGIN} ASC, ${Instances.EVENT_ID} ASC"
 ```
@@ -2046,10 +2046,13 @@ Guards enforced by `CalendarWriteExecutor` regardless of what the write plan say
    zero rows if the marker is gone or different. `Marker.likePattern` escapes `\`, `%` and `_` (the slot-key
    class allows `_`, a LIKE wildcard):
    ```kotlin
-   resolver.update(ContentUris.withAppendedId(Events.CONTENT_URI, eventId), values,
-       "${Events.DESCRIPTION} LIKE ? ESCAPE '\\'",
-       arrayOf("%" + Marker.likeEscape("[fitapp:v1 $uuid $slotKey]") + "%"))
+   resolver.update(Events.CONTENT_URI, values,
+       "${Events._ID} = ? AND ${Events.DESCRIPTION} LIKE ? ESCAPE '\\'",
+       arrayOf(eventId.toString(), "%" + Marker.likeEscape("[fitapp:v1 $uuid $slotKey]") + "%"))
    ```
+   The id goes into the selection on `Events.CONTENT_URI`: the Calendar provider refuses any selection on an
+   `events/<id>` URI ("Selection not permitted for content://com.android.calendar/events/<id>", engineering-fact,
+   seen on Android 16 on 2026-10-22, M2b.5). The same holds for the delete guard and the Adopt guard.
    SQLite's `LIKE` ignores ASCII case, so an op is only planned after the last read found the exact,
    case-sensitive marker (16.4); the guard then protects against edits made between that read and the
    batch. Zero rows → abort that op, set the link to `released`, log

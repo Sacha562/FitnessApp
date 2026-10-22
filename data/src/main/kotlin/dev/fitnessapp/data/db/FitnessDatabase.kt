@@ -7,6 +7,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import dev.fitnessapp.data.db.dao.CalendarEventDao
+import dev.fitnessapp.data.db.dao.CalendarInstanceDao
+import dev.fitnessapp.data.db.dao.CalendarLinkDao
 import dev.fitnessapp.data.db.dao.ChallengeDefinitionDao
 import dev.fitnessapp.data.db.dao.ChallengeEnrollmentDao
 import dev.fitnessapp.data.db.dao.ChallengeEventDao
@@ -30,6 +33,9 @@ import dev.fitnessapp.data.db.dao.SyncCursorDao
 import dev.fitnessapp.data.db.dao.UserExercisePrefDao
 import dev.fitnessapp.data.db.dao.WellnessLogDao
 import dev.fitnessapp.data.db.dao.WorkoutSessionDao
+import dev.fitnessapp.data.db.entity.CalendarEventEntity
+import dev.fitnessapp.data.db.entity.CalendarInstanceEntity
+import dev.fitnessapp.data.db.entity.CalendarLinkEntity
 import dev.fitnessapp.data.db.entity.ChallengeDefinitionEntity
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
@@ -60,7 +66,8 @@ import java.io.File
  * (configuration, sessions and sets, wellness, metrics, telemetry) plus the local-only tables of 8.3; version 2
  * (M1b) adds `user_exercise_prefs` and `exports`; version 3 (M2b) the challenge tables (definitions, enrollments,
  * events, rule audit), version 4 the local live plan of a challenge session and version 5 the interval columns of
- * `rest_timer` (the warm-up row countdown, D33). Later milestones add tables through
+ * `rest_timer` (the warm-up row countdown, D33), version 6 (M2b.5) `calendar_events` with the local
+ * `calendar_instance` cache and `calendar_link` table. Later milestones add tables through
  * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
@@ -79,9 +86,12 @@ import java.io.File
         ChallengeRuleEventEntity::class,
         // v4 (M2b.3, local only)
         ChallengeLiveSessionEntity::class,
+        // v6 (M2b.5): the synced calendar events and the local instance cache and link table
+        CalendarEventEntity::class, CalendarInstanceEntity::class, CalendarLinkEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @TypeConverters(Converters::class)
@@ -109,15 +119,18 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun challengeEvents(): ChallengeEventDao
     abstract fun ruleEvents(): ChallengeRuleEventDao
     abstract fun challengeLive(): ChallengeLiveDao
+    abstract fun calendarEvents(): CalendarEventDao
+    abstract fun calendarInstances(): CalendarInstanceDao
+    abstract fun calendarLinks(): CalendarLinkDao
 
     companion object {
-        const val VERSION = 5
+        const val VERSION = 6
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
         /**
          * Hand-written migrations of every version; [NoDestructiveMigrationTest] checks the builder uses only these.
-         * 1 -> 2, 2 -> 3 and 3 -> 4 only add tables, 4 -> 5 only adds nullable columns; all are [AutoMigration]s declared
+         * 1 -> 2, 2 -> 3, 3 -> 4 and 5 -> 6 only add tables, 4 -> 5 only adds nullable columns; all are [AutoMigration]s declared
          * on the class.
          */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()

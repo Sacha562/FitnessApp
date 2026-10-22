@@ -67,7 +67,12 @@ class FoldedEnrollment(
     val state: EnrollmentState,
     internal val lastKey: Pair<Long, String>?,
     internal val eventCount: Int,
-)
+) {
+    companion object {
+        /** A dry-run state on top of [f] (a projection, never stored). */
+        fun projected(f: FoldedEnrollment, state: EnrollmentState): FoldedEnrollment = FoldedEnrollment(f.enrollment, f.def, state, f.lastKey, f.eventCount)
+    }
+}
 
 /** What one write did: the new state, the notifications to show (5.7) and engine warnings. */
 class ChallengeOutcome(val folded: FoldedEnrollment, val notifications: List<ChallengeNotification>, val warnings: List<String>)

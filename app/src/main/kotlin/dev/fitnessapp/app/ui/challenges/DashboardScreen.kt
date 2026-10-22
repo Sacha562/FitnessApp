@@ -75,6 +75,9 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
     var menu by remember { mutableStateOf(false) }
     var proposals by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<String?>(null) }
+    var eventSheet by remember { mutableStateOf<String?>(null) }
+    val calendarSnap by c.calendar.snapshot.collectAsState()
+    eventSheet?.let { key -> dev.fitnessapp.app.ui.calendar.EventSheet(c, calendarSnap, key, onDismiss = { eventSheet = null }, onMessage = {}) }
 
     if (proposals) {
         BackHandler { proposals = false }
@@ -114,7 +117,7 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             Segmented(DashTab.entries, tab, { it.label }, { tab = it })
             when (tab) {
                 DashTab.OVERVIEW -> {
-                    DashboardOverview(u, onPain = { sheet = "pain" }, onTestDay = onTestDay)
+                    DashboardOverview(u, onPain = { sheet = "pain" }, onTestDay = onTestDay, onEvent = { eventSheet = it })
                     HabitRemindersTile(c)
                 }
                 DashTab.RULES -> Rules(u)
@@ -178,7 +181,7 @@ private fun HabitRemindersTile(c: AppContainer) {
 /** The Overview tab (UX 14.2); internal for the screenshot test. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}, onTestDay: () -> Unit = {}) {
+internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}, onTestDay: () -> Unit = {}, onEvent: (String) -> Unit = {}) {
     Tile {
         Pill(u.statusText, container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
         PhaseStepper(u.phases, u.phase)
@@ -190,7 +193,15 @@ internal fun DashboardOverview(u: DashboardUi, onPain: () -> Unit = {}, onTestDa
         Tile {
             TileLabel("This week")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                u.week.forEach { w -> Pill(w.text, container = if (w.done) Fit.Accent else Fit.Raised, content = if (w.done) Fit.OnAccent else Fit.Ink) }
+                u.week.forEach { w ->
+                    val text = w.text + (w.calendar?.let { " · $it" } ?: "")
+                    val key = w.instanceKey
+                    Pill(
+                        text, modifier = if (key != null) Modifier.clickable { onEvent(key) } else Modifier,
+                        container = if (w.done) Fit.Accent else if (w.calendar == "adopt?") Fit.AdvisoryContainer else Fit.Raised,
+                        content = if (w.done) Fit.OnAccent else Fit.Ink,
+                    )
+                }
             }
         }
     }

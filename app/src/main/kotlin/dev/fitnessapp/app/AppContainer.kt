@@ -134,6 +134,8 @@ class AppContainer(private val context: Context) {
         ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })
     }
     val settings: LocalSettings by lazy { LocalSettings(context) }
+    /** The calendar (ANDROID 16): reading, classification and the write-back to the test calendar (D39). */
+    val calendar: dev.fitnessapp.app.calendar.CalendarSync by lazy { dev.fitnessapp.app.calendar.CalendarSync(this) }
     val idle: dev.fitnessapp.app.session.IdleWatcher by lazy { dev.fitnessapp.app.session.IdleWatcher(this) }
 
     val notifications: NotificationPresenter by lazy { NotificationPresenter(context) }

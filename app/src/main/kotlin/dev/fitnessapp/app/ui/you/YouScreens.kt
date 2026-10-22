@@ -83,6 +83,7 @@ fun YouRoute(
     onEquipment: () -> Unit,
     onReliability: () -> Unit,
     onHistory: () -> Unit,
+    onCalendars: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val history by remember { c.history.observeHistory() }.collectAsState(initial = emptyList())
@@ -117,6 +118,8 @@ fun YouRoute(
             NavRow("Equipment", "Your gym and what it has", onEquipment)
             TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Rest timer reliability", "Permissions, phone settings, alarm test", onReliability)
+            TileDivider(Modifier.padding(horizontal = 10.dp))
+            NavRow("Calendars", "Gym sessions in your calendar", onCalendars)
             TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Log bodyweight", "Used for pull-ups, dips and assisted machines", { weighIn = true })
         }

@@ -8,6 +8,9 @@ sealed interface AppKey {
     data object DataSync : AppKey
     data object Equipment : AppKey
     data object Reliability : AppKey
+
+    /** You → Calendars (UX 15.6, D39). */
+    data object Calendars : AppKey
     data object History : AppKey
     data class SessionDetail(val sessionId: String) : AppKey
     data class ExerciseDetail(val exerciseId: String, val from: String) : AppKey
@@ -33,6 +36,7 @@ sealed interface AppKey {
             DataSync -> "data_sync"
             Equipment -> "equipment"
             Reliability -> "reliability"
+            Calendars -> "calendars"
             History -> "history"
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
@@ -49,6 +53,7 @@ sealed interface AppKey {
             s == "data_sync" -> DataSync
             s == "equipment" -> Equipment
             s == "reliability" -> Reliability
+            s == "calendars" -> Calendars
             s == "history" -> History
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }

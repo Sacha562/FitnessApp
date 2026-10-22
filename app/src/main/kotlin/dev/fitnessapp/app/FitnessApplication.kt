@@ -70,7 +70,11 @@ class FitnessApplication : Application(), Configuration.Provider {
             stepS("reminders") {
                 container.appScope.launch {
                     container.challenges.observeOpen().map { l -> l.map { Triple(it.id, it.last_folded_event_id, it.status) } }.distinctUntilChanged()
-                        .collect { container.reminders.recompute() }
+                        .collect {
+                            container.reminders.recompute()
+                            // ANDROID 16.4: challenge state changes re-plan and re-write the calendar.
+                            container.calendar.requestRefresh("challenge_change")
+                        }
                 }
             }
             for ((name, e) in failed.toList()) {
@@ -82,6 +86,7 @@ class FitnessApplication : Application(), Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 foreground = true
+                container.calendar.requestRefresh("app_start", 0)
                 container.syncScheduler.request(trigger = "app_start", immediate = true)
                 val cold = coldStart
                 coldStart = false

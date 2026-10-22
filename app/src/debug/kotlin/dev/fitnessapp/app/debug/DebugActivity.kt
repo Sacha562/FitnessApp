@@ -55,6 +55,10 @@ import java.time.ZoneId
  * stay; "Re-push all data" queues them again.
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action drop_dead_letters
  *   adb logcat -d -s DebugSync
+ * "pause_enrollment" / "resume_enrollment" (optional enrollment_id, default the first open one) pause with Holiday or resume.
+ * The calendar actions of [CalendarDebug] (`calendar_*`) work on the device-only test calendar only:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action calendar_dump
+ *   adb logcat -d -s CalendarDebug
  */
 class DebugActivity : ComponentActivity() {
     private val report = mutableStateOf("")
@@ -69,7 +73,18 @@ class DebugActivity : ComponentActivity() {
                 Log.i("Reminders", "probe armed mode=$mode")
             }
             "abandon_enrollment" -> abandonEnrollment(intent.getStringExtra("enrollment_id"))
+            "pause_enrollment", "resume_enrollment" -> pauseResume(intent.getStringExtra("action")!!, intent.getStringExtra("enrollment_id"))
             "drop_dead_letters" -> dropDeadLetters()
+            "calendar_create_test", "calendar_refresh", "calendar_dump", "calendar_seed", "calendar_edit", "calendar_adopt" -> {
+                val c = (application as FitnessApplication).container
+                val i = intent
+                c.appScope.launch {
+                    CalendarDebug.run(
+                        c, i.getStringExtra("action")!!, i.getStringExtra("spec"), i.getLongExtra("event_id", -1),
+                        i.getStringExtra("field"), i.getStringExtra("value"), i.getStringExtra("instance_key"),
+                    )
+                }
+            }
         }
         setContent {
             FitnessTheme {
@@ -121,6 +136,24 @@ class DebugActivity : ComponentActivity() {
             }.getOrElse { "failed: ${it.message}" }
             Log.i(SYNC_TAG, result)
             report.value = result
+        }
+    }
+
+    /** Pause (reason Holiday) or resume an enrollment through the dashboard's events (calendar checks, M2b.5). */
+    private fun pauseResume(action: String, enrollmentId: String?) {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                val id = enrollmentId ?: c.challenges.open().first().id
+                val today = LocalDate.now(ZONE)
+                val draft = if (action == "pause_enrollment") {
+                    ChallengeEventDraft(EventTypes.PAUSE, EventPayload.Pause("holiday"), Instant.now(), today)
+                } else {
+                    ChallengeEventDraft(EventTypes.RESUME, EventPayload.Resume("other", 0), Instant.now(), today)
+                }
+                "enrollment $id status=${c.challenges.record(id, draft).folded.state.status}"
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(CalendarDebug.TAG, result)
         }
     }
 

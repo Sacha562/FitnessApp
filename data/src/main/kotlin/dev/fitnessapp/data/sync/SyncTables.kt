@@ -2,6 +2,7 @@ package dev.fitnessapp.data.sync
 
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.dao.SyncDao
+import dev.fitnessapp.data.db.entity.CalendarEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
@@ -79,6 +80,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("set_logs", false, true, db.setLogs(), SetLogEntity.serializer()),
     SyncTable("wellness_logs", false, true, db.wellness(), WellnessLogEntity.serializer()),
     SyncTable("metric_observations", false, true, db.metrics(), MetricObservationEntity.serializer()),
+    SyncTable("calendar_events", false, true, db.calendarEvents(), CalendarEventEntity.serializer()),
     SyncTable("challenge_events", true, true, db.challengeEvents(), ChallengeEventEntity.serializer()),
     SyncTable("challenge_rule_events", true, true, db.ruleEvents(), ChallengeRuleEventEntity.serializer()),
     SyncTable("session_events", true, false, db.events(), SessionEventEntity.serializer()),
@@ -88,7 +90,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
     "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "challenge_enrollments", "workout_sessions", "session_blocks",
-    "session_exercises", "set_logs", "wellness_logs", "metric_observations", "challenge_events", "challenge_rule_events",
+    "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events", "challenge_rule_events",
     "session_events", "exports",
 )
 

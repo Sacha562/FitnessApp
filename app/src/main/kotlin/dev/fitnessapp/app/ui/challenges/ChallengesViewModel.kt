@@ -92,7 +92,7 @@ class ChallengesViewModel(private val c: AppContainer) : ViewModel() {
         val met = GateCriteria.criteria(f.def, c.params, s, facts)
         val lines = listOfNotNull(
             "Phase ${s.phase} of ${f.def.doc.phases.size} · block ${s.block.index}, week ${s.block.week}",
-            s.plannedTest.date?.let { "Next test: ${ChallengeTexts.date(it)}" } ?: if (s.plannedTest.basis == "postponed") "Test postponed" else null,
+            ChallengeWeek.nextTestText(c, f, facts),
             "${met.count { it.met == true }} of ${met.size} goals met",
         )
         return ChallengeCard(e.id, e.definition_id, ChallengeTexts.title(f.def), if (s.status == EnrollmentState.ACTIVE) ChallengeTexts.mode(s.mode) else ChallengeTexts.status(s.status), lines)

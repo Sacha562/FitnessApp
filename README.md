@@ -168,9 +168,10 @@ materializer with in-session rules and Undo, the week planner with today advice,
 
 ## M2b log (in progress, from 2026-10-20)
 
-**Builds**: `gradlew test` green after M2b.4, D37 and D38: 388 unit tests (`:algo` 177, `:sim` 60, `:data` 61, `:app` 90),
+**Builds**: `gradlew test` green after M2b.5: 414 unit tests (`:algo` 202, `:sim` 60, `:data` 62, `:app` 90),
 with the Roborazzi screenshots of the test-day cards (`app/src/test/screenshots/test_*.png`).
-Room is at version 5 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`).
+Room is at version 6 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`, v6 the
+calendar: the synced `calendar_events` and the local `calendar_instance` cache and `calendar_link` table).
 How each part was built: CHALLENGE_ENGINE 16.2.
 
 **Steps**:
@@ -181,8 +182,29 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | M2b.2 Challenges tab and setup wizard | built | The tab, the setup wizard (three steps since D35: overview with grip, starting point, first two weeks with Start; proposals at their recommendation), the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
 | M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
 | M2b.4 Test day | built | The test-day wizard (UX 14.9, D36): validity at the start, one card per step in the template's order (weigh-in, warm-up, strength attempts, max reps, holds and the assistance ladder per side, yes / no attempts), the review against the previous valid test, Submit with `session.completed`, `test.completed` and the observations, and the recalculation report. Structured test protocols in `oap@1.1.0` (migration 023, engine 1.1.0, migration 024); the attempt card also serves phase 3's attempts block. Entry from the dashboard and Today. |
-| M2b.5 Calendar | next | |
+| M2b.5 Calendar | built (test calendar) | `calendar.classify` and `challenge.calendar` in `:algo` (marker, classifier, slot matching, write plan; ALGORITHMS_PLANNING 1.7 and GF-CE-25 to 28), Room v6 with `calendar_events` sync, the provider reader and the guarded executor, refresh at app start, on calendar changes, at 05:00 and after challenge changes, Adopt / Rename / Remove / Add to calendar, corrections per event or series, You → Calendars, the event sheet and the dashboard's This week status (D39), the calendar budget (C49) and the session link (C35). Writes go to the device-only test calendar until you switch on real writes. |
 | M2b.6 Cutover | open | With you. |
+
+**M2b.5 phone checks (2026-10-22, test calendar, invented events)**: with calendar access granted, the app read your
+main calendar (read-only) and the new "FitnessApp TEST" calendar. Chess and other appointments read as busy, the two
+"Gym — ... na elleboog" events as planned gym sessions, and your hand-made "Gym — sessie C in elleboogvorm" on Wednesday
+matched slot C (1.0), so nothing was added for it. The app added the test enrollment's remaining sessions of this week and
+next to the test calendar only (Dutch titles, English exercise lines, the human line and the marker last), and a second
+refresh changed nothing. Edits in the test calendar gave the expected states: a moved event kept its new time (`user_moved`),
+a retitled one was no longer updated (`user_edited`), one without its marker was left alone and not offered for adoption
+(`released`), a deleted one was not re-created and offered "Add to calendar" (`user_deleted`). An unmarked "testdag" event
+was offered for Adopt, adopted, and then rewritten by the app with its own title and lines while keeping its time. Pausing
+deleted the two unmodified future events and asked "Remove?" for the moved and the edited one; resuming added the test days
+back without duplicates. The rows reached the server (`calendar_events`, `calendar_*` telemetry) without a rejected upload.
+Found and fixed: the provider refuses a selection on `events/<id>` (Adopt failed with `provider_error`), so every guard now
+selects `_id = ?` on `events` (ANDROID 16.7); the synced rows' `write_state` and `attention` were only written when a link
+changed, so new events stayed `none` and a released event drifted back to `unmarked_needs_adopt` (now written on every
+refresh). The screens, checked with you after unlocking: You → Calendars (main and test calendar first, the other 12 under "More
+calendars"), the event sheet with a correction applied and removed, and the dashboard's This week row ("in calendar",
+"moved by you"). Fixed there: the event sheet's chip rows overflowed (now wrapping, sheet fully open), long titles were cut
+to one line, "Marker removed" and "Session Test" wording, and "Next test" showed the due date (Thu) while the plan placed
+the test on Fri 17:30 (the card and the dashboard now show the planned day and time). Not covered on the phone:
+real-calendar writes (off until you switch them on, after T17) and the C36 rename prompt (unit tests only).
 
 **M2b.4 phone checks (2026-10-21, invented values)**: two full test days from the dashboard, each ending in
 `test.completed` and the report: one after "Start with a test week", one after "Enter my numbers" with "I'm
