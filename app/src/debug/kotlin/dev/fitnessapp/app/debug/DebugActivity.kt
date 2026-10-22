@@ -19,14 +19,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.room.withTransaction
 import dev.fitnessapp.algo.EngineVersion
+import dev.fitnessapp.algo.challenge.enrollment.EventPayload
+import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.app.FitnessApplication
 import dev.fitnessapp.app.ui.theme.FitnessTheme
+import dev.fitnessapp.data.challenge.ChallengeEventDraft
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Debug menu (debug and sandbox builds only). "Run determinism self-test" runs every bundled golden
@@ -41,6 +48,13 @@ import kotlinx.serialization.json.jsonPrimitive
  * "reminder_probe" arms one alarm through the habit-reminder path and logs its delivery latency (ANDROID.md 17):
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action reminder_probe --ei in_s 90
  *   adb logcat -d -s Reminders
+ * "abandon_enrollment" ends a challenge enrollment through the same event as the dashboard's Abandon:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action abandon_enrollment --es enrollment_id <id>
+ * "drop_dead_letters" discards uploads that can never succeed (test data the server rejected): every dead letter, and
+ * outbox rows deferred on a missing parent (`23503`), which would otherwise dead-letter hours later. The local rows
+ * stay; "Re-push all data" queues them again.
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action drop_dead_letters
+ *   adb logcat -d -s DebugSync
  */
 class DebugActivity : ComponentActivity() {
     private val report = mutableStateOf("")
@@ -54,6 +68,8 @@ class DebugActivity : ComponentActivity() {
                 val mode = (application as FitnessApplication).container.reminders.probe(intent.getIntExtra("in_s", 90))
                 Log.i("Reminders", "probe armed mode=$mode")
             }
+            "abandon_enrollment" -> abandonEnrollment(intent.getStringExtra("enrollment_id"))
+            "drop_dead_letters" -> dropDeadLetters()
         }
         setContent {
             FitnessTheme {
@@ -94,9 +110,43 @@ class DebugActivity : ComponentActivity() {
         }
     }
 
+    private fun abandonEnrollment(enrollmentId: String?) {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                val id = requireNotNull(enrollmentId) { "enrollment_id missing" }
+                val draft = ChallengeEventDraft(EventTypes.ABANDON, EventPayload.Abandon("other"), Instant.now(), LocalDate.now(ZONE))
+                val o = c.challenges.record(id, draft)
+                "enrollment $id status=${o.folded.state.status}" + o.warnings.joinToString("") { " warning=$it" }
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(SYNC_TAG, result)
+            report.value = result
+        }
+    }
+
+    private fun dropDeadLetters() {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                c.db.withTransaction {
+                    val dead = c.db.deadLetters().all()
+                    dead.forEach { c.db.deadLetters().delete(it.id) }
+                    val parked = c.db.openHelper.writableDatabase
+                        .compileStatement("DELETE FROM outbox WHERE last_error = '23503'")
+                        .executeUpdateDelete()
+                    "dropped ${dead.size} dead letters, $parked parked outbox rows"
+                }
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(SYNC_TAG, result)
+            report.value = result
+        }
+    }
+
     private companion object {
         const val TAG = "DeterminismSelfTest"
         const val RESTORE_TAG = "DebugRestore"
+        const val SYNC_TAG = "DebugSync"
+        val ZONE: ZoneId = ZoneId.of("Europe/Amsterdam")
     }
 }
 
