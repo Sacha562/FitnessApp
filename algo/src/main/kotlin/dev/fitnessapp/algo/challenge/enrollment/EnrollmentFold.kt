@@ -205,6 +205,7 @@ object EnrollmentFold : DeclaresParams {
             lastChallengeSessionDate = null,
             lastFacts = e.engineFacts,
             stateRev = 0,
+            testBaseline = pastValid.fold(sortedMapOf()) { acc, t -> withBaseline(acc, t.date, t.metrics, t.protocolCodes, t.notComparable) },
         )
         val records = Records(params)
         val vars = TreeMap<String, Value>()
@@ -234,6 +235,19 @@ object EnrollmentFold : DeclaresParams {
         return Step(s, emptyList(), emptyList(), warnings)
     }
 
+
+    /** [base] with every comparable value of a gate-valid test dated [date] (D41); an older test never replaces a newer value. */
+    fun withBaseline(
+        base: SortedMap<String, BaselineValue>, date: LocalDate, metrics: Map<String, Value>, codes: Map<String, String>, notComparable: Set<String>,
+    ): SortedMap<String, BaselineValue> {
+        val out = TreeMap(base)
+        for ((k, v) in metrics) {
+            if (k in notComparable) continue
+            val cur = out[k]
+            if (cur == null || !date.isBefore(cur.date)) out[k] = BaselineValue(v, date, codes[k])
+        }
+        return out
+    }
 
     /** Re-tags an `Int` written to a `Num` var and the like; other values pass unchanged. */
     private fun coerce(t: Type, v: Value): Value = if (t is Type.Q && v is QV && v.dim != t.dim && v.dim == Dim.INT) QV(t.dim, v.v) else v
@@ -321,7 +335,10 @@ object EnrollmentFold : DeclaresParams {
                 s = r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
                 if (test.valid) {
                     val metrics = TreeMap(test.t.fields)
-                    s = s.copy(lastValidTest = TestRecord(e.localDate, p.testSessionId, metrics, p.protocolCodes), validTestCount = s.validTestCount + 1)
+                    s = s.copy(
+                        lastValidTest = TestRecord(e.localDate, p.testSessionId, metrics, p.protocolCodes), validTestCount = s.validTestCount + 1,
+                        testBaseline = withBaseline(s.testBaseline, e.localDate, metrics, p.protocolCodes, emptySet()),
+                    )
                 }
             }
             is EventPayload.AttemptLogged -> {
@@ -408,16 +425,12 @@ object EnrollmentFold : DeclaresParams {
         val env = RuleEnv(def, params, records, s, e.localDate, facts, e)
         val t = LinkedHashMap<String, Value>()
         for ((k, v) in p.metrics) t[k] = grid(def, k, v)
-        val prev = s.lastValidTest
+        // D41: the newest gate-valid value of each measurement, not the newest test as a whole.
         val pt = LinkedHashMap<String, Value>()
-        if (prev != null) {
-            for ((k, v) in prev.metrics) {
-                if (k in prev.notComparable) continue
-                val a = prev.protocolCodes[k]
-                val b = p.protocolCodes[k]
-                if (a != null && b != null && a != b) continue
-                pt[k] = v
-            }
+        for ((k, base) in s.testBaseline) {
+            val b = p.protocolCodes[k]
+            if (base.protocolCode != null && b != null && base.protocolCode != b) continue
+            pt[k] = base.value
         }
         for (m in def.metrics.values) {
             val d = m.derived ?: continue

@@ -196,6 +196,10 @@ server's test rows were deleted (0 left; equipment and preferences kept). The re
 the server has it in `extra_deload` with the re-entry flag, 29 decisions (P22 declined by you), the three earlier tests
 counted for the gates, and the app's events only in the device test calendar (none in your Google calendar). Found after
 Start: the setup dropped the earlier tests' per-arm values (fixed in `SetupImport` with a unit test).
+Then D41 (2026-10-23): with 29 September counting for the gates, the next test would have compared against a test with
+only a hang and no bodyweight; engine 1.4.0 (migration 029) keeps the newest gate-valid value per measurement as `pt`, so
+19 September's 70.7 kg and +32.5 kg 3RM and 30 August's max reps stay the baseline. Your enrollment gets it on the next
+refold.
 
 **M2b.5 phone checks (2026-10-22, test calendar, invented events)**: with calendar access granted, the app read your
 main calendar (read-only) and the new "FitnessApp TEST" calendar. Chess and other appointments read as busy, the two

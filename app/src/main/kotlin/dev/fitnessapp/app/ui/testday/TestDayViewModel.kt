@@ -126,7 +126,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         _ui.update {
             it.copy(
                 phase = Phase.OVERVIEW, title = p.templateTitle(f.def), validity = v, steps = steps(p),
-                previous = f.state.lastValidTest?.metrics.orEmpty(),
+                previous = f.state.testBaseline.mapValues { it.value.value },
             )
         }
         c.fgsEvent("test_validity_shown", mapOf("valid" to v.valid, "reason_code" to v.reasonCode))
@@ -196,7 +196,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         metricTypes = f.def.metrics.mapValues { it.value.spec.type }
         lastBw = c.challengeFacts.facts(f.def, f.state).bwKg
         sessionBw = c.sessionRepository.session(sid)?.bodyweight_kg?.let { Scaled.toDouble(it, 2) }
-        _ui.update { it.copy(sessionId = sid, previous = f.state.lastValidTest?.metrics.orEmpty(), title = live?.plan?.templateTitle(f.def) ?: it.title) }
+        _ui.update { it.copy(sessionId = sid, previous = f.state.testBaseline.mapValues { it.value.value }, title = live?.plan?.templateTitle(f.def) ?: it.title) }
         viewModelScope.launch {
             combine(
                 c.challengeSessions.observeLive(sid),

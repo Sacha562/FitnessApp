@@ -39,6 +39,11 @@ object StateJson {
         ),
         "last_valid_test" to (s.lastValidTest?.let(::test) ?: JsonNull),
         "valid_test_count" to int(s.validTestCount),
+        "test_baseline" to JsonObject(
+            s.testBaseline.mapValues { (_, b) ->
+                obj("value" to ValueJson.encode(b.value), "date" to JsonPrimitive(b.date.toString()), "protocol_code" to str(b.protocolCode))
+            }.toSortedMap(),
+        ),
         "proposal_decisions" to JsonObject(
             s.proposalDecisions.mapValues { obj("decision" to JsonPrimitive(it.value.decision), "decided_at" to JsonPrimitive(it.value.decidedAt.toString())) }.toSortedMap(),
         ),

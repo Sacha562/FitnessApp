@@ -3,11 +3,11 @@
     "proposals": "declined",
     "definition": "oap@1.4.0",
     "definition_jcs_sha256": "8fca944277e084d1d3e35ed282bfb13366ac68b95d21c8993345e04198abbd4d",
-    "engine_version": "1.3.0",
+    "engine_version": "1.4.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 497,
     "audit_rows": 327,
-    "final_state_hash": "6b49868a812758e27b31db03b03a15d2800dd956b3fdca0150dca918256325ec",
+    "final_state_hash": "6589689856fbd44a0fb910932ec55be9aa0f239fbd43f540888fb8f01c9ef8f7",
     "violations": [],
     "weeks": [
         {

@@ -685,7 +685,7 @@ side-wise.
 | `p.<name>` | per declaration | everywhere | Effective param value (definition default -> enrollment params -> proposal decisions). |
 | `s.<name>` | per declaration | everywhere | State var, pre-event value (snapshot semantics). |
 | `t.<metric>` | per metric | rules on `test.completed`, gates, derived metrics | The test being processed (for gates: the test that triggered the gate check). `t.bw` is that test day's raw weigh-in (metric `bw`, C32), so gates are evaluated on the test-day bodyweight (C62). |
-| `pt.<metric>` | per metric | same | The previous valid test of the enrollment (for comparisons). |
+| `pt.<metric>` | per metric | same | The comparison baseline: per measurement, the newest value of any gate-valid test of the enrollment (D41; section 11.2). |
 | `m.<metric>` | per metric | gates with source `anyValidObservation`, rules on `attempt.logged` | Bool metrics: true if any valid observation since the phase started is true (per side); numeric: latest valid observation. |
 | `d.<name>` | per derived | rules on the derived fact's events | Derived fact (section 2.4.3). |
 | `ex.<itemKey>.<field>` | `List<T>` | rules on `session.completed` | Logged rows of that item in the event's session, in logging order. Fields: `reps`, `rir` (raw reported RIR, C17), `added`, `pin`, `assist`, `fingers`, `hold_s`, `hold_reserve_s`, `ecc_s`, `effort` (`max`/`hard`/`ok`/`easy`), `side`, `kind`, and one boolean field per DATA_MODEL E6 set flag under its snake_case code (`grip_slip_before_last`, `jerky`, `hand_shift`, `torso_rotation`, `hip_rotation`, `technique_breakdown`, `failed_rep`, `used_straps`; C38), plus scalars `plannedRows` (Int, rows prescribed after mode transforms), `targetReps` (Int), `targetHold_s`. `ex.<key>.L` / `.R` restrict to one side. Each field maps to a stored column (table below). |
@@ -2125,9 +2125,13 @@ is stored with RIR 0 (C63). On submit it writes metric observations (with `proto
 ### 11.2 Stall protocols
 
 Definitions express stall handling as test-day rules with a derived `progress` fact comparing `t.*`
-with `pt.*` (OAP: `struct.stall`, `d.testProgress`). The engine supplies `pt` (the previous valid
-test) and the metric comparability rule: observations with a different `protocol_code` are never
-compared (for example the 2026-08-30 one-arm hang under the old protocol). The general STALL-1 module
+with `pt.*` (OAP: `struct.stall`, `d.testProgress`). The engine supplies `pt` and the metric comparability
+rule: observations with a different `protocol_code` are never compared (for example the 2026-08-30 one-arm
+hang under the old protocol). Since D41 (`challenge.enrollment` 1.2.0) `pt` is not the newest gate-valid test as a
+whole but, per measurement, the newest value of any gate-valid test (imported or logged; the state's
+`test_baseline` with each value's date and protocol code). A value marked not comparable never enters it, so a
+partial test (the imported 2026-09-29 hang) cannot hide the bodyweight and strength values of earlier tests. The
+phase gates still read the newest gate-valid test as a whole (C62), and so does the dashboard's gate view. The general STALL-1 module
 does not act on challenge items (RULE mode, C15); its global reactive deload triggers (C13) read the
 contract and do not stack an extra deload on top of a challenge deload week (F8).
 

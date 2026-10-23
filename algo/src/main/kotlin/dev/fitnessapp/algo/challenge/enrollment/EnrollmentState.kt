@@ -28,6 +28,9 @@ data class TestRecord(
     val notComparable: Set<String> = emptySet(),
 )
 
+/** One measurement of the comparison baseline (D41): its value, the test date it comes from and its protocol code. */
+data class BaselineValue(val value: Value, val date: LocalDate, val protocolCode: String?)
+
 /** A completed session of an open week, reduced to what `week.closed` rules and `sessionsDone` read. */
 data class WeekSession(
     val slot: String?,
@@ -76,6 +79,8 @@ data class EnrollmentState(
     val lastChallengeSessionDate: LocalDate?,
     val lastFacts: EngineFacts?,
     val stateRev: Int,
+    /** D41: per measurement, the newest value of any gate-valid test; `pt` reads it. */
+    val testBaseline: SortedMap<String, BaselineValue> = sortedMapOf(),
 ) {
     fun approved(proposalId: String): Boolean = proposalDecisions[proposalId]?.decision == "approved"
 
