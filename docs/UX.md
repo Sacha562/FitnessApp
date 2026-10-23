@@ -1088,7 +1088,7 @@ session store. `today` provides the verdict `TRAIN`, `REST_SOFT` or `REST_HARD` 
 | `SETUP_NEEDED` | Onboarding incomplete (goals missing) | "Finish setting up" | "Continue setup" | none |
 | `IN_PROGRESS` | A session is running | "Session A in progress" + elapsed + sets done / total + rest state | "Resume session" | none |
 | `DONE` | A gym or test session finished today and nothing else is planned today | "Session A done · 68 min · 13 sets" | none | "Next: Sun 11 Oct, Test day 13:00", "View summary" |
-| `PLANNED` (challenge) | Calendar has a challenge session today (matched slot) | "Gym today 19:45 · OAP Session A" + mode line ("Deload week: sets halved, loads kept") + item preview | "Start Session A" | "Other options", time chips |
+| `PLANNED` (challenge) | Calendar has a challenge session today (matched slot) | "Gym today 19:45 · OAP Session A" + mode line ("Deload week: sets halved, loads kept") + item preview (built as a "Show exercises" fold, closed by default: the setup review's rows, materialized with the same calendar budget as Start) | "Start Session A" | "Other options", time chips |
 | `PLANNED` (test) | Today's matched slot is TEST | "Test day today 13:00" + validity line | "Log test day" (opens the Test-day wizard) | "Postpone" (if the challenge allows it) |
 | `PLANNED` (general) | Calendar has a planned general gym event today | "Gym today 18:00 · Legs + push" | "Start legs + push" | "Other options", time chips |
 | `PLANNED_BUT_REST` soft | Planned general event today but the verdict is `REST_SOFT` | "Planned 19:45, but rest is advised" + reason | "Start anyway" (tonal, not primary colour) | "Rest today" (records the choice) |

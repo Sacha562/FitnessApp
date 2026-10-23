@@ -288,12 +288,7 @@ private fun ReviewSessionRow(session: ReviewSession) {
             }
             Icon(if (open) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (open) "Hide exercises" else "Show exercises", tint = Fit.Muted)
         }
-        if (open) session.exercises.forEach { e ->
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(e.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                if (e.detail.isNotEmpty()) Text(e.detail, style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-            }
-        }
+        if (open) ExerciseRows(session.exercises)
     }
 }
 

@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +40,10 @@ import dev.fitnessapp.algo.challenge.plan.TodayAdvisor
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.session.SessionService
+import dev.fitnessapp.app.ui.challenges.ChallengeLines
 import dev.fitnessapp.app.ui.challenges.ChallengeTexts
+import dev.fitnessapp.app.ui.challenges.ExerciseRows
+import dev.fitnessapp.app.ui.challenges.ReviewExercise
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
 import dev.fitnessapp.app.ui.challenges.HabitDays
 import dev.fitnessapp.app.ui.common.Banner
@@ -72,6 +80,8 @@ data class TodayChallengeUi(
     val slotName: String? = null,
     /** [slot] is the definition's test slot: Start opens the test-day wizard (UX 14.9). */
     val isTest: Boolean = false,
+    /** [slot]'s exercises as Start would create them, for "Show exercises"; empty when there is nothing to start. */
+    val exercises: List<ReviewExercise> = emptyList(),
 )
 
 /** How a habit row is completed (UX 9.6): quick-done by its checkbox, or through the home mini-session (Start). */
@@ -135,6 +145,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             return TodayChallengeUi(
                 e.id, program, f.state.mode, if (done) "Done today: ${name(todaySlot)}" else "Today: ${name(todaySlot)}",
                 time, if (done) null else todaySlot, false, null, habits, isTest = todaySlot == def.doc.structure.block.testSlot,
+                exercises = if (done) emptyList() else preview(e.id, todaySlot, today),
             )
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
@@ -151,7 +162,21 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val nowSlot = if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null
         return TodayChallengeUi(
             e.id, program, f.state.mode, nextText, blocked, nowSlot, true, blocked, habits, slotName = nowSlot?.let(::name)?.substringBefore(':'),
+            exercises = nowSlot?.let { preview(e.id, it, today) }.orEmpty(),
         )
+    }
+
+    /** What Start would create for [slot] today, with the same calendar budget (C49); empty if it cannot be planned. */
+    private suspend fun preview(enrollmentId: String, slot: String, today: LocalDate): List<ReviewExercise> =
+        runCatching { ChallengeLines.exercises(c.challengeSessions.materialize(enrollmentId, slot, today, eventMinutes(enrollmentId, slot, today))) }
+            .getOrDefault(emptyList())
+
+    /** C49: a calendar event matched to this slot today sets the time budget (its length minus the changeover). */
+    private fun eventMinutes(enrollmentId: String, slot: String, today: LocalDate): Int? {
+        val event = c.calendar.snapshot.value.anchors.firstOrNull {
+            it.kind == dev.fitnessapp.algo.core.calendar.AnchorKind.CHALLENGE_SESSION && it.enrollmentId == enrollmentId && it.slot == slot && it.localDate == today
+        }
+        return event?.let { java.time.Duration.between(it.beginUtc, it.endUtc).toMinutes().toInt() }?.takeIf { it > AppContainer.CHANGEOVER_MIN }
     }
 
     /** UX 9.6: today's habits with their dose, state and how they are completed. */
@@ -264,12 +289,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
     private suspend fun launchSession(slot: String, onOpen: (String) -> Unit) {
         val u = _ui.value ?: return
         _busy.value = true
-        // C49: a calendar event matched to this slot today sets the time budget (its length minus the changeover).
-        val today = java.time.LocalDate.now(ChallengeWeek.ZONE)
-        val event = c.calendar.snapshot.value.anchors.firstOrNull {
-            it.kind == dev.fitnessapp.algo.core.calendar.AnchorKind.CHALLENGE_SESSION && it.enrollmentId == u.enrollmentId && it.slot == slot && it.localDate == today
-        }
-        val eventMin = event?.let { java.time.Duration.between(it.beginUtc, it.endUtc).toMinutes().toInt() }?.takeIf { it > AppContainer.CHANGEOVER_MIN }
+        val eventMin = eventMinutes(u.enrollmentId, slot, java.time.LocalDate.now(ChallengeWeek.ZONE))
         val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.start(u.enrollmentId, slot, eventMin) } }
             .onFailure { _notice.value = "warn" to (it.message ?: "The session could not start.") }.getOrNull()
         _busy.value = false
@@ -296,6 +316,18 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
         Pill(u.program + " · " + ChallengeTexts.mode(u.mode), container = if (u.mode == "injury") Fit.SafetyContainer else Fit.Raised)
         Text(u.headline, style = MaterialTheme.typography.titleLarge)
         u.detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
+        if (u.exercises.isNotEmpty()) {
+            // Look before starting: the exercises Start would create, folded (closed by default).
+            var open by rememberSaveable(u.enrollmentId, u.slot) { mutableStateOf(false) }
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { open = !open },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(if (open) "Hide exercises" else "Show exercises", style = MaterialTheme.typography.labelLarge, color = Fit.Accent, modifier = Modifier.weight(1f))
+                Icon(if (open) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, null, tint = Fit.Accent)
+            }
+            if (open) ExerciseRows(u.exercises)
+        }
         val slot = u.slot
         if (!sessionActive && slot != null) {
             if (u.isTest && !u.trainNow) {

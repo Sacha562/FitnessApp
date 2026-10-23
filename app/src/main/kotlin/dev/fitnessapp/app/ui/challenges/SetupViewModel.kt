@@ -315,22 +315,11 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
                         val plan = WeekPlanner.plan(def, c.params, PlanInput(Instant.now(), zone, s, facts, start, projected = w == 1))
                         val sessions = plan.sessions.map { p ->
                             val sp = Materializer.materialize(def, c.params, MaterializeInput(p.slot, p.date, s, facts, c.catalog.doc, changeoverMin = AppContainer.CHANGEOVER_MIN))
-                            val planned = sp.items.filter { it.status == "planned" }
-                            val main = planned.filter { it.role != "warmup" && it.role != "prehab" }.map { item ->
-                                // A test item reads as what it measures ("Max strict pull-ups"), without a set count.
-                                val metric = item.metric
-                                if (item.role == "test" && metric != null) {
-                                    ReviewExercise(if (metric == "bw") "Weigh-in" else ChallengeTexts.metricLabel(metric), if (item.rows.any { it.side == "L" || it.side == "R" }) "each arm" else "")
-                                } else {
-                                    ReviewExercise(item.name["en"] ?: item.key, ChallengeLines.detailOf(item))
-                                }
-                            }
                             val name = def.templates.values.firstOrNull { it.slot == p.slot }?.name?.get("en")
                             ReviewSession(
                                 slotName(def, p.slot), name?.substringAfter(':', "")?.trim()?.ifEmpty { null }?.replaceFirstChar { it.uppercase() },
                                 "${ChallengeTexts.date(p.date)} · ${ChallengeTexts.time(Week.localTime(p.interval.start, zone))}",
-                                listOfNotNull(ReviewExercise("Warm-up", "").takeIf { planned.any { it.role == "warmup" } }) + main +
-                                    listOfNotNull(ReviewExercise("Prehab", "").takeIf { planned.any { it.role == "prehab" } }),
+                                ChallengeLines.exercises(sp),
                             )
                         }
                         val notes = plan.droppedSlots.map { "${slotName(def, it)}: no room this week" } + plan.warnings

@@ -35,6 +35,24 @@ object ChallengeLines {
         return volume + (load?.let { " · $it" } ?: "")
     }
 
+    /**
+     * The planned items as name and detail rows for the setup review and Today's preview: "Warm-up" first and "Prehab"
+     * last as one row each; a test item reads as what it measures ("Max strict pull-ups"), without a set count.
+     */
+    fun exercises(sp: SessionPlan): List<ReviewExercise> {
+        val planned = sp.items.filter { it.status == "planned" }
+        val main = planned.filter { it.role != "warmup" && it.role != "prehab" }.map { item ->
+            val metric = item.metric
+            if (item.role == "test" && metric != null) {
+                ReviewExercise(if (metric == "bw") "Weigh-in" else ChallengeTexts.metricLabel(metric), if (item.rows.any { it.side == "L" || it.side == "R" }) "each arm" else "")
+            } else {
+                ReviewExercise(item.name["en"] ?: item.key, detailOf(item))
+            }
+        }
+        return listOfNotNull(ReviewExercise("Warm-up", "").takeIf { planned.any { it.role == "warmup" } }) + main +
+            listOfNotNull(ReviewExercise("Prehab", "").takeIf { planned.any { it.role == "prehab" } })
+    }
+
     /** One line per planned item, warm-up first and prehab last (one line each), for an event description. */
     fun descriptionLines(sp: SessionPlan): List<String> {
         val planned = sp.items.filter { it.status == "planned" }
