@@ -25,6 +25,8 @@ import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.app.FitnessApplication
+import dev.fitnessapp.app.ui.challenges.SetupDraft
+import dev.fitnessapp.app.ui.challenges.SetupViewModel
 import dev.fitnessapp.app.ui.theme.FitnessTheme
 import dev.fitnessapp.data.challenge.ChallengeEventDraft
 import kotlinx.coroutines.launch
@@ -56,6 +58,10 @@ import java.time.ZoneId
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action drop_dead_letters
  *   adb logcat -d -s DebugSync
  * "pause_enrollment" / "resume_enrollment" (optional enrollment_id, default the first open one) pause with Holiday or resume.
+ * "setup_draft" saves a challenge setup draft (SetupDraft JSON, base64) as the wizard's progress, so the wizard opens
+ * with those values for the user to check and Start (cutover import, D40); it creates nothing:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action setup_draft --es definition_id <id> --es draft_b64 <b64>
+ *   adb logcat -d -s DebugSetup
  * The calendar actions of [CalendarDebug] (`calendar_*`) work on the device-only test calendar only:
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action calendar_dump
  *   adb logcat -d -s CalendarDebug
@@ -75,7 +81,8 @@ class DebugActivity : ComponentActivity() {
             "abandon_enrollment" -> abandonEnrollment(intent.getStringExtra("enrollment_id"))
             "pause_enrollment", "resume_enrollment" -> pauseResume(intent.getStringExtra("action")!!, intent.getStringExtra("enrollment_id"))
             "drop_dead_letters" -> dropDeadLetters()
-            "calendar_create_test", "calendar_refresh", "calendar_dump", "calendar_seed", "calendar_edit", "calendar_adopt" -> {
+            "setup_draft" -> setupDraft(intent.getStringExtra("definition_id"), intent.getStringExtra("draft_b64"))
+            "calendar_create_test", "calendar_refresh", "calendar_dump", "calendar_seed", "calendar_edit", "calendar_adopt", "calendar_delete_test" -> {
                 val c = (application as FitnessApplication).container
                 val i = intent
                 c.appScope.launch {
@@ -157,6 +164,20 @@ class DebugActivity : ComponentActivity() {
         }
     }
 
+    private fun setupDraft(definitionId: String?, draftB64: String?) {
+        val result = runCatching {
+            val id = requireNotNull(definitionId) { "definition_id missing" }
+            val text = String(android.util.Base64.decode(requireNotNull(draftB64) { "draft_b64 missing" }, android.util.Base64.DEFAULT), Charsets.UTF_8)
+            val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = false }
+            val draft = json.decodeFromString(SetupDraft.serializer(), text).copy(layout = SetupViewModel.LAYOUT)
+            getSharedPreferences("challenge_setup", MODE_PRIVATE).edit()
+                .putString(id, kotlinx.serialization.json.Json.encodeToString(SetupDraft.serializer(), draft)).commit()
+            "draft saved for $id: start=${draft.start} mode=${draft.mode} tests=${draft.pastTests.size} vars=${draft.vars.keys}"
+        }.getOrElse { "failed: ${it.message}" }
+        Log.i(SETUP_TAG, result)
+        report.value = result
+    }
+
     private fun dropDeadLetters() {
         val c = (application as FitnessApplication).container
         c.appScope.launch {
@@ -179,6 +200,7 @@ class DebugActivity : ComponentActivity() {
         const val TAG = "DeterminismSelfTest"
         const val RESTORE_TAG = "DebugRestore"
         const val SYNC_TAG = "DebugSync"
+        const val SETUP_TAG = "DebugSetup"
         val ZONE: ZoneId = ZoneId.of("Europe/Amsterdam")
     }
 }

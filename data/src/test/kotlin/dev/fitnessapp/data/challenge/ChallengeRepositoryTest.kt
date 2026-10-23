@@ -113,17 +113,17 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled")
+        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
-        f.state.proposalDecisions.size shouldBe 27
+        f.state.proposalDecisions.size shouldBe 29
         // D37: before the enrollment exists the facts resolve the grip-dependent weighted pull-up with the param defaults,
         // so its k is there and the inits that read userK('weighted_pullup') succeed.
         (f.state.vars["anchorFraction"] as? QV)?.v?.toPlainString() shouldBe "0.8239"
         (f.state.vars["e1rmAdded"] as? QV)?.v?.stripTrailingZeros()?.toPlainString() shouldBe "39.38"
         // created + 27 decisions + today's day tick, which sorts first (00:00.002) and is folded after the creation
         val events = db.challengeEvents().forEnrollment(f.enrollment.id)
-        events.size shouldBe 29
+        events.size shouldBe 31
         events.first().dedupe_key shouldBe "day.tick:2026-10-20"
         events[1].event_type shouldBe EventTypes.CREATED
         val row = db.enrollments().get(f.enrollment.id)!!
@@ -131,7 +131,7 @@ class ChallengeRepositoryTest {
         row.state_hash shouldBe StateJson.hash(f.state)
         row.last_folded_event_id shouldBe events.last().id
         row.fold_generation shouldBe 0
-        Json.parseToJsonElement(row.rule_decisions).jsonObject.size shouldBe 27
+        Json.parseToJsonElement(row.rule_decisions).jsonObject.size shouldBe 29
         // The stored payloads fold back to the same state.
         val def = f.def
         val decoded = events.map {
@@ -139,7 +139,7 @@ class ChallengeRepositoryTest {
         }
         StateJson.hash(EnrollmentFold.fold(def, params, decoded).state) shouldBe row.state_hash
         db.outbox().pendingCount("challenge_enrollments", row.id) shouldBe 1
-        db.outbox().batch("challenge_events", Long.MAX_VALUE, 100).size shouldBe 29
+        db.outbox().batch("challenge_events", Long.MAX_VALUE, 100).size shouldBe 31
     }
 
     @Test
@@ -156,8 +156,8 @@ class ChallengeRepositoryTest {
         b.folded.enrollment.fold_generation shouldBe 1
         val stored = db.enrollments().get(f.enrollment.id)!!
         stored.state_hash shouldBe StateJson.hash(b.folded.state)
-        db.challengeEvents().count(f.enrollment.id) shouldBe 31
-        stored.state_rev shouldBe 30
+        db.challengeEvents().count(f.enrollment.id) shouldBe 33
+        stored.state_rev shouldBe 32
     }
 
     @Test
@@ -194,6 +194,6 @@ class ChallengeRepositoryTest {
         other.reconcile()
         val g = other.folded(f.enrollment.id)
         g.enrollment.fold_generation shouldBe 1
-        g.state.stateRev shouldBe 29
+        g.state.stateRev shouldBe 31
     }
 }

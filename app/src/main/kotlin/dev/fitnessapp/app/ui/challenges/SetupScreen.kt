@@ -55,6 +55,7 @@ import dev.fitnessapp.app.ui.common.ProgressBar
 import dev.fitnessapp.app.ui.common.SectionLabel
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.theme.Fit
+import java.time.LocalDate
 
 /** The challenge setup wizard (UX 14.8, D35): three steps, Start on the last. */
 @Composable
@@ -180,8 +181,27 @@ private fun MidProgram(def: CompiledDefinition, ui: SetupUi, vm: SetupViewModel)
     IntField("Phase", d.phase) { v -> vm.update { it.copy(phase = v) } }
     IntField("Block", d.blockIndex) { v -> vm.update { it.copy(blockIndex = v) } }
     IntField("Week of the block", d.blockWeek) { v -> vm.update { it.copy(blockWeek = v) } }
-    ChoiceChips(listOf("normal", "deload", "test_pending", "extra_deload"), d.mode, ChallengeTexts::mode) { v -> vm.update { it.copy(mode = v) } }
+    IntField("Week of the program", d.weekOrdinal) { v -> vm.update { it.copy(weekOrdinal = v) } }
+    ChoiceChips(listOf("normal", "deload", "test_pending", "extra_deload", "injury"), d.mode, ChallengeTexts::mode) { v -> vm.update { it.copy(mode = v) } }
+    if (d.mode == "injury") {
+        FitTextField(
+            d.vars[SetupViewModel.INJURY_START] ?: "", { v -> vm.update { it.copy(vars = it.vars + (SetupViewModel.INJURY_START to v.trim())) } },
+            Modifier.fillMaxWidth(), label = "Elbow protocol started (yyyy-mm-dd)", singleLine = true,
+        )
+    }
     FitTextField(d.plannedTestDate ?: "", { v -> vm.update { it.copy(plannedTestDate = v.ifBlank { null }) } }, Modifier.fillMaxWidth(), label = "Next test date (yyyy-mm-dd, optional)", singleLine = true)
+    for ((key, name) in vm.blockCountItems(def)) {
+        IntField("$name: sessions done in this block", d.blockItemCounts[key] ?: 0) { v -> vm.update { it.copy(blockItemCounts = it.blockItemCounts + (key to maxOf(0, v))) } }
+    }
+    if (d.pastTests.isNotEmpty()) {
+        MoreSection("Earlier tests (${d.pastTests.size})") {
+            val units = def.metrics.mapValues { (_, m) ->
+                val t = m.type.let { (it as? dev.fitnessapp.algo.challenge.fitexpr.Type.SideT)?.elem ?: it }
+                (t as? dev.fitnessapp.algo.challenge.fitexpr.Type.Q)?.dim?.unit.orEmpty()
+            }
+            d.pastTests.forEachIndexed { i, t -> PastTestRow(t, units, onValid = { v -> vm.update { it.copy(pastTests = it.pastTests.mapIndexed { j, x -> if (j == i) x.copy(validForGate = v) else x }) } }, onRemove = { vm.update { it.copy(pastTests = it.pastTests.filterIndexed { j, _ -> j != i }) } }) }
+        }
+    }
     MoreSection("Current loads") {
         for ((name, value) in ui.computed) {
             val info = def.stateVarByName[name] ?: continue
@@ -196,6 +216,29 @@ private fun MidProgram(def: CompiledDefinition, ui: SetupUi, vm: SetupViewModel)
                 shown, { v -> vm.update { it.copy(vars = it.vars + (name to v.replace(',', '.'))) } }, Modifier.fillMaxWidth(),
                 label = ChallengeTexts.varLabel(name), singleLine = true,
             )
+        }
+    }
+}
+
+/** One imported test: its date and values, whether it counts for the gates, and Remove (D40). */
+@Composable
+private fun PastTestRow(t: DraftTest, units: Map<String, String>, onValid: (Boolean) -> Unit, onRemove: () -> Unit) {
+    Tile(spacing = 4.dp) {
+        Text(ChallengeTexts.date(LocalDate.parse(t.date)), style = MaterialTheme.typography.titleSmall)
+        val values = t.metrics.entries.groupBy { it.key.substringBefore('.') }.map { (metric, entries) ->
+            val v = entries.sortedBy { it.key }.joinToString(" / ") { e -> (e.key.substringAfter('.', "").ifEmpty { null }?.let { "$it " } ?: "") + e.value }
+            val unit = units[metric].orEmpty().let { if (it.isEmpty()) "" else " $it" }
+            ChallengeTexts.metricLabel(metric) + " " + v + unit + if (metric in t.notComparable) " (other protocol)" else ""
+        }
+        values.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        t.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+        Row(
+            Modifier.fillMaxWidth().toggleable(t.validForGate, role = Role.Checkbox) { onValid(it) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(t.validForGate, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = Fit.Accent))
+            Text("Counts for the gates", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp).weight(1f))
+            LinkButton("Remove", onRemove)
         }
     }
 }

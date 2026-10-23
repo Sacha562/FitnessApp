@@ -51,7 +51,7 @@ class MaterializerTest {
     fun `phase-1 session A in a normal week`() {
         val p = plan(normal(), "A")
         p.templateId shouldBe "A1"
-        p.items.map { it.key } shouldBe listOf("wu_row", "wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pre_rwc", "pre_ps", "pre_fp")
+        p.items.map { it.key } shouldBe listOf("wu_row", "wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pallof", "pre_rwc", "pre_ps", "pre_fp")
         val oaa = p.item("oaa")
         oaa.pairs() shouldBe 5
         oaa.rows.first().pin shouldBe BigDecimal(40)

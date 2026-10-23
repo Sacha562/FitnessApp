@@ -14,6 +14,7 @@ import dev.fitnessapp.algo.challenge.enrollment.RowLog
 import dev.fitnessapp.algo.challenge.enrollment.SessionLog
 import dev.fitnessapp.algo.challenge.enrollment.StateJson
 import dev.fitnessapp.algo.challenge.fitexpr.BoolV
+import dev.fitnessapp.algo.challenge.fitexpr.Dec
 import dev.fitnessapp.algo.challenge.fitexpr.Dim
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.LoadProfile
@@ -39,6 +40,8 @@ import dev.fitnessapp.algo.challenge.plan.PlanInput
 import dev.fitnessapp.algo.challenge.plan.WeekPlanner
 import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.det.Grid
+import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.selection.catalog.CatalogDoc
 import java.math.BigDecimal
@@ -92,7 +95,11 @@ class ChallengeSimulator(
         bwKg = BigDecimal("70.70"),
         userK = sortedMapOf("weighted_pullup" to UserKFact("chinup_weighted", BigDecimal("30.0000"), BigDecimal("0.3000"), null, 0)),
         machines = sortedMapOf("assisted_pullup_machine" to MachineCalibration("lb", BigDecimal(5), BigDecimal.ZERO, null, BigDecimal("6.5"), BigDecimal.ONE, 1)),
-        loadProfiles = sortedMapOf("belt" to LoadProfile((0..24).map { BigDecimal("2.5").multiply(BigDecimal(it)) }, 1)),
+        loadProfiles = sortedMapOf(
+            "belt" to LoadProfile((0..24).map { BigDecimal("2.5").multiply(BigDecimal(it)) }, 1),
+            // A cable stack in 5 lb steps (D40: the Pallof press starts at 25 lb).
+            "cable" to LoadProfile((0..44).map { Grid.decimal(BigDecimal(5 * it).multiply(Dec.ofParam(params.double("load.lb_kg"))), GridKind.KG) }, 1),
+        ),
         has = listOf(
             "adjustable_bench", "assisted_pullup_machine", "barbell", "cable_station", "chest_supported_row", "dip_belt", "dip_station",
             "dumbbells", "fixed_neutral_handle", "pullup_bar", "rower_erg", "seated_cable_row",
@@ -314,11 +321,14 @@ class ChallengeSimulator(
         }
     }
 
-    /** Invariant: every prescribed load is loadable with the persona's equipment (2.6). */
+    /** Invariant: every prescribed load is loadable with the persona's equipment (2.6): belt loads, or the cable stack. */
     private fun checkLoads(plan: SessionPlan) {
         val belt = facts.loadProfiles.getValue("belt").achievableKg
+        val cable = facts.loadProfiles.getValue("cable").achievableKg
         for (item in plan.items) for (r in item.rows) {
-            r.addedKg?.let { a -> if (belt.none { it.compareTo(a) == 0 }) violations += "${plan.date} ${item.key}: +$a kg not loadable" }
+            val external = catalog.exercises.firstOrNull { it.slug == item.catalogSlug }?.loadMode == "external"
+            val points = if (external) cable else belt
+            r.addedKg?.let { a -> if (points.none { it.compareTo(a) == 0 }) violations += "${plan.date} ${item.key}: +$a kg not loadable" }
             r.pin?.let { p -> if (p.remainder(BigDecimal(5)).signum() != 0 || p.signum() < 0) violations += "${plan.date} ${item.key}: pin $p not on the machine" }
         }
     }

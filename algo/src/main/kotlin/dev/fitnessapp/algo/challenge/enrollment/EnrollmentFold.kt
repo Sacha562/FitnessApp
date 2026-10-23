@@ -98,8 +98,20 @@ object EnrollmentFold : DeclaresParams {
         val warnings = ArrayList(step.warnings)
         val trail = ArrayList<Pair<ChallengeEvent, EnrollmentState>>()
         trail += created to step.state
+        // 4.3 (D40): setup writes one decision per proposal at creation + 1 .. n ms. They belong to the creation, so
+        // they apply before the creation day's ticks, which are stamped at local midnight and sort earlier.
+        val setupEnd = created.occurredAt.plusMillis(def.doc.proposals.size.toLong())
+        val setup = sorted.filter {
+            it.type == EventTypes.APPROVAL && it.supersedesEventId == null && latest[it.id.toString()] == null &&
+                it.occurredAt.isAfter(created.occurredAt) && !it.occurredAt.isAfter(setupEnd)
+        }
+        for (e in setup) {
+            step = apply(def, params, step.state, e)
+            warnings += step.warnings
+            trail += e to step.state
+        }
         for (e in sorted) {
-            if (e === created) continue
+            if (e === created || e in setup) continue
             if (e.supersedesEventId != null) {
                 if (e.supersedesEventId !in ids) warnings += "orphan_amendment:${e.id}"
                 continue

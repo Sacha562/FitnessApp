@@ -944,6 +944,10 @@ future events that you have not changed; and if you delete one, it is not re-cre
 
 ## 11. Import plan for the switch-over (D4)
 
+*Done 2026-10-22 (D40).* The test of 11 October did not happen (elbow complaint from 8 October), so the import was the
+elbow protocol from 2026-10-08 with the last pre-injury loads of 11.1, ending on the setup day into the P29 lighter week;
+the tables below are the plan as written on 2026-10-07.
+
 Until you confirm the cutover, the current chat workflow stays in charge. At cutover the app imports
 your current state, you check every value, and from then on the app is the source of truth.
 

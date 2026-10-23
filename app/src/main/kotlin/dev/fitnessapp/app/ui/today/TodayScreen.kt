@@ -81,6 +81,7 @@ import java.util.Locale
 fun TodayRoute(
     c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {},
     onHistory: () -> Unit = {}, onOpenTest: (enrollmentId: String) -> Unit = {},
+    onOpenReliability: () -> Unit = {}, onOpenEquipment: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -113,7 +114,7 @@ fun TodayRoute(
 
             WeekStrip(today, recent)
 
-            StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync)
+            StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)
 
             // The challenge's session of the day (UX 9, CHALLENGE_ENGINE 7.6); hidden without an enrollment.
             TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) }, onOpenTest = onOpenTest)
@@ -250,12 +251,15 @@ private fun RecentRow(s: WorkoutSessionEntity, onClick: () -> Unit) {
 
 /** One status line at most (ANDROID.md 7.9): reliability problems first, then sync. */
 @Composable
-private fun StatusRow(c: AppContainer, pending: PendingStatus, dead: Int, sync: SyncState, onOpenSync: () -> Unit) {
+private fun StatusRow(
+    c: AppContainer, pending: PendingStatus, dead: Int, sync: SyncState, onOpenSync: () -> Unit, onOpenReliability: () -> Unit, onOpenEquipment: () -> Unit,
+) {
     val context = LocalContext.current
+    // Each problem opens the screen that fixes it: the permissions on Rest timer reliability, the gym on Equipment.
     val problems = buildList {
-        if (!c.device.notificationsAllowed()) add("Notifications are off: the rest alarm cannot show")
-        if (!c.device.canScheduleExactAlarms()) add("Exact alarms are off: the rest alarm may be late")
-        if (context.getSharedPreferences("onboarding", Context.MODE_PRIVATE).getBoolean("equipment_later", false)) add("Equipment not confirmed yet")
+        if (!c.device.notificationsAllowed()) add("Notifications are off: the rest alarm cannot show" to onOpenReliability)
+        if (!c.device.canScheduleExactAlarms()) add("Exact alarms are off: the rest alarm may be late" to onOpenReliability)
+        if (context.getSharedPreferences("onboarding", Context.MODE_PRIVATE).getBoolean("equipment_later", false)) add("Equipment not confirmed yet" to onOpenEquipment)
     }
     val syncText = when {
         dead > 0 -> "$dead changes could not be uploaded"
@@ -267,10 +271,10 @@ private fun StatusRow(c: AppContainer, pending: PendingStatus, dead: Int, sync: 
         sync is SyncState.Unreachable -> "Can't reach the server; changes are kept on this phone."
         else -> pendingLine(pending)
     }
-    val line = problems.firstOrNull() ?: syncText ?: return
+    val (line, onClick) = problems.firstOrNull() ?: (syncText ?: return) to onOpenSync
     Banner(
         line, BannerKind.ADVISORY, icon = if (problems.isNotEmpty() || dead > 0) Icons.Rounded.Warning else Icons.Rounded.CloudOff,
-        onClick = onOpenSync,
+        onClick = onClick,
     )
 }
 

@@ -50,7 +50,7 @@ class SemanticValidatorTest {
         val errors = (r as? LoadResult.Err)?.errors?.filter { !it.warning }.orEmpty()
         errors.map { it.toString() }.shouldBeEmpty()
         val d = ChallengeTestSupport.oap
-        d.rules.size shouldBe 46
+        d.rules.size shouldBe 47
         d.templates.keys.sorted() shouldBe listOf("A1", "A2", "A3", "B1", "B3", "C1", "C2", "C3", "T1", "T2")
         d.weekItemKeys shouldBe listOf("plank")
     }

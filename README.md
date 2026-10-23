@@ -168,7 +168,7 @@ materializer with in-session rules and Undo, the week planner with today advice,
 
 ## M2b log (in progress, from 2026-10-20)
 
-**Builds**: `gradlew test` green after M2b.5: 414 unit tests (`:algo` 202, `:sim` 60, `:data` 62, `:app` 90),
+**Builds**: `gradlew test` green after M2b.6: 420 unit tests (`:algo` 206, `:sim` 60, `:data` 62, `:app` 92),
 with the Roborazzi screenshots of the test-day cards (`app/src/test/screenshots/test_*.png`).
 Room is at version 6 (v3 the challenge tables, v4 the local live plan, v5 the interval columns of `rest_timer`, v6 the
 calendar: the synced `calendar_events` and the local `calendar_instance` cache and `calendar_link` table).
@@ -183,7 +183,19 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
 | M2b.4 Test day | built | The test-day wizard (UX 14.9, D36): validity at the start, one card per step in the template's order (weigh-in, warm-up, strength attempts, max reps, holds and the assistance ladder per side, yes / no attempts), the review against the previous valid test, Submit with `session.completed`, `test.completed` and the observations, and the recalculation report. Structured test protocols in `oap@1.1.0` (migration 023, engine 1.1.0, migration 024); the attempt card also serves phase 3's attempts block. Entry from the dashboard and Today. |
 | M2b.5 Calendar | built (test calendar) | `calendar.classify` and `challenge.calendar` in `:algo` (marker, classifier, slot matching, write plan; ALGORITHMS_PLANNING 1.7 and GF-CE-25 to 28), Room v6 with `calendar_events` sync, the provider reader and the guarded executor, refresh at app start, on calendar changes, at 05:00 and after challenge changes, Adopt / Rename / Remove / Add to calendar, corrections per event or series, You → Calendars, the event sheet and the dashboard's This week status (D39), the calendar budget (C49) and the session link (C35). Writes go to the device-only test calendar until you switch on real writes. |
-| M2b.6 Cutover | open | With you: real import values, Todoist retired, real calendar writes after T17 (D39). Still to build first: editing the schedule and habit times (PLAN 15). |
+| M2b.6 Cutover | started 2026-10-22 | `oap@1.4.0` (migration 028: Pallof press in A, B, C; P28; P29 lighter week after the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol and start date, week of the program, block counts, earlier tests), debug `setup_draft` / `calendar_delete_test`, the Today banner opening the screen that fixes it. Test data wiped; the real enrollment runs (D40). Open: Todoist closed after the first app week, T17 and real calendar writes, the artifact frozen, the earlier tests' per-arm values. The schedule editor stays deferred (the definition's times match). |
+
+**M2b.6 cutover (2026-10-22, real data from here on)**: the 11 October test never happened (elbow complaint from 8 October,
+pain-free since 12 October), so D40 imports the elbow protocol with the last pre-injury loads from the calendar. A phone
+rehearsal with the draft pushed over adb showed the import ending on the setup day into the lighter week (A Fri: pin 50 lb,
+2x4 +17.5 kg, no calibration negative; B Sun: 3x2 +22.5 kg, no negatives, Pallof press instead of the plank) and synced
+`oap@1.4.0` with engine 1.3.0. Fixed on the way: the block-count field was missing (the count is read in a `let`), the earlier
+tests had no units, the Pallof load showed "+11.34 kg", and the Today banner sent a notifications problem to Data & sync.
+Then the test calendar was deleted, the app uninstalled (OxygenOS refuses `pm clear` over adb) and reinstalled, and the
+server's test rows were deleted (0 left; equipment and preferences kept). The real enrollment was started by you at 69.9 kg;
+the server has it in `extra_deload` with the re-entry flag, 29 decisions (P22 declined by you), the three earlier tests
+counted for the gates, and the app's events only in the device test calendar (none in your Google calendar). Found after
+Start: the setup dropped the earlier tests' per-arm values (fixed in `SetupImport` with a unit test).
 
 **M2b.5 phone checks (2026-10-22, test calendar, invented events)**: with calendar access granted, the app read your
 main calendar (read-only) and the new "FitnessApp TEST" calendar. Chess and other appointments read as busy, the two

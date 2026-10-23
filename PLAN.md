@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39).*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17).*
 
 ---
 
@@ -619,8 +619,12 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
      test calendar.
    - **5e Screens and checks.** You → Calendars, the event sheet with corrections, the dashboard's This week row,
      the degraded banner; then the phone checks against the test calendar (ANDROID T17, first half).
-6. **M2b.6 Cutover.** With your confirmation: the real import values, the Todoist tasks retired, the
-   artifact frozen, and the first real week in the app.
+6. **M2b.6 Cutover** (started 2026-10-22, D40). With your confirmation: the real import values, the Todoist tasks retired, the
+   artifact frozen, and the first real week in the app. Built for it: `oap@1.4.0` (Pallof press, P28, P29 lighter week after
+   the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol,
+   week ordinal, block counts, earlier tests), the debug `setup_draft` and `calendar_delete_test` actions, the test-data wipe.
+   Still open: Todoist closed after the first app week (from 2026-10-29), T17 and real calendar writes, freezing the artifact,
+   and the earlier tests' missing per-arm values (D40 changelog).
 
 ### M3 — General load prescription (3–4 sessions)
 

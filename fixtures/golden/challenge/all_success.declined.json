@@ -1,13 +1,13 @@
 {
     "persona": "all_success",
     "proposals": "declined",
-    "definition": "oap@1.3.0",
-    "definition_jcs_sha256": "91c54120f2eed9383244f4addbced80280e27d7e0eb72c6a9ddb7a00ebfe1521",
-    "engine_version": "1.2.0",
+    "definition": "oap@1.4.0",
+    "definition_jcs_sha256": "8fca944277e084d1d3e35ed282bfb13366ac68b95d21c8993345e04198abbd4d",
+    "engine_version": "1.3.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
-    "events": 480,
-    "audit_rows": 335,
-    "final_state_hash": "067288a3dfd12613dec178515e4268b26124713f62095a4a30c8d4403a4a5644",
+    "events": 482,
+    "audit_rows": 340,
+    "final_state_hash": "a026db3aa9af9bf65436dc44f39f584e8eeee8ef4d1aa9b6eb41364faee8ec39",
     "violations": [],
     "weeks": [
         {
@@ -42,12 +42,14 @@
                 "negReset": 40,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 40,
                 "pinAReportShown": false,
                 "pinC": 50,
                 "pinHold90": 35,
                 "plankLoadKg": 0,
                 "plankS": 20,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 6,
                 "wpuA": 22.5,
@@ -121,12 +123,14 @@
                 "negReset": 40,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 30,
                 "pinAReportShown": false,
                 "pinC": 50,
                 "pinHold90": 30,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -199,12 +203,14 @@
                 "negReset": 40,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 20,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 25,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -280,12 +286,14 @@
                 "negReset": 40,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 10,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 20,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -358,12 +366,14 @@
                 "negReset": 45,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 10,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 20,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -378,6 +388,9 @@
                     "applied": 1
                 },
                 "data.test.neg": {
+                    "applied": 1
+                },
+                "prog.plank": {
                     "applied": 1
                 },
                 "safety.elbow.trace": {
@@ -397,7 +410,8 @@
                 }
             },
             "notifications": [
-                "2026-11-08 info:test_recorded"
+                "2026-11-08 info:test_recorded",
+                "2026-11-09 prompt:plank_plate_choose"
             ]
         },
         {
@@ -432,12 +446,14 @@
                 "negReset": 45,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 15,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -473,9 +489,7 @@
                     "applied": 1
                 }
             },
-            "notifications": [
-                "2026-11-16 prompt:plank_plate_choose"
-            ]
+            "notifications": []
         },
         {
             "iso_week": "2026-W48",
@@ -509,12 +523,14 @@
                 "negReset": 45,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 10,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -584,12 +600,14 @@
                 "negReset": 45,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 5,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -659,12 +677,14 @@
                 "negReset": 45,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -737,12 +757,14 @@
                 "negReset": 47.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -757,6 +779,9 @@
                     "applied": 1
                 },
                 "data.test.neg": {
+                    "applied": 1
+                },
+                "prog.plank": {
                     "applied": 1
                 },
                 "safety.elbow.trace": {
@@ -780,7 +805,8 @@
             },
             "notifications": [
                 "2026-12-13 info:test_recorded",
-                "2026-12-13 celebrate:phase_up"
+                "2026-12-13 celebrate:phase_up",
+                "2026-12-14 prompt:plank_plate_choose"
             ]
         },
         {
@@ -815,12 +841,14 @@
                 "negReset": 47.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -856,9 +884,7 @@
                     "applied": 1
                 }
             },
-            "notifications": [
-                "2026-12-21 prompt:plank_plate_choose"
-            ]
+            "notifications": []
         },
         {
             "iso_week": "2026-W53",
@@ -892,12 +918,14 @@
                 "negReset": 47.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -967,12 +995,14 @@
                 "negReset": 47.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1042,12 +1072,14 @@
                 "negReset": 47.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1120,12 +1152,14 @@
                 "negReset": 50,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1140,6 +1174,9 @@
                     "applied": 1
                 },
                 "data.test.neg": {
+                    "applied": 1
+                },
+                "prog.plank": {
                     "applied": 1
                 },
                 "safety.elbow.trace": {
@@ -1159,7 +1196,8 @@
                 }
             },
             "notifications": [
-                "2027-01-17 info:test_recorded"
+                "2027-01-17 info:test_recorded",
+                "2027-01-18 prompt:plank_plate_choose"
             ]
         },
         {
@@ -1194,12 +1232,14 @@
                 "negReset": 50,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1235,9 +1275,7 @@
                     "applied": 1
                 }
             },
-            "notifications": [
-                "2027-01-25 prompt:plank_plate_choose"
-            ]
+            "notifications": []
         },
         {
             "iso_week": "2027-W05",
@@ -1271,12 +1309,14 @@
                 "negReset": 50,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1346,12 +1386,14 @@
                 "negReset": 50,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1421,12 +1463,14 @@
                 "negReset": 50,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1499,12 +1543,14 @@
                 "negReset": 52.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1519,6 +1565,9 @@
                     "applied": 1
                 },
                 "data.test.neg": {
+                    "applied": 1
+                },
+                "prog.plank": {
                     "applied": 1
                 },
                 "safety.elbow.trace": {
@@ -1538,7 +1587,8 @@
                 }
             },
             "notifications": [
-                "2027-02-21 info:test_recorded"
+                "2027-02-21 info:test_recorded",
+                "2027-02-22 prompt:plank_plate_choose"
             ]
         },
         {
@@ -1573,12 +1623,14 @@
                 "negReset": 52.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1614,9 +1666,7 @@
                     "applied": 1
                 }
             },
-            "notifications": [
-                "2027-03-01 prompt:plank_plate_choose"
-            ]
+            "notifications": []
         },
         {
             "iso_week": "2027-W10",
@@ -1650,12 +1700,14 @@
                 "negReset": 52.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1725,12 +1777,14 @@
                 "negReset": 52.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1800,12 +1854,14 @@
                 "negReset": 52.5,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1878,12 +1934,14 @@
                 "negReset": 55,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1898,6 +1956,9 @@
                     "applied": 1
                 },
                 "data.test.neg": {
+                    "applied": 1
+                },
+                "prog.plank": {
                     "applied": 1
                 },
                 "safety.elbow.trace": {
@@ -1917,7 +1978,8 @@
                 }
             },
             "notifications": [
-                "2027-03-28 info:test_recorded"
+                "2027-03-28 info:test_recorded",
+                "2027-03-29 prompt:plank_plate_choose"
             ]
         },
         {
@@ -1952,12 +2014,14 @@
                 "negReset": 55,
                 "noProgressTests": 0,
                 "oaHangS": 10,
+                "pallofKg": 11.34,
                 "pinA": 0,
                 "pinAReportShown": true,
                 "pinC": 50,
                 "pinHold90": 0,
                 "plankLoadKg": 0,
                 "plankS": 30,
+                "reentry": false,
                 "stallStage": 0,
                 "sthS": 8,
                 "wpuA": 22.5,
@@ -1993,9 +2057,7 @@
                     "applied": 1
                 }
             },
-            "notifications": [
-                "2027-04-05 prompt:plank_plate_choose"
-            ]
+            "notifications": []
         }
     ]
 }

@@ -174,6 +174,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             c, m, onOpenSession = { id, resumed -> openSession(id, if (resumed) "today_card" else "start") }, onOpenSync = { push(AppKey.DataSync) },
                             onOpenTest = { push(AppKey.TestDay(it, null)) },
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
+                            onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
                         )
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) })
                         Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })

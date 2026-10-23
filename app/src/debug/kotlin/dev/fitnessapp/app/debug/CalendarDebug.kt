@@ -2,11 +2,14 @@ package dev.fitnessapp.app.debug
 
 import android.content.ContentUris
 import android.content.ContentValues
+import android.provider.CalendarContract
+import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
 import android.util.Log
 import dev.fitnessapp.algo.challenge.calendar.WritePrompt
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.calendar.CalendarProviderGateway
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
 import java.time.LocalDateTime
 
@@ -19,6 +22,7 @@ import java.time.LocalDateTime
  *   --es action calendar_seed --es spec "<title>|2026-10-24T11:00|90;..."   unmarked events in the test calendar
  *   --es action calendar_edit --el event_id <id> --es field title|description|shift_min|delete --es value <v>
  *   --es action calendar_adopt --es instance_key <key>    the Adopt prompt of that event
+ *   --es action calendar_delete_test                      deletes the test calendar and its events (cutover reset, D40)
  */
 object CalendarDebug {
     const val TAG = "CalendarDebug"
@@ -34,11 +38,27 @@ object CalendarDebug {
                     val p = c.calendar.snapshot.value.prompts.firstOrNull { (it.prompt as? WritePrompt.Adopt)?.instanceKey == instanceKey }
                     Log.i(TAG, "adopt: " + (p?.let { c.calendar.adopt(it) ?: "ok" } ?: "no adopt prompt for $instanceKey"))
                 }
+                "calendar_delete_test" -> deleteTestCalendar(c)
                 "calendar_dump" -> Unit
             }
         }
         result.exceptionOrNull()?.let { Log.w(TAG, "$action failed", it) }
         dump(c)
+    }
+
+    /** Only the app's local test account: a user's calendar can never match this selection. */
+    private suspend fun deleteTestCalendar(c: AppContainer) {
+        val uri = Calendars.CONTENT_URI.buildUpon()
+            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+            .appendQueryParameter(Calendars.ACCOUNT_NAME, CalendarProviderGateway.TEST_ACCOUNT)
+            .appendQueryParameter(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
+            .build()
+        val n = c.appContext.contentResolver.delete(
+            uri, "${Calendars.ACCOUNT_NAME} = ? AND ${Calendars.ACCOUNT_TYPE} = ?",
+            arrayOf(CalendarProviderGateway.TEST_ACCOUNT, CalendarContract.ACCOUNT_TYPE_LOCAL),
+        )
+        Log.i(TAG, "deleted $n test calendar(s)")
+        c.calendar.refresh("debug_delete_test")
     }
 
     private fun testCalendarId(c: AppContainer): Long =

@@ -34,7 +34,7 @@ class EnrollmentFoldTest {
         s.vars.getValue("needsCleanSession") shouldBe BoolV.TRUE
         s.snapshots.keys.toList() shouldBe listOf(0, 1)
         s.plannedTest shouldBe PlannedTest(LocalDate.parse("2026-10-11"), "postponed")
-        s.proposalDecisions.size shouldBe 27
+        s.proposalDecisions.size shouldBe 29
     }
 
     @Test

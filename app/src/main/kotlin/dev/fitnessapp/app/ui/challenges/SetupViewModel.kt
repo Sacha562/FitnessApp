@@ -10,6 +10,7 @@ import dev.fitnessapp.algo.challenge.enrollment.EnrollmentState
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.ImportBlock
+import dev.fitnessapp.algo.challenge.enrollment.PastTest
 import dev.fitnessapp.algo.challenge.fitexpr.BoolV
 import dev.fitnessapp.algo.challenge.fitexpr.DateV
 import dev.fitnessapp.algo.challenge.fitexpr.Dec
@@ -17,6 +18,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.Dim
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.NullV
 import dev.fitnessapp.algo.challenge.fitexpr.QV
+import dev.fitnessapp.algo.challenge.fitexpr.SideV
 import dev.fitnessapp.algo.challenge.fitexpr.StrV
 import dev.fitnessapp.algo.challenge.fitexpr.Type
 import dev.fitnessapp.algo.challenge.fitexpr.Value
@@ -58,6 +60,24 @@ data class SetupDraft(
     val vars: Map<String, String> = emptyMap(),
     /** Proposal decisions changed under Customize; the others follow the definition's recommendation (D35). */
     val decisions: Map<String, String> = emptyMap(),
+    /** Valid sessions per item key already done in the current block (`importSpec.blockItemCounts`, D40). */
+    val blockItemCounts: Map<String, Int> = emptyMap(),
+    /** Tests done before the app took over (`importSpec.pastTests`, C59, D40). */
+    val pastTests: List<DraftTest> = emptyList(),
+)
+
+/**
+ * A test from before the cutover. [metrics] maps a metric id, or `id.L` / `id.R` for a sided metric, to decimal text
+ * (`true` / `false` for a yes/no metric); [notComparable] metrics were measured another way and never feed comparisons.
+ */
+@Serializable
+data class DraftTest(
+    val date: String,
+    val validForGate: Boolean,
+    val metrics: Map<String, String> = emptyMap(),
+    val notComparable: List<String> = emptyList(),
+    val protocolCodes: Map<String, String> = emptyMap(),
+    val note: String? = null,
 )
 
 /** One onboarding value: the `onboard.<name>` key, its label, its inferred dimension and whether a state var's init reads it. */
@@ -207,12 +227,33 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         }
     }
 
+    /** The item keys whose block counts a rule reads (`validInBlock('neg')`), with the item's exercise name. */
+    fun blockCountItems(def: CompiledDefinition): List<Pair<String, String>> {
+        // Anywhere in a rule (its condition, a `let`, an action), so the whole rule is searched.
+        val keys = def.doc.rules.flatMap { r ->
+            BLOCK_COUNT.findAll(Json.encodeToString(dev.fitnessapp.algo.challenge.cds.RuleSpec.serializer(), r)).map { it.groupValues[1] }.toList()
+        }.distinct().sorted()
+        return keys.map { key -> key to (itemName(def, key) ?: key) }
+    }
+
+    private fun itemName(def: CompiledDefinition, key: String): String? {
+        val exercise = def.doc.templates.values.asSequence()
+            .flatMap { t -> (t["items"] as? kotlinx.serialization.json.JsonArray).orEmpty().asSequence() }
+            .mapNotNull { it as? kotlinx.serialization.json.JsonObject }
+            .firstOrNull { (it["key"] as? kotlinx.serialization.json.JsonPrimitive)?.content == key }
+            ?.let { (it["exercise"] as? kotlinx.serialization.json.JsonPrimitive)?.content } ?: return null
+        return def.doc.exercises.firstOrNull { it.key == exercise }?.name?.get("en")
+    }
+
     /** The import block of the draft (D4); `baseline` starts in a test-pending week with the test due today (D38). */
     private fun importOf(def: CompiledDefinition, d: SetupDraft): ImportBlock? = when (d.start) {
         "import" -> ImportBlock(
             phase = d.phase, blockIndex = d.blockIndex, blockWeek = d.blockWeek, mode = d.mode, weekOrdinal = d.weekOrdinal,
             plannedTestDate = d.plannedTestDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
-            vars = TreeMap(d.vars.mapNotNull { (k, v) -> parseVar(def, k, v)?.let { k to it } }.toMap()),
+            // The protocol's start date is only meaningful in the elbow protocol (D40).
+            vars = TreeMap(d.vars.filterKeys { it != INJURY_START || d.mode == "injury" }.mapNotNull { (k, v) -> parseVar(def, k, v)?.let { k to it } }.toMap()),
+            pastTests = d.pastTests.mapNotNull { SetupImport.pastTest(def, it) },
+            blockItemCounts = TreeMap(d.blockItemCounts.filterValues { it > 0 }),
         )
         "baseline" -> ImportBlock(
             mode = "test_pending", blockWeek = 1,
@@ -236,7 +277,10 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
         val decisions = def.doc.proposals.mapIndexed { i, p ->
             ChallengeEvent(UUID(0, 3L + i), EventTypes.APPROVAL, now.plusMillis(1L + i), LocalDate.now(zone), EventPayload.ApprovalChanged(p.id, all.getValue(p.id)), facts)
         }
-        return EnrollmentFold.fold(def, c.params, listOf(created) + decisions).state
+        // As in ChallengeRepository.create: today's ticks fold in too, so an imported protocol that is already over
+        // shows the week that follows it (D40).
+        val ticks = EnrollmentFold.catchUp(def, c.params, EnrollmentFold.create(def, c.params, created).state, now, zone, null).first
+        return EnrollmentFold.fold(def, c.params, listOf(created) + decisions + ticks).state
     }
 
     private fun refreshComputed() {
@@ -328,5 +372,10 @@ class SetupViewModel(private val c: AppContainer, private val definitionId: Stri
 
         /** The wizard layout saved drafts belong to (D35: three steps). */
         const val LAYOUT = 2
+
+        /** The state var that holds the elbow protocol's start (`injury` mode, D40). */
+        const val INJURY_START = "injuryStart"
+
+        private val BLOCK_COUNT = Regex("""validInBlock\('([A-Za-z0-9_]+)'\)""")
     }
 }

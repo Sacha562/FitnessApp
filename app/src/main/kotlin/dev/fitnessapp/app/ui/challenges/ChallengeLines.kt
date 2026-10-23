@@ -27,7 +27,8 @@ object ChallengeLines {
         val added = r.addedKg
         val load = when {
             pin != null -> "pin ${n(pin)} lb"
-            added != null && added.signum() > 0 -> "+${n(added)} kg"
+            // "+" only on top of bodyweight (the belt); a cable or machine load is the load itself (Pallof, D40).
+            added != null && added.signum() > 0 -> (if (r.systemLoadKg != null) "+" else "") + "${n(added)} kg"
             r.targetEccS != null -> n(r.targetEccS!!) + " s down"
             else -> null
         }

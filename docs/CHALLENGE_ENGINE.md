@@ -929,6 +929,12 @@ use fixed local times so that this order is always the intended one:
 | `week.closed(W)` | Monday after `W` at `challenge.enrollment.week_close_local_time` (default 04:00:00.000) | A session that started on Sunday evening and was finished after midnight still counts for week `W` (its `session.completed` has an earlier `occurred_at`, see below). 04:00 always exists on a Monday in Europe/Amsterdam (DST changes happen on Sundays). |
 | `week.started(W+1)` | the same Monday at 04:00:00.001 | Strictly after `week.closed(W)`. |
 
+**Setup decisions (D40, `challenge.enrollment` 1.1.0).** Setup writes one `rules.approval_changed` per proposal at
+the creation's `occurred_at` + 1 .. n ms (n = the number of proposals). They belong to the creation: the fold applies
+them right after `enrollment.created` and before any other event, because the creation day's `day.tick` is stamped at
+local midnight and would otherwise run that day's rules with every proposal undecided (the cutover import's elbow
+protocol ended on the setup day itself and took the declined branch of P29).
+
 `session.completed.occurred_at` is the session **end**; the session's week attribution uses the local
 date of its **start**. A session that starts before Monday 04:00 and ends after it is rare; when it
 happens, the engine moves the `week.closed` evaluation after that session by refolding (section
