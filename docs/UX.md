@@ -898,7 +898,7 @@ is editable; unknown values are asked, never guessed silently.
 | Stations | Common Basic-Fit stations ticked | unverified (machine list not verifiable online) | User unticks missing ones; "narrow bar: no archer / typewriter" noted |
 | Gym plates | 25, 20, 15, 10, 5, 2.5 kg | unverified | One editable list of sizes; the user adds 1.25 kg if the gym has it. Plates are assumed unlimited (no count per size, F7) |
 | Dumbbells | 2-10 kg in 2 kg steps, then 12.5-40 kg in 2.5 kg steps | unverified, expert guess | Must be confirmed in the gym; first use of a dumbbell exercise asks "Is X kg available?" while unconfirmed |
-| Machine stacks | 10 lb steps; unit kg or lb | user (F7, 2026-10-09) | Most stacks are marked in lb; the set card shows the lb value with the kg equivalent. First use of a machine asks for its smallest step while unconfirmed |
+| Machine stacks | 10 lb steps; unit kg or lb | user (F7, 2026-10-09) | Most stacks are marked in lb; the set card shows the lb value with the kg equivalent. First use of a machine asks for its smallest step while unconfirmed. Each machine can get its own stack (unit, step, lightest, heaviest) from the live exercise menu, "Stack setup" (D43); this setting then no longer changes it |
 | Smith bar weight | unknown -> "Ask me the first time" | F7 | Smith exercises are prescribed only after it is entered |
 | Assisted pull-up machine | `{unit lb, step 5, min 0, max: ask, offsetKg 6.5, ratio 1.0}` | F7, C2; the offset is the user's estimate ("6-7 kg"), the ratio is assumed | Detail screen explains: "assist = pin x 0.4536 x ratio + 6.5 kg; at pin 0 the machine still helps about 6.5 kg." |
 | Dip belt | own: yes; maximum belt load 60 kg | F7 (the maximum is a P default from the challenge) | |
@@ -1647,7 +1647,9 @@ From top to bottom:
 
 1. **Title row**: exercise name (Title L, wraps to 2 lines rather than truncating), "Set 2 of 4",
    side badge for unilateral work, `:` exercise menu (Swap · Skip · Do later · Add a set (C63) · End
-   exercise · Remove (only with 0 logged sets) · Move up / down · Note · Exercise details).
+   exercise · Remove (only with 0 logged sets) · Move up / down · Stack setup (machines with a kg or
+   lb stack, D43: unit, step, lightest and heaviest of this machine; the card rebuilds on the new
+   stack) · Note · Exercise details).
 2. **Target line**: the prescription from `rx` (or the challenge item in RULE mode, C15), for example
    "Target BW + 22.5 kg x 4 · aim: 2 in reserve", with `(i)` opening the Why sheet for this
    prescription (RX-1 mode MODEL / DOUBLE / RULE, rule id, numbers). An amber dot appears when the
@@ -2883,7 +2885,8 @@ Emits `goal_changed`, `rep_preference_changed`, `settings_changed {key, from, to
 
 ### 15.5 Equipment (`you.equipment`)
 
-The onboarding checklist (8.7) as an editable page, plus: per-machine stack steps, assisted machines
+The onboarding checklist (8.7) as an editable page, plus: per-machine stack steps (built first as the
+live exercise menu's "Stack setup", D43), assisted machines
 (several are allowed, each with its own calibration; if more than one exists, a session using one asks
 "Which assisted machine today?" once), belt plates, the profile's version history and "Confirm".
 Changes are versioned (prescriptions record the profile version). Emits `equipment_changed {key,

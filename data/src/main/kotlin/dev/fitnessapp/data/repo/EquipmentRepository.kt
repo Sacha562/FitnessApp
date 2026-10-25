@@ -131,6 +131,47 @@ class EquipmentRepository(
     }
 
     /**
+     * One machine's own weight stack, set in the live session (D43): only row [rowId] changes, the rest of its scheme
+     * (ratio, add-on steps) stays. The row becomes `measured`, so the checklist's stack setting no longer rewrites it.
+     */
+    suspend fun saveStack(rowId: String, unit: String, start: Double, step: Double, max: Double) {
+        val old = db.gymEquipment().byIds(listOf(rowId)).firstOrNull() ?: return
+        val stored = Json.parseToJsonElement(old.load_scheme).jsonObject
+        require(stored["type"]?.jsonPrimitive?.content == "stack") { "not a stack: ${old.equipment_type}" }
+        val edited = JsonObject(
+            stored + mapOf("unit" to JsonPrimitive(unit), "start" to JsonPrimitive(start), "step" to JsonPrimitive(step), "max" to JsonPrimitive(max)),
+        )
+        val scheme = JsonText.canonical(edited)
+        requireNotNull(parseScheme(scheme)) { "invalid stack" }
+        val calibrationChanged = old.load_scheme != scheme
+        val now = ctx.nowMs()
+        db.withTransaction {
+            val row = old.copy(
+                client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
+                load_scheme = scheme, calibration_rev = old.calibration_rev + if (calibrationChanged) 1 else 0,
+                calibration_source = "measured", confirmed_at = now,
+            )
+            db.gymEquipment().upsert(row)
+            outbox.enqueue("gym_equipment", row.id, now)
+            if (calibrationChanged) {
+                telemetry.write(
+                    EventDraft(
+                        type = "equipment_calibration_changed", entityType = "gym_equipment", entityId = row.id,
+                        payload = mapOf(
+                            "gym_equipment_id" to JsonPrimitive(row.id),
+                            "from_rev" to JsonPrimitive(old.calibration_rev),
+                            "to_rev" to JsonPrimitive(row.calibration_rev),
+                            "from_scheme" to Json.parseToJsonElement(old.load_scheme),
+                            "to_scheme" to Json.parseToJsonElement(row.load_scheme),
+                        ),
+                    ),
+                )
+            }
+        }
+        scheduler.request()
+    }
+
+    /**
      * The equipment for [e] in [mode] (B2.1): assisted pins use the assisted machine, weighted bodyweight the
      * dip belt, external loads the first loadable station the exercise requires, then its equipment class.
      */

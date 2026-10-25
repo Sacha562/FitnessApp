@@ -106,6 +106,8 @@ data class Card(
     val plannedFingers: Int? = null,
     /** An attempts-block row (phase 3, `LogMode.ATTEMPT_CHECKLIST`): the metric it records and the definition's checklist. */
     val attempt: AttemptInfo? = null,
+    /** The `gym_equipment` row of a kg or lb machine stack, which "Stack setup" edits (D43); null for other equipment. */
+    val stackRowId: String? = null,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
 
@@ -218,6 +220,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private var last: Snapshot? = null
 
+    /** The equipment changed under the card ("Stack setup"): the next rebuild drops the draft for a fresh card. */
+    @Volatile private var equipmentChanged = false
+
     private suspend fun rebuild(snap: Snapshot) {
         last = snap
         val items = snap.exs.mapNotNull { e ->
@@ -259,7 +264,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val warmup = old?.takeIf { it.item.se.id == item.se.id }?.warmup ?: (planItem(item)?.plan?.role == "warmup")
         val (setIndex, side) = nextSlot(item, warmup)
         val fresh = buildFresh(item, mode, setIndex, side, warmup, allSets)
-        return if (old != null && old.slotKey == fresh.slotKey) old.copy(item = item) else fresh
+        val keep = old != null && old.slotKey == fresh.slotKey && !equipmentChanged
+        equipmentChanged = false
+        return if (keep) old!!.copy(item = item) else fresh
     }
 
     private fun nextSlot(item: ExerciseItem, warmup: Boolean): Pair<Int, String> {
@@ -320,6 +327,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             shownAt = now, firstTouchAt = null, holdTargetS = holdTarget,
             eccS = if (item.ex.contraction == "eccentric_only") eccPrev ?: eccTarget else null, eccTargetS = eccTarget,
             attemptsS = attempts, fingers = fingers, plannedFingers = row?.fingers,
+            stackRowId = resolved.row?.id?.takeIf { (resolved.scheme as? LoadScheme.Stack)?.unit in setOf("kg", "lb") },
             attempt = row?.takeIf { it.logMode == dev.fitnessapp.algo.challenge.materialize.LogMode.ATTEMPT_CHECKLIST }?.let {
                 planItem(item)?.plan?.metric?.let { m -> AttemptInfo(m, attemptChecklist()) }
             },
@@ -846,6 +854,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun setLoadMode(mode: LoadMode) {
         val card = _ui.value.card ?: return
         viewModelScope.launch { c.sessionRepository.setLoadMode(card.item.se.id, mode) }
+    }
+
+    /** "Stack setup" (D43): saves this machine's stack, then rebuilds the card on it (`gym_equipment` is not observed). */
+    fun saveStack(unit: String, start: Double, step: Double, max: Double) {
+        val rowId = _ui.value.card?.stackRowId ?: return
+        viewModelScope.launch {
+            c.equipment.saveStack(rowId, unit, start, step, max)
+            equipmentChanged = true
+            last?.let { rebuild(it) }
+        }
     }
 
     fun skip(seId: String, reason: String, position: Int) = viewModelScope.launch { c.sessionRepository.skip(seId, reason, position) }

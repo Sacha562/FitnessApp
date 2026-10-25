@@ -40,6 +40,8 @@ data class Checklist(
     val beltMaxKg: Double = 60.0,
     val beltMaxItems: Int = 4,
     val chalk: Boolean = true,
+    /** Stacks set up per machine in the live session (D43, `measured`): kept as stored, never rewritten from [stackUnit]. */
+    val ownStacks: Map<String, JsonObject> = emptyMap(),
 ) {
     companion object {
         /** Stations that are not common at Basic-Fit start unticked. */
@@ -95,7 +97,9 @@ data class Checklist(
                     beltMaxItems = o["max_items"]?.jsonPrimitive?.intOrNull ?: c.beltMaxItems,
                 )
             }
-            rows.firstOrNull { it.scheme_type == "stack" }?.let { r ->
+            val (own, shared) = rows.filter { it.scheme_type == "stack" }.partition { it.calibration_source == "measured" }
+            c = c.copy(ownStacks = own.associate { it.equipment_type to Json.parseToJsonElement(it.load_scheme).jsonObject }.toSortedMap())
+            shared.firstOrNull()?.let { r ->
                 val o = Json.parseToJsonElement(r.load_scheme).jsonObject
                 val unit = o["unit"]?.jsonPrimitive?.content?.takeIf { it == "kg" || it == "lb" } ?: c.stackUnit
                 c = c.copy(stackUnit = unit, stackStep = o["step"]?.jsonPrimitive?.doubleOrNull ?: defaultStackStep(unit))
@@ -149,7 +153,7 @@ data class Checklist(
                     // Unlimited per size: only max_kg and max_items bind (F7).
                     put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", beltMaxItems) } }))
                 }
-                else -> if (t.defaultSchemeType == "stack") buildJsonObject {
+                else -> if (t.defaultSchemeType == "stack") ownStacks[t.key] ?: buildJsonObject {
                     put("type", "stack"); put("unit", stackUnit); put("start", stackStep); put("step", stackStep)
                     put("max", stackMaxNative(if (t.key in HEAVY_STACKS) heavyStackMaxKg else stackMaxKg))
                     put("add_on_steps", JsonArray(emptyList())); put("ratio", 1.0)
@@ -159,7 +163,11 @@ data class Checklist(
             val defaultDraft = defaultDrafts[t.key]
             val draft = EquipmentDraft(
                 equipmentType = t.key, label = label, available = available, loadScheme = scheme,
-                calibrationSource = if (t.key == "assisted_pullup_machine") "user_estimate" else "default",
+                calibrationSource = when {
+                    t.key == "assisted_pullup_machine" -> "user_estimate"
+                    t.key in ownStacks -> "measured"
+                    else -> "default"
+                },
             )
             out += draft.copy(changedFromDefault = defaultDraft != null && (defaultDraft.available != available || defaultDraft.loadScheme != scheme))
         }

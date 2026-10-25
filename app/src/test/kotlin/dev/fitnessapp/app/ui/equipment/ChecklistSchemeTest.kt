@@ -84,4 +84,25 @@ class ChecklistSchemeTest {
         back.plates shouldBe listOf(20.0, 10.0, 1.25)
         back shouldBe c
     }
+
+    @Test
+    fun `a machine's own stack survives the checklist's stack setting`() {
+        val c = Checklist.defaults(types)
+        val own = """{"add_on_steps":[],"max":100,"ratio":1,"start":2.5,"step":2.5,"type":"stack","unit":"kg"}"""
+        val rows = c.drafts(types).mapIndexed { i, d ->
+            val mine = d.equipmentType == "cable_station"
+            GymEquipmentEntity(
+                id = "e$i", user_id = "u", client_updated_at = 0L, device_id = "d", app_version = "t",
+                equipment_type = d.equipmentType, label = d.label, available = d.available,
+                scheme_type = d.loadScheme.getValue("type").jsonPrimitive.content,
+                load_scheme = if (mine) own else d.loadScheme.toString(), calibration_source = if (mine) "measured" else d.calibrationSource,
+            )
+        }
+        val back = Checklist.fromRows(types, c.gymName, rows)
+        back.stackUnit shouldBe "lb" // the shared setting comes from a default stack, not the measured one
+        val drafts = back.copy(stackUnit = "kg", stackStep = 5.0).drafts(types).associateBy { it.equipmentType }
+        drafts.getValue("cable_station").loadScheme.toString() shouldBe own
+        drafts.getValue("cable_station").calibrationSource shouldBe "measured"
+        LoadScheme.parse(drafts.getValue("leg_press").loadScheme).let { (it as LoadScheme.Stack).unit } shouldBe "kg"
+    }
 }

@@ -74,6 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.fitnessapp.algo.core.load.LoadMode
+import dev.fitnessapp.algo.core.load.LoadScheme
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.timer.RestDisplay
@@ -98,6 +99,7 @@ import dev.fitnessapp.app.ui.common.TileDivider
 import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.dutchNames
 import dev.fitnessapp.app.ui.common.undoTimeoutMs
+import dev.fitnessapp.app.ui.equipment.Checklist
 import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.theme.FitType
 import dev.fitnessapp.app.uidet.ChipContext
@@ -113,6 +115,7 @@ private sealed interface Sheet {
     data object Finish : Sheet
     data object Pain : Sheet
     data object Keypad : Sheet
+    data object Stack : Sheet
     data object Abandon : Sheet
     data object RuleUndo : Sheet
 }
@@ -175,6 +178,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                     "skip" -> sheet = Sheet.Skip(card.item.se.id)
                                     "end" -> sheet = Sheet.End(card.item.se.id)
                                     "pain" -> sheet = Sheet.Pain
+                                    "stack" -> sheet = Sheet.Stack
                                 }
                             }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain })
                         }
@@ -212,6 +216,12 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             sheet = null
         }
         Sheet.Keypad -> ui.card?.let { card -> KeypadSheet(card, vm, onDismiss = { sheet = null }) }
+        Sheet.Stack -> (ui.card?.scheme as? LoadScheme.Stack)?.let { stack ->
+            StackSheet(ui.card?.item?.ex?.nameEn ?: "Machine", stack, onDismiss = { sheet = null }) { unit, start, step, max ->
+                vm.saveStack(unit, start, step, max)
+                sheet = null
+            }
+        }
         Sheet.RuleUndo -> AlertDialog(
             onDismissRequest = { sheet = null },
             title = { Text("Undo the rule?") },
@@ -569,6 +579,7 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, be
             }
             DropdownMenuItem(text = { Text(label) }, onClick = { onDismiss(); vm.setLoadMode(m) })
         }
+        if (card.stackRowId != null) DropdownMenuItem(text = { Text("Stack setup") }, onClick = { onAction("stack") })
         // The optional beep per second; null when this set has none.
         beep?.let { on -> DropdownMenuItem(text = { Text(if (on) "Stop the beep" else "Beep each second") }, onClick = onBeep) }
         DropdownMenuItem(text = { Text("Something hurts", color = Fit.Safety) }, onClick = { onAction("pain") })
@@ -810,6 +821,54 @@ fun PainSheet(onDismiss: () -> Unit, preselectedRegion: String? = null, onSubmit
             }
             Banner("Not medical advice. If something hurts, stop and get it checked.", BannerKind.SAFETY, Modifier.padding(top = 8.dp))
             PrimaryButton("Save", { onSubmit(region!!, side, severity!!, symptoms.toList()) }, Modifier.fillMaxWidth().padding(top = 4.dp), enabled = region != null && severity != null)
+        }
+    }
+}
+
+/**
+ * "Stack setup" (D43): this machine's stack as marked on it, in kg or lb. Switching the unit restarts the steps at the
+ * unit's default and keeps the heaviest at the same kg, floored to the step.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StackSheet(name: String, stack: LoadScheme.Stack, onDismiss: () -> Unit, onSave: (unit: String, start: Double, step: Double, max: Double) -> Unit) {
+    var unit by remember { mutableStateOf(stack.unit) }
+    var step by remember { mutableStateOf(Numbers.num(stack.step)) }
+    var start by remember { mutableStateOf(Numbers.num(stack.start)) }
+    var max by remember { mutableStateOf(Numbers.num(stack.max)) }
+    fun parse(t: String) = t.replace(',', '.').toDoubleOrNull()
+    val stepV = parse(step)?.takeIf { it > 0 }
+    val startV = parse(start)?.takeIf { it >= 0 }
+    val maxV = parse(max)?.takeIf { m -> startV != null && m >= startV }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(SheetPadding),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Stack setup · $name", style = MaterialTheme.typography.titleLarge)
+            Text("As marked on this machine. Only this machine changes.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            ChoiceChips(listOf("lb", "kg"), unit, { it }) { u ->
+                if (u != unit) {
+                    val maxKg = (parse(max) ?: stack.max) * Checklist.unitKg(unit)
+                    val d = Checklist.defaultStackStep(u)
+                    unit = u
+                    step = Numbers.num(d)
+                    start = Numbers.num(d)
+                    max = Numbers.num(kotlin.math.floor(maxKg / Checklist.unitKg(u) / d + 1e-9) * d)
+                }
+            }
+            listOf(Triple("Step", step) { t: String -> step = t }, Triple("Lightest", start) { t: String -> start = t }, Triple("Heaviest", max) { t: String -> max = t })
+                .forEach { (label, value, set) ->
+                    FitTextField(
+                        value = value, onValueChange = set, label = "$label ($unit)", singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            if (unit == "lb" && stepV != null) {
+                Text("${Numbers.num(stepV)} lb ≈ ${Numbers.oneDecimal(stepV * Checklist.LB_KG)} kg; the set card shows both.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            }
+            PrimaryButton("Save", { onSave(unit, startV!!, stepV!!, maxV!!) }, Modifier.fillMaxWidth(), enabled = stepV != null && startV != null && maxV != null)
+            TonalButton("Cancel", onDismiss, Modifier.fillMaxWidth())
         }
     }
 }
