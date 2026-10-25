@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -187,8 +187,7 @@
       { "id": "dip_belt", "owner": "user", "binding": "plateInventory", "roundingProfile": "belt", "note": "Own belt and plates (F7); inventory asked at onboarding." },
       { "id": "cable_station", "roundingProfile": "cable", "note": "Stack from the gym equipment record; the Pallof press steps on it (D40)." },
       { "id": "dumbbells" },
-      { "id": "dip_station", "note": "Needs neutral (parallel) handles for dip_neutral." },
-      { "id": "rower_erg" }
+      { "id": "dip_station", "note": "Needs neutral (parallel) handles for dip_neutral." }
     ],
     "optional": [
       { "id": "wide_bar", "unlocks": ["typewriter_pullup"] },
@@ -221,7 +220,6 @@
     { "key": "reverse_wrist_curl_db", "catalogRef": "reverse_wrist_curl_db" },
     { "key": "db_pronation_supination", "catalogRef": "db_pronation_supination" },
     { "key": "face_pull_cable", "catalogRef": "face_pull_cable" },
-    { "key": "rower_erg", "catalogRef": "rower_erg" },
     { "key": "scap_pull_bar", "catalogRef": "scap_pull_bar" },
     { "key": "pallof_press", "catalogRef": "pallof_press" }
   ],
@@ -333,7 +331,6 @@
   ],
   "blocks": {
     "warmup10": [
-      { "key": "wu_row", "exercise": "rower_erg", "role": "warmup", "duration_s": 180 },
       { "key": "wu_face", "exercise": "face_pull_cable", "role": "warmup", "sets": 1, "reps": 20 },
       { "key": "wu_scap", "exercise": "scap_pull_bar", "role": "warmup", "sets": 1, "reps": 10 },
       { "key": "wu_pull", "exercise": "pullup_bw", "role": "warmup", "sets": 2, "reps": "ramp" }
@@ -898,6 +895,7 @@
     "1.0.1": {"varMap": {}, "defaults": {}, "notes": "Structured test protocols of P21 (D36) and the first-test rules (D37). No state var changes."},
     "1.1.0": {"varMap": {}, "defaults": {}, "notes": "D37: the first valid test fills empty loads, negatives and pins; the gate e1RM is initialised from the entered 3RM. Nothing changes once every value is set."},
     "1.2.0": {"varMap": {}, "defaults": {}, "notes": "D38: the test may fall on any day (a rest day before it stays required) and goes first in its week while there are no loads."},
-    "1.3.0": {"varMap": {}, "defaults": {}, "notes": "D40: the Pallof press in A, B and C (B's gym plank removed, the plank rule counts the two home days), P28 and P29 (re-entry week after the elbow protocol). New vars pallofKg and reentry start from their init."}
+    "1.3.0": {"varMap": {}, "defaults": {}, "notes": "D40: the Pallof press in A, B and C (B's gym plank removed, the plank rule counts the two home days), P28 and P29 (re-entry week after the elbow protocol). New vars pallofKg and reentry start from their init."},
+    "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."}
   }
 }

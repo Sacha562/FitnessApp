@@ -48,7 +48,7 @@ class CatalogValidatorTest {
     fun `bundled seed passes CAT-1`() {
         val (local, refs) = definitionSlugs(oap)
         local.size shouldBe 14
-        refs.size shouldBe 16
+        refs.size shouldBe 15
         val report = CatalogValidator.validate(catalog, stations, challengeLocalSlugs = local, requiredSlugs = local + refs)
         report.issues.map { it.toString() }.shouldBeEmpty()
         doc.catalogVersion shouldBe "1.0.1"

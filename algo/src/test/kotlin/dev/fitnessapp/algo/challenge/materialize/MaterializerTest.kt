@@ -51,7 +51,7 @@ class MaterializerTest {
     fun `phase-1 session A in a normal week`() {
         val p = plan(normal(), "A")
         p.templateId shouldBe "A1"
-        p.items.map { it.key } shouldBe listOf("wu_row", "wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pallof", "pre_rwc", "pre_ps", "pre_fp")
+        p.items.map { it.key } shouldBe listOf("wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pallof", "pre_rwc", "pre_ps", "pre_fp")
         val oaa = p.item("oaa")
         oaa.pairs() shouldBe 5
         oaa.rows.first().pin shouldBe BigDecimal(40)
@@ -67,7 +67,16 @@ class MaterializerTest {
         p.item("h90").rows.first().targetHoldMaxS shouldBe BigDecimal(8)
         p.item("sth").rows.first().targetHoldS shouldBe BigDecimal(6)
         p.item("wu_pull").noteCodes shouldContain "ramp"
-        p.item("wu_row").rows.single().durationS shouldBe BigDecimal(180)
+    }
+
+    @Test
+    fun `no warm-up holds a cardio exercise (D44)`() {
+        val families = catalog.exercises.associate { it.slug to it.family }
+        for (slot in listOf("A", "B", "C", "TEST")) {
+            val warmup = plan(normal(), slot).items.filter { it.role == "warmup" }
+            warmup.map { it.key } shouldBe listOf("wu_face", "wu_scap", "wu_pull")
+            warmup.filter { families[it.catalogSlug] == "cardio" } shouldBe emptyList()
+        }
     }
 
     @Test
@@ -132,9 +141,9 @@ class MaterializerTest {
     @Test
     fun `GF-CE-38 test-day order`() {
         val declined = plan(OapFixture.start(except = mapOf("P08" to false, "P20" to false)), "TEST")
-        declined.items.map { it.key } shouldBe listOf("bw", "wu_row", "wu_face", "wu_scap", "wu_pull", "str", "max", "hang", "top", "assist", "neg")
+        declined.items.map { it.key } shouldBe listOf("bw", "wu_face", "wu_scap", "wu_pull", "str", "max", "hang", "top", "assist", "neg")
         val approved = plan(OapFixture.start(), "TEST")
-        approved.items.map { it.key } shouldBe listOf("bw", "wu_row", "wu_face", "wu_scap", "wu_pull", "str", "hang", "top", "assist", "neg", "max")
+        approved.items.map { it.key } shouldBe listOf("bw", "wu_face", "wu_scap", "wu_pull", "str", "hang", "top", "assist", "neg", "max")
         approved.item("assist").notes.last()["en"]!!.startsWith("Start at the A pin + 10 lb") shouldBe true
         approved.item("hang").rows.map { it.side } shouldBe listOf("L", "R")
         approved.item("hang").rows.first().logMode shouldBe LogMode.TEST_RECORD

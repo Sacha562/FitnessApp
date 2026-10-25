@@ -1613,14 +1613,13 @@ block out of the program's order shows an advisory line once: "Order changed fro
 
 ### 11.5 Blocks
 
-**Warm-up block.** For challenge sessions, the challenge's fixed warm-up (OAP `warmup10`: 3 min row,
-20 face pulls, 10 scap pulls, 2 ramp pull-up sets). For general sessions, an optional "General
+**Warm-up block.** For challenge sessions, the challenge's fixed warm-up (OAP `warmup10`: 20 face pulls,
+10 scap pulls, 2 ramp pull-up sets; no cardio since `oap@1.5.0`, D44). For general sessions, an optional "General
 warm-up · 10 min" row (TIME-1 budgets it, C19). The block card replaces the set card while it is
 current:
 
 ```
 | WARM-UP · 10 min                    |
-| Row 3:00            [ Start 3:00 ]  |
 | Face pulls x 20     [   Done    ]   |
 | Scap pulls x 10     [   Done    ]   |
 | Pull-up ramp  BW x 3 [Done] x 2 [Done]|
@@ -1816,9 +1815,10 @@ the 3 rounds become 2 in the deload and test-pending weeks.
   lowering goes to `set_logs.ecc_s_actual` and the `jerky` flag to the set's flags.
 * Eccentric sets never enter SSE-1 (C8); that is the engine's concern, not the UI's.
 
-#### 11.7.6 Timed cardio item (warm-up row)
+#### 11.7.6 Timed cardio item
 
-"Row 3:00 [Start 3:00]" runs a countdown in the block card with the rest-end alert at zero. It is
+No challenge warm-up holds one since `oap@1.5.0` (D44); the behaviour stays for a timed item a definition
+may add. "Row 3:00 [Start 3:00]" runs a countdown in the block card with the rest-end alert at zero. It is
 alarm-backed (D33): `RestTimerController` with `purpose = interval` (ANDROID 12.3), so the alert arrives
 with the screen off and the session notification shows "Row · 1:12 left" with −15 s / Skip / +15 s. At zero
 the row is logged done with its seconds; a Done tap before zero (on the card or in the notification, where
@@ -2535,10 +2535,15 @@ changed here (use the pain protocol, pause, resume or abandon). The change appea
 reason.
 
 **Definition update** (CHALLENGE_ENGINE section 4.12): when a newer version of the definition is
-published, the Challenges library card and the menu show "Update available". The preview shows the
-current and next ISO week under the old and the new version side by side (loads, sets, rules) and any
-new proposals; "Update" writes `definition.migrated`. Text-only patch versions apply without a preview;
-a major version is never applied automatically.
+published with a migration from the running version, the Challenges library card says "Update
+available: version 1.5.0" and the menu shows "Update available (version 1.5.0)" (otherwise "Program
+version 1.4.0", muted). The preview dialog lists, per planned session of this and next ISO week, each
+exercise the new version adds, removes or changes (with the old and new prescription), then the rules
+added, removed or changed and any new proposals (off until decided), and the migration's note; "Update"
+writes `definition.migrated`, "Not now" closes it. If the enrollment changed after the preview was
+made, the update is refused with a message and the preview can be opened again. History shows
+"Program updated to version 1.5.0". As built (D44) every update goes through the preview: text-only
+patch auto-apply and the major-version rules are not built yet.
 
 A gate that is met shows a filled check and, the first time it is met, the expressive "gate
 achieved" moment (4.6). A phase change shows a full-width celebration card once ("Phase 2: less

@@ -96,6 +96,12 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
                     if (open) DropdownMenuItem(text = { Text(if (paused) "Resume" else "Pause") }, onClick = { menu = false; sheet = if (paused) "resume" else "pause" })
                     DropdownMenuItem(text = { Text("Proposals") }, onClick = { menu = false; proposals = true })
                     if (open) DropdownMenuItem(text = { Text("Correct a value") }, onClick = { menu = false; sheet = "correct" })
+                    // CHALLENGE_ENGINE 4.12 (D44): the running version, and "Update available" when a newer one has a migration.
+                    if (open && ui?.update != null) {
+                        DropdownMenuItem(text = { Text("Update available (version ${ui?.update})", color = Fit.Advisory) }, onClick = { menu = false; sheet = "update" })
+                    } else if (ui != null) {
+                        DropdownMenuItem(text = { Text("Program version ${ui?.version}", color = Fit.Muted) }, onClick = { menu = false })
+                    }
                     if (open) DropdownMenuItem(text = { Text("Abandon") }, onClick = { menu = false; sheet = "abandon" })
                 }
             }
@@ -148,7 +154,52 @@ fun ChallengeDashboardRoute(c: AppContainer, enrollmentId: String, onBack: () ->
             vm.reportPain(region, side, severity, symptoms)
         }
         "correct" -> CorrectDialog(ui?.targets.orEmpty(), onSave = { t, v, r -> vm.correct(t, v, r); sheet = null }, onDismiss = { sheet = null })
+        "update" -> UpdateDialog(vm, onDone = { sheet = null })
     }
+}
+
+/**
+ * The definition-update preview (UX 14.2, CHALLENGE_ENGINE 4.12, D44): this and next week's sessions under the new version
+ * next to the running one, with the rule and proposal changes; "Update" writes `definition.migrated`.
+ */
+@Composable
+private fun UpdateDialog(vm: DashboardViewModel, onDone: () -> Unit) {
+    var preview by remember { mutableStateOf<UpdatePreviewUi?>(null) }
+    var failed by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { runCatching { vm.updatePreview() }.onSuccess { preview = it }.onFailure { failed = it.message ?: "Preview failed" } }
+    val p = preview
+    AlertDialog(
+        onDismissRequest = onDone,
+        title = { Text(if (p == null) "Program update" else "Update to version ${p.to}?") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                when {
+                    failed != null -> Text(failed!!, color = Fit.Safety)
+                    p == null -> Text("Comparing this week and next…", color = Fit.Muted)
+                    else -> {
+                        Text("You run version ${p.from}. Your loads, history and decisions stay.", style = MaterialTheme.typography.bodyMedium)
+                        p.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+                        if (p.sessions.isEmpty() && p.rules.isEmpty() && p.proposals.isEmpty()) {
+                            Text("Nothing changes in this week's or next week's sessions.", style = MaterialTheme.typography.bodySmall)
+                        }
+                        p.sessions.forEach { (header, lines) ->
+                            Text(header, style = MaterialTheme.typography.titleSmall)
+                            lines.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        }
+                        if (p.rules.isNotEmpty() || p.proposals.isNotEmpty()) {
+                            Text("Rules", style = MaterialTheme.typography.titleSmall)
+                            (p.rules + p.proposals).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { busy = true; vm.applyUpdate(onDone) }, enabled = p != null && !busy) { Text("Update") }
+        },
+        dismissButton = { TextButton(onDone) { Text("Not now") } },
+    )
 }
 
 /**

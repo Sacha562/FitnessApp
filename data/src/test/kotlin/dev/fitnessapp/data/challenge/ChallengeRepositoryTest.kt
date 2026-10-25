@@ -13,6 +13,7 @@ import dev.fitnessapp.algo.challenge.enrollment.StateJson
 import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
+import dev.fitnessapp.algo.challenge.materialize.MigrationPreviews
 import dev.fitnessapp.algo.core.clock.Clock
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.data.db.FitnessDatabase
@@ -95,9 +96,9 @@ class ChallengeRepositoryTest {
         ),
     )
 
-    private suspend fun start(): FoldedEnrollment {
+    private suspend fun start(version: String? = null): FoldedEnrollment {
         repo.ensureBundled()
-        val defId = db.challengeDefinitions().all().maxBy { it.version }.id
+        val defId = db.challengeDefinitions().all().let { all -> version?.let { v -> all.single { it.version == v } } ?: all.maxBy { it.version } }.id
         val def = repo.definition(defId)
         return repo.create(
             defId, sortedMapOf(), onboard,
@@ -113,7 +114,7 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled")
+        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled", "1.5.0" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
         f.state.proposalDecisions.size shouldBe 29
@@ -195,5 +196,41 @@ class ChallengeRepositoryTest {
         val g = other.folded(f.enrollment.id)
         g.enrollment.fold_generation shouldBe 1
         g.state.stateRev shouldBe 31
+    }
+
+    @Test
+    fun `a definition update moves the enrollment to the new version and refolds across it (D44)`() = blocking {
+        val f = start("1.4.0")
+        val to = requireNotNull(repo.updateFor(f.enrollment.id))
+        to.version shouldBe "1.5.0"
+        val facts = ChallengeFactsProvider(db, EquipmentRepository(db, OutboxWriter(db), TelemetryWriter(db, OutboxWriter(db), ctx, EventRegistry.bundled()), ctx, SyncScheduler({ error("off") }, SyncConfig(), enabled = false)), { CatalogRepository.bundled().doc }, params, { Instant.ofEpochMilli(now) })
+        val today = LocalDate.parse("2026-10-20")
+        val preview = MigrationPreviews.preview(
+            f.def, to, params, f.state, facts.facts(f.def, f.state), CatalogRepository.bundled().doc, listOf("A" to today.plusDays(3)), today, 5,
+        )
+        preview.sessions.single().changes.map { it.kind to it.key } shouldBe listOf("removed" to "wu_row")
+        now += 60_000
+        val out = repo.migrate(f.enrollment.id, to, preview)
+        out.folded.def.version shouldBe "1.5.0"
+        val row = db.enrollments().get(f.enrollment.id)!!
+        row.definition_version shouldBe "1.5.0"
+        row.definition_id shouldBe ChallengeLibrary.idOf("oap", "1.5.0").toString()
+        db.challengeEvents().forEnrollment(f.enrollment.id).last().let { it.event_type to it.definition_version } shouldBe (EventTypes.MIGRATED to "1.5.0")
+        repo.updateFor(f.enrollment.id) shouldBe null
+        // A fresh repository folds the stored events across both versions to the same state.
+        val g = make().folded(f.enrollment.id)
+        g.def.version shouldBe "1.5.0"
+        g.enrollment.fold_generation shouldBe 0
+        StateJson.hash(g.state) shouldBe row.state_hash
+    }
+
+    @Test
+    fun `an update made on a stale preview is refused`() = blocking {
+        val f = start("1.4.0")
+        val to = requireNotNull(repo.updateFor(f.enrollment.id))
+        val preview = MigrationPreviews.preview(f.def, to, params, f.state, f.state.lastFacts!!, null, emptyList(), LocalDate.parse("2026-10-20"), 5)
+        now += 86_400_000
+        repo.catchUp()
+        runCatching { repo.migrate(f.enrollment.id, to, preview) }.exceptionOrNull()?.message shouldBe "the enrollment changed after the preview"
     }
 }

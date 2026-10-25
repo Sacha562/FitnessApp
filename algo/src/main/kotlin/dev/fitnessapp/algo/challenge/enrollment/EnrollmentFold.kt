@@ -34,6 +34,8 @@ import dev.fitnessapp.algo.core.params.ParamType
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.core.registry.ModuleRef
 import dev.fitnessapp.algo.core.registry.ModuleRegistry
+import dev.fitnessapp.algo.core.registry.SemVer
+import kotlinx.serialization.json.JsonObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -73,10 +75,24 @@ object EnrollmentFold : DeclaresParams {
         val warnings: List<String>,
         /** State after each folded event, for trajectories and checkpoints. */
         val trail: List<Pair<ChallengeEvent, EnrollmentState>>,
+        /** The definition the last event folded under: the creation's, or the last `definition.migrated` target (4.12). */
+        val def: CompiledDefinition,
     )
 
     /** Folds an unordered event list (sorted here); amendments and retractions apply at the original's position. */
-    fun fold(def: CompiledDefinition, params: ParamView, events: List<ChallengeEvent>): FoldResult {
+    fun fold(def: CompiledDefinition, params: ParamView, events: List<ChallengeEvent>): FoldResult =
+        fold(def, { v -> if (v == def.version) def else throw IllegalArgumentException("definition.migrated to $v needs that version") }, params, events)
+
+    /** [fold] across definition updates (4.12): [defs] holds every version the events name, by version. */
+    fun fold(defs: Map<String, CompiledDefinition>, params: ParamView, events: List<ChallengeEvent>): FoldResult {
+        val created = events.firstOrNull { it.type == EventTypes.CREATED } ?: throw IllegalArgumentException("no enrollment.created event")
+        val version = (created.payload as EventPayload.Created).definitionVersion
+        val at = { v: String -> defs[v] ?: throw IllegalArgumentException("definition version $v is not available") }
+        return fold(at(version), at, params, events)
+    }
+
+    private fun fold(first: CompiledDefinition, at: (String) -> CompiledDefinition, params: ParamView, events: List<ChallengeEvent>): FoldResult {
+        var def = first
         val sorted = events.sortedWith(ChallengeEvent.ORDER)
         val created = sorted.firstOrNull { it.type == EventTypes.CREATED } ?: throw IllegalArgumentException("no enrollment.created event")
         val ids = sorted.map { it.id }.toSet()
@@ -122,13 +138,20 @@ object EnrollmentFold : DeclaresParams {
                 replacement.payload is EventPayload.Pain && (replacement.payload as EventPayload.Pain).retracted -> continue
                 else -> e.copy(payload = replacement.payload, engineFacts = replacement.engineFacts ?: e.engineFacts)
             }
-            step = apply(def, params, step.state, effective)
+            val migrated = effective.payload as? EventPayload.Migrated
+            if (migrated != null) {
+                val to = at(migrated.toVersion)
+                step = migrate(def, to, params, step.state, effective)
+                def = to
+            } else {
+                step = apply(def, params, step.state, effective)
+            }
             audits += step.audits
             notes += step.notifications
             warnings += step.warnings
             trail += effective to step.state
         }
-        return FoldResult(step.state, audits, notes, warnings, trail)
+        return FoldResult(step.state, audits, notes, warnings, trail, def)
     }
 
     /**
@@ -353,6 +376,7 @@ object EnrollmentFold : DeclaresParams {
                 s = r.state; audits = r.audits; notes = r.notifications; warnings += r.warnings
             }
             is EventPayload.Created -> throw IllegalArgumentException("a second enrollment.created event")
+            is EventPayload.Migrated -> throw IllegalArgumentException("definition.migrated needs both versions: use migrate (4.12)")
         }
         s = s.copy(stateRev = s0.stateRev + 1, lastFacts = e.engineFacts ?: s0.lastFacts)
         return Step(s, audits, notes, warnings)
@@ -544,5 +568,56 @@ object EnrollmentFold : DeclaresParams {
     }
 
     /** Convenience for tests and `:sim`: the values of an enrollment's derived `p.*` map. */
+    /** `migrations[from.version]` of [to] (2.3), when [to] is a newer version of the same slug that names [from]. */
+    fun migrationOf(from: CompiledDefinition, to: CompiledDefinition): JsonObject? {
+        if (to.slug != from.slug || SemVer.parse(to.version) <= SemVer.parse(from.version)) return null
+        return to.doc.migrations[from.version] as? JsonObject
+    }
+
+    /**
+     * 4.12 (D44): the values of the state vars [to] adds, from `migrations[from].defaults` or their `init` on the current
+     * state. They go into the `definition.migrated` event, so a refold applies them without evaluating anything. A
+     * non-empty `varMap` (a changed var) is refused until an engine supports it.
+     */
+    fun migrationVars(from: CompiledDefinition, to: CompiledDefinition, params: ParamView, s: EnrollmentState, date: LocalDate): SortedMap<String, Value> {
+        val m = requireNotNull(migrationOf(from, to)) { "${to.slug}@${to.version} has no migration from ${from.version}" }
+        require((m["varMap"] as? JsonObject).orEmpty().isEmpty()) { "${to.slug}@${to.version}: a varMap from ${from.version} is not supported" }
+        val defaults = (m["defaults"] as? JsonObject).orEmpty()
+        val records = Records(params)
+        val vars = TreeMap(s.vars.filterKeys { it in to.stateVarByName })
+        val out = TreeMap<String, Value>()
+        for (v in to.stateVars) {
+            if (v.name in vars) continue
+            val env = RuleEnv(to, params, records, s.copy(vars = TreeMap(vars)), date, s.lastFacts ?: EngineFacts())
+            val value = defaults[v.name]?.let { ValueJson.decode(v.type, it) } ?: try {
+                v.init?.evaluate(env.roots(), env.host) ?: NullV
+            } catch (err: EvalError) {
+                NullV
+            }
+            val c = RuleEngine.canonical(v.type, coerce(v.type, value), env)
+            vars[v.name] = c
+            out[v.name] = c
+        }
+        return out
+    }
+
+    /**
+     * `definition.migrated` (4.12): the state moves to [to] (vars it no longer declares dropped, the event's `var_map`
+     * written), then [to]'s rules see the event like any other.
+     */
+    fun migrate(from: CompiledDefinition, to: CompiledDefinition, params: ParamView, s0: EnrollmentState, e: ChallengeEvent): Step {
+        val p = e.payload as? EventPayload.Migrated ?: throw IllegalArgumentException("${e.type} is not definition.migrated")
+        require(p.fromVersion == from.version && s0.definitionVersion == from.version) { "migration from ${p.fromVersion} on ${s0.definitionVersion}" }
+        require(p.toVersion == to.version && p.toJcsSha256 == to.jcsSha256) { "migration to ${p.toVersion} with another definition" }
+        val keep = to.snapshotVars.toSet()
+        val moved = s0.copy(
+            vars = TreeMap(s0.vars.filterKeys { it in to.stateVarByName }).also { it.putAll(p.varMap) },
+            snapshots = TreeMap(s0.snapshots.mapValues { (_, snap) -> TreeMap(snap.filterKeys { it in keep }) }),
+            definitionVersion = to.version,
+            definitionSha = to.jcsSha256,
+        )
+        return apply(to, params, moved, e.copy(payload = EventPayload.Empty))
+    }
+
     fun effectiveParams(def: CompiledDefinition, s: EnrollmentState): SortedMap<String, Value> = RuleEnv.effectiveParams(def, s)
 }

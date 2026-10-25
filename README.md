@@ -200,6 +200,9 @@ Then D41 (2026-10-23): with 29 September counting for the gates, the next test w
 only a hang and no bodyweight; engine 1.4.0 (migration 029) keeps the newest gate-valid value per measurement as `pt`, so
 19 September's 70.7 kg and +32.5 kg 3RM and 30 August's max reps stay the baseline. Your enrollment gets it on the next
 refold.
+Then D44 (2026-10-25): no rowing machine in the warm-up. `oap@1.5.0` (migration 031) drops it; engine 1.6.0 folds
+`definition.migrated`, so the running enrollment moves to 1.5.0 when you tap "Update available" in the dashboard menu
+and confirm the preview (this and next week's sessions, item by item).
 
 **M2b.5 phone checks (2026-10-22, test calendar, invented events)**: with calendar access granted, the app read your
 main calendar (read-only) and the new "FitnessApp TEST" calendar. Chess and other appointments read as busy, the two

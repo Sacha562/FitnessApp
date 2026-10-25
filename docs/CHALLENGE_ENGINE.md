@@ -205,8 +205,8 @@ Rules for interaction:
 | Change | Version bump | Enrollment effect |
 |---|---|---|
 | Text only (`messages`, names, notes, explanations) | patch (`1.0.1`) | Offered as a migration with an empty state map; may be auto-accepted because it cannot change any computed value (the validator proves it: identical compiled ASTs and constants). |
-| New P proposal, new param with a default, new template for a later phase, changed default of a P param | minor (`1.1.0`) | Migration preview; new proposals arrive undecided (inactive) until the user decides. |
-| Changed A rule, changed state var semantics, removed key, renamed item key or state var | major (`2.0.0`) | Migration with an explicit `varMap`; requires user confirmation after a diff preview; the engine range may change. |
+| New P proposal, new param with a default, new template for a later phase, changed default of a P param, a block or template item removed that no rule, state var, gate, count or habit reads (D44) | minor (`1.1.0`) | Migration preview; new proposals arrive undecided (inactive) until the user decides. |
+| Changed A rule, changed state var semantics, removed key that something reads, renamed item key or state var | major (`2.0.0`) | Migration with an explicit `varMap`; requires user confirmation after a diff preview; the engine range may change. |
 
 `engine` is a semver range (for example `>=1.0.0 <2.0.0`). An app whose `ENGINE_VERSION` is outside
 the range refuses to enroll and shows "Update the app to use this challenge version".
@@ -1092,7 +1092,8 @@ and `supersedes_event_id`; the refold then runs as if the original report had ne
 
 ### 4.12 Definition upgrade and migration
 
-1. A newer published version of the same slug appears. The Challenges tab shows "Update available".
+1. A newer published version of the same slug appears whose `migrations` names the enrollment's version
+   (D44: no entry, no offer). The Challenges tab shows "Update available".
 2. Preview: the engine materializes the current and next ISO week under the old and the new version
    (new state from `migrations[fromVersion].varMap` applied to the current state) and shows a diff of
    loads, sets, rules and new proposals.
@@ -1101,6 +1102,26 @@ and `supersedes_event_id`; the refold then runs as if the original report had ne
    replay pins each range to its version.
 4. Patch versions that only change text may be applied without a preview (validator-proven no-op).
 5. A major version is never applied automatically.
+
+As built (D44, engine 1.6.0, `challenge.enrollment` 1.3.0):
+
+* Each `challenge_events` row carries the version it was written under; the repository reads every row with
+  its own version and folds with the map of versions (`EnrollmentFold.fold(defs, ...)`). The
+  `definition.migrated` row carries the new version.
+* Folding `definition.migrated` (`EnrollmentFold.migrate`): the vars the new version no longer declares are
+  dropped (also from the snapshots), the event's `var_map` is written, `definitionVersion` and
+  `definitionSha` move to the new version, and the new version's rules see the event like any other.
+  Every later event folds under the new version. The enrollment row's `definition_id`, `definition_version`
+  and `definition_jcs_sha256` follow the state.
+* `var_map` is computed when the update is made (`EnrollmentFold.migrationVars`): every state var the new
+  version adds takes `migrations[fromVersion].defaults[name]` or its `init` (without `onboard`), so a refold
+  never re-evaluates it. A non-empty `varMap` is refused until an engine supports it.
+* The preview (`MigrationPreviews.preview`) materializes every planned, not yet done session of this and
+  next ISO week under both versions, the new one on the state the update would leave, and compares the
+  items by key (added, removed, changed); rules by id (added, removed, changed JSON); new proposals by id.
+  `preview_hash` is the JCS hash of both definition hashes, the state hash, `var_map` and those lists. The
+  update is refused when the enrollment's state hash differs from the one the preview was made on.
+* Every update goes through the preview: steps 4 and 5 are not built yet.
 
 ### 4.13 Snapshots
 

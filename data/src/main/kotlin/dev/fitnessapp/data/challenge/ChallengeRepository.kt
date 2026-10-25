@@ -19,9 +19,11 @@ import dev.fitnessapp.algo.challenge.enrollment.StateJson
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.ValueJson
+import dev.fitnessapp.algo.challenge.materialize.MigrationPreview
 import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.det.JsonNumbers
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.core.registry.SemVer
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.JsonText
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
@@ -206,7 +208,7 @@ class ChallengeRepository(
         if (e.supersedesEventId != null || late) {
             db.withTransaction { insertEvent(row, now.toEpochMilli()) }
             val before = f.state.notificationsSent
-            val g = refoldLocked(f.enrollment, f.def)
+            val g = refoldLocked(f.enrollment)
             scheduler.request()
             val fresh = g.second.filter { (it.msgKey + "|" + it.scopeKey) !in before }
             return@withLock ChallengeOutcome(g.first, fresh, g.third)
@@ -250,6 +252,57 @@ class ChallengeRepository(
         CatchUpResult(prompts, notes, ticks)
     }
 
+    // ------------------------------------------------------------------------------------------ definition update
+
+    /**
+     * 4.12 (D44): the newest published version of an open enrollment's definition that has a migration from the version
+     * it runs ("Update available"), or null.
+     */
+    suspend fun updateFor(enrollmentId: String): CompiledDefinition? {
+        val f = folded(enrollmentId)
+        if (f.state.status != EnrollmentState.ACTIVE && f.state.status != EnrollmentState.PAUSED) return null
+        return definitions().map { it.second }.filter { EnrollmentFold.migrationOf(f.def, it) != null }.maxByOrNull { SemVer.parse(it.version) }
+    }
+
+    /**
+     * "Update" in the preview (4.12): writes `definition.migrated` to [to] with the preview's var values and hash; later
+     * events fold under [to]. Refused when the enrollment changed after [preview] was made (its state hash differs).
+     */
+    suspend fun migrate(enrollmentId: String, to: CompiledDefinition, preview: MigrationPreview): ChallengeOutcome = mutex.withLock {
+        val now = Instant.ofEpochMilli(ctx.nowMs())
+        val f = load(enrollmentId)
+        check(StateJson.hash(f.state) == preview.stateHash && preview.fromVersion == f.def.version && preview.toVersion == to.version) {
+            "the enrollment changed after the preview"
+        }
+        val uid = ctx.requireUser()
+        val e = ChallengeEvent(
+            UUID.fromString(ctx.ids.next()), EventTypes.MIGRATED, now, now.atZone(ctx.zone()).toLocalDate(),
+            EventPayload.Migrated(f.def.version, to.version, to.jcsSha256, preview.varMap, preview.hash), facts.facts(f.def, f.state),
+        )
+        // Read back with the version it moves to (the row's definition_version).
+        val row = eventRow(uid, enrollmentId, to, e, null)
+        if (f.lastKey != null && compareKeys(keyOf(e), f.lastKey) < 0) {
+            db.withTransaction { insertEvent(row, now.toEpochMilli()) }
+            val g = refoldLocked(f.enrollment)
+            scheduler.request()
+            return@withLock ChallengeOutcome(g.first, g.second.filter { (it.msgKey + "|" + it.scopeKey) !in f.state.notificationsSent }, g.third)
+        }
+        val step = EnrollmentFold.migrate(f.def, to, params, f.state, e)
+        val next = db.withTransaction {
+            insertEvent(row, now.toEpochMilli())
+            insertAudits(
+                auditRows(uid, enrollmentId, to, step.audits, mapOf(e.id to (f.state.stateRev to step.state.stateRev)), f.enrollment.fold_generation),
+                now.toEpochMilli(),
+            )
+            val enr = enrollmentRow(f.enrollment, step.state, f.enrollment.fold_generation, e.id.toString())
+            db.enrollments().upsert(enr)
+            outbox.enqueue("challenge_enrollments", enr.id, now.toEpochMilli())
+            FoldedEnrollment(enr, to, step.state, keyOf(e), f.eventCount + 1).also { cache[enrollmentId] = it }
+        }
+        scheduler.request()
+        ChallengeOutcome(next, step.notifications, step.warnings)
+    }
+
     /** After a sync pull: refolds every enrollment whose stored events no longer match its cached fold (4.11). */
     suspend fun reconcile() = mutex.withLock {
         cache.clear()
@@ -267,29 +320,45 @@ class ChallengeRepository(
     private suspend fun load(enrollmentId: String): FoldedEnrollment {
         val enr = requireNotNull(db.enrollments().get(enrollmentId)) { "unknown enrollment $enrollmentId" }
         cache[enrollmentId]?.let { c -> if (c.enrollment.state_rev == enr.state_rev && c.enrollment.fold_generation == enr.fold_generation) return c }
-        val def = definition(enr.definition_id)
         val rows = db.challengeEvents().forEnrollment(enrollmentId)
-        val events = rows.map { decode(def, it) }
-        val fold = EnrollmentFold.fold(def, params, events)
+        val defs = versions(enr, rows)
+        val events = rows.map { decode(defs.getValue(it.definition_version), it) }
+        val fold = EnrollmentFold.fold(defs, params, events)
         val last = events.lastOrNull()
         val fresh = enr.state_hash == StateJson.hash(fold.state) && enr.last_folded_event_id == last?.id?.toString()
-        if (!fresh) return refoldLocked(enr, def).first
-        return FoldedEnrollment(enr, def, fold.state, last?.let(::keyOf), events.size).also { cache[enrollmentId] = it }
+        if (!fresh) return refoldLocked(enr).first
+        return FoldedEnrollment(enr, fold.def, fold.state, last?.let(::keyOf), events.size).also { cache[enrollmentId] = it }
     }
 
+    /**
+     * Every definition version the enrollment's events were written under (4.12: each row carries its version), by
+     * version. A row is read with its own version, so a `definition.migrated` row is read with the version it moves to.
+     */
+    private suspend fun versions(enr: ChallengeEnrollmentEntity, rows: List<ChallengeEventEntity>): Map<String, CompiledDefinition> =
+        (rows.map { it.definition_version } + enr.definition_version).distinct().associateWith { v ->
+            definition(ChallengeLibrary.idOf(enr.definition_slug, v).toString())
+        }
+
     /** Full refold with `fold_generation + 1`: new audit rows for the generation, the row updated (4.11). */
-    private suspend fun refoldLocked(enr: ChallengeEnrollmentEntity, def: CompiledDefinition): Triple<FoldedEnrollment, List<ChallengeNotification>, List<String>> {
+    private suspend fun refoldLocked(enr: ChallengeEnrollmentEntity): Triple<FoldedEnrollment, List<ChallengeNotification>, List<String>> {
         val uid = enr.user_id
-        val events = db.challengeEvents().forEnrollment(enr.id).map { decode(def, it) }
-        val fold = EnrollmentFold.fold(def, params, events)
+        val rows = db.challengeEvents().forEnrollment(enr.id)
+        val defs = versions(enr, rows)
+        val events = rows.map { decode(defs.getValue(it.definition_version), it) }
+        val fold = EnrollmentFold.fold(defs, params, events)
+        // An audit row carries the version its event folded under.
+        val versionOf = fold.trail.associate { (e, s) -> e.id to s.definitionVersion }
         val generation = enr.fold_generation + 1
         val now = ctx.nowMs()
+        val revs = revsOf(fold.trail)
         val next = db.withTransaction {
-            insertAudits(auditRows(uid, enr.id, def, fold.audits, revsOf(fold.trail), generation), now)
+            for ((v, audits) in fold.audits.groupBy { versionOf[it.eventId] ?: fold.def.version }) {
+                insertAudits(auditRows(uid, enr.id, defs.getValue(v), audits, revs, generation), now)
+            }
             val row = enrollmentRow(enr, fold.state, generation, events.lastOrNull()?.id?.toString())
             db.enrollments().upsert(row)
             outbox.enqueue("challenge_enrollments", row.id, now)
-            FoldedEnrollment(row, def, fold.state, events.lastOrNull()?.let(::keyOf), events.size).also { cache[enr.id] = it }
+            FoldedEnrollment(row, fold.def, fold.state, events.lastOrNull()?.let(::keyOf), events.size).also { cache[enr.id] = it }
         }
         return Triple(next, fold.notifications, fold.warnings)
     }
@@ -330,7 +399,7 @@ class ChallengeRepository(
             }
         }
         // Another device synthesized some of these ticks first: fold the stored events instead.
-        if (ignored) refoldLocked(db.enrollments().get(f.enrollment.id)!!, f.def)
+        if (ignored) refoldLocked(db.enrollments().get(f.enrollment.id)!!)
         return notes to events.count { it.type == EventTypes.DAY_TICK }
     }
 
@@ -433,6 +502,9 @@ class ChallengeRepository(
         fun json(m: Map<String, JsonElement>) = JsonText.canonical(JsonObject(m))
         return base.copy(
             client_updated_at = ctx.nextClientMs(),
+            // 4.12: after `definition.migrated` the row points at the version the state folds under.
+            definition_id = ChallengeLibrary.idOf(base.definition_slug, s.definitionVersion).toString(),
+            definition_version = s.definitionVersion, definition_jcs_sha256 = s.definitionSha,
             status = s.status, mode = s.mode, phase = s.phase, block_index = s.block.index, block_week = s.block.week, week_ordinal = s.weekOrdinal,
             params = json(s.params.mapValues { ValueJson.encode(it.value) }),
             rule_decisions = json(s.proposalDecisions.mapValues { JsonPrimitive(it.value.decision) }),

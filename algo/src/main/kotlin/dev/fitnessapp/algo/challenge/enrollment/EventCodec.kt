@@ -80,6 +80,11 @@ object EventCodec {
             is EventPayload.ManualOverride -> mapOf(
                 "target" to JsonPrimitive(p.target), "value" to ValueJson.encode(p.value), "reason_code" to JsonPrimitive(p.reasonCode),
             )
+            is EventPayload.Migrated -> mapOf(
+                "from_version" to JsonPrimitive(p.fromVersion), "to_version" to JsonPrimitive(p.toVersion),
+                "to_jcs_sha256" to JsonPrimitive(p.toJcsSha256), "var_map" to JsonObject(p.varMap.mapValues { ValueJson.encode(it.value) }.toSortedMap()),
+                "preview_hash" to JsonPrimitive(p.previewHash),
+            )
         }
         val facts = e.engineFacts?.let { "engine_facts" to facts(it) }
         return obj(body + listOfNotNull(facts))
@@ -211,6 +216,11 @@ object EventCodec {
             EventTypes.RESUME -> EventPayload.Resume(p.so("reason_code"), p.s("gap_days").toLong())
             EventTypes.ABANDON -> EventPayload.Abandon(p.so("reason_code"))
             EventTypes.OVERRIDE -> EventPayload.ManualOverride(p.s("target"), ValueJson.decode(overrideType(def, p.s("target")), p.getValue("value")), p.s("reason_code"))
+            // Read with the version it migrates to: the row carries that version (DATA_MODEL 9.7.1).
+            EventTypes.MIGRATED -> EventPayload.Migrated(
+                p.s("from_version"), p.s("to_version"), p.s("to_jcs_sha256"),
+                TreeMap(p.o("var_map").mapValues { (k, v) -> ValueJson.decode(def.stateVarByName[k]?.type ?: Type.AnyT, v) }), p.s("preview_hash"),
+            )
             else -> EventPayload.Empty
         }
         val facts = (p["engine_facts"] as? JsonObject)?.let(::facts)

@@ -95,7 +95,9 @@ class ChallengesViewModel(private val c: AppContainer) : ViewModel() {
             ChallengeWeek.nextTestText(c, f, facts),
             "${met.count { it.met == true }} of ${met.size} goals met",
         )
-        return ChallengeCard(e.id, e.definition_id, ChallengeTexts.title(f.def), if (s.status == EnrollmentState.ACTIVE) ChallengeTexts.mode(s.mode) else ChallengeTexts.status(s.status), lines)
+        // UX 14.1 (D44): a newer version with a migration from this one.
+        val update = runCatching { c.challenges.updateFor(e.id) }.getOrNull()?.let { "Update available: version ${it.version}" }
+        return ChallengeCard(e.id, e.definition_id, ChallengeTexts.title(f.def), if (s.status == EnrollmentState.ACTIVE) ChallengeTexts.mode(s.mode) else ChallengeTexts.status(s.status), lines, update)
     }
 
     private fun availableCard(id: String, d: CompiledDefinition): ChallengeCard {

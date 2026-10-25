@@ -2,12 +2,13 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.2.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.5.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
-first in its week while there are no loads (D38); the frozen 1.0.0, 1.0.1, 1.1.0 and 1.2.0 are
-`oap.challenge.v1.0.0.json` to `oap.challenge.v1.2.0.json`). The proposal
+first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
+1.5.0 drops the rowing machine from the warm-up (D44); the frozen 1.0.0 to 1.4.0 are `oap.challenge.v1.0.0.json` to
+`oap.challenge.v1.4.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -809,7 +810,7 @@ C 50, 90-degree hold 35 lb (unchanged); C hang target floor(0.67 x 16) = 10 s; d
 
 | Block | Content |
 |---|---|
-| Warm-up (10 min, never skipped) | Rowing 3 min; 20 face pulls (cable); 10 scapular pulls on the bar; 2 ramp-up sets of pull-ups. |
+| Warm-up (never skipped) | 20 face pulls (cable); 10 scapular pulls on the bar; 2 ramp-up sets of pull-ups. |
 | Prevention (5 min, every session) | Reverse wrist curls 2 x 15 light; dumbbell pronation/supination 2 x 10 per side; face pulls 2 x 15. Doubled in the elbow protocol. |
 
 ### 9.2 Phase-1 templates (A, with today's imported values)
@@ -871,7 +872,7 @@ migration slug list (migration 009) is the union of these slugs and the general 
 
 | Kind | Slugs |
 |---|---|
-| Catalog references (15) | `chinup_weighted`, `neutral_grip_pullup_weighted`, `pullup_weighted` (the definition key `weighted_pullup` resolves to one of them by the `grip` parameter); `chinup_bw`, `neutral_grip_pullup_bw`, `pullup_bw` (the definition key `pullup_bw` resolves by grip, so for your supinated grip it is `chinup_bw`); `dip_neutral`, `barbell_row_pronated`, `seated_cable_row_wide_pronated`, `chest_supported_row_pronated`, `reverse_wrist_curl_db`, `db_pronation_supination`, `face_pull_cable`, `rower_erg`, `scap_pull_bar` |
+| Catalog references (15) | `chinup_weighted`, `neutral_grip_pullup_weighted`, `pullup_weighted` (the definition key `weighted_pullup` resolves to one of them by the `grip` parameter); `chinup_bw`, `neutral_grip_pullup_bw`, `pullup_bw` (the definition key `pullup_bw` resolves by grip, so for your supinated grip it is `chinup_bw`); `dip_neutral`, `barbell_row_pronated`, `seated_cable_row_wide_pronated`, `chest_supported_row_pronated`, `reverse_wrist_curl_db`, `db_pronation_supination`, `face_pull_cable`, `scap_pull_bar`, `pallof_press` (D40; `rower_erg` left with the warm-up row in 1.5.0, D44) |
 | Challenge-local entries (14, tag `challenge`, validated like catalog rows) | `weighted_negative_pullup`, `oap_assisted_machine`, `oap_finger_assisted`, `oa_negative`, `oa_top_hold`, `oa_hold90_machine`, `oa_hold_angle`, `oa_straight_arm_hold`, `oa_scap_pull`, `oa_dead_hang`, `oap_attempt`, `typewriter_pullup`, `one_arm_plank`, `two_arm_dead_hang` |
 
 `weighted_pullup` is a definition key, not a catalog slug (D7's `userK('weighted_pullup')` resolves

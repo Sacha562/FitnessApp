@@ -145,7 +145,8 @@ class ChallengeSessionRepositoryTest {
         oaa.load_mode shouldBe "assisted_machine"
         oaa.planned_sets shouldBe 5
         oaa.side_mode shouldBe "unilateral_sequential"
-        exercises.any { it.challenge_item_key == "wu_row" } shouldBe true
+        exercises.any { it.challenge_item_key == "wu_face" } shouldBe true
+        exercises.none { it.challenge_item_key == "wu_row" } shouldBe true
 
         // Calibration pair: L 2, R 4 -> +5 lb on the remaining sets (ins.A.oaa.calibrate, D14).
         log(sessionId, oaa.id, oaa.exercise_id, 1, "L", 2)

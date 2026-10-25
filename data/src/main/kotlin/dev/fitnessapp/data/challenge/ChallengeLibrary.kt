@@ -59,9 +59,11 @@ class ChallengeLibrary(private val params: ParamView, private val changeoverMin:
 
     companion object {
         /** File names under `fitness/challenges/`. */
-        val BUNDLED: List<String> = listOf("oap.challenge.v1.0.0.json", "oap.challenge.v1.0.1.json", "oap.challenge.v1.1.0.json", "oap.challenge.v1.2.0.json", "oap.challenge.v1.3.0.json", "oap.challenge.v1.json")
+        val BUNDLED: List<String> = listOf("oap.challenge.v1.0.0.json", "oap.challenge.v1.0.1.json", "oap.challenge.v1.1.0.json", "oap.challenge.v1.2.0.json", "oap.challenge.v1.3.0.json", "oap.challenge.v1.4.0.json", "oap.challenge.v1.json")
 
         /** DATA_MODEL 6.4: `challenge_definition:<slug>@<version>`. */
-        fun idOf(def: CompiledDefinition) = Ids.fitness("challenge_definition:${def.slug}@${def.version}")
+        fun idOf(def: CompiledDefinition) = idOf(def.slug, def.version)
+
+        fun idOf(slug: String, version: String) = Ids.fitness("challenge_definition:$slug@$version")
     }
 }

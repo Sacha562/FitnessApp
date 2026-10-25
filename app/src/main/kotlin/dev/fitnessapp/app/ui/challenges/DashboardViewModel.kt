@@ -15,6 +15,10 @@ import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.Type
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
+import dev.fitnessapp.algo.challenge.materialize.ItemChange
+import dev.fitnessapp.algo.challenge.materialize.MigrationPreview
+import dev.fitnessapp.algo.challenge.materialize.MigrationPreviews
+import dev.fitnessapp.algo.challenge.materialize.PlannedItem
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.uidet.GateRows
@@ -73,6 +77,20 @@ data class DashboardUi(
     val targets: List<CorrectTarget>,
     /** "Log test day" shows on the planned test day and after it, and while the test is pending (UX 14.2). */
     val testDay: Boolean = false,
+    /** The program version this enrollment runs, and a newer one it can update to (CHALLENGE_ENGINE 4.12, D44). */
+    val version: String = "",
+    val update: String? = null,
+)
+
+/** The definition-update preview (UX 14.2, D44): what changes in this and next week's sessions, the rules and proposals. */
+data class UpdatePreviewUi(
+    val from: String,
+    val to: String,
+    val notes: String?,
+    /** Per planned session: its header ("Session A · Fri 23 Oct") and one line per changed exercise. */
+    val sessions: List<Pair<String, List<String>>>,
+    val rules: List<String>,
+    val proposals: List<String>,
 )
 
 /**
@@ -139,6 +157,8 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             targets = targets(def, s),
             testDay = s.status == EnrollmentState.ACTIVE &&
                 (s.mode == "test_pending" || s.plannedTest.date?.let { !LocalDate.now(zone).isBefore(it) } == true),
+            version = def.version,
+            update = runCatching { c.challenges.updateFor(f.enrollment.id)?.version }.getOrNull(),
         )
     }
 
@@ -267,6 +287,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             EventTypes.OVERRIDE -> "Value corrected"
             EventTypes.HABIT_COMPLETED -> null
             EventTypes.ATTEMPT -> "Attempt logged"
+            EventTypes.MIGRATED -> "Program updated to version ${p?.get("to_version")?.jsonPrimitive?.contentOrNull ?: "?"}"
             else -> null
         }
     }
@@ -346,6 +367,73 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     fun clearMessages() {
         _messages.value = emptyList()
         _error.value = null
+    }
+
+    // ------------------------------------------------------------------------------------------ definition update
+
+    /** The preview the user saw, kept for "Update": the update is written only for the state it was made on. */
+    private var pending: Pair<CompiledDefinition, MigrationPreview>? = null
+
+    /**
+     * CHALLENGE_ENGINE 4.12 step 2 (D44): this and next week's planned sessions materialized under the running version
+     * and the new one, compared item by item, with the rule and proposal changes.
+     */
+    suspend fun updatePreview(): UpdatePreviewUi = withContext(Dispatchers.Default) {
+        c.challenges.catchUp(force = true)
+        val f = c.challenges.folded(enrollmentId)
+        val to = requireNotNull(c.challenges.updateFor(enrollmentId)) { "No update available" }
+        val facts = c.challengeFacts.facts(f.def, f.state)
+        val sessions = (0..1).flatMap { w -> ChallengeWeek.plan(c, f, facts, weekOffset = w).second.sessions.filter { it.source != "done" }.map { it.slot to it.date } }
+        val today = LocalDate.now(zone)
+        val p = MigrationPreviews.preview(f.def, to, c.params, f.state, facts, c.catalog.doc, sessions, today, AppContainer.CHANGEOVER_MIN)
+        pending = to to p
+        val notes = (to.doc.migrations[f.def.version] as? kotlinx.serialization.json.JsonObject)?.get("notes")?.jsonPrimitive?.contentOrNull
+        UpdatePreviewUi(
+            f.def.version, to.version, notes,
+            p.sessions.filter { it.changes.isNotEmpty() }.map { d ->
+                val day = d.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.ENGLISH))
+                "${if (d.slot == "TEST") "Test day" else "Session ${d.slot}"} · $day" to d.changes.map { ch -> itemLine(ch) }
+            },
+            p.rules.map { r ->
+                val text = ChallengeTexts.ruleExplain(if (r.kind == "removed") f.def else to, r.id)
+                when (r.kind) {
+                    "added" -> "New rule: $text"
+                    "removed" -> "Rule removed: $text"
+                    else -> "Rule changed: $text"
+                }
+            },
+            p.newProposals.map { id -> "New proposal, off until you decide: ${proposalTitle(to, id) ?: id}" },
+        )
+    }
+
+    private fun itemLine(ch: ItemChange): String {
+        fun name(i: PlannedItem) = (i.name["en"] ?: i.key) + if (i.role == "warmup") " (warm-up)" else if (i.role == "prehab") " (prehab)" else ""
+        val b = ch.before
+        val a = ch.after
+        return when {
+            b == null && a != null -> "Added: ${name(a)}" + ChallengeLines.detailOf(a).let { if (it.isNotEmpty()) " · $it" else "" }
+            a == null && b != null -> "Removed: ${name(b)}"
+            a != null && b != null -> {
+                val (was, now) = ChallengeLines.detailOf(b) to ChallengeLines.detailOf(a)
+                "Changed: ${name(a)}" + if (was != now) " · $was → $now" else ""
+            }
+            else -> ch.key
+        }
+    }
+
+    /** "Update" in the preview: `definition.migrated` (4.12 step 3). A preview made on an older state is refused. */
+    fun applyUpdate(onDone: () -> Unit) {
+        val (to, p) = pending ?: return
+        viewModelScope.launch {
+            runCatching { c.challenges.migrate(enrollmentId, to, p) }
+                .onSuccess { o ->
+                    pending = null
+                    _messages.value = listOf("info" to "Updated to version ${to.version}.") +
+                        o.notifications.map { it.kind to ChallengeTexts.message(o.folded.def, it) } + o.warnings.map { "warn" to it }
+                }
+                .onFailure { _error.value = it.message }
+            onDone()
+        }
     }
 
     suspend fun pausePreview(): List<Pair<Long, List<String>>> = withContext(Dispatchers.Default) {

@@ -58,7 +58,7 @@ object ModuleRegistry {
         "challenge.cds" to SemVer(1, 2, 0),
         "challenge.materialize" to SemVer(1, 1, 0),
         "challenge.plan" to SemVer(1, 2, 0),
-        "challenge.enrollment" to SemVer(1, 2, 0),
+        "challenge.enrollment" to SemVer(1, 3, 0),
     )
 
     private fun layer(layer: Layer, vararg ids: String): List<Entry> =

@@ -1,13 +1,13 @@
 {
     "persona": "dst_and_late_ticks",
     "proposals": "approved",
-    "definition": "oap@1.4.0",
-    "definition_jcs_sha256": "8fca944277e084d1d3e35ed282bfb13366ac68b95d21c8993345e04198abbd4d",
-    "engine_version": "1.5.0",
+    "definition": "oap@1.5.0",
+    "definition_jcs_sha256": "4db8dfc1aad0de274cb6c1a7c1e647a3166d985e0ffd671bff48157d494bbaae",
+    "engine_version": "1.6.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 466,
     "audit_rows": 395,
-    "final_state_hash": "11e2efa1a070a19b6bf99dbec7367dd8a8ee3774f06f82741e96620fbdfb9dec",
+    "final_state_hash": "1efdb0baf883b5b8fef110840c7c11f10892171c1083f1abc6e3643c932dfd84",
     "violations": [],
     "weeks": [
         {

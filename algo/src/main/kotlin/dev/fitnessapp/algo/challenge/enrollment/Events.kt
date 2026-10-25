@@ -84,6 +84,18 @@ sealed class EventPayload {
     data class Abandon(val reasonCode: String?) : EventPayload()
 
     data class ManualOverride(val target: String, val value: Value, val reasonCode: String) : EventPayload()
+
+    /**
+     * The definition update of 4.12: events after it fold under [toVersion]. [varMap] is the result written to the
+     * state vars that the new version adds (computed when the update is made, so a refold never re-evaluates it).
+     */
+    data class Migrated(
+        val fromVersion: String,
+        val toVersion: String,
+        val toJcsSha256: String,
+        val varMap: SortedMap<String, Value>,
+        val previewHash: String,
+    ) : EventPayload()
 }
 
 /** The cutover import of D4 / CHALLENGE_ENGINE 2.4.15. */
