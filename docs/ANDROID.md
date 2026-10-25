@@ -924,7 +924,7 @@ example of the write path.
 | `fgs_started` | system | 11.2, 11.3 | `fgs_type` (`health`, `special_use`; `none` below API 34, where services are untyped), `sdk_int` |
 | `fgs_stopped` | system | 11.3, 11.5 | `reason` (`finished`, `abandoned`, `idle_timeout`, `no_active_session`) |
 | `fgs_restart_failed` | system | 11.3 | `error_class` |
-| `notification_posted`, `notification_opened`, `notification_dismissed` | system | 11.5, 12.4, 13, 17 | `notification_id` (UX §18 catalogue id, for example `N-REST-DONE`), `channel` (13.1 channel id), `latency_ms?` (scheduled reminders: delivery time minus due time), `platform_config_hash?` (reminder deliveries) |
+| `notification_posted`, `notification_opened`, `notification_dismissed` | system | 11.5, 12.4, 13, 17 | `notification_id` (UX §18 catalogue id, for example `N-SESSION`), `channel` (13.1 channel id), `latency_ms?` (scheduled reminders: delivery time minus due time), `platform_config_hash?` (reminder deliveries) |
 | `notification_action` | system | 11.5, 12.5, 17 | `notification_id`, `channel`, `action` (`minus_15`, `plus_15`, `skip`, `start`, `snooze`, `skip_today`, `finish`, `keep_open`, `weigh_in`, `export`, `open`) |
 | `notification_promotion_state` | system | 13.4 | `can_post_promoted`, `flag_promoted` |
 | `reminder_scheduled` | system | 17 | `kind` (`habit`, `weigh_in`, `test_day`), `count`, `horizon_h` |
@@ -1322,7 +1322,7 @@ data; the permission rationale says so. The chosen type is logged (`fgs_started 
 - When the rest alarm fires after the process died (12.6), the alarm receiver may restart the service:
   exact-alarm deliveries are exempt from background FGS start restrictions on Android 12+, and
   ACTIVITY_RECOGNITION is not a while-in-use permission. If the start still fails, the receiver only
-  vibrates and posts the rest-done notification.
+  vibrates and posts the overtime session notification as a plain notification (no service).
 
 ### 11.4 What the service does
 
@@ -1445,8 +1445,8 @@ remainingMs(nowWall, nowElapsed, bootCount):
 startInterval(nowWall, nowElapsed, bootCount, d_s, hardMaxS, durationSource, sessionId, plannedRowRef):
   any active rest or interval timer first ends (rest: ended_by = next_set_early, as onNextSetLogged without a set)
   start(nowWall, nowElapsed, bootCount, d_s, hardMaxS, interval, durationSource)   # start_wall = the Start tap, set_log_id null
-onEndAlarm (interval): same alert as a rest end (vibration waveform, optional tone, heads-up with the item name
-  and "done"); no overtime reminder; state = ended, ended_by = elapsed; the warm-up item is logged done with
+onEndAlarm (interval): same alert as a rest end (vibration waveform, optional tone; no heads-up, D45), the
+  session notification returns to the count-up; no overtime reminder; state = ended, ended_by = elapsed; the warm-up item is logged done with
   duration_s = prescribed_s (+ adjustments) and completed_at = end_wall
 done early (the item's Done tap while running): state = ended, ended_by = skipped; the item is logged with the
   measured seconds (completed_at = tap). Skip (the notification shows Done in its place) and a set logged while
@@ -1521,14 +1521,10 @@ than that, which is why this mode is not the default.)
    pocket and is not suppressed by touch-feedback settings. Default waveform
    `[0, 300, 150, 300, 150, 600]` ms (three pulses, the last long).
 2. Optional tone (setting, default off): section 14.2.
-3. Heads-up notification on channel `rest_done` (silent channel; the app performs vibration and tone
-   itself so that the pattern is deterministic and not altered by OEM channel defaults): title and text
-   with the `N-REST-DONE` wording of the UX §18 catalogue (UX owns the copy: rest-end title plus the next
-   set's prescription, for example "BW + 22.5 kg × 4"), category `CATEGORY_ALARM`, auto-cancel, cancelled
-   when the next set is logged; logged as `notification_posted { notification_id: N-REST-DONE, channel:
-   rest_done }`.
-4. The ongoing session notification switches to overtime mode (count-up from `end_wall`).
-5. One overtime reminder buzz at `end_wall + timer.overtimeReminderS` (60 s), scheduled as a second
+3. The ongoing session notification switches to overtime mode (count-up from `end_wall`, the next set in
+   its text). It is the only notification of the rest end: no separate heads-up is posted (D45). The
+   session channel is LOW and silent, so the update does not pop up; the vibration is the alert.
+4. One overtime reminder buzz at `end_wall + timer.overtimeReminderS` (60 s), scheduled as a second
    `setAlarmClock`, cancelled by the next set.
 
 **Pre-warning (C54).** At `end − timer.prewarnS` (10 s) a single light haptic tick, only while the app UI is
@@ -1608,7 +1604,7 @@ Rest timers live entirely in UTC epoch milliseconds and elapsed time, so the DST
 | Channel id | Name (user-visible) | Importance | Sound | Vibration | Lock screen | Used for |
 |------------|--------------------|------------|-------|-----------|-------------|----------|
 | `session_ongoing` | "Active session" | LOW | none | none | PUBLIC | The FGS notification: session progress, rest countdown, actions (`N-SESSION`). Not MIN, so it can be promoted to a Live Update. |
-| `rest_done` | "Rest finished" | HIGH | none (app plays tone) | none (app vibrates) | PUBLIC | Heads-up at rest end (`N-REST-DONE`). |
+| `rest_done` | "Rest finished" | HIGH | none (app plays tone) | none (app vibrates) | PUBLIC | Retired (D45): was the heads-up at rest end (`N-REST-DONE`). No longer created on new installs, never deleted on existing ones; the id stays reserved. |
 | `habit_reminders` | "Reminders" | DEFAULT | system default | system default | PRIVATE | Home-habit reminders (`N-HABIT`, section 17) and the weigh-in reminder (`N-WEIGH`). |
 | `challenge` | "Challenge updates" | DEFAULT | system default | system default | PRIVATE | Test-day morning (`N-TEST-DAY`), program changes outside a session (`N-PROGRAM`), phase unlocked (`N-CELEBRATE`). |
 | `safety` | "Safety alerts" | HIGH | system default | system default | PRIVATE | Challenge rule notifications of kind stop/warn, such as a pain-protocol exit or extension (`N-SAFETY`). |
@@ -1629,7 +1625,7 @@ section only illustrate structure.
 | Id / request code | Use |
 |-------------------|-----|
 | 1001 | Session FGS notification |
-| 1002 | Rest-done heads-up |
+| 1002 | Reserved (was the rest-done heads-up, retired by D45) |
 | 1101 / 1102 / 1103 | Rest actions −15 s / Skip / +15 s |
 | 1201 / 1202 | Rest end alarm / overtime alarm PendingIntents |
 | 2000 + (hash(reminderId) mod 1000) | Habit reminders and their alarms |
@@ -2198,7 +2194,7 @@ target guard (16.7, guard 1) refuses any other calendar.
 | Permission | Kind | Why | When requested | If denied / unavailable |
 |------------|------|-----|----------------|-------------------------|
 | `INTERNET`, `ACCESS_NETWORK_STATE` | normal | Supabase sync; WorkManager network constraint | install | — |
-| `POST_NOTIFICATIONS` | runtime, API 33+ | Session notification, rest-done heads-up, reminders | Reliability setup step 1 (M1) | Session and alarms still run; vibration still alerts; no visible countdown; Reliability red; re-ask link |
+| `POST_NOTIFICATIONS` | runtime, API 33+ | Session notification (rest countdown and overtime), reminders | Reliability setup step 1 (M1) | Session and alarms still run; vibration still alerts; no visible countdown; Reliability red; re-ask link |
 | `FOREGROUND_SERVICE` | normal | Session service | install | — |
 | `FOREGROUND_SERVICE_HEALTH` | normal | FGS type `health` (C28) | install | — |
 | `ACTIVITY_RECOGNITION` | runtime, API 29+ (requested only on 34+) | Prerequisite for `health` FGS type; no activity data read | Reliability setup step 2 | `specialUse` FGS type (C28) |

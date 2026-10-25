@@ -942,7 +942,6 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     private suspend fun stopService(reason: String) {
-        c.notifications.cancelRestDone()
         SessionService.stop(c.appContext)
         c.notifications.cancelSession()
         c.fgsEvent("fgs_stopped", mapOf("reason" to reason))

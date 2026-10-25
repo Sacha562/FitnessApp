@@ -1,7 +1,5 @@
 package dev.fitnessapp.app.timer
 
-import dev.fitnessapp.app.notify.Channels
-
 import android.os.Build
 import androidx.room.withTransaction
 import dev.fitnessapp.app.PlatformConfig
@@ -107,7 +105,6 @@ class RestTimerController(
      */
     suspend fun startSelfTest(hardMaxS: Int): Long? = mutex.withLock {
         if (db.restTimers().active() != null) return@withLock null
-        notifications.cancelRestDone()
         val now = nowWall()
         val mode = profiles.get()?.rest_alarm_mode ?: "alarm_clock"
         val tr = RestTimerReducer.start(
@@ -150,7 +147,6 @@ class RestTimerController(
         if (previousSetCompletedAt == null || t.start_wall_ms != previousSetCompletedAt) return@withLock null
         val (tr, cols) = RestTimerReducer.onNextSetLogged(t, RestTimerReducer.NextSet(completedAtWall, firstTouchWall, holdStartWall, estSetDurationS, nowWall()))
         apply(tr)
-        notifications.cancelRestDone()
         cols
     }
 
@@ -160,13 +156,11 @@ class RestTimerController(
         if (t.start_wall_ms != setLoggedAt || t.state == RestTimerReducer.ENDED) return@withLock
         db.restTimers().upsert(t.copy(state = RestTimerReducer.ENDED, ended_by = null))
         alarms.cancel(t.id)
-        notifications.cancelRestDone()
         notifications.postSession(notifications.session())
     }
 
     suspend fun sessionFinished(sessionId: String) = mutex.withLock {
         db.restTimers().latest(sessionId)?.let { apply(RestTimerReducer.sessionFinished(it, nowWall())) }
-        notifications.cancelRestDone()
     }
 
     suspend fun onEndAlarm(timerId: String, firedWall: Long, appState: String) = mutex.withLock {
@@ -241,10 +235,7 @@ class RestTimerController(
         )
         alarms.cancel(t.id)
         selfTests.fired(firedWall, !device.screenInteractive())
-        if (alert) {
-            haptics.alarm(config.timerVibrationWaveformMs)
-            notifications.postRestDone(TimerSelfTest.TEXT)
-        }
+        if (alert) haptics.alarm(config.timerVibrationWaveformMs)
         onSelfTestEnded()
     }
 
@@ -275,12 +266,8 @@ class RestTimerController(
                 RestEffect.NotifyOvertime -> timer?.let { notifications.postSession(notifications.overtime(it.end_wall_ms, textFor(it))) }
                 // A skipped self-test has no session to return to.
                 RestEffect.NotifySession -> if (timer?.let(::isSelfTest) == true) onSelfTestEnded() else notifications.postSession(notifications.session())
-                RestEffect.Alert -> {
-                    haptics.alarm(config.timerVibrationWaveformMs)
-                    if (notifications.postRestDone(timer?.let(::textFor) ?: notifications.text, timer?.let(::intervalLabel))) {
-                        timer?.let { event(it, "notification_posted", mapOf("notification_id" to JsonPrimitive("N-REST-DONE"), "channel" to JsonPrimitive(Channels.REST_DONE))) }
-                    }
-                }
+                // No heads-up (D45): the session notification's overtime state is the only notification.
+                RestEffect.Alert -> haptics.alarm(config.timerVibrationWaveformMs)
                 RestEffect.ReminderBuzz -> haptics.buzz()
                 is RestEffect.IntervalDone -> onIntervalDone(e)
                 is RestEffect.Event -> timer?.let { event(it, e.type, e.payload) } ?: eventNoTimer(e)

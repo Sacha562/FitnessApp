@@ -98,7 +98,6 @@ class IdleWatcher(private val c: AppContainer) {
         if (finish) {
             c.restTimer.sessionFinished(s.id)
             c.sessionRepository.finish(s.id, null)
-            c.notifications.cancelRestDone()
             SessionService.stop(c.appContext)
             c.notifications.cancelSession()
             c.fgsEvent("fgs_stopped", mapOf("reason" to "finished"))

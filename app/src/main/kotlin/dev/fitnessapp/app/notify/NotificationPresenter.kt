@@ -132,22 +132,6 @@ class NotificationPresenter(private val context: Context) {
         notify(Channels.ID_SESSION, n)
     }
 
-    /** Heads-up at rest end (`N-REST-DONE`), cancelled when the next set is logged; an interval says "<item> done". */
-    fun postRestDone(t: SessionNotificationText = text, interval: String? = null): Boolean {
-        val n = NotificationCompat.Builder(context, Channels.REST_DONE)
-            .setSmallIcon(R.drawable.ic_stat_session)
-            .setContentTitle(interval?.let { "$it done" } ?: "Rest over")
-            .setContentText(listOf(t.nextTitle, t.nextLoad).filter { it.isNotBlank() }.joinToString(": "))
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setSilent(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(openIntent("fitapp://session/current/rest", "N-REST-DONE", Channels.REST_DONE, Channels.ID_REST_DONE))
-            .build()
-        return notify(Channels.ID_REST_DONE, n)
-    }
-
     /**
      * N-HABIT (ANDROID.md 17, UX 18): "Two-arm hang" · "4-5 sets, 2-3 min total" with Start (the home mini-session),
      * Snooze 30 min and Skip today; never Done. [id] is the reminder's code (13.2), shared by its actions.
@@ -220,8 +204,6 @@ class NotificationPresenter(private val context: Context) {
             .setContentIntent(openIntent("fitapp://you/data", "N-SYNC", Channels.APP_STATUS, Channels.ID_SYNC))
             .build(),
     )
-
-    fun cancelRestDone() = NotificationManagerCompat.from(context).cancel(Channels.ID_REST_DONE)
 
     fun cancelSession() = NotificationManagerCompat.from(context).cancel(Channels.ID_SESSION)
 
