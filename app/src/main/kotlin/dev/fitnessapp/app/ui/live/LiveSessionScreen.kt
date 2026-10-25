@@ -24,8 +24,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,22 +53,31 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -106,6 +119,7 @@ import dev.fitnessapp.app.uidet.ChipContext
 import dev.fitnessapp.app.uidet.ChipRoute
 import dev.fitnessapp.app.uidet.UiReasonChips
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private sealed interface Sheet {
     data object Add : Sheet
@@ -153,7 +167,10 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                 // The list takes what it needs, at most the top 38 % (UX 4.3); the set card gets the rest.
                 val listMax = maxHeight * 0.38f
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (ui.items.isNotEmpty()) ExerciseList(ui, Modifier.heightIn(max = listMax), onFocus = vm::focus, onAdd = { sheet = Sheet.Add })
+                    if (ui.items.isNotEmpty()) ExerciseList(
+                        ui, Modifier.heightIn(max = listMax), onFocus = vm::focus, onAdd = { sheet = Sheet.Add },
+                        onReorder = { ids, moved -> vm.reorder(ids, moved, via = "drag") },
+                    )
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         ui.rest?.let { RestCard(c, it, ui, vm) }
                         if (ui.switchHint) Pill("Switch to your right side", container = Fit.Accent, content = Fit.OnAccent)
@@ -276,16 +293,122 @@ private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onA
     ProgressBar(if (total == 0) 0f else done.toFloat() / total, Modifier.padding(horizontal = 4.dp))
 }
 
+/**
+ * Drag-to-reorder of the exercise list (UX 11.4): the dragged row follows the finger and swaps with the row its middle
+ * crosses; [order] is the order shown while dragging and after the drop until Room emits it.
+ */
+private class ListDrag(val list: LazyListState) {
+    var order by mutableStateOf<List<String>?>(null)
+    var dragged by mutableStateOf<String?>(null)
+    private var startOrder: List<String> = emptyList()
+    private var startOffset = 0
+    private var distance by mutableFloatStateOf(0f)
+
+    private fun info(key: Any?) = list.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }
+
+    /** [y] is the finger in the list's own coordinates; only an open exercise row can be dragged. */
+    fun start(y: Float, ids: List<String>, draggable: (String) -> Boolean): Boolean {
+        val at = y + list.layoutInfo.viewportStartOffset
+        val row = list.layoutInfo.visibleItemsInfo.firstOrNull { at.toInt() in it.offset until it.offset + it.size } ?: return false
+        val id = (row.key as? String)?.takeIf { it in ids && draggable(it) } ?: return false
+        startOrder = ids
+        order = ids
+        dragged = id
+        startOffset = row.offset
+        distance = 0f
+        return true
+    }
+
+    /** Moves the dragged row by [dy]; returns how far the list should scroll to keep it in view. */
+    fun drag(dy: Float): Float {
+        val id = dragged ?: return 0f
+        val ids = order ?: return 0f
+        distance += dy
+        val row = info(id) ?: return 0f
+        val top = startOffset + distance
+        val middle = (top + row.size / 2f).toInt()
+        val target = list.layoutInfo.visibleItemsInfo.firstOrNull { it.key != id && it.key in ids && middle in it.offset until it.offset + it.size }
+        if (target != null) {
+            val from = ids.indexOf(id)
+            val to = ids.indexOf(target.key)
+            // Skips a layout that still shows the order before the last swap (the target must lie on the side it moves to).
+            if ((to > from) == (target.offset > row.offset)) order = ids.toMutableList().apply { add(to, removeAt(from)) }
+        }
+        val info = list.layoutInfo
+        return when {
+            top < info.viewportStartOffset -> top - info.viewportStartOffset
+            top + row.size > info.viewportEndOffset -> top + row.size - info.viewportEndOffset
+            else -> 0f
+        }
+    }
+
+    /** The dragged row's shift from its laid-out place. */
+    fun shift(id: String): Float = info(id)?.let { startOffset + distance - it.offset } ?: 0f
+
+    /** An interrupted drag puts the rows back. */
+    fun cancel() {
+        dragged = null
+        order = null
+    }
+
+    /** Ends the drag; returns the new order and the moved id when the order changed. */
+    fun end(): Pair<List<String>, String>? {
+        val id = dragged
+        dragged = null
+        val ids = order
+        if (id == null || ids == null || ids == startOrder) { order = null; return null }
+        return ids to id
+    }
+}
+
 @Composable
-private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit) {
-    LazyColumn(modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fit.Tile), contentPadding = PaddingValues(6.dp)) {
-        items(ui.items, key = { it.se.id }) { item ->
+private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit, onReorder: (List<String>, String) -> Unit) {
+    val list = rememberLazyListState()
+    val drag = remember(list) { ListDrag(list) }
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val ids = ui.items.map { it.se.id }
+    // The dropped order stays until Room has it, or the exercises themselves change.
+    LaunchedEffect(ids) { drag.order?.let { o -> if (drag.dragged == null && (o == ids || o.toSet() != ids.toSet())) drag.order = null } }
+    val byId = ui.items.associateBy { it.se.id }
+    val shown = drag.order?.let { o -> o.mapNotNull(byId::get) + ui.items.filter { it.se.id !in o } } ?: ui.items
+    // The gesture outlives recompositions: it reads the latest rows and callback.
+    val items by rememberUpdatedState(ui.items)
+    val reorder by rememberUpdatedState(onReorder)
+    // Long-press 300 ms starts the drag (UX 11.4); Move up / down in the exercise menu is the accessible alternative.
+    val base = LocalViewConfiguration.current
+    val config = remember(base) { object : ViewConfiguration by base { override val longPressTimeoutMillis = 300L } }
+    CompositionLocalProvider(LocalViewConfiguration provides config) {
+    LazyColumn(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fit.Tile).pointerInput(drag) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { o ->
+                    val open = items.filter { it.open }.map { it.se.id }.toSet()
+                    if (drag.start(o.y, drag.order ?: items.map { it.se.id }) { it in open }) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onDrag = { change, d ->
+                    if (drag.dragged != null) {
+                        change.consume()
+                        val scroll = drag.drag(d.y)
+                        if (scroll != 0f) scope.launch { list.scrollBy(scroll) }
+                    }
+                },
+                onDragEnd = { drag.end()?.let { (o, id) -> reorder(o, id) } },
+                onDragCancel = drag::cancel,
+            )
+        },
+        state = list, contentPadding = PaddingValues(6.dp),
+    ) {
+        items(shown, key = { it.se.id }) { item ->
             val current = item.se.id == ui.focusedId
             val skipped = item.se.status == "skipped"
             val done = item.se.status == "done"
+            val dragging = item.se.id == drag.dragged
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) Fit.Raised else Fit.Tile)
-                    .clickable(enabled = !skipped) { onFocus(item.se.id) }.padding(horizontal = 12.dp),
+                (if (dragging) Modifier.zIndex(1f).graphicsLayer { translationY = drag.shift(item.se.id) } else Modifier.animateItem())
+                    .fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).background(if (current || dragging) Fit.Raised else Fit.Tile)
+                    // Disabled while dragging so lifting the finger after a long-press does not also jump to the row.
+                    .clickable(enabled = !skipped && drag.dragged == null) { onFocus(item.se.id) }.padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when {
@@ -315,9 +438,9 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
                 Text(tail, style = MaterialTheme.typography.labelLarge, color = if (current) Fit.Ink else Fit.Muted, modifier = Modifier.padding(start = 8.dp))
             }
         }
-        item {
+        item(key = "add") {
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onAdd).padding(horizontal = 12.dp),
+                Modifier.animateItem().fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onAdd).padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(Icons.Rounded.Add, null, tint = Fit.Muted, modifier = Modifier.size(22.dp))
@@ -325,6 +448,7 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
                 Text("Add exercise", color = Fit.Muted, style = MaterialTheme.typography.labelLarge)
             }
         }
+    }
     }
 }
 
