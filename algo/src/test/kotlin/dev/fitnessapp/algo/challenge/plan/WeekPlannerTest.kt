@@ -177,6 +177,28 @@ class WeekPlannerTest {
         TodayAdvisor.advise(def, params, inp, plan, trainNow = true).kind shouldBe "rest"
     }
 
+    /** D42 (2026-10-23 on the phone): after the latest suggested start the plan drops A, but A can still start now. */
+    @Test
+    fun `train now offers a slot the plan dropped, at any time of day`() {
+        val c = DoneSession("C", LocalDate.parse("2026-10-14"), Interval(OapFixture.at("2026-10-14", "19:45"), OapFixture.at("2026-10-14", "21:15")))
+        // Friday 21:35: no start for A is left today, so the week keeps only B on Sunday.
+        val fri = input(normalBlock2(), "2026-10-12", now = "2026-10-16T19:35:00Z").copy(done = listOf(c))
+        val plan = WeekPlanner.plan(def, params, fri)
+        plan.droppedSlots shouldBe listOf("A")
+        plan.slots() shouldBe listOf("C 2026-10-14 19:45", "B 2026-10-18 11:00")
+        TodayAdvisor.advise(def, params, fri, plan, trainNow = true).let {
+            it.kind shouldBe "challenge"
+            it.slot shouldBe "A"
+            it.start shouldBe Instant.parse("2026-10-16T19:35:00Z")
+            it.reasons shouldBe listOf("train_now")
+        }
+        // Sunday 17:00, A and B both missed: only one fits; B is kept before A (slotPriority).
+        val sun = input(normalBlock2(), "2026-10-12", now = "2026-10-18T15:00:00Z").copy(done = listOf(c))
+        val sunPlan = WeekPlanner.plan(def, params, sun)
+        sunPlan.droppedSlots.sorted() shouldBe listOf("A", "B")
+        TodayAdvisor.advise(def, params, sun, sunPlan, trainNow = true).slot shouldBe "B"
+    }
+
     @Test
     fun `a run the day before B is a warning, not a violation`() {
         val s = normalBlock2()

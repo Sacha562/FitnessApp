@@ -1640,8 +1640,13 @@ Friday holds session A").
 ### 7.6 Today advice
 
 1. Today has a done, matched or planned challenge session: `challenge` with slot and time.
-2. Otherwise, if the user asks to train now: try each remaining slot in `order`; the first slot for
-   which a feasible full week exists with that slot fixed today is recommended.
+2. Otherwise, if the user asks to train now (D42, `challenge.plan` 1.2.0): try every slot of the week
+   that is not done yet, whether the plan kept it or dropped it, as a session starting now, at any time
+   of day (no lead time, no suggestion window). A trial counts when that session breaks no hard
+   constraint and the week then drops no slot the plan kept. Of those, recommend the trial that leaves
+   the fewest slots out, then the one that leaves out the less important slots (`slotPriority`), then
+   the first in `order`. (Before 1.2.0 only the slots the plan kept were tried, so a slot dropped
+   because its suggestion window had passed could not be started that day.)
 3. Otherwise, if today is not blocked for general training (section 8.4): `general_allowed` with the
    families the contract allows (for example "legs or push only, no grip-heavy work").
 4. Otherwise `rest` with the rule ("Saturday before the test day: rest day").
