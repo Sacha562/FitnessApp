@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -352,7 +352,7 @@
         { "key": "wpu", "exercise": "weighted_pullup", "role": "main", "sets": 4, "reps": 5, "added": "s.reentry ? max(0kg, roundLoad(s.wpuC - p.reentryLoadDropKg, 'belt', 'down')) : s.wpuC", "creditRir": 1, "rest_s": 150, "stopSetOn": ["grip_slip_before_last"], "chalk": true, "progression": "rule", "note": { "en": "The anchor for all weighted loads." } },
         { "key": "scap", "exercise": "oa_scap_pull", "role": "main", "sets": 4, "reps": 3, "perSide": true, "sideOrder": ["L", "R"], "sideRule": "matchLeft", "creditRir": 2, "rest_s": 90, "stopSetOn": ["torso_rotation"], "progression": "none", "note": { "en": "Left first; the right arm does no more clean reps than the left. Stop the set as soon as the torso rotates." } },
         { "key": "hang", "exercise": "oa_dead_hang", "role": "main", "sets": 4, "hold_s": "s.oaHangS", "perSide": true, "sideOrder": ["L", "R"], "toFailure": false, "rest_s": 60, "progression": "rule", "note": { "en": "Not to failure; the time counts until the torso starts to rotate." } },
-        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
+        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "perSide": true, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
         { "block": "prehab5" }
       ] },
     "A1": { "slot": "A", "name": { "en": "Session A: one arm heavy", "nl": "Sessie A: één arm zwaar" }, "kind": "gym", "bookedMin": 90, "tags": ["unilateral_pull", "heavy_unilateral", "pull_heavy", "grip_heavy", "elbow_flexor_heavy"], "requiresReadiness": ["elbow"], "tag": "A", "source": "artifact section 06 / Todoist A",
@@ -364,7 +364,7 @@
         { "key": "top", "exercise": "oa_top_hold", "role": "main", "rounds": 3, "attemptsPerRound": 4, "perSide": true, "sideOrder": ["L", "R"], "assist": "none", "creditRir": 2, "rest_s": 90, "progression": "none", "note": { "en": "From a two-arm pull-up release one hand and re-grip before you drop; 4 short attempts per arm per round." } },
         { "key": "h90", "exercise": "oa_hold90_machine", "role": "main", "sets": 3, "hold_s": [6, 8], "perSide": true, "sideOrder": ["L", "R"], "assistPin": "s.reentry ? s.pinHold90 + p.reentryPinOffsetLb : s.pinHold90", "creditRir": 2, "rest_s": 90, "progression": "rule", "note": { "en": "Elbow at 90 degrees, 6-8 s still. Fails: +5 lb." } },
         { "key": "sth", "exercise": "oa_straight_arm_hold", "role": "main", "sets": 3, "hold_s": "s.sthS", "perSide": true, "sideOrder": ["L", "R"], "creditRir": 2, "rest_s": 90, "replacesHabitToday": "daily_hang", "position": "lastMain", "progression": "rule", "note": { "en": "Fixed neutral handle; deliberately last: the only exercise hanging from one hand at full extension. Replaces today's 17:15 hang." } },
-        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "position": "after:sth", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
+        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "perSide": true, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "position": "after:sth", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
         { "block": "prehab5" }
       ] },
     "B1": { "slot": "B", "name": { "en": "Session B: max strength", "nl": "Sessie B: maximale kracht" }, "kind": "gym", "bookedMin": 90, "tags": ["pull_heavy", "grip_heavy", "elbow_flexor_heavy"], "requiresReadiness": ["elbow"], "tag": "A", "source": "artifact section 06 / Todoist B",
@@ -378,7 +378,7 @@
         { "key": "neg", "exercise": "weighted_negative_pullup", "role": "main", "sets": 3, "reps": 2, "added": "s.negB", "ecc_s_target": 5, "creditRir": 2, "rest_s": 180, "skipIf": "s.elbowTrace || s.reentry", "progression": "rule", "note": { "en": "Two arms, 5 s down. Skip at any trace of elbow pain." } },
         { "key": "row", "exercise": { "anyOf": ["barbell_row_pronated", "seated_cable_row_wide_pronated", "chest_supported_row_pronated"], "pick": "preference" }, "role": "main", "sets": 4, "reps": 8, "rirTarget": 1, "creditRir": 1, "rest_s": 120, "progression": "delegate:rx", "note": { "en": "Heavy, pronated: counterweight to all the supinated work." } },
         { "key": "dip", "exercise": "dip_neutral", "role": "main", "sets": 3, "repsRange": [8, 10], "rirTarget": 2, "creditRir": 2, "rest_s": 120, "progression": "delegate:rx", "bootstrap": "firstSessionBodyweightCalibration", "note": { "en": "Neutral handles, stop every set two reps before failure. First time: log how many clean reps; the load follows from that." } },
-        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
+        { "key": "pallof", "exercise": "pallof_press", "role": "main", "sets": 3, "reps": 10, "perSide": true, "added": "s.pallofKg", "rirTarget": 2, "creditRir": 2, "rest_s": 60, "progression": "rule", "note": { "en": "Side-on to the cable, handle against your sternum: press straight out and back, the torso does not turn. 2 reps left on every set." } },
         { "block": "prehab5" }
       ] },
     "T1": { "slot": "TEST", "name": { "en": "Test day", "nl": "Testdag" }, "kind": "test", "bookedMin": 120, "tags": ["pull_heavy", "grip_heavy", "elbow_flexor_heavy", "heavy_unilateral"], "requiresReadiness": ["elbow"], "tag": "A", "source": "Todoist Testdag (order, F10) / artifact section 07; C65 (the unassisted 5 s one-arm negative per arm is part of every test day, in the order given here)",
@@ -518,7 +518,7 @@
       "then": [ { "set": "s.elbowTrace", "to": "event.elbowDiscomfort >= 1" } ],
       "explain": { "en": "Any elbow discomfort: no negatives and no hang today." }, "source": "artifact section 06 / Todoist B ('overslaan bij ook maar een spoor van elleboogpijn')" },
     { "id": "safety.elbow.traceFromPain", "tag": "A", "stage": "safety", "prio": 94, "on": ["pain.reported"],
-      "if": "event.location in ['elbow_medial', 'elbow_lateral', 'elbow_anterior']",
+      "if": "event.location in ['elbow_medial', 'elbow_lateral', 'elbow_anterior', 'elbow_posterior', 'forearm']",
       "then": [ { "set": "s.elbowTrace", "to": "true" } ],
       "explain": { "en": "Elbow pain reported: no negatives or daily hang until the next check." }, "source": "artifact section 08" },
     { "id": "safety.injury.exit", "tag": "A", "supersededBy": "P14", "stage": "safety", "prio": 90, "on": ["day.tick"],
@@ -896,6 +896,7 @@
     "1.1.0": {"varMap": {}, "defaults": {}, "notes": "D37: the first valid test fills empty loads, negatives and pins; the gate e1RM is initialised from the entered 3RM. Nothing changes once every value is set."},
     "1.2.0": {"varMap": {}, "defaults": {}, "notes": "D38: the test may fall on any day (a rest day before it stays required) and goes first in its week while there are no loads."},
     "1.3.0": {"varMap": {}, "defaults": {}, "notes": "D40: the Pallof press in A, B and C (B's gym plank removed, the plank rule counts the two home days), P28 and P29 (re-entry week after the elbow protocol). New vars pallofKg and reentry start from their init."},
-    "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."}
+    "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."},
+    "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."}
   }
 }

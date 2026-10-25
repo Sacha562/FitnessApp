@@ -16,7 +16,7 @@ import java.util.TreeMap
 /** CHALLENGE_ENGINE 4.12 (D44): `definition.migrated` from oap@1.4.0 to 1.5.0 (no rower in the warm-up). */
 class DefinitionMigrationTest {
     private val old: CompiledDefinition = Cds.load(ChallengeTestSupport.resource("challenges/oap.challenge.v1.4.0.json"), ChallengeTestSupport.context).orThrow()
-    private val new: CompiledDefinition = OapFixture.def
+    private val new: CompiledDefinition = Cds.load(ChallengeTestSupport.resource("challenges/oap.challenge.v1.5.0.json"), ChallengeTestSupport.context).orThrow()
     private val params = OapFixture.params()
     private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.1.json")) }
     private val imp = OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false)

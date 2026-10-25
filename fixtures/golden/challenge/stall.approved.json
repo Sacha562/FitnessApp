@@ -1,13 +1,13 @@
 {
     "persona": "stall",
     "proposals": "approved",
-    "definition": "oap@1.5.0",
-    "definition_jcs_sha256": "4db8dfc1aad0de274cb6c1a7c1e647a3166d985e0ffd671bff48157d494bbaae",
+    "definition": "oap@1.6.0",
+    "definition_jcs_sha256": "eadc0df4249ba320343d6dedd8833fd4188f846e8caedf232f646444a0ec8fe2",
     "engine_version": "1.6.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 480,
     "audit_rows": 407,
-    "final_state_hash": "6577f860ae5f1cbcb14bb100d06ec9cffc86e88036ee73d080862cef6a905518",
+    "final_state_hash": "717f7d822b225717c6f20fb789315f64dfa685e6a6b227d841a77641fba4c370",
     "violations": [],
     "weeks": [
         {

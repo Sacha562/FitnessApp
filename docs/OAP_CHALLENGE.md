@@ -2,13 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.5.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.6.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
-1.5.0 drops the rowing machine from the warm-up (D44); the frozen 1.0.0 to 1.4.0 are `oap.challenge.v1.0.0.json` to
-`oap.challenge.v1.4.0.json`). The proposal
+1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
+forearm and makes the Pallof press per side (D45); the frozen 1.0.0 to 1.5.0 are `oap.challenge.v1.0.0.json` to
+`oap.challenge.v1.5.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -186,7 +187,7 @@ the lowering seconds and the flags.
 |---|---|---|---|---|---|---|
 | `safety.elbow.stop` | A | Pain report or readiness check | Not already in injury mode, and any of the three stop signals: medial elbow ache hours after training (`medial_elbow_ache_after`), pain deep in the elbow crease on extension (`elbow_crease_pain_on_extension`), tingling in ring or little finger (`ulnar_tingling`) | Mode `injury` (14 days no unilateral work, light bilateral, prehab doubled, daily hang off); injury start = today; a clean session is needed before the next test; elbow trace on; STOP notice (once per day) | Artifact 08, 10 | Safety-critical. Only works if reporting is fast and honest; the app makes it one tap and asks before every pulling session. Not medical advice. A report during the protocol does not restart the 14 days (E): `safety.injury.exit` ends it after 14 days and P14 decides what persisting pain does. |
 | `safety.elbow.trace` | A | Readiness check before a session | Always | Elbow trace = (elbow check >= 1 on the 0-3 scale: none / trace / mild / pain). A trace skips the negatives (B and the A calibration negative) and today's daily hang | Artifact 06, Todoist B ("skip at any trace of elbow pain") | E: "any trace" is mapped to score >= 1. |
-| `safety.elbow.traceFromPain` | A | Pain report | Location is an elbow region (`elbow_medial`, `elbow_lateral` or `elbow_anterior`, the DATA_MODEL 9.1.5 body-region codes; the P14 rules below use the same three) | Elbow trace on until the next readiness check | Artifact 08 | |
+| `safety.elbow.traceFromPain` | A | Pain report | Location is an elbow region (`elbow_medial`, `elbow_lateral`, `elbow_anterior`, and from 1.6.0 also `elbow_posterior` and `forearm`, D45; the DATA_MODEL 9.1.5 body-region codes; the P14 rules below use only the first three) | Elbow trace on until the next readiness check | Artifact 08 | |
 | `safety.injury.exit` | A, replaced if P14 approved | Every day | In injury mode and >= 14 days since it started | Loads back to the level of two blocks ago (block index - 2, at least block 1, which is your imported state); mode normal; a new block starts next Monday | Artifact 10 ("daarna terug op het niveau van twee blokken geleden") | Ends the protocol even if pain persists; P14 adds a pain-free check. |
 | `safety.injury.exit.painfree` | P (P14) | Every day | Injury, >= 14 days, and the last 3 days pain-free at the elbow | Same as `safety.injury.exit` | P14 | |
 | `safety.injury.extend` | P (P14) | Every day | Injury, >= 14 days, but elbow pain within the last 3 days | Protocol extended by 7 days; advice to see a physiotherapist (once per block) | P14 | |
@@ -884,7 +885,7 @@ Stored codes in the definition are the DATA_MODEL section 8 values (C38): load m
 flags `grip_slip_before_last`, `jerky`, `torso_rotation`, `hip_rotation` and `hand_shift`; metric
 codes from DATA_MODEL 9.1.4 (including the display-only `wpu_e1rm_added_m110`, `wpu_e1rm_added_hi` and
 `wpu_e1rm_added_lo`; the import also uses `oa_least_assist_kg`); pain locations from DATA_MODEL
-9.1.5 (`elbow_medial`, `elbow_lateral`, `elbow_anterior`). Every hold exercise carries a hold class for
+9.1.5 (`elbow_medial`, `elbow_lateral`, `elbow_anterior`; from 1.6.0 also `elbow_posterior`, `forearm`). Every hold exercise carries a hold class for
 HOLD-1 (C43): grip for the one- and two-arm dead hangs, elbow for the top hold, the 90-degree hold and
 the three-angle holds, shoulder for the straight-arm hold, trunk for the one-arm plank.
 
