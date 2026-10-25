@@ -1028,6 +1028,7 @@ private fun KeypadSheet(card: Card, vm: LiveSessionViewModel, onDismiss: () -> U
 /** Body regions of the Pain sheet (UX 16.2): code and label. */
 internal val PAIN_REGIONS = listOf(
     "elbow_medial" to "Elbow, inner side", "elbow_lateral" to "Elbow, outer side", "elbow_anterior" to "Elbow crease",
+    "elbow_posterior" to "Elbow, back", "forearm" to "Forearm",
     "shoulder" to "Shoulder", "wrist" to "Wrist", "hand_fingers" to "Hand and fingers", "neck" to "Neck", "upper_back" to "Upper back",
     "lower_back" to "Lower back", "hip" to "Hip", "knee" to "Knee", "ankle_foot" to "Ankle and foot", "other" to "Other",
 )

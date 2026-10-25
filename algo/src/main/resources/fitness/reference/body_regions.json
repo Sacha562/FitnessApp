@@ -36,6 +36,31 @@
       "sort": 30
     },
     {
+      "code": "elbow_posterior",
+      "joint_keys": [
+        "elbow_medial",
+        "elbow_lateral"
+      ],
+      "side_applicable": true,
+      "label_en": "Elbow, back",
+      "label_nl": "Elleboog, achterkant",
+      "active": true,
+      "sort": 32
+    },
+    {
+      "code": "forearm",
+      "joint_keys": [
+        "elbow_medial",
+        "elbow_lateral",
+        "wrist"
+      ],
+      "side_applicable": true,
+      "label_en": "Forearm",
+      "label_nl": "Onderarm",
+      "active": true,
+      "sort": 35
+    },
+    {
       "code": "shoulder",
       "joint_keys": [
         "shoulder_ant",

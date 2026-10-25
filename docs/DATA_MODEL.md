@@ -860,7 +860,7 @@ Pain locations for the pain sheet (UI-05/UI-07) and the PainEvent fact (C33).
 | `label_en` / `label_nl` | text | | | | |
 | S-REF | | | | | |
 
-Seed: `elbow_medial` {elbow_medial}, `elbow_lateral` {elbow_lateral}, `elbow_anterior` {elbow_medial, elbow_lateral} (conservative), `shoulder` {shoulder_ant, shoulder_overhead}, `wrist` {wrist}, `hand_fingers` {wrist}, `neck` {}, `upper_back` {}, `lower_back` {lumbar}, `hip` {hip}, `knee` {knee}, `ankle_foot` {}, `other` {}.
+Seed: `elbow_medial` {elbow_medial}, `elbow_lateral` {elbow_lateral}, `elbow_anterior` {elbow_medial, elbow_lateral} (conservative), `elbow_posterior` {elbow_medial, elbow_lateral} and `forearm` {elbow_medial, elbow_lateral, wrist} (both conservative; migration 032, D45), `shoulder` {shoulder_ant, shoulder_overhead}, `wrist` {wrist}, `hand_fingers` {wrist}, `neck` {}, `upper_back` {}, `lower_back` {lumbar}, `hip` {hip}, `knee` {knee}, `ankle_foot` {}, `other` {}.
 
 #### 9.1.6 `fitness.symptom_codes`
 
