@@ -2050,9 +2050,10 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
   reason chips (11.8).
 * Tapping the countdown toggles **focus mode**: a full-screen dark rest view with the same digits and
   buttons (useful with the phone on a bench). Default off; remembered per user.
-* **Overtime**: when the time is up, the digits switch to "+0:23" counting up in advisory colour, the
-  ring disappears, and the card shows the next set's card directly below the overtime line, so the
-  user can log the next set immediately. One reminder pulse at +60 s.
+* **Overtime**: when the time is up, the rest card disappears on its own (no Skip needed) and the next
+  set's card moves to the top, so the user can log the next set immediately. The timer stays in
+  overtime underneath: the notification counts up from the rest end, one reminder pulse at +60 s, and
+  the next logged set closes it with the actual rest.
 
 #### 11.13.3 Notification during the session (foreground service)
 
@@ -5393,7 +5394,7 @@ dp at 1.0 and 1.3) are added for the Live Session states. This extends the reduc
 | 8 | Week 41 with volume bars and the STRONG banner | GF-UX-12, GF-UX-13 |
 | 9 | Live Session set card: weighted pull-up set 2 of 2, BW + 22.5 kg × 4, grip flag | GF-UX-06 |
 | 10 | Rest card 2:18 with an engine suggestion card | GF-UX-08 |
-| 11 | Rest card in overtime "+0:23" with the next set card | GF-UX-08 |
+| 11 | Overtime: rest card gone, next set card at the top | GF-UX-08 |
 | 12 | Unilateral assisted card, pin 40 lb, left active | GF-UX-07 |
 | 13 | Hold card READY, HOLDING (00:07), RESULT | GF-UX-15 |
 | 14 | Top-hold round entry | synthetic |

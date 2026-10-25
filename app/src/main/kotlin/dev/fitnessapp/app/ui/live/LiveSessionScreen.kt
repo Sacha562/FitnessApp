@@ -332,7 +332,10 @@ private fun EmptyAction(ui: LiveUi, onAdd: () -> Unit, onFinish: () -> Unit) {
     }
 }
 
-/** UX 11.13.2: countdown in a depleting ring, -15 / Skip / +15 (500 ms input guard), next-set preview; overtime counts up. */
+/**
+ * UX 11.13.2: countdown in a depleting ring, -15 / Skip / +15 (500 ms input guard), next-set preview. In overtime the
+ * card hides itself so the set card needs no Skip; the timer stays open until the next set closes it.
+ */
 @Composable
 private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerEntity, ui: LiveUi, vm: LiveSessionViewModel) {
     var display by remember(t.id) { mutableStateOf<RestDisplay?>(null) }
@@ -351,6 +354,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
             delay(200)
         }
     }
+    if (display is RestDisplay.Overtime) return
     val shownAt = remember(t.id) { System.currentTimeMillis() }
     val guard = { System.currentTimeMillis() - shownAt > 500 }
     // An interval is the countdown of a timed warm-up item (D33): its name, and Done instead of Skip.
@@ -366,13 +370,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
                 is RestDisplay.Countdown -> RingTimer(d.barFraction.toFloat(), Modifier.size(196.dp)) {
                     Text(d.digits, style = FitType.RestDigits, color = Fit.Ink)
                 }
-                is RestDisplay.Overtime -> Box(Modifier.size(196.dp), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(d.digits, style = FitType.Overtime, color = Fit.Advisory)
-                        Text("Over the rest time", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
-                    }
-                }
-                null -> Box(Modifier.size(196.dp))
+                else -> Box(Modifier.size(196.dp))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
