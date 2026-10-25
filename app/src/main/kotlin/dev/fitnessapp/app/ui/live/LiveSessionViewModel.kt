@@ -706,7 +706,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             return
         }
         val decision = if (card.warmup) {
-            RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = WarmupRest.afterWarmup(null, false, p)), p)
+            val toWork = warmupLeadsToWork(_ui.value.items, card.item.se.id, card.setNumber, card.item.planned, card.item.warmupItem)
+            RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = WarmupRest.afterWarmup(null, toWork, p)), p)
         } else {
             RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), targetReps = card.target.reps), p)
         }
@@ -975,14 +976,24 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     companion object {
         const val DEFAULT_REPS = 8
 
-        /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
         /** The most fingers of assistance (`assisted_ordinal`): the other hand's four fingers. */
-private const val MAX_FINGERS = 4
+        private const val MAX_FINGERS = 4
 
-fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {
+        /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
+        fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {
             if (warmup || side == "L") return false
             if (setNumber < planned) return false
             return items.none { it.se.id != seId && it.open && it.workingDone < it.planned }
+        }
+
+        /**
+         * The last set of the challenge warm-up block (WARMUP-1, UX 19.8): [setNumber] finishes warm-up item [seId], no other
+         * warm-up item has sets left and a working item does, so the rest is `warmup.rest_to_work_s`.
+         */
+        fun warmupLeadsToWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmupItem: Boolean): Boolean {
+            if (!warmupItem || setNumber < planned) return false
+            val left = items.filter { it.se.id != seId && it.open && it.workingDone < it.planned }
+            return left.none { it.warmupItem } && left.isNotEmpty()
         }
     }
 }
