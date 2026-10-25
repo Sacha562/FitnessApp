@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -292,7 +292,7 @@
     "advance": { "mode": "completionDriven", "weekCounts": "d.weekCounts", "onMissed": "repeatWeek", "tag": "A", "source": "artifact section 10 ('niets inhalen ... dezelfde gewichten')" },
     "modes": {
       "normal": { "tag": "A" },
-      "deload": { "tag": "A", "source": "artifact section 04 (halve all sets, keep the weight, halve the hang time)", "sets": "max(1, ceil(sets / 2))", "loadFactor": 1.0, "holdSecondsFactor": 1.0, "exemptRoles": ["warmup"], "habitScale": { "daily_hang": { "sets": 0.5, "time": 0.5 } }, "progression": "frozen", "countsAsBlockWeek": true },
+      "deload": { "tag": "A", "source": "artifact section 04 (halve all sets, keep the weight, halve the hang time)", "sets": "max(1, ceil(sets / 2))", "loadFactor": 1.0, "holdSecondsFactor": 1.0, "exemptRoles": ["warmup", "prehab"], "habitScale": { "daily_hang": { "sets": 0.5, "time": 0.5 } }, "progression": "frozen", "countsAsBlockWeek": true },
       "test_pending": { "tag": "P", "proposal": "P19", "inherits": "deload", "inheritsIfDeclined": "normal", "progression": "frozen", "progressionNote": "C47: progression is frozen in test_pending whether or not P19 is approved; P19 only decides the session form (deload or full).", "countsAsBlockWeek": false },
       "extra_deload": { "tag": "A", "source": "artifact section 10 (extra deload week after the ladder switch)", "inherits": "deload", "progression": "frozen", "countsAsBlockWeek": false },
       "injury": { "tag": "A", "source": "artifact section 08 (two weeks no unilateral work, light bilateral, prehab doubled, daily hang dropped first)", "excludeItemTags": ["unilateral_pull", "eccentric"], "disableHabits": ["daily_hang"], "prehabSetsFactor": 2, "progression": "frozen", "countsAsBlockWeek": false, "lightBilateral": { "proposal": "P27", "sets": "max(1, ceil(sets / 2))", "rirMin": 3, "overrides": { "weighted_pullup": { "added": "0kg" } }, "ifDeclined": "note" } }
@@ -897,6 +897,7 @@
     "1.2.0": {"varMap": {}, "defaults": {}, "notes": "D38: the test may fall on any day (a rest day before it stays required) and goes first in its week while there are no loads."},
     "1.3.0": {"varMap": {}, "defaults": {}, "notes": "D40: the Pallof press in A, B and C (B's gym plank removed, the plank rule counts the two home days), P28 and P29 (re-entry week after the elbow protocol). New vars pallofKg and reentry start from their init."},
     "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."},
-    "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."}
+    "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."},
+    "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."}
   }
 }

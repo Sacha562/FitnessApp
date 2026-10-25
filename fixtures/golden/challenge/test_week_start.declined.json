@@ -1,13 +1,13 @@
 {
     "persona": "test_week_start",
     "proposals": "declined",
-    "definition": "oap@1.6.0",
-    "definition_jcs_sha256": "eadc0df4249ba320343d6dedd8833fd4188f846e8caedf232f646444a0ec8fe2",
+    "definition": "oap@1.7.0",
+    "definition_jcs_sha256": "63b2a65045a111339dd945e30bb11e2cbb7fa437d716ee12970ac8e79968ef68",
     "engine_version": "1.6.0",
     "params_hash": "e9c5f0ed0b315a8b51ce06ee2268a6d1402dd7c01ff6d620eed406d3f97e8469",
     "events": 482,
     "audit_rows": 342,
-    "final_state_hash": "9d0e2b543a4bbe216b6b8c480a3f25695e39937ac1646a85e55d92844d7082f3",
+    "final_state_hash": "630a130909b590f3e2900739388a83aaf4f4d8ed11ad0941e75062215ad6d213",
     "violations": [],
     "weeks": [
         {

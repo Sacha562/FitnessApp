@@ -97,6 +97,17 @@ class MaterializerTest {
     }
 
     @Test
+    fun `D47 deload weeks keep the prehab sets`() {
+        for (mode in listOf("deload", "test_pending", "extra_deload")) {
+            val p = plan(normal().copy(mode = mode), "A")
+            p.item("wpu").rows.size shouldBe 2
+            p.item("pre_rwc").rows.size shouldBe 2
+            p.item("pre_ps").pairs() shouldBe 2
+            p.item("pre_fp").rows.size shouldBe 2
+        }
+    }
+
+    @Test
     fun `GF-CE-22 typewriters need a wide bar`() {
         val s = normal().copy(phase = 2)
         val p = plan(s, "C")

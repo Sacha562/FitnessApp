@@ -1386,7 +1386,7 @@ For every resolved item, in template order:
 | Mode | Transform (definition data; OAP values shown) |
 |---|---|
 | `normal` | none |
-| `deload` | For items whose role is not in `exemptRoles` (OAP: `warmup`) and not `test`: `sets := max(1, ceil(sets / 2))` (5 -> 3, 4 -> 2, 6 -> 3, 3 -> 2, 1 -> 1); the same formula applies to `rounds` and to ladder counts; `loadFactor` 1.0 (load kept); `holdSecondsFactor` 1.0; habits scaled by `habitScale` (OAP daily hang: sets x0.5, time x0.5, rounded up to whole sets and whole seconds); progression frozen (section 5.5). |
+| `deload` | For items whose role is not in `exemptRoles` (OAP: `warmup` and, from `oap@1.7.0`, `prehab`, D47) and not `test`: `sets := max(1, ceil(sets / 2))` (5 -> 3, 4 -> 2, 6 -> 3, 3 -> 2, 1 -> 1); the same formula applies to `rounds` and to ladder counts; `loadFactor` 1.0 (load kept); `holdSecondsFactor` 1.0; habits scaled by `habitScale` (OAP daily hang: sets x0.5, time x0.5, rounded up to whole sets and whole seconds); progression frozen (section 5.5). |
 | `test_pending` | Inherits `deload` when its proposal (OAP P19) is approved, otherwise `normal` (sets and loads); progression is frozen in both cases (C47). Does not count as a block week. |
 | `extra_deload` | Inherits `deload`; does not count as a block week. |
 | `injury` | Items carrying an excluded tag (OAP: `unilateral_pull`, `eccentric`) are excluded; habits in `disableHabits` are muted; prehab sets x `prehabSetsFactor` (2); progression frozen; the `lightBilateral` sub-transform applies when its proposal (OAP P27) is approved (sets halved, minimum RIR 3, listed load overrides such as weighted pull-ups at bodyweight); when declined, the remaining items keep their loads and show a "keep it light" note. |

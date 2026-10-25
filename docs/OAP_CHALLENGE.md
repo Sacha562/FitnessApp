@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.6.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.7.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45); the frozen 1.0.0 to 1.5.0 are `oap.challenge.v1.0.0.json` to
-`oap.challenge.v1.5.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47); the frozen 1.0.0
+to 1.6.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.6.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -290,7 +290,7 @@ rotation, hip tilt) only show a message and never change a load.
 | Mode | Tag | Effect |
 |---|---|---|
 | normal | A | Sessions as written. |
-| deload | A | Sets halved (rounded up, at least 1; warm-up unchanged), loads kept, hold times kept, daily hang sets and time halved, progression frozen. Test on Sunday instead of B. |
+| deload | A | Sets halved (rounded up, at least 1; warm-up and, from 1.7.0, prehab unchanged, D47), loads kept, hold times kept, daily hang sets and time halved, progression frozen. Test on Sunday instead of B. |
 | test pending | P19 (else normal) | A waiting week after a postponed test; with P19 it keeps the deload form, without P19 the full build sessions. Progression is frozen either way (C47). |
 | extra deload | A | Deload form; does not count as a block week. |
 | injury | A (light bilateral defined by P27) | No unilateral and no eccentric items; daily hang off; prehab sets doubled; progression frozen; general training may not include grip-heavy or elbow-flexor-heavy work. With P27: pull-ups at bodyweight, rows and dips at RIR >= 3, half the sets. Without P27: the remaining items keep their loads with a "keep it light" note. |
