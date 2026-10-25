@@ -1599,6 +1599,9 @@ needs a change of C63 first.
 | Ended early | `v` muted | name + "2/3, pain" | expands |
 | Excluded by a rule | muted, lock icon | name + "skipped today: elbow trace" | Why (enforced safety rule, no override) |
 
+A unilateral item (name + " (L/R)") counts L+R pairs (C7), so its count reads "0/2 each side";
+a warm-up item does not carry the suffix.
+
 Block headers (C34): "WARM-UP", "OAP · SESSION A" (challenge block), "ADD-ON · LEGS · ~15 min"
 (general block built by `select` with the add-on capacity from `time`, the contract's allowed
 patterns and forbidden muscles). The add-on header has "Skip" (one-tap reason sheet, `no_time`
@@ -1644,8 +1647,9 @@ follow the user's preferences and the contract (forbidden muscles never appear).
 
 From top to bottom:
 
-1. **Title row**: exercise name (Title L, wraps to 2 lines rather than truncating), "Set 2 of 4",
-   side badge for unilateral work, `:` exercise menu (Swap · Skip · Do later · Add a set (C63) · End
+1. **Title row**: exercise name (Title L, wraps to 2 lines rather than truncating), "Set 2 of 4"
+   ("Set 2 of 4 each side" for unilateral work, where an L+R pair is one set, C7), side badge for
+   unilateral work, `:` exercise menu (Swap · Skip · Do later · Add a set (C63) · End
    exercise · Remove (only with 0 logged sets) · Move up / down · Stack setup (machines with a kg or
    lb stack, D43: unit, step, lightest and heaviest of this machine; the card rebuilds on the new
    stack) · Note · Exercise details).
@@ -1671,7 +1675,7 @@ tap.
 
 | Variant | Load row | Secondary line | Step | Notes |
 |---|---|---|---|---|
-| External (barbell, dumbbell, machine, cable) | `( - ) 60 kg ( + )` | plates per side for barbells ("20 + 5 per side"), "per hand" for dumbbells | loadable increment | Dumbbell loads are per hand |
+| External (barbell, dumbbell, machine, cable) | `( - ) 60 kg ( + )` | plates per side for barbells ("20 + 5 per side"), "per hand" for a pair of dumbbells, "one dumbbell" on a unilateral row | loadable increment | Dumbbell loads are per hand |
 | Bodyweight only | none; "BW" label with "+ add weight" text button | | | "+ add weight" turns the row into weighted bodyweight |
 | Weighted bodyweight (dip belt) | `( - ) BW + 22.5 kg ( + )` | plate breakdown on the belt "20 + 2.5" | next loadable belt combination | System load is never shown here; it is in Why (BW 70.7 + 22.5 = 93.2 kg) |
 | Assisted, pin (lb machine) | `( - ) harder  Pin 40 lb  easier ( + )` | "≈ 24.6 kg assist · one-arm load 46.1 kg" or for two-arm "effective 46.1 kg" (1 decimal, C54) | 5 lb | Lower pin = harder; arrow icon + text. Native lb shown, kg secondary (C2, D12) |
@@ -3534,7 +3538,8 @@ loadable sets, the next loadable value in each direction, assist kg and plate br
 
 * Values are formatted with section 5: native pin unit first, then "≈ 24.6 kg assist · one-arm load
   46.1 kg" (1 decimal, C54); "BW + 22.5 kg" with the belt breakdown "20 + 2.5 on belt"; "20 + 5 per
-  side" for barbells; "per hand" for dumbbells. Breakdowns and kg values are `load` outputs (`breakdown`,
+  side" for barbells; "per hand" for a pair of dumbbells, "one dumbbell" on a unilateral row (`implement_count`
+  1). Breakdowns and kg values are `load` outputs (`breakdown`,
   `assistKg`, `effectiveKg`), never computed in the UI.
 * Assisted machines label the stepper buttons by effect, "( - ) harder" and "easier ( + )" (6.1).
 * When the right side's reps are capped by the side rule (`ins.scap.matchLeft`, 11.7.2) the hint

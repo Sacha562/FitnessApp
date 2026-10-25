@@ -44,6 +44,8 @@ object Numbers {
             LoadMode.BODYWEIGHT_PLUS_EXTERNAL ->
                 if (p.plateBreakdown.isEmpty()) null else p.plateBreakdown.joinToString(" + ") { num(it) } + " on belt"
             LoadMode.EXTERNAL -> when {
+                // A unilateral dumbbell row holds one dumbbell; "per hand" would read as a pair.
+                p.implementCount == 1 -> "one dumbbell"
                 p.implementCount != null -> "per hand"
                 p.plateBreakdown.isNotEmpty() -> p.plateBreakdown.joinToString(" + ") { num(it) } + " per side"
                 p.nativeUnit == "lb" -> "≈ " + oneDecimal(p.addedKg) + " kg"

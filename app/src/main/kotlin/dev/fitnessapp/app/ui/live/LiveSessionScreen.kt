@@ -430,10 +430,11 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
+                val each = if (item.unilateral && !item.warmupItem) " each side" else ""
                 val tail = when {
                     skipped -> "skipped"
-                    item.se.status == "deferred" -> "later · ${item.workingDone}/${item.planned}"
-                    else -> "${item.workingDone}/${maxOf(item.planned, item.workingDone)}"
+                    item.se.status == "deferred" -> "later · ${item.workingDone}/${item.planned}$each"
+                    else -> "${item.workingDone}/${maxOf(item.planned, item.workingDone)}$each"
                 }
                 Text(tail, style = MaterialTheme.typography.labelLarge, color = if (current) Fit.Ink else Fit.Muted, modifier = Modifier.padding(start = 8.dp))
             }
@@ -536,10 +537,12 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
             Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(item.ex.nameEn, style = MaterialTheme.typography.titleLarge)
                 val sideLabel = when (card.side) { "L" -> " · Left"; "R" -> " · Right"; else -> "" }
+                // An L+R pair is one set (C7), so the count of a sided item says it is per side.
+                val each = if (item.unilateral) " each side" else ""
                 val count = when {
                     card.warmup -> "Warm-up set"
-                    card.isRound -> "Round ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}"
-                    else -> "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}"
+                    card.isRound -> "Round ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
+                    else -> "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
                 }
                 Pill(count + sideLabel)
             }
