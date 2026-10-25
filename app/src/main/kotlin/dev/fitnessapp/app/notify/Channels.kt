@@ -8,7 +8,7 @@ import android.os.Build
 /** Notification channels and ids of ANDROID.md 13.1-13.2 (final, C54). Channels are never renamed or deleted. */
 object Channels {
     const val SESSION_ONGOING = "session_ongoing"
-    // `rest_done` (the rest-end heads-up) and notification id 1002 are retired by D45 and stay reserved:
+    // `rest_done` (the rest-end heads-up) and notification id 1002 are retired by D46 and stay reserved:
     // new installs no longer create the channel, existing installs keep it (channels are never deleted).
     const val HABIT_REMINDERS = "habit_reminders"
     const val CHALLENGE = "challenge"

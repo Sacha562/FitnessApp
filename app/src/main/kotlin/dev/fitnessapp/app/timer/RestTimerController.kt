@@ -266,7 +266,7 @@ class RestTimerController(
                 RestEffect.NotifyOvertime -> timer?.let { notifications.postSession(notifications.overtime(it.end_wall_ms, textFor(it))) }
                 // A skipped self-test has no session to return to.
                 RestEffect.NotifySession -> if (timer?.let(::isSelfTest) == true) onSelfTestEnded() else notifications.postSession(notifications.session())
-                // No heads-up (D45): the session notification's overtime state is the only notification.
+                // No heads-up (D46): the session notification's overtime state is the only notification.
                 RestEffect.Alert -> haptics.alarm(config.timerVibrationWaveformMs)
                 RestEffect.ReminderBuzz -> haptics.buzz()
                 is RestEffect.IntervalDone -> onIntervalDone(e)

@@ -2100,7 +2100,7 @@ pull-up):
   alarm usage (always, F20, independent of channel settings), plays the optional tone with ducking
   (6.8), and the session notification switches to overtime (11.13.3): title "Rest over · Set 2 of 2",
   text "Weighted pull-up · BW + 22.5 kg × 4", count-up from the rest end. No separate heads-up is
-  posted (D45, ANDROID section 12.4): the session notification is the only one, and the vibration is
+  posted (D46, ANDROID section 12.4): the session notification is the only one, and the vibration is
   the alert.
 * Pre-warning at 10 s left: one short haptic tick, only while the app UI is in the foreground, driven
   by the UI's own countdown (no alarm). There is no pre-warning in the background (ANDROID section
@@ -3253,13 +3253,13 @@ scheduling (C54; ANDROID sections 11.5, 12.4, 13 and 17); this section owns the 
 timing rules of the reminders and the user-visible wording (ANDROID section 13.1 leaves the wording to
 this section and 24.6). The channel ids are those of ANDROID section 13.1: `session_ongoing`,
 `rest_done`, `habit_reminders`, `challenge`, `safety`, `app_status`; they are final and cannot be
-renamed after the first install. `rest_done` is retired (D45): no notification uses it and new installs
+renamed after the first install. `rest_done` is retired (D46): no notification uses it and new installs
 do not create it.
 
 | Id | Channel (importance) | When | Title / text | Actions | Tap opens (route, 3.4) |
 |---|---|---|---|---|---|
 | `N-SESSION` | `session_ongoing` (LOW, silent) | whole session (foreground service) | see 11.13.3 (ANDROID section 13.3) | -15 s, Skip, +15 s (during rest) | Live Session (`fitapp://session/current`) |
-| `N-REST-DONE` | `rest_done` (retired, D45) | not posted: the rest end only switches `N-SESSION` to overtime (11.13.3) and vibrates | none | none | none |
+| `N-REST-DONE` | `rest_done` (retired, D46) | not posted: the rest end only switches `N-SESSION` to overtime (11.13.3) and vibrates | none | none | none |
 | `N-IDLE` | `app_status` (LOW) | no set, rest or exercise event for 60 min during a session (`session.idlePromptMin`, ANDROID section 11.5); after 240 min (`session.idleStopFgsMin`) the service stops itself and the session stays in progress | "Session C still running. Finish it?" | Finish, Keep open | Live Session (`fitapp://session/current`) |
 | `N-HABIT` | `habit_reminders` (DEFAULT) | habit time (17:15 hang, 17:30 plank on Tue/Thu), skipped on days the definition skips; only after the D4 cutover | "Two-arm hang" · "4-5 sets, 2-3 min total" (the deload prescription when halved) | Start, Snooze 30 min, Skip today (never "Done": completion is logged only through the session, ANDROID section 17) | home mini-session (`fitapp://habit/<habit_id>`) |
 | `N-WEIGH` | `habit_reminders` (DEFAULT) | morning after the weigh-in becomes 14 days stale, at most once per week | "Time to weigh in (last: 70.7 kg, 15 days ago)" | Weigh in | Today (`fitapp://today`); its weigh-in row opens the Weigh-in sheet |
@@ -3872,7 +3872,7 @@ the next set, starting a hold or tapping Skip ends the rest.
 the foreground (ANDROID.md 12.4, C54). End: alarm-clock alarm by default (C28), vibration waveform
 `[0, 300, 150, 300, 150, 600]` ms with alarm usage always (F20), optional ducking tone (default off),
 the session notification switches to overtime "Rest over · Set 2 of 2" (11.13.3; no separate heads-up,
-D45, ANDROID section 12.4). One overtime reminder pulse at +60 s (`timer.overtimeReminderS`). Alarm modes:
+D46, ANDROID section 12.4). One overtime reminder pulse at +60 s (`timer.overtimeReminderS`). Alarm modes:
 `ALARM_CLOCK` (default), `EXACT_IDLE` (user option, offered only after `timer.exactIdleMinSamples` = 30
 alarm-clock rests with p95 latency at most 2000 ms and reverted when the p95 of the last
 `timer.exactIdleRevertWindow` = 20 alarms of that mode exceeds it, C28, C54), `INEXACT` (fallback when
@@ -4976,7 +4976,7 @@ section 13.3's (C54).
 |---|---|
 | `disclaimer` | "This app does not give medical advice." |
 | `disclaimer_short` | "Not medical advice." |
-| `rest_over_title` | "Rest over" (overtime title in the session notification; was also the retired N-REST-DONE, D45) |
+| `rest_over_title` | "Rest over" (overtime title in the session notification; was also the retired N-REST-DONE, D46) |
 | `rest_over_text` | "Set {n}: {load} × {reps}" (for example "Set 2: BW + 22.5 kg × 4") |
 | `session_set_title` | "{session} · {challenge}" (for example "Session A · OAP"; the session name alone for general sessions) |
 | `session_set_text` | "Set {n} of {total} · {exercise}" |
@@ -5232,7 +5232,7 @@ October, `today_card_shown.tz_offset_min` = 60. N-HABIT for the daily hang fires
 **GF-UX-19 Session notification content (Thursday, after set 1 of the weighted pull-up).** Rest running
 (structure of ANDROID section 13.3, wording of 24.6): title "Rest · next: Weighted pull-up 2/2", text
 "BW + 22.5 kg × 4", `when` `1791482460000`, countdown chronometer, actions in the order "-15 s", "Skip",
-"+15 s" (the order of the rest card). At the end: no heads-up (D45); the ongoing notification switches to
+"+15 s" (the order of the rest card). At the end: no heads-up (D46); the ongoing notification switches to
 overtime with title "Rest over · Set 2 of 2" and text "Weighted pull-up · BW + 22.5 kg × 4". Tapping it
 opens the route `fitapp://session/current`.
 

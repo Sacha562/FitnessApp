@@ -1445,7 +1445,7 @@ remainingMs(nowWall, nowElapsed, bootCount):
 startInterval(nowWall, nowElapsed, bootCount, d_s, hardMaxS, durationSource, sessionId, plannedRowRef):
   any active rest or interval timer first ends (rest: ended_by = next_set_early, as onNextSetLogged without a set)
   start(nowWall, nowElapsed, bootCount, d_s, hardMaxS, interval, durationSource)   # start_wall = the Start tap, set_log_id null
-onEndAlarm (interval): same alert as a rest end (vibration waveform, optional tone; no heads-up, D45), the
+onEndAlarm (interval): same alert as a rest end (vibration waveform, optional tone; no heads-up, D46), the
   session notification returns to the count-up; no overtime reminder; state = ended, ended_by = elapsed; the warm-up item is logged done with
   duration_s = prescribed_s (+ adjustments) and completed_at = end_wall
 done early (the item's Done tap while running): state = ended, ended_by = skipped; the item is logged with the
@@ -1522,7 +1522,7 @@ than that, which is why this mode is not the default.)
    `[0, 300, 150, 300, 150, 600]` ms (three pulses, the last long).
 2. Optional tone (setting, default off): section 14.2.
 3. The ongoing session notification switches to overtime mode (count-up from `end_wall`, the next set in
-   its text). It is the only notification of the rest end: no separate heads-up is posted (D45). The
+   its text). It is the only notification of the rest end: no separate heads-up is posted (D46). The
    session channel is LOW and silent, so the update does not pop up; the vibration is the alert.
 4. One overtime reminder buzz at `end_wall + timer.overtimeReminderS` (60 s), scheduled as a second
    `setAlarmClock`, cancelled by the next set.
@@ -1604,7 +1604,7 @@ Rest timers live entirely in UTC epoch milliseconds and elapsed time, so the DST
 | Channel id | Name (user-visible) | Importance | Sound | Vibration | Lock screen | Used for |
 |------------|--------------------|------------|-------|-----------|-------------|----------|
 | `session_ongoing` | "Active session" | LOW | none | none | PUBLIC | The FGS notification: session progress, rest countdown, actions (`N-SESSION`). Not MIN, so it can be promoted to a Live Update. |
-| `rest_done` | "Rest finished" | HIGH | none (app plays tone) | none (app vibrates) | PUBLIC | Retired (D45): was the heads-up at rest end (`N-REST-DONE`). No longer created on new installs, never deleted on existing ones; the id stays reserved. |
+| `rest_done` | "Rest finished" | HIGH | none (app plays tone) | none (app vibrates) | PUBLIC | Retired (D46): was the heads-up at rest end (`N-REST-DONE`). No longer created on new installs, never deleted on existing ones; the id stays reserved. |
 | `habit_reminders` | "Reminders" | DEFAULT | system default | system default | PRIVATE | Home-habit reminders (`N-HABIT`, section 17) and the weigh-in reminder (`N-WEIGH`). |
 | `challenge` | "Challenge updates" | DEFAULT | system default | system default | PRIVATE | Test-day morning (`N-TEST-DAY`), program changes outside a session (`N-PROGRAM`), phase unlocked (`N-CELEBRATE`). |
 | `safety` | "Safety alerts" | HIGH | system default | system default | PRIVATE | Challenge rule notifications of kind stop/warn, such as a pain-protocol exit or extension (`N-SAFETY`). |
@@ -1625,7 +1625,7 @@ section only illustrate structure.
 | Id / request code | Use |
 |-------------------|-----|
 | 1001 | Session FGS notification |
-| 1002 | Reserved (was the rest-done heads-up, retired by D45) |
+| 1002 | Reserved (was the rest-done heads-up, retired by D46) |
 | 1101 / 1102 / 1103 | Rest actions −15 s / Skip / +15 s |
 | 1201 / 1202 | Rest end alarm / overtime alarm PendingIntents |
 | 2000 + (hash(reminderId) mod 1000) | Habit reminders and their alarms |
