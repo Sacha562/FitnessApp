@@ -82,6 +82,8 @@ data class TodayChallengeUi(
     val isTest: Boolean = false,
     /** [slot]'s exercises as Start would create them, for "Show exercises"; empty when there is nothing to start. */
     val exercises: List<ReviewExercise> = emptyList(),
+    /** Another session is planned later this week, so "train now" starts [slot] instead of waiting for it. */
+    val instead: Boolean = true,
 )
 
 /** How a habit row is completed (UX 9.6): quick-done by its checkbox, or through the home mini-session (Start). */
@@ -150,6 +152,8 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         }
         val next = plan.sessions.firstOrNull { it.source != "done" && it.date.isAfter(today) }
         val nextText = next?.let { "Next: ${name(it.slot)} ${ChallengeTexts.date(it.date)} ${ChallengeTexts.time(Week.localTime(it.interval.start, input.zone))}" }
+            // D42: a slot the week dropped (its suggestion times passed) is still open, not done.
+            ?: plan.droppedSlots.takeIf { it.isNotEmpty() }?.let { d -> "Not planned this week: ${d.joinToString(", ") { name(it).substringBefore(':') }}." }
             ?: "This week's challenge sessions are done."
         val now = TodayAdvisor.advise(def, c.params, input, plan, trainNow = true)
         // The planner's reason reads "rest day before <slot>"; shown with the session's name (D35: no codes).
@@ -162,6 +166,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val nowSlot = if (now.kind == "challenge" && now.reasons == listOf("train_now")) now.slot else null
         return TodayChallengeUi(
             e.id, program, f.state.mode, nextText, blocked, nowSlot, true, blocked, habits, slotName = nowSlot?.let(::name)?.substringBefore(':'),
+            instead = next != null,
             exercises = nowSlot?.let { preview(e.id, it, today) }.orEmpty(),
         )
     }
@@ -333,7 +338,7 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
             if (u.isTest && !u.trainNow) {
                 PrimaryButton("Start test day", { onOpenTest(u.enrollmentId) }, Modifier.fillMaxWidth())
             } else if (u.trainNow) {
-                LinkButton(if (busy) "Starting…" else "Start ${u.slotName ?: "a session"} now instead", { vm.start(slot, onOpenSession) }, enabled = !busy)
+                LinkButton(if (busy) "Starting…" else "Start ${u.slotName ?: "a session"} now" + if (u.instead) " instead" else "", { vm.start(slot, onOpenSession) }, enabled = !busy)
             } else {
                 PrimaryButton(if (busy) "Starting…" else "Start session", { vm.start(slot, onOpenSession) }, Modifier.fillMaxWidth(), enabled = !busy)
             }
