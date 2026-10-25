@@ -135,6 +135,8 @@ data class LiveUi(
     val card: Card? = null,
     val rest: RestTimerEntity? = null,
     val restNext: String? = null,
+    /** The next set's exercise and count, shown above [restNext] on the rest card. */
+    val restNextTitle: String? = null,
     val lastLogged: LastLogged? = null,
     val switchHint: Boolean = false,
     val banner: String? = null,
@@ -252,7 +254,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         _ui.update {
             it.copy(
                 session = snap.s, items = items, focusedId = focus, card = card, rest = activeRest,
-                restNext = card?.let(::nextLine), pendingCount = snap.pending,
+                restNext = card?.let(::nextLine), restNextTitle = card?.let(::nextTitle), pendingCount = snap.pending,
             )
         }
         updateNotification(snap.s, card)
@@ -964,6 +966,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val perf = if (card.isHold) (card.holdTargetS?.let { Numbers.num(it, 1) + " s" } ?: "hold") else "× ${card.reps ?: 0}"
         val side = when (card.side) { "L" -> "Left · "; "R" -> "Right · "; else -> "" }
         return side + listOfNotNull(load, perf).joinToString(" ")
+    }
+
+    private fun nextTitle(card: Card): String {
+        val count = if (card.warmup) "warm-up" else "${card.setNumber}/${maxOf(card.item.planned, card.setNumber)}"
+        return "${card.item.ex.nameEn} · $count"
     }
 
     private fun updateNotification(s: WorkoutSessionEntity?, card: Card?) {

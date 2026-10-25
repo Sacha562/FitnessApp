@@ -2040,7 +2040,9 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
 | ======================--------      |
 |  [ -15 s ]   [  Skip  ]  [ +15 s ]  |
 |                                     |
-| Next: BW + 22.5 kg x 4              |
+| Up next                             |
+| Weighted pull-up · 2/2              |
+| BW + 22.5 kg x 4                    |
 | Set 1: 4 reps · 2 in reserve   Undo |
 | (suggestion card, if any)           |
 +-------------------------------------+
@@ -2051,7 +2053,8 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
 * Buttons 64 dp tall pills, tonal (not primary): -15 s, Skip, +15 s. They ignore input for 500 ms after the
   rest card appears (input guard, P5), because they occupy the screen region where the RIR chip was
   just tapped.
-* Next-set preview line; last-set summary line with Undo while the snackbar window is open.
+* Next-set preview "Up next": the exercise and set count ("2/2", or "warm-up") as its title, the load and
+  reps below; last-set summary line with Undo while the snackbar window is open.
 * Slot for an engine suggestion card or a challenge "Rule: ... · Undo" line (11.10) and for post-log
   reason chips (11.8).
 * Tapping the countdown toggles **focus mode**: a full-screen dark rest view with the same digits and

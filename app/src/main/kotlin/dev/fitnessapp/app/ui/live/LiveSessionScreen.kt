@@ -517,7 +517,8 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
         ui.restNext?.takeIf { !interval }?.let {
             Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 2.dp) {
                 Text("Up next", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
-                Text(it, style = MaterialTheme.typography.titleMedium)
+                ui.restNextTitle?.let { title -> Text(title, style = MaterialTheme.typography.titleMedium) }
+                Text(it, style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
