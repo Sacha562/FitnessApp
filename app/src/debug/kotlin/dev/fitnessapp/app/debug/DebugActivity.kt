@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -56,6 +57,14 @@ import java.time.ZoneId
  * outbox rows deferred on a missing parent (`23503`), which would otherwise dead-letter hours later. The local rows
  * stay; "Re-push all data" queues them again.
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action drop_dead_letters
+ *   adb logcat -d -s DebugSync
+ * "repair_sets" rewrites the logged sets of one finished session exercise in another load mode (the Pallof press of
+ * 2026-10-23 saved as a belt load, which the server refused): every set becomes [input] [unit] on the gym's
+ * [equipment_type], per side when per_side is true (the set's row becomes L, a copy R, 1 ms later); the session
+ * exercise takes the mode and sides, its dead letters are dropped, the rows queue again and the session's report is
+ * amended (`session.amended`), so the enrollment refolds. Reps, RIR and times stay as logged:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action repair_sets --es session_exercise_id <id> \
+ *     --es load_mode external --es equipment_type cable_station --es input 25 --es unit lb --ez per_side true --es note "<why>"
  *   adb logcat -d -s DebugSync
  * "pause_enrollment" / "resume_enrollment" (optional enrollment_id, default the first open one) pause with Holiday or resume.
  * "setup_draft" saves a challenge setup draft (SetupDraft JSON, base64) as the wizard's progress, so the wizard opens
@@ -81,6 +90,7 @@ class DebugActivity : ComponentActivity() {
             "abandon_enrollment" -> abandonEnrollment(intent.getStringExtra("enrollment_id"))
             "pause_enrollment", "resume_enrollment" -> pauseResume(intent.getStringExtra("action")!!, intent.getStringExtra("enrollment_id"))
             "drop_dead_letters" -> dropDeadLetters()
+            "repair_sets" -> repairSets(intent)
             "setup_draft" -> setupDraft(intent.getStringExtra("definition_id"), intent.getStringExtra("draft_b64"))
             "calendar_create_test", "calendar_refresh", "calendar_dump", "calendar_seed", "calendar_edit", "calendar_adopt", "calendar_delete_test" -> {
                 val c = (application as FitnessApplication).container
@@ -190,6 +200,74 @@ class DebugActivity : ComponentActivity() {
                         .executeUpdateDelete()
                     "dropped ${dead.size} dead letters, $parked parked outbox rows"
                 }
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(SYNC_TAG, result)
+            report.value = result
+        }
+    }
+
+    private fun repairSets(i: android.content.Intent) {
+        val c = (application as FitnessApplication).container
+        val seId = i.getStringExtra("session_exercise_id")
+        val mode = i.getStringExtra("load_mode") ?: "external"
+        val equipmentType = i.getStringExtra("equipment_type")
+        val input = i.getStringExtra("input")?.let(::BigDecimal)
+        val unit = i.getStringExtra("unit") ?: "kg"
+        val perSide = i.getBooleanExtra("per_side", false)
+        val note = i.getStringExtra("note")
+        c.appScope.launch {
+            val result = runCatching {
+                require(mode == "external") { "only external is supported" }
+                val se = requireNotNull(c.db.sessionExercises().get(requireNotNull(seId) { "session_exercise_id missing" })) { "no session exercise $seId" }
+                val session = requireNotNull(c.db.sessions().get(se.session_id))
+                require(session.status == "finished") { "session ${session.id} is ${session.status}" }
+                val eq = c.db.gymEquipment().all().first { it.equipment_type == requireNotNull(equipmentType) { "equipment_type missing" } && it.available }
+                val native = requireNotNull(input) { "input missing" }
+                val kg = (if (unit == "lb") native.multiply(BigDecimal(c.params.double("load.lb_kg").toString())) else native).setScale(2, java.math.RoundingMode.HALF_EVEN)
+                val w = c.writeContext
+                val now = w.nowMs()
+                val sets = c.db.setLogs().bySession(se.session_id).filter { it.session_exercise_id == se.id && it.deleted_at == null }
+                require(sets.none { it.side != "both" } || !perSide) { "sets already have sides" }
+                val rows = sets.flatMap { s ->
+                    val fixed = s.copy(
+                        load_mode = mode, equipment_id = eq.id, equipment_calibration_rev = eq.calibration_rev,
+                        // The engine's target was the cable step; the belt rounding only came from the wrong mode.
+                        planned_input_value = s.planned_input_value?.let { kg.movePointRight(2).toLong() }, planned_input_unit = s.planned_input_unit?.let { "kg" },
+                        input_value = native.movePointRight(2).toLong(), input_unit = unit, implement_count = null, load_per_implement_kg = null,
+                        implement_base_kg = 0, added_kg = kg.movePointRight(2).toLong(), bodyweight_kg = null, f_bw = null,
+                        effective_load_kg = kg.movePointRight(2).toLong(), deviation_note = listOfNotNull(s.deviation_note, note).joinToString("; ").ifEmpty { null },
+                        side = if (perSide) "L" else s.side, client_updated_at = w.nextClientMs(), device_id = w.device.deviceId(), app_version = w.appVersion,
+                    )
+                    if (perSide) {
+                        listOf(
+                            fixed,
+                            fixed.copy(
+                                id = w.ids.next(), side = "R", completed_at = s.completed_at + 1, started_at = null, rest_timer_planned_s = null, rest_adjust_s = null,
+                                rest_timer_overridden = false, rest_before_s = null, rest_source = null, rest_end_reason = null, client_updated_at = w.nextClientMs(),
+                            ),
+                        )
+                    } else {
+                        listOf(fixed)
+                    }
+                }
+                c.db.withTransaction {
+                    val seRow = se.copy(
+                        load_mode = mode, equipment_id = eq.id, side_mode = if (perSide) "unilateral_sequential" else se.side_mode,
+                        side_order = if (perSide) "LR" else se.side_order, client_updated_at = w.nextClientMs(), device_id = w.device.deviceId(), app_version = w.appVersion,
+                    )
+                    c.db.sessionExercises().upsert(seRow)
+                    c.outbox.enqueue("session_exercises", seRow.id, now)
+                    rows.forEach { r ->
+                        c.db.setLogs().upsert(r)
+                        c.outbox.enqueue("set_logs", r.id, now)
+                    }
+                    val ids = sets.map { it.id }.toSet()
+                    c.db.deadLetters().all().filter { it.table_name == "set_logs" && it.row_id in ids }.forEach { c.db.deadLetters().delete(it.id) }
+                }
+                val o = c.challengeSessions.amend(se.session_id)
+                c.syncScheduler.request()
+                "repaired ${sets.size} sets of ${se.id} into ${rows.size} rows at $native $unit = $kg kg on ${eq.equipment_type}; amended=${o != null}" +
+                    o?.warnings.orEmpty().joinToString("") { " warning=$it" }
             }.getOrElse { "failed: ${it.message}" }
             Log.i(SYNC_TAG, result)
             report.value = result

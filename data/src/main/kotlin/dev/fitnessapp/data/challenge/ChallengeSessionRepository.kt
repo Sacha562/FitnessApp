@@ -211,7 +211,9 @@ class ChallengeSessionRepository(
         val mode = when {
             item.rows.any { it.pin != null } -> LoadMode.ASSISTED_MACHINE
             item.rows.any { it.fingers != null } -> LoadMode.ASSISTED_ORDINAL
-            item.rows.any { it.addedKg != null && it.addedKg!!.signum() > 0 } -> LoadMode.BODYWEIGHT_PLUS_EXTERNAL
+            // Added kg means the belt only on a lift that can carry it; on a cable or dumbbell item it is the external load.
+            item.rows.any { it.addedKg != null && it.addedKg!!.signum() > 0 } && LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code in ex.allowedLoadModes ->
+                LoadMode.BODYWEIGHT_PLUS_EXTERNAL
             else -> LoadMode.of(ex.loadMode)
         }
         val sets = if (unilateral) working.count { it.side == "L" } else working.size
@@ -318,7 +320,15 @@ class ChallengeSessionRepository(
     }
 
     /** Finish (6.12): `session.completed` with every item's logged rows; returns the engine's notifications. */
-    suspend fun complete(sessionId: String): ChallengeOutcome? {
+    suspend fun complete(sessionId: String): ChallengeOutcome? = report(sessionId, amend = false)
+
+    /**
+     * A finished session whose rows were corrected afterwards: `session.amended` with every item's rows as they are now,
+     * superseding the session's latest report (CHALLENGE_ENGINE 4.3), so the enrollment refolds. Not for habit sessions.
+     */
+    suspend fun amend(sessionId: String): ChallengeOutcome? = report(sessionId, amend = true)
+
+    private suspend fun report(sessionId: String, amend: Boolean): ChallengeOutcome? {
         val stored = db.challengeLive().get(sessionId) ?: return null
         val live = decodeLive(stored)
         val session = db.sessions().get(sessionId) ?: return null
@@ -348,6 +358,7 @@ class ChallengeSessionRepository(
         }
         // A home mini-session reports the habit (UX 9.6): its rows feed the week's habit rows, not a slot.
         session.habit_id?.let { habitId ->
+            require(!amend) { "habit session $sessionId cannot be amended" }
             return challenges.record(
                 live.enrollmentId,
                 ChallengeEventDraft(
@@ -364,11 +375,20 @@ class ChallengeSessionRepository(
             durationMin = session.finished_at?.let { end -> session.started_at?.let { BigDecimal((end - it) / 60_000) } },
             items = items,
         )
+        val supersedes = if (amend) {
+            val reports = db.challengeEvents().forEnrollment(live.enrollmentId)
+                .filter { it.source_session_id == sessionId && it.event_type in setOf(EventTypes.SESSION_COMPLETED, EventTypes.SESSION_AMENDED) }
+            val superseded = reports.mapNotNull { it.supersedes_event_id }.toSet()
+            requireNotNull(reports.lastOrNull { it.id !in superseded }) { "session $sessionId has no report to amend" }.id
+        } else {
+            null
+        }
         return challenges.record(
             live.enrollmentId,
             ChallengeEventDraft(
-                EventTypes.SESSION_COMPLETED, EventPayload.Session(log), Instant.ofEpochMilli(session.finished_at ?: ctx.nowMs()),
-                LocalDate.parse(session.local_date), sourceSessionId = sessionId,
+                if (amend) EventTypes.SESSION_AMENDED else EventTypes.SESSION_COMPLETED, EventPayload.Session(log),
+                Instant.ofEpochMilli(session.finished_at ?: ctx.nowMs()), LocalDate.parse(session.local_date), sourceSessionId = sessionId,
+                supersedesEventId = supersedes,
             ),
         )
     }

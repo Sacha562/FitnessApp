@@ -97,6 +97,7 @@ class ChallengeSessionRepositoryTest {
                 EquipmentDraft("fixed_neutral_handle", "Neutral handle", true, bw),
                 EquipmentDraft("dip_station", "Dip station", true, bw),
                 EquipmentDraft("rower_erg", "Rower", true, bw),
+                EquipmentDraft("cable_station", "Cable station", true, scheme("""{"type":"stack","unit":"lb","start":5,"step":5,"max":220,"ratio":1,"add_on_steps":[]}""")),
             ),
             confirmed = true,
         )
@@ -166,6 +167,42 @@ class ChallengeSessionRepositoryTest {
         val events = db.challengeEvents().forEnrollment(enrollmentId)
         events.last().event_type shouldBe EventTypes.SESSION_COMPLETED
         events.last().source_session_id shouldBe sessionId
+    }
+
+    @Test
+    fun `added kg is a belt load only on a belt lift, the Pallof press stays an external cable load`() = blocking {
+        val enrollmentId = enroll()
+        val sessionId = live.start(enrollmentId, "B")
+        val exercises = db.sessionExercises().bySession(sessionId)
+        val wpu = exercises.single { it.challenge_item_key == "wpu" }
+        wpu.load_mode shouldBe "bodyweight_plus_external"
+        val pallof = exercises.single { it.challenge_item_key == "pallof" }
+        pallof.load_mode shouldBe "external"
+        pallof.planned_load_input shouldBe 1134L
+        equipment.resolve(CatalogRepository.bundled().bySlug("pallof_press")!!, dev.fitnessapp.algo.core.load.LoadMode.EXTERNAL).row!!.equipment_type shouldBe "cable_station"
+    }
+
+    @Test
+    fun `amend reports the corrected rows as session_amended superseding the latest report`() = blocking {
+        val enrollmentId = enroll()
+        val sessionId = live.start(enrollmentId, "B")
+        val pallof = db.sessionExercises().bySession(sessionId).single { it.challenge_item_key == "pallof" }
+        log(sessionId, pallof.id, pallof.exercise_id, 1, "both", 10)
+        now += 600_000
+        sessions.finish(sessionId, "no_time")
+        val completed = live.complete(sessionId)!!
+        val set = db.setLogs().bySession(sessionId).single()
+        db.setLogs().upsert(set.copy(side = "L"))
+        db.setLogs().upsert(set.copy(id = "01a16a69-0000-7000-8000-000000000001", side = "R", completed_at = set.completed_at + 1))
+
+        live.amend(sessionId)!!
+        live.amend(sessionId)!!
+        val reports = db.challengeEvents().forEnrollment(enrollmentId).filter { it.source_session_id == sessionId }
+        reports.map { it.event_type } shouldBe listOf(EventTypes.SESSION_COMPLETED, EventTypes.SESSION_AMENDED, EventTypes.SESSION_AMENDED)
+        reports[1].supersedes_event_id shouldBe reports[0].id
+        reports[2].supersedes_event_id shouldBe reports[1].id
+        reports[2].payload.contains("\"side\":\"R\"") shouldBe true
+        completed.folded.state.lastChallengeSessionDate shouldBe LocalDate.parse("2026-10-22")
     }
 
     @Test
