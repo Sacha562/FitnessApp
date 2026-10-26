@@ -8,9 +8,11 @@ import dev.fitnessapp.algo.challenge.enrollment.EventCodec
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.ImportBlock
+import dev.fitnessapp.algo.challenge.enrollment.PastTest
 import dev.fitnessapp.algo.challenge.enrollment.SessionLog
 import dev.fitnessapp.algo.challenge.enrollment.StateJson
 import dev.fitnessapp.algo.challenge.fitexpr.QV
+import dev.fitnessapp.algo.challenge.fitexpr.SideV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.fitexpr.Values
 import dev.fitnessapp.algo.challenge.materialize.MigrationPreviews
@@ -96,13 +98,13 @@ class ChallengeRepositoryTest {
         ),
     )
 
-    private suspend fun start(version: String? = null): FoldedEnrollment {
+    private suspend fun start(version: String? = null, pastTests: List<PastTest> = emptyList()): FoldedEnrollment {
         repo.ensureBundled()
         val defId = db.challengeDefinitions().all().let { all -> version?.let { v -> all.single { it.version == v } } ?: all.maxBy { it.version } }.id
         val def = repo.definition(defId)
         return repo.create(
             defId, sortedMapOf(), onboard,
-            ImportBlock(phase = 1, blockIndex = 1, blockWeek = 2, mode = "normal", weekOrdinal = 7),
+            ImportBlock(phase = 1, blockIndex = 1, blockWeek = 2, mode = "normal", weekOrdinal = 7, pastTests = pastTests),
             def.doc.proposals.associate { it.id to "approved" },
         )
     }
@@ -196,6 +198,27 @@ class ChallengeRepositoryTest {
         val g = other.folded(f.enrollment.id)
         g.enrollment.fold_generation shouldBe 1
         g.state.stateRev shouldBe 31
+    }
+
+    @Test
+    fun `a correction of the earlier tests refolds and survives a reload (D48)`() = blocking {
+        val d = LocalDate.parse("2026-09-29")
+        val f = start(pastTests = listOf(PastTest(d, TreeMap(), validForGate = true)))
+        f.state.testBaseline.containsKey("oa_hang_s") shouldBe false
+        now += 60_000
+        val hang = SideV(Values.duration("15"), Values.duration("20"))
+        val out = repo.amendImportedTests(f.enrollment.id, listOf(PastTest(d, TreeMap(mapOf("oa_hang_s" to hang)), validForGate = true)))
+        out.warnings.filter { it.startsWith("creation_amendment") } shouldBe emptyList()
+        out.folded.state.testBaseline.getValue("oa_hang_s").value shouldBe hang
+        out.folded.state.vars shouldBe f.state.vars
+        out.folded.enrollment.fold_generation shouldBe 1
+        val rows = db.challengeEvents().forEnrollment(f.enrollment.id).filter { it.event_type == EventTypes.CREATED }
+        rows.size shouldBe 2
+        rows.last().supersedes_event_id shouldBe rows.first().id
+        // The stored rows fold back to the same state in a fresh process, with no further generation.
+        val again = make().folded(f.enrollment.id)
+        StateJson.hash(again.state) shouldBe StateJson.hash(out.folded.state)
+        again.enrollment.fold_generation shouldBe 1
     }
 
     @Test

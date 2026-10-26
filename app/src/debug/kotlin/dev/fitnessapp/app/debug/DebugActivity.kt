@@ -23,13 +23,17 @@ import androidx.room.withTransaction
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
+import dev.fitnessapp.algo.challenge.fitexpr.ValueJson
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.app.FitnessApplication
+import dev.fitnessapp.app.ui.challenges.DraftTest
 import dev.fitnessapp.app.ui.challenges.SetupDraft
+import dev.fitnessapp.app.ui.challenges.SetupImport
 import dev.fitnessapp.app.ui.challenges.SetupViewModel
 import dev.fitnessapp.app.ui.theme.FitnessTheme
 import dev.fitnessapp.data.challenge.ChallengeEventDraft
 import kotlinx.coroutines.launch
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -71,6 +75,11 @@ import java.time.ZoneId
  * with those values for the user to check and Start (cutover import, D40); it creates nothing:
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action setup_draft --es definition_id <id> --es draft_b64 <b64>
  *   adb logcat -d -s DebugSetup
+ * "amend_import" corrects the imported earlier tests of an enrollment (optional enrollment_id, default the first open
+ * one) with the full list of tests in the setup draft's format (List<DraftTest> JSON, base64), written as a second
+ * `enrollment.created` that supersedes the original (D48); it logs the corrected comparison baseline:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action amend_import --es tests_b64 <b64>
+ *   adb logcat -d -s DebugSetup
  * The calendar actions of [CalendarDebug] (`calendar_*`) work on the device-only test calendar only:
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action calendar_dump
  *   adb logcat -d -s CalendarDebug
@@ -92,6 +101,7 @@ class DebugActivity : ComponentActivity() {
             "drop_dead_letters" -> dropDeadLetters()
             "repair_sets" -> repairSets(intent)
             "setup_draft" -> setupDraft(intent.getStringExtra("definition_id"), intent.getStringExtra("draft_b64"))
+            "amend_import" -> amendImport(intent.getStringExtra("enrollment_id"), intent.getStringExtra("tests_b64"))
             "calendar_create_test", "calendar_refresh", "calendar_dump", "calendar_seed", "calendar_edit", "calendar_adopt", "calendar_delete_test" -> {
                 val c = (application as FitnessApplication).container
                 val i = intent
@@ -186,6 +196,25 @@ class DebugActivity : ComponentActivity() {
         }.getOrElse { "failed: ${it.message}" }
         Log.i(SETUP_TAG, result)
         report.value = result
+    }
+
+    private fun amendImport(enrollmentId: String?, testsB64: String?) {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                val id = enrollmentId ?: c.challenges.open().first().id
+                val text = String(android.util.Base64.decode(requireNotNull(testsB64) { "tests_b64 missing" }, android.util.Base64.DEFAULT), Charsets.UTF_8)
+                val drafts = Json { ignoreUnknownKeys = false }.decodeFromString(ListSerializer(DraftTest.serializer()), text)
+                val def = c.challenges.folded(id).def
+                val tests = drafts.map { requireNotNull(SetupImport.pastTest(def, it)) { "test ${it.date} does not parse" } }
+                val out = c.challenges.amendImportedTests(id, tests)
+                val s = out.folded.state
+                val base = s.testBaseline.entries.joinToString("; ") { (k, b) -> "$k=${ValueJson.text(b.value)}@${b.date}" }
+                "enrollment $id tests=${tests.size} lastValid=${s.lastValidTest?.date} count=${s.validTestCount} warnings=${out.warnings} baseline: $base"
+            }.getOrElse { "failed: ${it.message}" }
+            Log.i(SETUP_TAG, result)
+            report.value = result
+        }
     }
 
     private fun dropDeadLetters() {

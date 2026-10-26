@@ -85,8 +85,7 @@ object EnrollmentFold : DeclaresParams {
 
     /** [fold] across definition updates (4.12): [defs] holds every version the events name, by version. */
     fun fold(defs: Map<String, CompiledDefinition>, params: ParamView, events: List<ChallengeEvent>): FoldResult {
-        val created = events.firstOrNull { it.type == EventTypes.CREATED } ?: throw IllegalArgumentException("no enrollment.created event")
-        val version = (created.payload as EventPayload.Created).definitionVersion
+        val version = (original(events).payload as EventPayload.Created).definitionVersion
         val at = { v: String -> defs[v] ?: throw IllegalArgumentException("definition version $v is not available") }
         return fold(at(version), at, params, events)
     }
@@ -94,7 +93,7 @@ object EnrollmentFold : DeclaresParams {
     private fun fold(first: CompiledDefinition, at: (String) -> CompiledDefinition, params: ParamView, events: List<ChallengeEvent>): FoldResult {
         var def = first
         val sorted = events.sortedWith(ChallengeEvent.ORDER)
-        val created = sorted.firstOrNull { it.type == EventTypes.CREATED } ?: throw IllegalArgumentException("no enrollment.created event")
+        val original = original(sorted)
         val ids = sorted.map { it.id }.toSet()
         val latest = TreeMap<String, ChallengeEvent>()
         for (e in sorted) {
@@ -108,10 +107,14 @@ object EnrollmentFold : DeclaresParams {
             }
             latest[root.toString()] = e
         }
+        // D48: a creation that supersedes the original may correct the imported earlier tests, and nothing else.
+        val amendment = latest[original.id.toString()]
+        val created = amendment?.let { correctedCreation(original, it) } ?: original
         var step = create(def, params, created)
         val audits = ArrayList(step.audits)
         val notes = ArrayList(step.notifications)
         val warnings = ArrayList(step.warnings)
+        if (amendment != null && created === original) warnings += "creation_amendment_ignored:${amendment.id}"
         val trail = ArrayList<Pair<ChallengeEvent, EnrollmentState>>()
         trail += created to step.state
         // 4.3 (D40): setup writes one decision per proposal at creation + 1 .. n ms. They belong to the creation, so
@@ -127,7 +130,7 @@ object EnrollmentFold : DeclaresParams {
             trail += e to step.state
         }
         for (e in sorted) {
-            if (e === created || e in setup) continue
+            if (e === original || e in setup) continue
             if (e.supersedesEventId != null) {
                 if (e.supersedesEventId !in ids) warnings += "orphan_amendment:${e.id}"
                 continue
@@ -152,6 +155,23 @@ object EnrollmentFold : DeclaresParams {
             trail += effective to step.state
         }
         return FoldResult(step.state, audits, notes, warnings, trail, def)
+    }
+
+    /** The enrollment's own creation: the earliest `enrollment.created` that supersedes nothing (D48). */
+    private fun original(events: List<ChallengeEvent>): ChallengeEvent =
+        events.filter { it.type == EventTypes.CREATED && it.supersedesEventId == null }.minWithOrNull(ChallengeEvent.ORDER)
+            ?: throw IllegalArgumentException("no enrollment.created event")
+
+    /**
+     * D48: [original] with the earlier tests of [amendment] (keeping its id, time and facts), or null when the amendment
+     * is not a creation or changes anything besides `import.pastTests`.
+     */
+    private fun correctedCreation(original: ChallengeEvent, amendment: ChallengeEvent): ChallengeEvent? {
+        val o = original.payload as EventPayload.Created
+        val a = amendment.payload as? EventPayload.Created ?: return null
+        fun withoutTests(p: EventPayload.Created) = p.copy(import = p.import?.copy(pastTests = emptyList()))
+        if (amendment.type != EventTypes.CREATED || a.import == null || withoutTests(a) != withoutTests(o)) return null
+        return original.copy(payload = a)
     }
 
     /**

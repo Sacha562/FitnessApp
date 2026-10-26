@@ -623,8 +623,8 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
    artifact frozen, and the first real week in the app. Built for it: `oap@1.4.0` (Pallof press, P28, P29 lighter week after
    the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol,
    week ordinal, block counts, earlier tests), the debug `setup_draft` and `calendar_delete_test` actions, the test-data wipe.
-   Still open: Todoist closed after the first app week (from 2026-10-29), T17 and real calendar writes, freezing the artifact,
-   and the earlier tests' missing per-arm values (D40 changelog).
+   Still open: Todoist closed after the first app week (from 2026-10-29), T17 and real calendar writes, and freezing the
+   artifact. The earlier tests' missing per-arm values (D40 changelog) were restored on 2026-10-26 (D48, engine 1.7.0).
 
 ### M3 — General load prescription (3–4 sessions)
 

@@ -14,6 +14,7 @@ import dev.fitnessapp.algo.challenge.enrollment.EventCodec
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.ImportBlock
+import dev.fitnessapp.algo.challenge.enrollment.PastTest
 import dev.fitnessapp.algo.challenge.enrollment.PauseTools
 import dev.fitnessapp.algo.challenge.enrollment.StateJson
 import dev.fitnessapp.algo.challenge.fitexpr.EngineFacts
@@ -301,6 +302,28 @@ class ChallengeRepository(
         }
         scheduler.request()
         ChallengeOutcome(next, step.notifications, step.warnings)
+    }
+
+    /**
+     * D48: corrects the imported earlier tests with a second `enrollment.created` that supersedes the original and differs
+     * from it only in `import.pastTests`; the refold folds the creation with [pastTests].
+     */
+    suspend fun amendImportedTests(enrollmentId: String, pastTests: List<PastTest>): ChallengeOutcome {
+        val original = mutex.withLock {
+            val enr = requireNotNull(db.enrollments().get(enrollmentId)) { "unknown enrollment $enrollmentId" }
+            val rows = db.challengeEvents().forEnrollment(enrollmentId)
+            // The rows come in (occurred_at, id) order.
+            val row = rows.firstOrNull { it.event_type == EventTypes.CREATED && it.supersedes_event_id == null }
+            decode(versions(enr, rows).getValue(requireNotNull(row) { "no enrollment.created event" }.definition_version), row)
+        }
+        val p = original.payload as EventPayload.Created
+        val imp = requireNotNull(p.import) { "the enrollment was not imported" }
+        val now = Instant.ofEpochMilli(ctx.nowMs())
+        val draft = ChallengeEventDraft(
+            EventTypes.CREATED, p.copy(import = imp.copy(pastTests = pastTests)), now, now.atZone(ctx.zone()).toLocalDate(),
+            supersedesEventId = original.id.toString(),
+        )
+        return record(enrollmentId, draft)
     }
 
     /** After a sync pull: refolds every enrollment whose stored events no longer match its cached fold (4.11). */

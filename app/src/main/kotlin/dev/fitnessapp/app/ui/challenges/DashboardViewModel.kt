@@ -264,7 +264,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
     private fun eventLabel(def: CompiledDefinition, e: ChallengeEventEntity): String? {
         val p = runCatching { Json.parseToJsonElement(e.payload).jsonObject }.getOrNull()
         return when (e.event_type) {
-            EventTypes.CREATED -> "Challenge started"
+            EventTypes.CREATED -> if (e.supersedes_event_id != null) "Earlier tests corrected" else "Challenge started"
             EventTypes.APPROVAL -> {
                 val id = p?.get("proposal_id")?.jsonPrimitive?.contentOrNull
                 val title = id?.let { proposalTitle(def, it) } ?: "Recommended change"

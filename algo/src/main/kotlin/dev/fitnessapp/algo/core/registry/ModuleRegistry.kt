@@ -52,13 +52,13 @@ object ModuleRegistry {
 
     /**
      * Modules past 1.0.0 (ALGORITHMS.md A7): structured test protocols (D36, ENGINE_VERSION 1.1.0) and a slot that goes
-     * first in its week (D38, ENGINE_VERSION 1.2.0); the setup's decisions fold with the creation (D40, ENGINE_VERSION 1.3.0); the comparison baseline per measurement (D41, ENGINE_VERSION 1.4.0); train now tries every slot not done yet, at any time of day (D42, ENGINE_VERSION 1.5.0).
+     * first in its week (D38, ENGINE_VERSION 1.2.0); the setup's decisions fold with the creation (D40, ENGINE_VERSION 1.3.0); the comparison baseline per measurement (D41, ENGINE_VERSION 1.4.0); train now tries every slot not done yet, at any time of day (D42, ENGINE_VERSION 1.5.0); definition updates of a running enrollment (D44, ENGINE_VERSION 1.6.0); a creation that corrects the imported earlier tests (D48, ENGINE_VERSION 1.7.0).
      */
     private val BUMPED: Map<String, SemVer> = mapOf(
         "challenge.cds" to SemVer(1, 2, 0),
         "challenge.materialize" to SemVer(1, 1, 0),
         "challenge.plan" to SemVer(1, 2, 0),
-        "challenge.enrollment" to SemVer(1, 3, 0),
+        "challenge.enrollment" to SemVer(1, 4, 0),
     )
 
     private fun layer(layer: Layer, vararg ids: String): List<Entry> =

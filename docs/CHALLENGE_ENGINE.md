@@ -1090,6 +1090,14 @@ session, late sync) triggers a refold:
 with "Undo (wrong tap)" (UX 20.11) is written the same way: a new `pain.reported` with `retracted: true`
 and `supersedes_event_id`; the refold then runs as if the original report had never been folded.
 
+**Correcting the imported earlier tests** (D48, engine 1.7.0, `challenge.enrollment` 1.4.0). The fold always starts from the
+original `enrollment.created` (the earliest one without `supersedes_event_id`). A later `enrollment.created` that supersedes
+it (directly or through an earlier correction; the newest wins) is accepted only when its payload equals the original's
+except for `import.past_tests`; the creation is then folded with those tests, so `lastValidTest`, `validTestCount` and the
+comparison baseline (11.2, D41) come from the corrected list, while the original keeps its id, time, engine facts and place
+in the trail. Any other difference is ignored with the warning `creation_amendment_ignored:<id>`. The correction itself is
+not folded as an event. The app writes it with the debug action `amend_import`; History shows "Earlier tests corrected".
+
 ### 4.12 Definition upgrade and migration
 
 1. A newer published version of the same slug appears whose `migrations` names the enrollment's version
