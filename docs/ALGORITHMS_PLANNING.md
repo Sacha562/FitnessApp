@@ -2441,7 +2441,8 @@ between the members, the after-pair rest from REST-1's formula, and `t_pair` use
 ```
 substitute(e, reason, session):
   if reason == occupied and ∃ k not done, not pinned, station(k) ≠ station(e):
-      offer "Do {k} now, then come back to {e}" (k = first by ORD-1 order); defer_count(e) += 1
+      offer "Do {k} now, then come back to {e}" (k = first by ORD-1 order; until ORD-1 exists in M4, the next
+      exercise not done in the session's own order, D49); defer_count(e) += 1
       after MAX_DEFERS deferrals (UI-05) go straight to the candidates below
   v(x) = [groupCoeff(x, g) for the 18 groups] ⊕ [REGION_WEIGHT · coeff(x, r) for the 34 regions]
   C = {c ∈ ELIG pool with the session's constraints : c ∉ session, station(c) not marked occupied this session}
@@ -3949,9 +3950,11 @@ planner's enumeration (one pass gives every "today = type" optimum). Target: < 1
 
 **Build order (milestones of the critique's MVP; C73, D18, D21).** M1 (logger): `catalog` (seed + validator in CI),
 `ui.reasonchips`, `ui.prefill` (D18: "last time" as the only source; M3 adds the `rx` targets), and from
-ALGORITHMS.md `load`, `bodyweight` and the base policy of `rest` (D21). M2: `calendar.classify`, `safety`, `time` (challenge add-on capacity). M3: `pref`, `elig`, `select`,
-`order`, `substitute`, `injury`, the `rx` source of `ui.prefill`. M4: `setcredit`, `readiness`, `targets`, `runs`, `allocator`, `weekplan`, `today`, `rotate`,
-`ui.todaycard`, `ui.prompts`, `ui.volumebars`, `ui.warndisplay`, `ui.progress`. M5: `tuner`, `sim`, `replay`.
+ALGORITHMS.md `load`, `bodyweight` and the base policy of `rest` (D21). M2: `calendar.classify`, `safety`. M3 (D49): `pref`, `injury`, the hard filters of `elig` (§12.3 without the
+necessity gate), `substitute`, the `rx` source of `ui.prefill`, `ui.warndisplay`. M4: the necessity gate of `elig`,
+`select`, `order`, `time` (including the challenge add-on capacity), `setcredit`, `readiness`, `targets`, `runs`,
+`allocator`, `weekplan`, `today`, `rotate`, `ui.todaycard`, `ui.prompts`, `ui.volumebars`, `ui.progress`. M5: `tuner`,
+`sim`, `replay`.
 
 **Reproducing §21.** The numbers of §21 and §22 came from Python reference prototypes written for this specification
 (kept outside the repository; version 1.1.0 re-ran them with C49's 34-minute add-on capacity, the C50 light-pull

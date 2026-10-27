@@ -597,7 +597,7 @@ These domains are canonical for every stored code (C38): challenge definitions, 
 | E6 | set flag | `grip_slip_before_last`, `jerky`, `torso_rotation`, `hip_rotation`, `technique_breakdown`, `failed_rep`, `hand_shift`, `used_straps` | C38: challenge definitions (`flagsOffered`, FitExpr identifiers) use exactly these snake_case keys; camelCase spellings are rejected. |
 | E7 | session kind | `gym`, `home`, `test` | C34. Home habits are tiny `home` sessions. |
 | E8 | session status | `planned`, `in_progress`, `finished`, `abandoned`, `skipped` | |
-| E9 | template_source | `challenge_slot`, `family_combo`, `recommended`, `empty`, `habit`, `import` | C35. |
+| E9 | template_source | `challenge_slot`, `family_combo`, `recommended`, `empty`, `habit`, `import`, `repeat` | C35. `repeat` (D49): a general session copied from a past finished general session; the CHECK gains it with the M3.4 migration, and `session_started` carries the source session's id. |
 | E10 | block_kind | `challenge`, `general` | C34. |
 | E11 | session exercise status | `pending`, `active`, `done`, `skipped`, `removed`, `deferred`, `not_done` | `skipped`/`removed` require a reason (UI-05); `not_done` = still pending when the session finished (no reason). |
 | E12 | session exercise origin | `plan`, `challenge`, `user_added`, `substitute`, `live_algo` | |

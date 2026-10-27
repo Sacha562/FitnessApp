@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17).*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49.*
 
 ---
 
@@ -628,14 +628,40 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
 
 ### M3 — General load prescription (3–4 sessions)
 
-- Load model, bodyweight, RIR bias, personal rep curve, strength estimator, fatigue model, holds,
-  prescription with double progression, warm-ups, rest durations, reason semantics, in-session
-  suggestions, stall handling.
+- RIR bias, personal rep curve, strength estimator, fatigue model, holds, prescription with double progression,
+  warm-up sets, rest durations, reason semantics, in-session suggestions, stall handling (load and bodyweight were built
+  in M1a, D21).
 - Set/rep preferences and the warning engine (warn-only).
-- Exercise preferences (5-state, captured in M1b) feeding the eligibility gate, selection, ordering, substitution, time
-  fitting — for a session type you choose manually.
-- **Done when**: a manually chosen legs or push session gets loadable prescriptions that land within
-  ±1 RIR of target most of the time after 3 exposures.
+- The exercises are the ones you pick: a general session starts empty or as a repeat of a past session (D49, amending
+  D22). Exercise preferences (5-state, captured in M1b) feed substitution when a machine is occupied, missing or
+  unwanted; custom exercises (D27) arrive with it. Building a session automatically for a session type (eligibility
+  gate, selection, ordering, time fitting) moves to M4 (D49).
+- The OAP's delegated items, the B row and the dips, get their loads from the same prescription engine (D49).
+- **Done when**: after 3 exposures, a legs or push session you assemble or repeat gets loadable prescriptions that land
+  within ±1 RIR of target most of the time (measured with `v_prescription_error`).
+
+M3 is built in six steps (D49), each ending with a green build and checks on the phone:
+
+1. **M3.1 Estimators.** The pure `:algo` modules `fatigue`, `rcm`, `rircal`, `sse` and `hold` with their value classes
+   and the golden fixtures of ALGORITHMS Part D. No screen changes.
+2. **M3.2 Estimator storage and the session-end update.** Room's `exercise_model_state` with sync, the L8 update when a
+   session finishes (rebuildable from `set_logs`), the snapshots and the review views they fill, the exercise detail's
+   e1RM sparkline (deferred since M1b), and RCM-1's `k` as the OAP's `userK` fact. Under C59 the OAP gate keeps the
+   prior `k` of 30 until RCM-1 has informative windows; from then on the gate value and the test recalculation use
+   your fitted `k`.
+3. **M3.3 Prescription engine.** The pure `:algo` modules `reason` (with the pain stop of D49 and the missing-RIR
+   imputation), `rx` (model, double, the first-set probe, deload and re-entry, the shadow model for rule items, delegated
+   challenge items, unilateral and bodyweight variants, the cap table), the warm-up set generator, `rest@1.1.0` and
+   `stall`, checked against the golden weeks W41 and W43 (DST).
+4. **M3.4 Targets in the live session.** Set-card targets as the second prefill source (D18), the first-set probe that
+   plans the remaining sets, generated warm-up sets, the OAP's B row and dips with prescribed loads, Summary "Next time",
+   the Why sheet with the traces, and "Repeat" on the session start (the `template_source` migration is shown first).
+5. **M3.5 Suggestions, warnings and preferences.** In-session suggestion cards (`autoreg`, at most one per C16), the
+   warning engine with its display (including grip-heavy or pull work added on an OAP gap day), stall-tier suggestions,
+   the Preferences screen's Sets and reps section, and the opt-in RIR check set (F14).
+6. **M3.6 Substitution and custom exercises.** `pref`, `injury`, the hard filters of `elig` and `substitute`: "Occupied"
+   offers the next exercise first, then three ranked alternatives with a starting load from the transfer ratios; the
+   exercise detail's Alternatives section; custom exercises.
 
 ### M4 — Planning (4–6 sessions)
 
@@ -643,6 +669,9 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
   contract consumption, add-on blocks, Today recommender with reason chips, weekly planner (Week tab
   with recommended vs planned and volume bars), deload policy synced to the challenge, mesocycle
   exercise rotation, "Plan it" for general sessions.
+- Building a general session automatically (moved from M3 by D49): the eligibility filter's necessity gate, selection,
+  ordering and supersets, and the time model with trimming, fed by the allocator's per-group targets; the Preferences
+  screen's Muscle goals and Sessions settings.
 - **Done when**: Today and Week give sensible, explained recommendations for the real week (golden
   fixture: Wed 2026-10-07 with C Tue, A Thu, test Sun) and respect every challenge constraint.
 

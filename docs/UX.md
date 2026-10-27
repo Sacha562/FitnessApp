@@ -5548,8 +5548,8 @@ app/src/test/resources/fixtures/ux/   # GF-UX-*.json (section 25)
 |---|---|
 | M1 (logger) | design tokens and components (4, 6); Live Session with set card, RIR and felt chips, unilateral pairs, hold timer, reason chips, skip / do later / add / remove / reorder, rest timer and notification, Summary (without "Next time"), History, Exercises list and detail (preferences), equipment and permissions onboarding; `ui.prefill`, `ui.reasonchips`, `TelemetryWriter`, `RestDisplay`, `HoldCueSchedule`; fixtures GF-UX-06, 07, 08, 14, 15, 16, 17, 19, 23, 24 |
 | M2 (challenge) | Challenges tab, dashboard and gate rows, rules and proposals, Correct a value, definition update, setup wizard with cutover, test-day wizard (including the unassisted negative, C65), Pain and Readiness sheets, home habits, calendar read and app-written challenge events, challenge in-session rules with "Rule: ... · Undo" (D14); `ui.prompts`, `ui.progress.gateRows`; fixtures GF-UX-04, 10, 11, 21, 26 |
-| M3 (prescription) | targets on the set card from `rx`, suggestion cards (`autoreg`), Why sheet with traces, warnings display; `ui.warndisplay`; fixture GF-UX-12 |
-| M4 (planning) | Today card, Week tab, volume bars, Plan it, template picker; `ui.todaycard`, `ui.volumebars`; fixtures GF-UX-01, 02, 03, 05, 09, 13, 20, 22, 25, 27 |
+| M3 (prescription) | targets on the set card from `rx`, suggestion cards (`autoreg`), Why sheet with traces, warnings display, "Repeat" on the session start (D49), the substitution offer for occupied, missing or unwanted exercises and the exercise detail's Alternatives, custom exercises (D27), Preferences: Sets and reps and RIR check sets (15.4); `ui.warndisplay`; fixture GF-UX-12 |
+| M4 (planning) | Today card, Week tab, volume bars, Plan it, template picker, automatic session building (moved from M3 by D49), Preferences: Muscle goals and Sessions (15.4); `ui.todaycard`, `ui.volumebars`; fixtures GF-UX-01, 02, 03, 05, 09, 13, 20, 22, 25, 27 |
 | M5 (review) | Progress charts and PRs (`ui.progress`), review bundle export, Transparency screen; full screenshot matrix GF-UX-18 |
 
 ### 27.3 Test names to create first
