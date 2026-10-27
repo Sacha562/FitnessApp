@@ -140,6 +140,10 @@ class AppContainer(private val context: Context) {
     val prescriptions: dev.fitnessapp.data.engine.PrescriptionRunner by lazy {
         dev.fitnessapp.data.engine.PrescriptionRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, equipment, params, PARAMS_VERSION, repPreferences)
     }
+    /** WE-1 for a live session (M3.5): evidence and safety warnings, stored as `warnings.evaluation`. */
+    val warnings: dev.fitnessapp.data.engine.WarningRunner by lazy {
+        dev.fitnessapp.data.engine.WarningRunner(db, outbox, writeContext, syncScheduler, catalog, prescriptions, params, PARAMS_VERSION)
+    }
     /** The engine-logged estimates for display (the exercise detail's e1RM history). */
     val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }

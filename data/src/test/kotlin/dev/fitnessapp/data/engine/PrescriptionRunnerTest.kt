@@ -230,6 +230,10 @@ class PrescriptionRunnerTest {
         // Clearing every field soft-deletes the row and the next prescription is back to the defaults.
         repPrefs.save("exercise:${catalog.idOf(wpu)}", RepPrefValues())
         repPrefs.all().shouldBeEmpty()
+        // The tombstone keeps its values: the server requires one non-null field per row (rep_preferences_something_ck).
+        val tomb = db.repPreferences().exportAll().single()
+        tomb.deleted_at.shouldNotBeNull()
+        tomb.sets_pref shouldBe 4
     }
 
     @Test

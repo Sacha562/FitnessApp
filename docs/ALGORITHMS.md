@@ -1889,6 +1889,12 @@ Challenge in-session rules are a different mechanism (auto-applied with Undo, D1
 autoregulation is at least as good as fixed
 percentages (Helms 2018, Zhang 2021, Larsen 2021; moderate); the clamps and hysteresis are expert-opinion.
 
+M3.5 build note: on the phone AUTO-1 serves the exercises RX-1 prescribes (general items and `delegate:rx` items);
+RULE items have no `rx.prescription` there, so their shadow `delta_ex` waits for the RULE shadow snapshot and the
+session readiness of B13.5 reads the general items only. After a probe, AUTO-1 reads the follow-up's input (the
+estimate updated with the probe). `delta_today` is computed when an exercise's first set is evaluated, from the
+exercises whose working sets all came before it.
+
 ### B13.1 Trigger (UI-06)
 
 ```
@@ -2039,6 +2045,14 @@ rules R1-R10 and the planning rules W1-W8, uses four severities (INFO, WARN, STR
 user's preferences (D10 warn-only) and enforces only the safety rules. Display (banner, dot, "your choice",
 Why sheet) is UI-10 (`ui.warndisplay`, specified in ALGORITHMS_PLANNING 19.5 per C53, display details in UX
 17); this module only evaluates.
+
+M3.5 build note: the rules that read weekly targets, the time model or the week plan's volume (WE-V2, WE-V4 to V7,
+WE-P8, WE-L1) arrive with M4; WE-V1 and WE-V3 are implemented for their fixtures but not fed yet. WE-S3's repeat-pain
+advice waits for the wellness history read. WE-S4 on the phone covers the rest day before B or TEST, the hard
+protected windows, the add-on block's forbidden groups and tags, and the gap-day tags with the C50 light-pull filter
+(a pull-family exercise outside that filter is WARN, a session tag the gap day keeps out is SAFETY). An enforced SAFETY
+(the engine clamped its own output) is shown in the notes with a dot, not in the safety slot, because there is
+nothing to acknowledge.
 
 ### B15.1 Inputs
 

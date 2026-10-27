@@ -181,6 +181,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
                             onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) }, onCalendars = { push(AppKey.Calendars) },
+                            onPreferences = { push(AppKey.Preferences) },
                         )
                     }
                 }
@@ -205,6 +206,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             entry<AppKey.Equipment> { EquipmentRoute(c, onBack = { pop() }) }
             entry<AppKey.Reliability> { ReliabilityRoute(c, onBack = { pop() }) }
             entry<AppKey.Calendars> { dev.fitnessapp.app.ui.calendar.CalendarsRoute(c, onBack = { pop() }) }
+            entry<AppKey.Preferences> { dev.fitnessapp.app.ui.you.PreferencesRoute(c, onBack = { pop() }) }
             entry<AppKey.History> { HistoryRoute(c, onBack = { pop() }, onOpen = { push(AppKey.SessionDetail(it)) }) }
             entry<AppKey.SessionDetail> { k ->
                 SessionDetailRoute(
@@ -260,6 +262,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Equipment -> "you.equipment"
     AppKey.Reliability -> "you.rest"
     AppKey.Calendars -> "you.calendars"
+    AppKey.Preferences -> "you.preferences"
     AppKey.History -> "you.history"
     is AppKey.SessionDetail -> "you.session_detail"
     is AppKey.ExerciseDetail -> "exercises.detail"

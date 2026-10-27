@@ -525,3 +525,25 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   (B9.13 `independent`); timed holds and eccentric-only items keep "last time" until HOLD-1's prescription is wired
   (M3.5); RULE items keep their plan rows and no shadow snapshot is stored yet; "Next time" shows at most six lines
   without "Show all".
+- 2026-10-27 — M3.5 built (D49): suggestions, warnings and preferences. `:algo` gains `autoreg` (AUTO-1 with the UI-06
+  trigger on the model basis, C57: `delta_ex` after every working set, the proposal from RX-1 re-run at
+  `M_use * exp(delta_ex)` behind the 1.5 RIR hysteresis and the -8 %/+6 % bounds, the safety drop, the stop advice, the
+  RULE shadow, `delta_today`) and `warnings` (WE-1: WE-S1 to S5, WE-P1 to P7, P9 to P11, WE-T1, WE-T2, WE-V1, WE-V3,
+  ranked and de-duplicated), both at 1.0.0 as registered by 005, so ENGINE_VERSION stays 1.8.0; golden fixtures
+  GF-AUTO-01/02 and GF-WE-01 to 07 reproduce the spec's numbers and join the on-device self-test (47 fixtures). `:app`
+  gains `ui.warndisplay` (UI-10). Room v8 adds `rep_preferences` (pushed and pulled, LWW; the server table exists since
+  010, so there is no server migration). The live session shows the AUTO-1 card in the rest area (Apply, Keep, Why;
+  logging the next set is an implicit Keep; Apply makes the proposal UI-04's accepted adjustment, with Undo; a stop card
+  ends the exercise with a reason), the SAFETY notices (acknowledged with OK), one advisory banner, "N more notes" and a
+  dot on the affected target; `autoreg.suggestion` is stored for each shown card and `warnings.evaluation` at finish.
+  You > Preferences has the Sets and reps section (all exercises, compound, isolation, per-exercise overrides; each with
+  its evidence note and "Use suggested", D10) and the RIR check sets switch (F14, off by default). With the switch on,
+  the first prescription of a session lets RIRCAL-1 choose the check exercise and marks its last working set; the card
+  asks for the predicted reserve, then the extra reps to failure, and logs `set_kind` `calibration` with
+  `calib_extra_reps`, which L8 already reads (B4.3). A sets preference sets S for exercises the user picked; the
+  preferences enter the `rx.prescription` inputs. Build notes (defaults, no user decision needed): the joint-flag
+  input of the check choice is false until `safety`'s flags are stored; the warnings that need M4's targets, time model
+  or week volume are not fed (B15 build note); WE-S3's repeat advice waits for the wellness read; stall tiers are
+  applied through RX-1's scheme transforms only once STALL-1's weekly evaluation is stored (it needs four valid
+  exposures in 42 days, so it would not fire before then); timed holds, eccentric-only items and the RULE shadow keep
+  their M3.4 behaviour; a suggestion on a unilateral exercise is evaluated after the pair, per side.

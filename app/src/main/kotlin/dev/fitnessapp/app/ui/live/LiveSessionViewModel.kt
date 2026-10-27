@@ -15,7 +15,13 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.notify.SessionNotificationText
 import dev.fitnessapp.app.session.SessionService
+import dev.fitnessapp.algo.prescription.autoreg.SuggestionKind
+import dev.fitnessapp.algo.prescription.warnings.Warning
+import dev.fitnessapp.app.format.WarnTexts
 import dev.fitnessapp.app.ui.common.WhyContent
+import dev.fitnessapp.app.uidet.Dismissal
+import dev.fitnessapp.app.uidet.UiWarnDisplay
+import dev.fitnessapp.app.uidet.WarnDisplayResult
 import dev.fitnessapp.app.uidet.ChipContext
 import dev.fitnessapp.app.uidet.ChipSet
 import dev.fitnessapp.app.uidet.Deviation
@@ -35,6 +41,7 @@ import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.engine.Prescription
 import dev.fitnessapp.data.engine.RxSlot
 import dev.fitnessapp.data.engine.RxTarget
+import dev.fitnessapp.data.engine.Suggestion
 import dev.fitnessapp.data.engine.WarmupTarget
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
@@ -50,7 +57,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /** One exercise of the session with its catalog row and today's sets. */
 data class ExerciseItem(
@@ -126,6 +139,10 @@ data class Card(
     val workIndex: Int = 1,
     /** A calibration probe without a load (B9.8): the reps "a weight you could lift about N times" refers to. */
     val probePickReps: Int? = null,
+    /** Today's explicit RIR check (F14, B4.3): the chip is the predicted reserve, then extra reps to failure. */
+    val calibration: Boolean = false,
+    val calibRir: Int? = null,
+    val calibExtra: Int = 0,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
 
@@ -146,6 +163,20 @@ data class AttemptInfo(val metric: String, val checklist: List<String>)
 /** The last tap's rows for Undo: one set, or the attempts of a round ([extraIds]). */
 data class LastLogged(val setId: String, val label: String, val at: Long, val extraIds: List<String> = emptyList())
 
+/** An AUTO-1 card (UX 11.10): the proposal for the remaining sets of one exercise and side, never applied by itself. */
+data class SuggestionUi(
+    val seId: String,
+    val side: String,
+    val recommendationId: String,
+    val kind: SuggestionKind,
+    val stopReason: String?,
+    val title: String,
+    val reason: String,
+    val sets: List<RxTarget>,
+    val shownAt: Long,
+    val why: WhyContent,
+)
+
 data class LiveUi(
     val session: WorkoutSessionEntity? = null,
     val items: List<ExerciseItem> = emptyList(),
@@ -163,6 +194,11 @@ data class LiveUi(
     val ruleLine: RuleLine? = null,
     /** A notice of an in-session rule (`notify`, for example "Hand slipped: end the set here."). */
     val ruleNotice: String? = null,
+    /** UX 11.10: an engine suggestion waiting for Apply or Keep, and the "applied · Undo" line after Apply. */
+    val suggestion: SuggestionUi? = null,
+    val applied: String? = null,
+    /** UX 17: what UI-10 shows of the session's warnings. */
+    val warn: WarnDisplayResult? = null,
     /** "Session C" for a challenge session (the session notification and the header). */
     val title: String? = null,
 )
@@ -204,7 +240,25 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** The warm-up switch of an item as the user set it (UX 11.5); absent = the default (generated warm-ups first). */
     private val warmupOverride = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
 
+    /** Applied suggestions (UX 11.10): "seId|side" -> set index -> the accepted target, UI-04's first prefill source. */
+    private val accepted = java.util.concurrent.ConcurrentHashMap<String, Map<Int, RxTarget>>()
+    @Volatile private var lastApplied: String? = null
+
+    /** AUTO-1's last verdict per session exercise; WE-S5 reads its next-set prediction. */
+    private val verdicts = java.util.concurrent.ConcurrentHashMap<String, Suggestion>()
+
+    /** UI-10's dismissal store and "use mine" flags (from the event log), the SAFETY notices acknowledged today. */
+    @Volatile private var dismissals: Map<String, Dismissal> = emptyMap()
+    @Volatile private var useMine: Set<String> = emptySet()
+    private val acknowledged: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
+    private val warningsShown: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
+    @Volatile private var warnings: List<Warning> = emptyList()
+
     init {
+        viewModelScope.launch {
+            loadWarningStore()
+            refreshWarnings()
+        }
         viewModelScope.launch {
             combine(
                 c.sessionRepository.observeSession(sessionId),
@@ -344,7 +398,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val leftReps = if (side == "R") item.sets.firstOrNull { it.set_index == setIndex && it.side == "L" }?.reps else null
         // The working set number on this side: RX-1's set index and "last time"'s renumbered index (warm-ups excluded).
         val workIndex = item.working.count { it.side == side } + 1
-        val rxTarget = if (warmup) null else item.rx?.target(workIndex, side)
+        val adjusted = if (warmup) null else accepted["${item.se.id}|$side"]?.get(workIndex)
+        val rxTarget = if (warmup) null else adjusted ?: item.rx?.target(workIndex, side)
         val warmupTarget = if (warmup && warmupOverride[item.se.id] == null) {
             item.rx?.warmup?.getOrNull(item.sets.count { it.set_kind == "warmup" && it.side == side })
         } else null
@@ -353,6 +408,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val pf = UiPrefill.prefill(
             SetSlot(if (warmup) setIndex else workIndex, side, mode),
             PrefillContext(
+                acceptedAdjustment = adjusted?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) },
                 target = engine,
                 history = if (warmup) emptyList() else history, todayPrevious = todayPrev, default = default,
                 // Right side reps never prefill above the left side's (UX 11.7.2); the program rule arrives with M2.
@@ -397,6 +453,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             attemptsS = attempts, fingers = fingers, plannedFingers = row?.fingers,
             stackRowId = resolved.row?.id?.takeIf { (resolved.scheme as? LoadScheme.Stack)?.unit in setOf("kg", "lb") },
             rxTarget = rxTarget, warmupTarget = warmupTarget, workIndex = workIndex,
+            calibration = !warmup && side == "both" && item.rx?.calibrationSet == workIndex,
             probePickReps = rxTarget?.takeIf { item.rx?.probe == true && workIndex == 1 && it.wSys == null }?.let { t ->
                 (t.targetReps ?: 0) + Math.round(t.rir ?: 0.0).toInt()
             },
@@ -477,12 +534,15 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         return "Last " + listOfNotNull(load, perf).joinToString(" × ") + " · " + date
     }
 
-    private fun emit(type: String, sessionExerciseId: String?, payload: Map<String, JsonElement>, entityType: String = "session_exercise") {
+    private fun emit(
+        type: String, sessionExerciseId: String?, payload: Map<String, JsonElement>, entityType: String = "session_exercise",
+        recommendationId: String? = null,
+    ) {
         viewModelScope.launch {
             c.sessionRepository.event(
                 dev.fitnessapp.data.telemetry.EventDraft(
                     type = type, sessionId = sessionId, entityType = if (sessionExerciseId == null) "none" else entityType,
-                    entityId = sessionExerciseId, screen = "session.live", payload = payload,
+                    entityId = sessionExerciseId, screen = "session.live", payload = payload, recommendationId = recommendationId,
                 ),
             )
         }
@@ -672,6 +732,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private suspend fun commitLog(u: LiveUi, card: Card, rir: Int?, feltReserveS: Double?, feltLowerBound: Boolean, control: String) {
         run {
             val now = System.currentTimeMillis()
+            // UX 11.10: logging the next set of the exercise without Apply or Keep is a Keep.
+            _ui.value.suggestion?.takeIf { it.seId == card.item.se.id && !card.warmup }?.let { open ->
+                emit("suggestion_kept", open.seId, mapOf("implicit" to JsonPrimitive(true)), recommendationId = open.recommendationId)
+                _ui.update { it.copy(suggestion = null) }
+            }
+            val check = card.calibration && card.calibRir != null
             val all = last?.sets.orEmpty()
             val prevCompleted = all.maxOfOrNull { it.completed_at }
             val pv = params
@@ -698,7 +764,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val ordinal = card.mode == LoadMode.ASSISTED_ORDINAL
             val cmd = LogSetCommand(
                 sessionId = sessionId, sessionExerciseId = card.item.se.id, exerciseId = card.item.se.exercise_id,
-                setIndex = card.setIndex, side = card.side, setKind = if (card.warmup) "warmup" else "working",
+                setIndex = card.setIndex, side = card.side, setKind = when { card.warmup -> "warmup"; check -> "calibration"; else -> "working" },
                 load = if (ordinal) null else p, reps = if (card.isHold) null else card.reps, durationS = if (card.isHold) card.holdS else null,
                 rir = rir?.toDouble(), rirLowerBound = rir == 5, holdReserveS = feltReserveS, holdReserveLowerBound = feltLowerBound,
                 flags = flags.toList(), deviationReason = card.reason, countsAsWork = card.item.warmupItem,
@@ -718,6 +784,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 rest = rest, startedAtMs = holdStart, completedAtMs = now, telemetry = telemetry,
                 eccSActual = if (card.isEcc) card.eccS else null, eccSTarget = if (card.isEcc) card.eccTargetS else null,
                 assistOrdinal = if (ordinal) card.fingers else null,
+                calibExtraReps = if (check) card.calibExtra else null,
             )
             // A round logs one row per attempt with the round's effort chip (UX 11.7.4); the rest belongs to the first.
             val cmds = card.attemptsS?.mapIndexed { i, s ->
@@ -731,6 +798,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 rxSlot(card.item)?.let { slot -> runCatching { c.prescriptions.followUp(slot) } }
             }
             if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
+            if (!card.warmup && card.item.rx != null && card.side != "L") autoreg(card)
+            refreshWarnings()
             // CHALLENGE_ENGINE 4.2: a phase-3 attempt is an `attempt.logged` event; the gate reads the phase's observations.
             card.attempt?.let { a ->
                 val live = challenge
@@ -806,6 +875,181 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             sessionId, setId, card.item.se.exercise_id, card.side, loggedAt, planned ?: decision.timerS.toInt(), decision.hardMaxS.toInt(),
             "rest", if (planned != null) "challenge" else "rest_module",
         )
+    }
+
+    /** AUTO-1 after a working set (B13, UI-06): both sides after an L+R pair; the first card that fires is shown. */
+    private suspend fun autoreg(card: Card) {
+        val slot = rxSlot(card.item) ?: return
+        val sides = if (card.side == "both") listOf("both") else listOf("L", "R")
+        for (side in sides) {
+            val v = runCatching { c.prescriptions.suggest(slot, side, feelingGood = card.reason == "feeling_good") }.getOrNull() ?: continue
+            verdicts[card.item.se.id] = v
+            val id = v.recommendationId
+            if (v.result.card && id != null && _ui.value.suggestion == null) showSuggestion(card, v, id)
+        }
+    }
+
+    private suspend fun showSuggestion(card: Card, v: Suggestion, id: String) {
+        val r = v.result
+        val item = card.item
+        val mode = card.mode
+        val sets = r.proposed.map { RxTarget(it.setIndex, it.side, it.targetReps, it.rir, it.wSys, it.rirPred, it.restS) }
+        val load = r.wNew?.let { w -> card.points.firstOrNull { p -> p.wSys != null && kotlin.math.abs(p.wSys!! - w) < LOAD_EPS_KG }?.let { Numbers.loadMain(it, mode) } ?: (Numbers.num(w, 2) + " kg") }
+        val title = when (r.kind) {
+            SuggestionKind.STOP -> "End ${item.ex.nameEn} here"
+            else -> "Next sets: " + (load?.let { "$it × " } ?: "") + sets.joinToString(" ") { it.targetReps?.toString() ?: "?" }
+        }
+        val d = r.deltas.lastOrNull()
+        val reason = when {
+            r.kind == SuggestionKind.STOP -> when (r.stopReason) {
+                "fatigue" -> "Fatigue: no load near the plan still reaches the rep range."
+                "short_at_failure" -> "Two sets short of the range at 0 in reserve."
+                else -> "Technique broke down twice."
+            }
+            r.trigger == "reps_short" -> "${card.reps ?: 0} reps, short of the target."
+            r.trigger == "reason" -> if (card.reason == "too_easy") "You marked the set too easy." else "You marked the set too hard."
+            d != null && d > 0 -> "About ${Numbers.num(d, 1)} more in reserve than predicted."
+            d != null -> "About ${Numbers.num(-d, 1)} less in reserve than predicted."
+            else -> "Today differs from the plan."
+        }
+        val why = WhyContent(
+            title = "Why this suggestion?", summary = reason,
+            numbers = buildList {
+                add("Readiness today  " + Numbers.num(r.deltaEx * 100, 1) + " %")
+                r.rirNextCur?.let { add("Next set at the current load  " + Numbers.num(it, 1) + " in reserve") }
+                r.rirNextNew?.let { add("Next set as suggested  " + Numbers.num(it, 1) + " in reserve") }
+                r.hysteresis?.let { add("Aim  " + Numbers.num(it.qStar, 1) + " in reserve") }
+            },
+            module = "autoreg@${dev.fitnessapp.algo.prescription.autoreg.Autoreg.ref.version} · keep is the default",
+            evidence = "moderate (RIR-based autoregulation: Helms 2018, Zhang 2021); clamps and hysteresis expert-opinion",
+            trace = dev.fitnessapp.data.db.JsonText.canonical(dev.fitnessapp.algo.prescription.autoreg.AutoregJson.result(r)),
+            recommendationId = id, codes = r.trace,
+        )
+        val ui = SuggestionUi(item.se.id, v.side, id, r.kind!!, r.stopReason, title, reason, sets, System.currentTimeMillis(), why)
+        emit(
+            "suggestion_shown", item.se.id,
+            mapOf(
+                "trigger" to JsonPrimitive(r.trigger ?: r.stopReason ?: "stop"),
+                "deltas" to JsonArray(r.deltas.map { x -> x?.let { JsonPrimitive(it) } ?: kotlinx.serialization.json.JsonNull }),
+                "proposed" to dev.fitnessapp.algo.prescription.autoreg.AutoregJson.result(r).getValue("proposed"),
+                "recommendation_id" to JsonPrimitive(id),
+            ),
+            recommendationId = id,
+        )
+        _ui.update { it.copy(suggestion = ui) }
+    }
+
+    /** Apply (UX 11.10): the proposal becomes the accepted adjustment of the remaining sets; a stop ends the exercise. */
+    fun applySuggestion() {
+        val sg = _ui.value.suggestion ?: return
+        emit(
+            "suggestion_applied", sg.seId,
+            mapOf("recommendation_id" to JsonPrimitive(sg.recommendationId), "latency_ms" to JsonPrimitive(System.currentTimeMillis() - sg.shownAt)),
+            recommendationId = sg.recommendationId,
+        )
+        if (sg.kind == SuggestionKind.STOP) {
+            _ui.update { it.copy(suggestion = null) }
+            endExercise(sg.seId, if (sg.stopReason == "technique") "technique_breakdown" else "too_hard")
+            return
+        }
+        val key = "${sg.seId}|${sg.side}"
+        accepted[key] = sg.sets.associateBy { it.setIndex }
+        lastApplied = key
+        _ui.update { it.copy(suggestion = null, applied = sg.title) }
+        viewModelScope.launch { last?.let { rebuild(it) } }
+    }
+
+    fun keepSuggestion() {
+        val sg = _ui.value.suggestion ?: return
+        emit("suggestion_kept", sg.seId, mapOf("implicit" to JsonPrimitive(false)), recommendationId = sg.recommendationId)
+        _ui.update { it.copy(suggestion = null) }
+    }
+
+    /** Undo of an applied suggestion: the remaining sets go back to the prescription. */
+    fun undoApplied() {
+        lastApplied?.let { accepted.remove(it) }
+        lastApplied = null
+        _ui.update { it.copy(applied = null) }
+        viewModelScope.launch { last?.let { rebuild(it) } }
+    }
+
+    fun dismissApplied() = _ui.update { it.copy(applied = null) }
+
+    // ------------------------------------------------------------------------------------------------ warnings (UX 17)
+
+    private suspend fun loadWarningStore() {
+        val rows = runCatching { c.sessionRepository.eventsOfTypes(listOf("warning_dismissed", "warning_use_mine_toggled")) }.getOrDefault(emptyList())
+        val d = HashMap<String, Dismissal>()
+        val mine = HashSet<String>()
+        for (r in rows) {
+            val o = runCatching { Json.parseToJsonElement(r.payload).jsonObject }.getOrNull() ?: continue
+            val rule = o["rule_id"]?.jsonPrimitive?.contentOrNull ?: continue
+            val entity = o["entity"]?.jsonPrimitive?.contentOrNull ?: continue
+            val key = UiWarnDisplay.key(rule, entity)
+            when (r.event_type) {
+                "warning_dismissed" -> d[key] = Dismissal(java.time.Instant.ofEpochMilli(r.occurred_at), o["magnitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0)
+                else -> if (o["on"]?.jsonPrimitive?.booleanOrNull == true) mine += key else mine -= key
+            }
+        }
+        dismissals = d
+        useMine = mine
+    }
+
+    private fun refreshWarnings() = viewModelScope.launch {
+        val session = _ui.value.session ?: c.db.sessions().get(sessionId)
+        val constraints = session?.let { s -> runCatching { ChallengeConstraints.warnings(c, s, _ui.value.items) }.getOrDefault(emptyList()) }.orEmpty()
+        val ws = dev.fitnessapp.algo.prescription.warnings.Warnings.rank(
+            runCatching { c.warnings.session(sessionId, verdicts.toMap()) }.getOrDefault(emptyList()) + constraints,
+        )
+        warnings = ws
+        val shown = UiWarnDisplay.display(ws, dismissals, useMine, acknowledged.toSet(), java.time.Instant.now(), params)
+        (shown.safety + listOfNotNull(shown.banner)).forEach { w ->
+            if (warningsShown.add(UiWarnDisplay.key(w.ruleId, w.entity))) {
+                emit(
+                    "warning_shown", seIdOf(w.entity),
+                    mapOf(
+                        "rule_id" to JsonPrimitive(w.ruleId), "severity" to JsonPrimitive(w.severity.code), "entity" to JsonPrimitive(w.entity),
+                        "magnitude" to JsonPrimitive(w.magnitude), "surface" to JsonPrimitive("session.live"),
+                    ),
+                )
+            }
+        }
+        _ui.update { it.copy(warn = shown) }
+    }
+
+    private fun seIdOf(entity: String): String? = entity.removePrefix("session_exercise:").takeIf { entity.startsWith("session_exercise:") }
+
+    /** The name the copy uses for a warning's entity. */
+    fun warningName(w: Warning): String = seIdOf(w.entity)?.let { id -> _ui.value.items.firstOrNull { it.se.id == id }?.ex?.nameEn }
+        ?: w.entity.substringAfter(':').let { id -> c.catalog.byId(id)?.nameEn ?: id.replace('_', ' ') }
+
+    /** SAFETY notices are acknowledged, advisory ones dismissed (snoozed, UX 19.5); both are `warning_dismissed`. */
+    fun dismissWarning(w: Warning) {
+        val key = UiWarnDisplay.key(w.ruleId, w.entity)
+        if (w.severity == dev.fitnessapp.algo.prescription.warnings.Severity.SAFETY) acknowledged += key
+        else dismissals = dismissals + (key to Dismissal(java.time.Instant.now(), w.magnitude))
+        emit(
+            "warning_dismissed", seIdOf(w.entity),
+            mapOf("rule_id" to JsonPrimitive(w.ruleId), "entity" to JsonPrimitive(w.entity), "magnitude" to JsonPrimitive(w.magnitude)),
+        )
+        refreshWarnings()
+    }
+
+    fun warningWhy(w: Warning): WhyContent {
+        emit("warning_why_opened", seIdOf(w.entity), mapOf("rule_id" to JsonPrimitive(w.ruleId), "entity" to JsonPrimitive(w.entity)))
+        return WarnTexts.why(w, warningName(w))
+    }
+
+    // ------------------------------------------------------------------------------------------------ RIR check (F14)
+
+    /** The chip on a check set is the predicted reserve (`q_pred`); the set is logged after the extra reps. */
+    fun calibChip(rir: Int) = _ui.update { u -> u.copy(card = u.card?.copy(calibRir = rir)) }
+
+    fun stepCalibExtra(up: Boolean) = _ui.update { u -> u.copy(card = u.card?.copy(calibExtra = ((u.card.calibExtra) + if (up) 1 else -1).coerceIn(0, MAX_CALIB_EXTRA))) }
+
+    fun logCalibration() {
+        val rir = _ui.value.card?.calibRir ?: return
+        log(rir = rir, control = "calibration")
     }
 
     fun undoLast() {
@@ -939,6 +1183,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun addExercise(ex: CatalogExercise) = viewModelScope.launch {
         val id = c.sessionRepository.addExercise(sessionId, ex)
         focusOverride = id
+        // WE-S4 reads the new exercise once Room has it in the items.
+        kotlinx.coroutines.delay(WARN_AFTER_ADD_MS)
+        refreshWarnings()
     }
 
     fun setLoadMode(mode: LoadMode) {
@@ -1015,6 +1262,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun openExercises(): List<ExerciseItem> = _ui.value.items.filter { it.open }
 
     fun finish(endReason: String?, done: (String) -> Unit) = viewModelScope.launch {
+        runCatching { c.warnings.store(sessionId, c.warnings.session(sessionId, verdicts.toMap())) }
         c.restTimer.sessionFinished(sessionId)
         c.sessionRepository.finish(sessionId, endReason)
         // CHALLENGE_ENGINE 6.12: the slot's `session.completed`; the Summary reads its rule audit.
@@ -1136,6 +1384,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
         /** The most fingers of assistance (`assisted_ordinal`): the other hand's four fingers. */
         private const val MAX_FINGERS = 4
+
+        /** How long after adding an exercise WE-S4 is evaluated (the item arrives through Room first). */
+        private const val WARN_AFTER_ADD_MS = 600L
+
+        /** The most extra reps a RIR check takes (B4.3). */
+        private const val MAX_CALIB_EXTRA = 30
 
         /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
         fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {

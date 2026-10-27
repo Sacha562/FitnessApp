@@ -329,6 +329,9 @@ interface SessionEventDao : SyncDao<SessionEventEntity> {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(row: SessionEventEntity)
 
+    @Query("SELECT * FROM session_events WHERE event_type IN (:types) ORDER BY occurred_at, id")
+    suspend fun ofTypes(types: List<String>): List<SessionEventEntity>
+
     @Query("SELECT * FROM session_events WHERE session_id = :sessionId ORDER BY occurred_at, id")
     suspend fun bySession(sessionId: String): List<SessionEventEntity>
 

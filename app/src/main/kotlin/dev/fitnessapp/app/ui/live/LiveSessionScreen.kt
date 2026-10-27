@@ -100,6 +100,10 @@ import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.format.WarnTexts
+import dev.fitnessapp.app.uidet.WarnMarker
+import dev.fitnessapp.algo.prescription.autoreg.SuggestionKind
+import dev.fitnessapp.algo.prescription.warnings.Warning
 import dev.fitnessapp.app.ui.common.LogChip
 import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Pill
@@ -135,6 +139,7 @@ private sealed interface Sheet {
     data object Abandon : Sheet
     data object RuleUndo : Sheet
     data class Why(val content: dev.fitnessapp.app.ui.common.WhyContent) : Sheet
+    data object Notes : Sheet
 }
 
 @Composable
@@ -166,6 +171,18 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             ui.ruleNotice?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = vm::dismissRuleNotice) }
             // UX 11.10 (D14): an in-session rule changed the remaining sets at once; Undo takes it back with a reason.
             ui.ruleLine?.let { line -> Banner(line.text, BannerKind.ADVISORY, action = "Undo", onAction = { sheet = Sheet.RuleUndo }) }
+            // UX 17: SAFETY notices stay until acknowledged; at most one advisory banner; the rest behind "N more notes".
+            ui.warn?.let { w ->
+                w.safety.forEach { n ->
+                    Banner(WarnTexts.text(n, vm.warningName(n)), BannerKind.SAFETY, action = "OK", onAction = { vm.dismissWarning(n) },
+                        onClick = { sheet = Sheet.Why(vm.warningWhy(n)) })
+                }
+                w.banner?.let { b ->
+                    Banner(WarnTexts.text(b, vm.warningName(b)), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(b) },
+                        onClick = { sheet = Sheet.Why(vm.warningWhy(b)) })
+                }
+                if (w.moreNotes > 0) LinkButton("${w.moreNotes} more note" + if (w.moreNotes == 1) "" else "s", { sheet = Sheet.Notes })
+            }
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                 // The list takes what it needs, at most the top 38 % (UX 4.3); the set card gets the rest.
                 val listMax = maxHeight * 0.38f
@@ -176,6 +193,10 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                     )
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         ui.rest?.let { RestCard(c, it, ui, vm) }
+                        ui.suggestion?.let { sg -> SuggestionCard(sg, onApply = vm::applySuggestion, onKeep = vm::keepSuggestion, onWhy = { sheet = Sheet.Why(sg.why) }) }
+                        ui.applied?.let { a ->
+                            Banner("Applied: $a", BannerKind.ADVISORY, action = "Undo", onAction = vm::undoApplied, onClick = vm::dismissApplied)
+                        }
                         if (ui.switchHint) Pill("Switch to your right side", container = Fit.Accent, content = Fit.OnAccent)
                         val card = ui.card
                         if (card == null) {
@@ -201,7 +222,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                     "stack" -> sheet = Sheet.Stack
                                 }
                             }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain },
-                                onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } })
+                                onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } },
+                                marker = ui.warn?.markers?.get("session_exercise:${card.item.se.id}"))
                         }
                         Spacer(Modifier.height(2.dp))
                     }
@@ -264,6 +286,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             dismissButton = { TextButton(onClick = { sheet = null }) { Text("Keep going") } },
         )
         is Sheet.Why -> dev.fitnessapp.app.ui.common.WhySheet(s.content, onDismiss = { sheet = null }, onShown = { vm.whyOpened(s.content) }, onCopied = vm::traceExported)
+        Sheet.Notes -> NotesSheet(ui.warn?.notes.orEmpty(), vm, onDismiss = { sheet = null }) { w -> sheet = Sheet.Why(vm.warningWhy(w)) }
         null -> {}
     }
 }
@@ -533,7 +556,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
 @Composable
 private fun SetCard(
     card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit,
-    onWhy: () -> Unit,
+    onWhy: () -> Unit, marker: WarnMarker? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
@@ -568,10 +591,18 @@ private fun SetCard(
         vm.targetLine(card)?.let { line ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(line, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                // UX 17: an amber dot (WARN, STRONG), a muted dot (INFO) or "your choice" next to the affected target.
+                when (marker) {
+                    WarnMarker.AMBER_DOT -> Box(Modifier.size(8.dp).clip(CircleShape).background(Fit.Advisory))
+                    WarnMarker.MUTED_DOT -> Box(Modifier.size(8.dp).clip(CircleShape).background(Fit.Muted))
+                    WarnMarker.YOUR_CHOICE -> Text("your choice", style = MaterialTheme.typography.labelSmall, color = Fit.Muted)
+                    null -> {}
+                }
                 if (card.rxTarget != null) IconButton(onClick = onWhy) { Icon(Icons.Outlined.Info, "Why this target", tint = Fit.Muted) }
             }
         }
         card.lastLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
+        if (card.calibration) Pill("RIR check", container = Fit.Accent, content = Fit.OnAccent)
         if (card.sideCapApplied) Text("Right ≤ left: ${card.reps} clean reps", style = MaterialTheme.typography.bodySmall, color = Fit.Accent)
         if (card.deviation.fields.any { it.field == "side_rule" }) Text("Right above left", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
 
@@ -668,6 +699,20 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
     Tile(radius = 28.dp, padding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp), spacing = 8.dp) {
         when {
             card.warmup -> PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
+            // F14 (UX 15.4, B4.3): at the target reps tap the reserve you predict, keep going to failure, enter the extra reps.
+            card.calibration && card.calibRir == null -> {
+                Text("RIR check: at ${card.reps ?: 0} reps, how many are left?", style = MaterialTheme.typography.labelMedium, color = Fit.Muted,
+                    modifier = Modifier.padding(start = 4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (0..5).forEach { r -> LogChip(if (r == 5) "5+" else r.toString(), { guarded { vm.calibChip(r) } }, Modifier.weight(1f)) }
+                }
+            }
+            card.calibration -> {
+                Text("Now keep going to technical failure. Extra reps after the ${card.reps ?: 0}:", style = MaterialTheme.typography.labelMedium,
+                    color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
+                StepperRow(value = "+${card.calibExtra} reps", secondary = "you said ${card.calibRir} left", onMinus = { vm.stepCalibExtra(false) }, onPlus = { vm.stepCalibExtra(true) })
+                PrimaryButton("Log check", { guarded { vm.logCalibration() } }, Modifier.fillMaxWidth(), height = 64.dp)
+            }
             card.isHold || card.isEcc -> {
                 Text("How did it feel?", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(start = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -683,6 +728,42 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
                     (0..5).forEach { r ->
                         LogChip(if (r == 5) "5+" else r.toString(), { guarded { vm.log(rir = r, control = "rir_chip") } }, Modifier.weight(1f))
                     }
+                }
+            }
+        }
+    }
+}
+
+/** An engine suggestion in the rest area (UX 11.10): Keep is the default; nothing changes until Apply. */
+@Composable
+private fun SuggestionCard(sg: SuggestionUi, onApply: () -> Unit, onKeep: () -> Unit, onWhy: () -> Unit) {
+    Tile(radius = 24.dp, padding = PaddingValues(16.dp), spacing = 8.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill("Suggestion")
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onWhy) { Icon(Icons.Outlined.Info, "Why this suggestion", tint = Fit.Muted) }
+        }
+        Text(sg.title, style = MaterialTheme.typography.titleMedium)
+        Text(sg.reason, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TonalButton(if (sg.kind == SuggestionKind.STOP) "End exercise" else "Apply", onApply, Modifier.weight(1f), height = 56.dp)
+            TonalButton(if (sg.kind == SuggestionKind.STOP) "Keep going" else "Keep", onKeep, Modifier.weight(1f), height = 56.dp)
+        }
+    }
+}
+
+/** The warnings list sheet (UX 16.12): every current note of the session, each with its Why and a dismiss. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotesSheet(notes: List<Warning>, vm: LiveSessionViewModel, onDismiss: () -> Unit, onWhy: (Warning) -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Notes", style = MaterialTheme.typography.titleLarge)
+            if (notes.isEmpty()) Text("No notes.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            notes.forEach { w ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(WarnTexts.text(w, vm.warningName(w)), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).clickable { onWhy(w) })
+                    if (!w.enforced) LinkButton("Dismiss", { vm.dismissWarning(w) })
                 }
             }
         }

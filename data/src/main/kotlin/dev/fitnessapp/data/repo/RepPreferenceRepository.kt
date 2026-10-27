@@ -79,13 +79,16 @@ class RepPreferenceRepository(
             val base = db.repPreferences().get(id) ?: RepPreferenceEntity(
                 id = id, user_id = uid, client_updated_at = 0, device_id = "", app_version = "", scope_kind = kind, scope_key = scopeKey,
             )
-            val row = base.copy(
+            // The server keeps at least one field per row (rep_preferences_something_ck): a clear keeps the old values.
+            val row = if (values.empty) base.copy(
+                deleted_at = ctx.nowMs(), client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
+            ) else base.copy(
                 scope_kind = kind, scope_key = scopeKey,
                 goal_kind = arg.takeIf { kind == "goal" }, mechanics = arg.takeIf { kind == "mechanics" },
                 muscle_group_id = arg.takeIf { kind == "muscle_group" }, exercise_id = arg.takeIf { kind == "exercise" },
                 sets_pref = values.setsPref, rep_min = values.repMin, rep_max = values.repMax,
                 rir_target = values.rirTarget?.let { Scaled.toLong(BigDecimal.valueOf(it), 1) }, rep_scheme = values.repScheme,
-                rest_pref_s = values.restPrefS, deleted_at = if (values.empty) ctx.nowMs() else null,
+                rest_pref_s = values.restPrefS, deleted_at = null,
                 client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
             )
             db.repPreferences().upsert(row)

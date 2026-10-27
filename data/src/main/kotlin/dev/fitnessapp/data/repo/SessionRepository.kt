@@ -12,6 +12,7 @@ import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.db.dao.SetWithSessionStart
 import dev.fitnessapp.data.db.entity.SessionBlockEntity
+import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
@@ -596,6 +597,9 @@ class SessionRepository(
         db.withTransaction { telemetry.write(draft) }
         scheduler.request()
     }
+
+    /** Events of [types], oldest first (UI-10's dismissal store reads `warning_dismissed` and `warning_use_mine_toggled`). */
+    suspend fun eventsOfTypes(types: List<String>): List<SessionEventEntity> = db.events().ofTypes(types)
 
     // ------------------------------------------------------------------------------------------ helpers
 

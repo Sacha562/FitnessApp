@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators), M3.2 (estimator storage and the L8 update), M3.3 (prescription engine) and M3.4 (targets in the live session; migration 036 applied) built the same day.*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators), M3.2 (estimator storage and the L8 update), M3.3 (prescription engine) and M3.4 (targets in the live session; migration 036 applied) and M3.5 (suggestions, warnings and preferences; no server migration) built the same day.*
 
 ---
 
@@ -659,7 +659,7 @@ M3 is built in six steps (D49), each ending with a green build and checks on the
 4. **M3.4 Targets in the live session** (built 2026-10-27). Set-card targets as the second prefill source (D18), the first-set probe that
    plans the remaining sets, generated warm-up sets, the OAP's B row and dips with prescribed loads, Summary "Next time",
    the Why sheet with the traces, and "Repeat" on the session start (the `template_source` migration is shown first).
-5. **M3.5 Suggestions, warnings and preferences.** In-session suggestion cards (`autoreg`, at most one per C16), the
+5. **M3.5 Suggestions, warnings and preferences** (built 2026-10-27). In-session suggestion cards (`autoreg`, at most one per C16), the
    warning engine with its display (including grip-heavy or pull work added on an OAP gap day), stall-tier suggestions,
    the Preferences screen's Sets and reps section, and the opt-in RIR check set (F14).
 6. **M3.6 Substitution and custom exercises.** `pref`, `injury`, the hard filters of `elig` and `substitute`: "Occupied"

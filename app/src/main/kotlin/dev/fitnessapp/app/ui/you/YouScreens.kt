@@ -84,6 +84,7 @@ fun YouRoute(
     onReliability: () -> Unit,
     onHistory: () -> Unit,
     onCalendars: () -> Unit,
+    onPreferences: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val history by remember { c.history.observeHistory() }.collectAsState(initial = emptyList())
@@ -108,6 +109,8 @@ fun YouRoute(
         }
         Tile(spacing = 0.dp, padding = PaddingValues(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp)) {
             TileLabel("Settings", Modifier.padding(start = 10.dp, bottom = 4.dp))
+            NavRow("Preferences", "Sets and reps, RIR check sets", onPreferences)
+            TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Data and sync", when {
                 dead > 0 -> "$dead could not be uploaded"
                 pending is PendingStatus.Offline -> "Offline · ${pending.count} saved on this phone"
