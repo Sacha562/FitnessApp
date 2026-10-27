@@ -1,0 +1,50 @@
+{
+    "id": "GF-WE-06",
+    "module": "warnings",
+    "description": "Weighted pull-up 3RM recorded at RIR 0 (set_kind test): no WE-S1; the same on a working set: WE-S1 SAFETY",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-06",
+        "payload": {
+            "cases": [
+                {
+                    "op": "logged_set",
+                    "entity": "ex:weighted_pullup:test",
+                    "high_risk": true,
+                    "set_kind": "test",
+                    "rir": 0
+                },
+                {
+                    "op": "logged_set",
+                    "entity": "ex:weighted_pullup:working",
+                    "high_risk": true,
+                    "set_kind": "working",
+                    "rir": 0
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-S1",
+                    "severity": "safety",
+                    "entity": "ex:weighted_pullup:working",
+                    "magnitude": 1,
+                    "evidence_grade": "expert-opinion",
+                    "enforced": false,
+                    "numbers": {
+                        "rir": 0
+                    },
+                    "suggestion": "keep_q_star",
+                    "citations": [
+                        "D10"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "1b4e43f1f8a53fc0bdddfd10dc1c5a887c15b55e1b9ad69a1732b9977fef30fd"
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "id": "GF-WE-01",
+    "module": "warnings",
+    "description": "Improve group, 2 x 12 at RIR 2, twice a week: x 4 -> WE-V1 WARN, magnitude 0.60, +1 set per session = +22 %",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-01",
+        "payload": {
+            "cases": [
+                {
+                    "op": "improve_weekly_low",
+                    "entity": "lats",
+                    "x": 4,
+                    "exposures": 2
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-V1",
+                    "severity": "warn",
+                    "entity": "group:lats",
+                    "magnitude": 0.6,
+                    "evidence_grade": "moderate",
+                    "enforced": false,
+                    "numbers": {
+                        "gain": 0.2247,
+                        "x": 4,
+                        "x_new": 6
+                    },
+                    "suggestion": "sets_per_exposure:+1",
+                    "citations": [
+                        "Pelland 2024",
+                        "ACSM 2026"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "a922c89ff8e88a768be5ae0dcf60724891ac3c5708b50c8c87eb52097d646921"
+    }
+}

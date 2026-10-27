@@ -1,0 +1,46 @@
+{
+    "id": "GF-WE-02",
+    "module": "warnings",
+    "description": "Strength-goal weighted pull-up 2 x 12 at RIR 2: WE-P5 STRONG (WE-P8 arrives with TIME-1 in M4)",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-02",
+        "payload": {
+            "cases": [
+                {
+                    "op": "scheme",
+                    "entity": "ex:weighted_pullup",
+                    "r_lo": 12,
+                    "r_hi": 12,
+                    "q_star": 2,
+                    "strength": true,
+                    "high_risk": true
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-P5",
+                    "severity": "strong",
+                    "entity": "ex:weighted_pullup",
+                    "magnitude": 1,
+                    "evidence_grade": "moderate",
+                    "enforced": false,
+                    "numbers": {
+                        "rep_min": 12
+                    },
+                    "suggestion": "rep_scheme:fixed_3_5",
+                    "citations": [
+                        "Schoenfeld 2017",
+                        "Lopez 2021"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "fa57f940241a5fc0f08fbe2fe238918fb7594de0ced7dfe60375ab4d412eb2ab"
+    }
+}

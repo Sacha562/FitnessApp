@@ -40,6 +40,7 @@ class ParamsCoverageTest {
         "calendar.classify" to CalendarClassifier, "challenge.calendar" to SlotMatcher,
         "fatigue" to Fatigue, "rcm" to Rcm, "rircal" to RirCal, "sse" to Sse, "hold" to Hold,
         "reason" to Reason, "rx" to Rx, "warmup" to Warmup, "stall" to Stall,
+        "autoreg" to dev.fitnessapp.algo.prescription.autoreg.Autoreg, "warnings" to dev.fitnessapp.algo.prescription.warnings.Warnings,
     )
     private val all: List<DeclaresParams> = complete.values.toList()
 

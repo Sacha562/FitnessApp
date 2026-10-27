@@ -1,0 +1,41 @@
+{
+    "id": "GF-WE-03",
+    "module": "warnings",
+    "description": "Chest: 12 fractional sets in one session -> WE-V3 INFO (preliminary evidence)",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-03",
+        "payload": {
+            "cases": [
+                {
+                    "op": "session_volume_high",
+                    "entity": "chest",
+                    "x": 12
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-V3",
+                    "severity": "info",
+                    "entity": "group:chest",
+                    "magnitude": 0.0909,
+                    "evidence_grade": "weak",
+                    "enforced": false,
+                    "numbers": {
+                        "x": 12
+                    },
+                    "suggestion": "split_sessions",
+                    "citations": [
+                        "Remmert (preprint)"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "d9c9aa943c70b3b9bc9fb742ef58de7e6d3c0088fd5582c11d29b4b8b89ad40c"
+    }
+}

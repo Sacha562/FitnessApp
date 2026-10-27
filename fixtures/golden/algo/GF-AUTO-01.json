@@ -1,0 +1,120 @@
+{
+    "id": "GF-AUTO-01",
+    "module": "autoreg",
+    "description": "6 x 2 at +27.5 kg (M 109.94, k 30.63, q* 2, rest 180), set 1 reported RIR 4, P_LL 0.0016: delta_ex +1.73 %, next-set RIR 3.14, no card (B13.6)",
+    "input": {
+        "module": "autoreg@1.0.0",
+        "scope_key": "golden:GF-AUTO-01",
+        "payload": {
+            "cases": [
+                {
+                    "op": "model",
+                    "scheme": {
+                        "kind": "fixed",
+                        "r_lo": 2,
+                        "r_hi": 2,
+                        "q_star": 2,
+                        "strength": true
+                    },
+                    "sets": 6,
+                    "rest_s": 180,
+                    "loadables": {
+                        "base": 70.7,
+                        "add": [
+                            0.0,
+                            1.25,
+                            2.5,
+                            3.75,
+                            5.0,
+                            6.25,
+                            7.5,
+                            8.75,
+                            10.0,
+                            11.25,
+                            12.5,
+                            13.75,
+                            15.0,
+                            16.25,
+                            17.5,
+                            18.75,
+                            20.0,
+                            21.25,
+                            22.5,
+                            23.75,
+                            25.0,
+                            26.25,
+                            27.5,
+                            28.75,
+                            30.0,
+                            31.25,
+                            32.5,
+                            33.75,
+                            35.0,
+                            36.25,
+                            37.5,
+                            38.75,
+                            40.0,
+                            41.25,
+                            42.5,
+                            43.75,
+                            45.0,
+                            46.25,
+                            47.5,
+                            48.75,
+                            50.0,
+                            51.25,
+                            52.5,
+                            53.75,
+                            55.0,
+                            56.25,
+                            57.5,
+                            58.75,
+                            60.0
+                        ]
+                    },
+                    "k": 30.63,
+                    "m_kg": 109.94,
+                    "p_ll": 0,
+                    "high_risk": true,
+                    "curve_class": "upper_compound",
+                    "f_bw": 1.0,
+                    "p_ll_autoreg": 0.0016,
+                    "logged": [
+                        {
+                            "w": 98.2,
+                            "reps": 2,
+                            "rir": 4
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "cases": [
+                {
+                    "trigger_rule": null,
+                    "deltas": [
+                        1.84
+                    ],
+                    "delta_ex": 0.0173,
+                    "kind": null,
+                    "stop_reason": null,
+                    "proposed": {
+                        "load_kg": null,
+                        "sets": []
+                    },
+                    "w_cur": null,
+                    "rir_next_cur": 3.14,
+                    "rir_next_new": null,
+                    "hysteresis": null,
+                    "card": false,
+                    "trace": []
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "a87b34dff8ca99c0d179ce2acaa54b33e38b639532f220e6297579a32703bbd4"
+    }
+}

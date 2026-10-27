@@ -4,8 +4,21 @@ import dev.fitnessapp.algo.core.det.Det
 import dev.fitnessapp.algo.core.det.Grid
 import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.det.JsonNumbers
+import dev.fitnessapp.algo.core.load.LoadMode
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.estimation.CurveClass
+import dev.fitnessapp.algo.estimation.ExerciseFacts
+import dev.fitnessapp.algo.estimation.LoggedSet
+import dev.fitnessapp.algo.estimation.rircal.RirCal
+import dev.fitnessapp.algo.estimation.sse.Sse
 import dev.fitnessapp.algo.estimation.stall.Stall
+import dev.fitnessapp.algo.prescription.autoreg.Autoreg
+import dev.fitnessapp.algo.prescription.autoreg.AutoregInput
+import dev.fitnessapp.algo.prescription.autoreg.AutoregJson
+import dev.fitnessapp.algo.prescription.warnings.ConstraintFacts
+import dev.fitnessapp.algo.prescription.warnings.SchemeFacts
+import dev.fitnessapp.algo.prescription.warnings.Warning
+import dev.fitnessapp.algo.prescription.warnings.Warnings
 import dev.fitnessapp.algo.estimation.stall.StallExposure
 import dev.fitnessapp.algo.estimation.stall.StallStatus
 import dev.fitnessapp.algo.prescription.PrescriptionJson
@@ -37,6 +50,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.time.Instant
 import java.time.LocalDate
 import java.util.TreeMap
 
@@ -156,6 +170,60 @@ internal object PrescriptionGolden {
                 })
             }
         })
+    }
+
+    /**
+     * AUTO-1 (GF-AUTO): the plan is RX-1 MODEL of the case at `p_ll` 0 (the posterior mean, B13.6); the logged sets go
+     * through SSE-1's shared steps with the exercise's curve class, and AUTO-1 reads the case's `p_ll_autoreg`.
+     */
+    fun autoreg(payload: JsonObject, params: ParamView): JsonObject = buildJsonObject {
+        put("cases", buildJsonArray {
+            payload.getValue("cases").jsonArray.forEach { e ->
+                val c = e.jsonObject
+                val input = rxInput(c)
+                val plan = Rx.modelMode(input, params.fork())
+                val facts = ExerciseFacts("golden", CurveClass.of(str(c, "curve_class")), dbl(c, "f_bw"), 0.0, sortedMapOf())
+                val sets = c.getValue("logged").jsonArray.mapIndexed { n, s ->
+                    val o = s.jsonObject
+                    val at = Instant.parse("2026-10-27T17:00:00Z").plusSeconds(n * 240L)
+                    LoggedSet(
+                        id = "g$n", sessionId = "golden", exerciseId = "golden", side = "both", performedAt = at,
+                        localDate = LocalDate.parse("2026-10-27"), setKind = "working", contraction = "dynamic",
+                        loadMode = LoadMode.EXTERNAL, wSys = dbl(o, "w"), reps = dbl(o, "reps").toInt(), rirReported = opt(o, "rir"),
+                        rirLowerBound = bool(o, "lower_bound"), reasonCode = o["reason"]?.jsonPrimitive?.content,
+                        restBeforeS = if (n > 0) dbl(c, "rest_s") else null,
+                    )
+                }
+                val prepared = Sse.prepare(sets, mapOf("golden" to facts), RirCal.initial(params), params)
+                val r = Autoreg.evaluate(
+                    AutoregInput(input.copy(estimate = input.estimate!!.copy(pLL = dbl(c, "p_ll_autoreg"))), plan, prepared),
+                    params.fork(),
+                )
+                add(AutoregJson.result(r))
+            }
+        })
+    }
+
+    /** WE-1 (GF-WE): one evaluation per case, by rule family. */
+    fun warnings(payload: JsonObject, params: ParamView): JsonObject {
+        val out = ArrayList<Warning>()
+        payload.getValue("cases").jsonArray.forEach { e ->
+            val c = e.jsonObject
+            val entity = str(c, "entity")
+            when (str(c, "op")) {
+                "improve_weekly_low" -> Warnings.improveWeeklyLow(entity, dbl(c, "x"), dbl(c, "exposures").toInt(), params)?.let { out += it }
+                "session_volume_high" -> Warnings.sessionVolumeHigh(entity, dbl(c, "x"), params)?.let { out += it }
+                "scheme" -> out += Warnings.scheme(entity, SchemeFacts(
+                    rLo = dbl(c, "r_lo").toInt(), rHi = dbl(c, "r_hi").toInt(), qStar = dbl(c, "q_star"),
+                    qStarAsked = opt(c, "q_star_asked") ?: dbl(c, "q_star"), strength = bool(c, "strength"), highRisk = bool(c, "high_risk"),
+                ), params)
+                "constraint" -> out += Warnings.constraint(entity, ConstraintFacts(restDayBefore = bool(c, "rest_day_before")))
+                "load_above_cap" -> Warnings.loadAboveCap(entity, dbl(c, "w"), dbl(c, "w_cap"), bool(c, "rule_item"), bool(c, "hold"))?.let { out += it }
+                "logged_set" -> Warnings.loggedSet(entity, bool(c, "high_risk"), str(c, "set_kind"), "dynamic", opt(c, "rir"), bool(c, "failed_rep"))?.let { out += it }
+                else -> throw IllegalArgumentException("unknown warnings op")
+            }
+        }
+        return Warnings.json(out)
     }
 
     private fun rxInput(c: JsonObject): RxInput {

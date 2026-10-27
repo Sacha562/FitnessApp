@@ -1,0 +1,40 @@
+{
+    "id": "GF-WE-04",
+    "module": "warnings",
+    "description": "A gym session on the day before TEST -> WE-S4 SAFETY rule_override",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-04",
+        "payload": {
+            "cases": [
+                {
+                    "op": "constraint",
+                    "entity": "session:2026-10-10",
+                    "rest_day_before": true
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-S4",
+                    "severity": "safety",
+                    "entity": "session:2026-10-10",
+                    "magnitude": 1,
+                    "evidence_grade": "per challenge definition",
+                    "enforced": false,
+                    "numbers": {},
+                    "suggestion": "rule_override:rest_day_before",
+                    "citations": [
+                        "C11",
+                        "D5"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "d699ce5400ec4884201540ae4c6d4dc43b20d2b147fae3d347bc932492426372"
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "id": "GF-WE-05",
+    "module": "warnings",
+    "description": "RULE item: assisted one-arm pin 50 -> 45 lb (w_sys 41.52 -> 43.79, cap 43.60): WE-S2 WARN, not enforced, magnitude 0.0044",
+    "input": {
+        "module": "warnings@1.0.0",
+        "scope_key": "golden:GF-WE-05",
+        "payload": {
+            "cases": [
+                {
+                    "op": "load_above_cap",
+                    "entity": "ex:assisted_oap",
+                    "w": 43.79,
+                    "w_cap": 43.596000000000004,
+                    "rule_item": true,
+                    "hold": false
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": [
+                {
+                    "rule_id": "WE-S2",
+                    "severity": "warn",
+                    "entity": "ex:assisted_oap",
+                    "magnitude": 0.0044,
+                    "evidence_grade": "expert-opinion",
+                    "enforced": false,
+                    "numbers": {
+                        "w": 43.79,
+                        "w_cap": 43.596
+                    },
+                    "suggestion": null,
+                    "citations": [
+                        "D13",
+                        "C45"
+                    ]
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "51ead031d79ae0e17b33f615a76f6e605b73a7733a282bab4a0ca5c159c1ec2a"
+    }
+}
