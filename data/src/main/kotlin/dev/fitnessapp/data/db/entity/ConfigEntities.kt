@@ -152,4 +152,6 @@ data class RepPreferenceEntity(
     @Serializable(with = Scale1::class) val rir_target: Long? = null,
     val rep_scheme: String? = null,
     val rest_pref_s: Int? = null,
+    /** Multiplier of REST-1's class base (D50, v9); a row holds at most one of this and [rest_pref_s]. */
+    @Serializable(with = Scale2::class) val rest_pref_mult: Long? = null,
 ) : MutableRow

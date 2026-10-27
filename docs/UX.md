@@ -2889,7 +2889,7 @@ Emits `progress_viewed {exercise_id, metric, axis, range}`, `progress_axis_toggl
 | Section | Content |
 |---|---|
 | Profile | bodyweight history (link to the Bodyweight chart, "Weigh in" button), experience, age (optional) |
-| Sets and reps | the global default, class overrides, a list of per-exercise overrides; each with its evidence note from `warnings` (D10: the preference is kept) |
+| Sets and reps | the global default, class overrides, a list of per-exercise overrides; each with its evidence note from `warnings` (D10: the preference is kept). The editor opens full height, scrolls, and keeps Clear and Save pinned at the bottom. Presets Muscle growth and Strength fill reps and reserve from the engine defaults (D50). Rest is a multiplier of each exercise's own rest for the broad scopes ("x1.2", with an example such as "upper-body compound 120 s → 145 s") and seconds for an exercise override |
 | Muscle goals | the same editor as onboarding (8.9) plus the resulting weekly target per group from `targets` ("Improve · 12 sets/week"; "Maintain · 4 sets/week, at least 1 hard set at normal load"; covered by challenge) |
 | Sessions | default time budget without a calendar event (75), changeover subtracted from a calendar gym event (5; the event is training time, F11, C49), maximum gym visits per week (4, D5), usual training windows, supersets (F13), RIR check sets (F14), running priority (F6) |
 
@@ -4238,7 +4238,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 | `equipment_confirmed` | Confirm equipment (8.7, 15.5) | gym_equipment | `profile_version`, `changed_from_default[]` (keys only) |
 | `equipment_changed` | an equipment value is edited | gym_equipment | `key`, `from`, `to` |
 | `equipment_calibration_changed` | a calibration field of a machine changes (DATA_MODEL 9.3.3) | gym_equipment | `gym_equipment_id`, `from_scheme`, `to_scheme`, `from_rev`, `to_rev` |
-| `rep_preference_changed` | set and rep preference saved (8.8, 15.4, exercise detail) | none | `scope` (global, class_compound, class_isolation, exercise), `exercise_id`?, `field` (sets, rep_range, rir, scheme), `from`, `to`, `warning_rule_ids[]` |
+| `rep_preference_changed` | set and rep preference saved (8.8, 15.4, exercise detail) | none | `scope` (global, class_compound, class_isolation, exercise), `exercise_id`?, `field` (sets, rep_range, rir, scheme, rest), `from`, `to`, `warning_rule_ids[]`, `preset_id`? (hypertrophy, strength; D50) |
 | `goal_changed` | a muscle goal or focus changes (8.9, 15.4) | none | `group`, `from`, `to`, `focus_from`, `focus_to`, `via` (preset, manual), `preset_id`? |
 | `preference_changed` | 5-state preference changed (13.4) | exercise | `exercise_id`, `from`, `to`, `surface` (detail, list, session) |
 | `exercise_custom_created` | custom exercise saved (13.5) | exercise | `exercise_id`, `pattern` (E36), `equipment`, `coefficients_edited` |

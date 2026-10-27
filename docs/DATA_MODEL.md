@@ -1158,9 +1158,10 @@ Set/rep preferences at several scopes; the engine resolves the most specific sco
 | `rep_min`, `rep_max` | smallint | null | | 1-100; `rep_min <= rep_max` | |
 | `rir_target` | numeric(3,1) | null | | 0-5, half steps | |
 | `rep_scheme` | text | null | | `range`, `fixed` | |
-| `rest_pref_s` | smallint | null | | 30-600 | |
+| `rest_pref_s` | smallint | null | | 30-600 | Rest in seconds; the editor offers it for an exercise override (D50). |
+| `rest_pref_mult` | numeric(3,2) | null | | 0.50-2.00 | Multiplier on REST-1's class base; the editor offers it for the broader scopes (D50). |
 
-Check: at least one of `sets_pref`, `rep_min`, `rir_target`, `rep_scheme`, `rest_pref_s` is non-null. Indexes: `(muscle_group_id)`, `(exercise_id)`.
+Check: at least one of `sets_pref`, `rep_min`, `rir_target`, `rep_scheme`, `rest_pref_s`, `rest_pref_mult` is non-null; at most one of `rest_pref_s` and `rest_pref_mult` (`rep_preferences_rest_one_ck`, D50). Indexes: `(muscle_group_id)`, `(exercise_id)`.
 
 #### 9.3.5 `fitness.muscle_goals`
 
@@ -2393,6 +2394,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 034 | `fitness_034_oap_v1_7_0` (data; applied 2026-10-25, version 20261025204534) | M2b.6 (D47) | `oap@1.7.0`: 3 jsonb operations on the 1.6.0 row (version, `structure.modes.deload.exemptRoles` = `warmup`, `prehab`, the empty migration from 1.6.0); proven by `server_checksum`. No engine change. | Checks inside the migration (the 1.6.0 checksum, the new row's `jcs_sha256` and `server_checksum`); advisors. |
 | 035 | `fitness_035_engine_1_7_0` (data; applied 2026-10-25, version 20261025220432) | M2b.6 (D48) | Register `challenge.enrollment@1.4.0` for engine 1.7.0 (a superseding `enrollment.created` may correct the imported earlier tests); no definition change. | Check inside the migration; advisors. |
 | 036 | `fitness_036_params_1_0_2_engine_1_8_0` (data and one CHECK; applied 2026-10-27, version 20261027152030) | M3.4 (D49) | `algo_params` 1.0.2 (1.0.1 plus `reason.pain_stop_js_min`, hash `6298d121...`, 1.0.1 superseded); `rest@1.1.0` for engine 1.8.0 (unchanged slice hash); the `workout_sessions.template_source` CHECK gains `repeat` (E9); the `session_started` registry row gains `source_session_id`. Applied before the M3.4 APK is installed (9.1.9 release rule). | Checks inside the migration (622 keys, only the new key differs, one module for 1.8.0, the registry key); advisors. |
+| 037 | `fitness_037_rest_multiplier_engine_1_9_0` (DDL and data) | D50 | `rep_preferences.rest_pref_mult` numeric(3,2) 0.50-2.00; `rep_preferences_something_ck` counts it; new `rep_preferences_rest_one_ck` (at most one rest form); `rest@1.2.0` and `rx@1.1.0` for engine 1.9.0 (unchanged slice hashes); the `rep_preference_changed` registry row gains `preset_id`. Applied before the APK that writes the column is installed (9.1.9 release rule). | Checks inside the migration (column, both CHECKs, two modules for 1.9.0, the registry key); advisors. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 

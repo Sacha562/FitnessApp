@@ -54,6 +54,21 @@ class RestPolicyTest {
     }
 
     @Test
+    fun `a multiplier scales the class base and is the user's base (D50)`() {
+        val upper = RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, targetReps = 10, userRestMult = 1.2), params)
+        (upper.timerS to upper.source) shouldBe (144.0 to RestSource.USER)
+        upper.steps shouldBe listOf("rest.class", "rest.user_mult")
+        RestPolicy.decide(RestInput(RestClass.ISOLATION, userRestMult = 0.5), params).timerS shouldBe 45.0
+        RestPolicy.decide(RestInput(RestClass.CORE, userRestMult = 0.5), params).timerS shouldBe 30.0
+        // The strength-heavy class is scaled too, and the user clamps (not 60-300 s) apply.
+        RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, targetReps = 5, userRestMult = 1.5), params).timerS shouldBe 270.0
+        RestPolicy.decide(RestInput(RestClass.COMPOUND_LOWER, userRestMult = 2.0, lastQTrue = 0.0, qStar = 2.0), params).timerS shouldBe 330.0
+        // An adapted base is scaled; seconds win over a multiplier.
+        RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, adaptedBaseS = 105.0, userRestMult = 1.2), params).timerS shouldBe 126.0
+        RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, userRestPrefS = 90.0, userRestMult = 1.5), params).timerS shouldBe 90.0
+    }
+
+    @Test
     fun `alternating sides switch immediately by default`() {
         RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, sideMode = SideMode.ALTERNATING), params).betweenSidesS shouldBe 0.0
         RestPolicy.decide(RestInput(RestClass.COMPOUND_UPPER, sideMode = SideMode.SEQUENTIAL), params).betweenSidesS shouldBe null

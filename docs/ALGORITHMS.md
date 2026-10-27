@@ -1408,8 +1408,9 @@ Timed holds (`measure = duration`) are prescribed by HOLD-1 (B8.3); RX-1 dispatc
 goalKind(exercise) = strength  if the exercise is a RULE-mode challenge item, or the exercise-scope rep_preference has
                                rep_scheme = fixed and rep_max <= 6
                      hypertrophy otherwise                                  (OI-A10: no explicit column)
-resolve each field (sets_pref, rep_min, rep_max, rir_target, rep_scheme, rest_pref_s) independently from
+resolve each field (sets_pref, rep_min, rep_max, rir_target, rep_scheme, rest) independently from
 rep_preferences: exercise > muscle_group (primary group of the exercise) > mechanics > goal > global;
+rest is one field in two forms (D50): the most specific scope with rest_pref_s or rest_pref_mult wins;
 fill remaining nulls from engine defaults:
    hypertrophy, compound:            RANGE 8-12, q* = 2
    hypertrophy, isolation/machine:   RANGE 8-12, q* = 1
@@ -1734,8 +1735,8 @@ Willardson 2006, Senna 2011: with 1 min rest reps drop from set 2, with 3-5 min 
 
 Inputs: exercise `rest_class` (E41), the prescription (scheme, target reps, `p = w / M`), the last logged
 set (reps, target, `q_true`, reason), `F_next` (FAT-1 prediction before the next set), side mode and
-superset membership, the challenge item's rest values, the resolved user `rest_pref_s`, the adapted class
-bases. Output `RestDecision {timer_s, between_sides_s, base_s, source (challenge|user|engine),
+superset membership, the challenge item's rest values, the resolved user rest preference (`rest_pref_s` or
+`rest_pref_mult`, D50), the adapted class bases. Output `RestDecision {timer_s, between_sides_s, base_s, source (challenge|user|engine),
 modifiers[], readout}`.
 
 ### B11.2 Algorithm
@@ -1748,13 +1749,14 @@ elif the challenge item defines rest (rest_s, restBetweenSidesS):
 else:
      cls  = strength_heavy if (target reps <= rest.strength_heavy_max_reps (5)) or (p >= rest.strength_heavy_min_p (0.85))
             else exercise.rest_class
-     base = user rest_pref_s if resolved, else adaptedBase(user, cls) (defaults below)
+     base = user rest_pref_s if resolved,
+            else adaptedBase(user, cls) x (user rest_pref_mult if resolved, else 1)   // D50
      mods = 0
      if q_true_last <= rest.mod_hard_rir (0.5) or reps_last < target_last - rest.mod_short_reps (1): mods += rest.mod_hard_s (30)
      elif q_true_last >= q* + rest.mod_easy_rir_margin (2):                                      mods -= rest.mod_easy_s (15)
      if F_next > rest.mod_fatigue_f (0.25):                                                      mods += rest.mod_fatigue_s (15)
-     timer = engine base ? clamp(base + mods, rest.min_s (60), rest.max_s (300))
-                         : clamp(base + mods, rest.user_min_s (30), rest.user_max_s (600))      // D10: the user's base is kept
+     timer = no user preference ? clamp(base + mods, rest.min_s (60), rest.max_s (300))
+                                : clamp(base + mods, rest.user_min_s (30), rest.user_max_s (600))  // D10: the user's base is kept
 UI adjustments (steps timer.adjustStepS / timer.longPressStepS in ANDROID PlatformConfig, C54) are bounded by
 rest.timer_hard_max_s (900) (C18)
 ```
@@ -1792,7 +1794,8 @@ after >= rest.adapt_min_sets (10) logged timed sets of the class since the last 
         compound_lower and strength_heavy 120)
    elif resid <= rest.adapt_resid_bad (-1.0) and mean actual rest >= timer_s:
         base += rest.adapt_step_s, cap rest.max_s
-   at most one change per class per rest.adapt_cooldown_days (7); never for a scope with a user rest preference
+   at most one change per class per rest.adapt_cooldown_days (7); never for a scope with a user rest_pref_s
+   (a rest_pref_mult scales the adapted base, so the adaptation keeps running under it, D50)
 ```
 
 Snapshot `rest.adapt` (scope `class:<key>`): `rest_class`, `base_old_s`, `base_new_s`, `early_share`,

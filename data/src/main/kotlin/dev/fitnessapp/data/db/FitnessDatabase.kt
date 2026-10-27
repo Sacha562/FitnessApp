@@ -76,7 +76,8 @@ import java.io.File
  * events, rule audit), version 4 the local live plan of a challenge session and version 5 the interval columns of
  * `rest_timer` (the warm-up row countdown, D33), version 6 (M2b.5) `calendar_events` with the local
  * `calendar_instance` cache and `calendar_link` table, version 7 (M3.2) the estimation layer's `params_snapshots`,
- * `recommendations` and `exercise_model_state`, version 8 (M3.5) `rep_preferences`. Later milestones add tables through
+ * `recommendations` and `exercise_model_state`, version 8 (M3.5) `rep_preferences`, version 9 (D50) its `rest_pref_mult`.
+ * Later milestones add tables through
  * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
@@ -105,6 +106,7 @@ import java.io.File
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8),
+        AutoMigration(from = 8, to = 9),
     ],
 )
 @TypeConverters(Converters::class)
@@ -141,13 +143,13 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun modelStates(): ExerciseModelStateDao
 
     companion object {
-        const val VERSION = 8
+        const val VERSION = 9
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
         /**
          * Hand-written migrations of every version; [NoDestructiveMigrationTest] checks the builder uses only these.
-         * 1 -> 2, 2 -> 3, 3 -> 4, 5 -> 6 and 6 -> 7 only add tables, 4 -> 5 only adds nullable columns; all are [AutoMigration]s declared
+         * 1 -> 2, 2 -> 3, 3 -> 4, 5 -> 6, 6 -> 7 and 7 -> 8 only add tables, 4 -> 5 and 8 -> 9 only add nullable columns; all are [AutoMigration]s declared
          * on the class.
          */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()

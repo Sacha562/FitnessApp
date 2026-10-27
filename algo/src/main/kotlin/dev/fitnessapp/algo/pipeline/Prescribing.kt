@@ -228,6 +228,7 @@ object Prescribing {
                     put("rir_target", p.rirTarget?.let { rep(it) } ?: JsonNull)
                     put("rep_scheme", p.repScheme?.let { JsonPrimitive(it) } ?: JsonNull)
                     put("rest_pref_s", p.restPrefS?.let { JsonNumbers.grid(Grid.s(it), GridKind.S) } ?: JsonNull)
+                    put("rest_pref_mult", p.restPrefMult?.let { JsonNumbers.grid(Grid.ratio(it), GridKind.RATIO) } ?: JsonNull)
                 })
             }
         })

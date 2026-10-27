@@ -1,0 +1,119 @@
+{
+    "id": "GF-REST-03",
+    "module": "rest",
+    "description": "D50 rest multiplier: x1.2 upper compound, x0.5 isolation and core, x1.5 on the strength-heavy class, x2.0 lower compound after a hard set (user clamps), seconds win over a multiplier",
+    "input": {
+        "module": "rest@1.2.0",
+        "scope_key": "golden:GF-REST-03",
+        "payload": {
+            "decide": [
+                {
+                    "rest_class": "compound_upper",
+                    "target_reps": 10,
+                    "user_rest_mult": 1.2
+                },
+                {
+                    "rest_class": "isolation",
+                    "target_reps": 12,
+                    "user_rest_mult": 0.5
+                },
+                {
+                    "rest_class": "core",
+                    "user_rest_mult": 0.5
+                },
+                {
+                    "rest_class": "compound_upper",
+                    "target_reps": 5,
+                    "user_rest_mult": 1.5
+                },
+                {
+                    "rest_class": "compound_lower",
+                    "target_reps": 8,
+                    "q_star": 2,
+                    "last_q_true": 0.5,
+                    "last_reps": 9,
+                    "last_target": 9,
+                    "f_next": 0.3,
+                    "user_rest_mult": 2.0
+                },
+                {
+                    "rest_class": "compound_upper",
+                    "target_reps": 10,
+                    "user_rest_pref_s": 90,
+                    "user_rest_mult": 1.5
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "decide": [
+                {
+                    "timer_s": 144,
+                    "between_sides_s": null,
+                    "base_s": 144,
+                    "source": "user",
+                    "steps": [
+                        "rest.class",
+                        "rest.user_mult"
+                    ]
+                },
+                {
+                    "timer_s": 45,
+                    "between_sides_s": null,
+                    "base_s": 45,
+                    "source": "user",
+                    "steps": [
+                        "rest.class",
+                        "rest.user_mult"
+                    ]
+                },
+                {
+                    "timer_s": 30,
+                    "between_sides_s": null,
+                    "base_s": 30,
+                    "source": "user",
+                    "steps": [
+                        "rest.class",
+                        "rest.user_mult"
+                    ]
+                },
+                {
+                    "timer_s": 270,
+                    "between_sides_s": null,
+                    "base_s": 270,
+                    "source": "user",
+                    "steps": [
+                        "rest.class.strength_heavy",
+                        "rest.user_mult"
+                    ]
+                },
+                {
+                    "timer_s": 345,
+                    "between_sides_s": null,
+                    "base_s": 300,
+                    "source": "user",
+                    "steps": [
+                        "rest.class",
+                        "rest.user_mult",
+                        "rest.mod.hard",
+                        "rest.mod.fatigue"
+                    ]
+                },
+                {
+                    "timer_s": 90,
+                    "between_sides_s": null,
+                    "base_s": 90,
+                    "source": "user",
+                    "steps": [
+                        "rest.user"
+                    ]
+                }
+            ],
+            "pair": [],
+            "readout": []
+        },
+        "outputs_jcs_sha256": "dfc43a400f095f3b1a45aa2cfb58bbb1a3f1f00dfd669bbd06025459c7a14089"
+    }
+}

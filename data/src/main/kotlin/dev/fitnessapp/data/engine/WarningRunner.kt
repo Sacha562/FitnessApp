@@ -5,6 +5,9 @@ import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.core.det.Jcs
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.prescription.rest.RestClass
+import dev.fitnessapp.algo.prescription.rest.RestInput
+import dev.fitnessapp.algo.prescription.rest.RestPolicy
 import dev.fitnessapp.algo.prescription.warnings.SchemeFacts
 import dev.fitnessapp.algo.prescription.warnings.Warning
 import dev.fitnessapp.algo.prescription.warnings.Warnings
@@ -68,7 +71,7 @@ class WarningRunner(
                 val facts = SchemeFacts(
                     rLo = rx.rLo, rHi = rx.rHi, qStar = rx.qStar, qStarAsked = asked,
                     setsPref = prefs.firstNotNullOfOrNull { it["sets_pref"]?.jsonPrimitive?.intOrNull },
-                    restS = prefs.firstNotNullOfOrNull { it["rest_pref_s"]?.jsonPrimitive?.doubleOrNull },
+                    restS = userRestS(ex.restClass, rx.rHi, prefs, p),
                     strength = scheme?.get("kind")?.jsonPrimitive?.contentOrNull == "fixed" && rx.rHi <= STRENGTH_MAX_REPS,
                     compound = ex.mechanics != "isolation", highRisk = highRisk,
                     repsPerStep = rx.trace["reps_per_step"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.doubleOrNull,
@@ -146,6 +149,18 @@ class WarningRunner(
         }
         scheduler.request()
         return id
+    }
+
+    /**
+     * WE-P6's rest (B15.2, D50): the resolved preference of the prescription's inputs as REST-1's base, seconds or the
+     * class base at the prescribed reps times the multiplier; null without a user rest preference.
+     */
+    private fun userRestS(restClass: String, reps: Int, prefs: List<JsonObject>, p: ParamView): Double? {
+        fun num(o: JsonObject, k: String) = o[k]?.takeIf { it !is JsonNull }?.jsonPrimitive?.doubleOrNull
+        val pref = prefs.firstOrNull { num(it, "rest_pref_s") != null || num(it, "rest_pref_mult") != null } ?: return null
+        return RestPolicy.decide(
+            RestInput(RestClass.of(restClass), targetReps = reps, userRestPrefS = num(pref, "rest_pref_s"), userRestMult = num(pref, "rest_pref_mult")), p,
+        ).baseS
     }
 
     companion object {

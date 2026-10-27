@@ -31,6 +31,8 @@ enum class RestSource(val code: String) { WARMUP("warmup"), CHALLENGE("challenge
  * REST-1 input for the rest after one logged set (B11.1). [p] is `w / M` of the prescription; the last set's
  * [lastQTrue], [lastReps] against [lastTarget] and the target RIR [qStar] drive the outcome modifiers, [fNext] (FAT-1
  * before the next set) the fatigue modifier, and [adaptedBaseS] replaces the class base after the nightly adaptation.
+ * The user's rest preference is [userRestPrefS] (seconds, replaces the base) or [userRestMult] (scales the class base,
+ * D50); at most one is set.
  * Without them the decision is the base policy of `rest@1.0.0` (D21).
  */
 data class RestInput(
@@ -44,6 +46,7 @@ data class RestInput(
     val targetReps: Int? = null,
     val p: Double? = null,
     val userRestPrefS: Double? = null,
+    val userRestMult: Double? = null,
     val sideMode: SideMode = SideMode.NONE,
     val lastQTrue: Double? = null,
     val lastReps: Int? = null,
@@ -72,8 +75,8 @@ data class RestDecision(
 )
 
 /**
- * REST-1 (ALGORITHMS.md B11, C18) as `rest@1.1.0`: warm-up rests, challenge item values, the user's
- * `rest_pref_s`, the class table `rest.base` with the strength-heavy rule, the outcome and fatigue modifiers and the
+ * REST-1 (ALGORITHMS.md B11, C18) as `rest@1.2.0`: warm-up rests, challenge item values, the user's
+ * `rest_pref_s` or `rest_pref_mult` (D50, new in 1.2.0), the class table `rest.base` with the strength-heavy rule, the outcome and fatigue modifiers and the
  * clamps (`decide`); the alternating pair and superset formulas, the live readout and the nightly adaptation.
  * `rest@1.0.0` (D21) was the base policy alone; with no last-set inputs `decide` still gives exactly that.
  */
@@ -125,6 +128,8 @@ object RestPolicy : DeclaresParams {
         }
 
         val userBase = input.userRestPrefS
+        val mult = input.userRestMult.takeIf { userBase == null }
+        val user = userBase != null || mult != null
         val steps = ArrayList<String>()
         val cls = effectiveClass(input, params)
         val base = if (userBase != null) {
@@ -133,17 +138,20 @@ object RestPolicy : DeclaresParams {
         } else {
             steps += if (cls == input.restClass) "rest.class" else "rest.class.strength_heavy"
             if (input.adaptedBaseS != null) steps += "rest.adapted"
-            input.adaptedBaseS ?: params.table("rest.base").getValue(cls.code)
+            val classBase = input.adaptedBaseS ?: params.table("rest.base").getValue(cls.code)
+            // D50: a multiplier scales the (adapted) class base and makes it the user's base.
+            if (mult != null) steps += "rest.user_mult"
+            classBase * (mult ?: 1.0)
         }
         val mods = modifiers(input, params, steps)
-        val timer = if (userBase != null) {
+        val timer = if (user) {
             clamp(base + mods, params.double("rest.user_min_s"), params.double("rest.user_max_s")) // D10: the user's base is kept
         } else {
             clamp(base + mods, params.double("rest.min_s"), params.double("rest.max_s"))
         }
         return RestDecision(
             Grid.s(minOf(timer, hardMax)), betweenSides(input, params), Grid.s(base),
-            if (userBase != null) RestSource.USER else RestSource.ENGINE, steps, hardMax,
+            if (user) RestSource.USER else RestSource.ENGINE, steps, hardMax,
         )
     }
 
@@ -191,8 +199,8 @@ object RestPolicy : DeclaresParams {
 
     /**
      * The nightly adaptation of an engine base (B11.4) over the class's timed sets since its last change, oldest
-     * first; null when it may not run (fewer than `rest.adapt_min_sets` sets, inside the cooldown, or a user rest
-     * preference for the scope).
+     * first; null when it may not run (fewer than `rest.adapt_min_sets` sets, inside the cooldown, or a user
+     * `rest_pref_s` for the scope; a multiplier scales the adapted base, so it does not stop the adaptation, D50).
      */
     fun adapt(cls: RestClass, baseS: Double, sets: List<AdaptSet>, daysSinceChange: Int?, userPreference: Boolean, params: ParamView): RestAdapt? {
         if (userPreference) return null

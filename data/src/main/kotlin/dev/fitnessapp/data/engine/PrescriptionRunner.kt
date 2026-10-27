@@ -30,9 +30,11 @@ import dev.fitnessapp.algo.prescription.rest.RestClass
 import dev.fitnessapp.algo.prescription.rest.RestInput
 import dev.fitnessapp.algo.prescription.rest.RestPolicy
 import dev.fitnessapp.algo.prescription.rx.ItemScheme
+import dev.fitnessapp.algo.prescription.rx.RepPref
 import dev.fitnessapp.algo.prescription.rx.Rx
 import dev.fitnessapp.algo.prescription.rx.RxMode
 import dev.fitnessapp.algo.prescription.rx.RxOutput
+import dev.fitnessapp.algo.prescription.rx.Schemes
 import dev.fitnessapp.algo.pipeline.RxRequest
 import dev.fitnessapp.algo.selection.catalog.Catalog
 import dev.fitnessapp.algo.selection.catalog.CatalogExercise
@@ -374,8 +376,10 @@ class PrescriptionRunner(
         val rircal = rircal()
         val transferM = if (sse.isEmpty()) transfer(se.exercise_id) else null
         val prefs = repPrefs?.resolve(ex, se.exercise_id, primaryGroup(ex, model)).orEmpty()
-        val restPref = prefs.firstNotNullOfOrNull { it.restPrefS }
-        val restS = slot.restS ?: RestPolicy.decide(RestInput(RestClass.of(ex.restClass), userRestPrefS = restPref), p).timerS
+        val restPref = Schemes.restPref(prefs)
+        val restS = slot.restS ?: RestPolicy.decide(
+            RestInput(RestClass.of(ex.restClass), userRestPrefS = restPref?.restPrefS, userRestMult = restPref?.restPrefMult), p,
+        ).timerS
         val history = db.setLogs().historyForExercise(se.exercise_id, if (includeThisSession) "" else session.id, HISTORY_LIMIT)
             .filter { it.set.set_kind != "warmup" && it.session_started_at != null && (it.session_started_at <= (session.started_at ?: Long.MAX_VALUE) || includeThisSession) }
         val bySession = history.groupBy { it.set.session_id }
@@ -414,6 +418,10 @@ class PrescriptionRunner(
         val units = sets.sumOf { if (it.side == "both") 2 else 1 } / 2
         return (units >= params.int("warmup.warm_min_sets")) to same.isEmpty()
     }
+
+    /** The rest preference that applies to [ex] (B9.3, D50): seconds or a multiplier, from the most specific scope. */
+    suspend fun userRest(ex: CatalogExercise, exerciseId: String): RepPref? =
+        repPrefs?.let { Schemes.restPref(it.resolve(ex, exerciseId, primaryGroup(ex, catalogModel()))) }
 
     private fun primaryGroup(e: CatalogExercise, model: Catalog): String? =
         model.taxonomy.activeGroups.map { it.id to model.groupCoeff(e, it.id) }.filter { it.second > 0.0 }

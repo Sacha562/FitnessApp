@@ -237,6 +237,26 @@ class PrescriptionRunnerTest {
     }
 
     @Test
+    fun `a rest multiplier for a broad scope yields to seconds for the exercise and logs the preset`() = blocking {
+        history()
+        repPrefs.save(RepPreferenceRepository.GLOBAL, RepPrefValues(repMin = 8, repMax = 12, repScheme = "range", restPrefMult = 1.5), presetId = "hypertrophy") shouldBe 4
+        val ev = db.events().exportAll().filter { it.event_type == "rep_preference_changed" }
+        ev.map { Json.parseToJsonElement(it.payload).jsonObject["preset_id"]!!.jsonPrimitive.content }.distinct() shouldBe listOf("hypertrophy")
+        db.repPreferences().exportAll().single().rest_pref_mult shouldBe 150L
+        runner.userRest(wpu, catalog.idOf(wpu))!!.restPrefMult shouldBe 1.5
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        val pref = runner.get(runner.ensure(RxSlot(seId))!!)!!.inputs!!["requests"]!!.jsonArray.first().jsonObject["prefs"]!!.jsonArray.single().jsonObject
+        pref["rest_pref_mult"]!!.jsonPrimitive.content shouldBe "1.5"
+        // Seconds at the exercise scope win over the global multiplier (B9.3, D50).
+        repPrefs.save("exercise:${catalog.idOf(wpu)}", RepPrefValues(restPrefS = 150))
+        runner.userRest(wpu, catalog.idOf(wpu))!!.let { (it.restPrefS to it.restPrefMult) } shouldBe (150.0 to null)
+        // Clearing keeps the multiplier on the tombstone (one non-null field per row on the server).
+        repPrefs.save(RepPreferenceRepository.GLOBAL, RepPrefValues())
+        db.repPreferences().exportAll().first { it.scope_key == RepPreferenceRepository.GLOBAL }.rest_pref_mult shouldBe 150L
+    }
+
+    @Test
     fun `a much easier first set stores one autoreg card and a second set none`() = blocking {
         history()
         val sid = sessions.start(params)

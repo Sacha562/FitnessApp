@@ -850,7 +850,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private fun feltCode(s: Double) = when (s) { 0.0 -> "max"; 2.0 -> "hard"; 5.0 -> "ok"; else -> "easy" }
 
-    /** REST-1 base policy (D21); a left side switches immediately (between-sides 0 s, UX 11.7.2). */
+    /** REST-1 base policy (D21) with the user's rest preference (D50); a left side switches immediately (between-sides 0 s, UX 11.7.2). */
     private suspend fun startRest(card: Card, setId: String, loggedAt: Long) {
         val p = params
         if (completesPlannedWork(card)) return
@@ -867,7 +867,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val toWork = warmupLeadsToWork(_ui.value.items, card.item.se.id, card.setNumber, card.item.planned, card.item.warmupItem)
             RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = WarmupRest.afterWarmup(null, toWork, p)), p)
         } else {
-            RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), targetReps = card.target.reps), p)
+            // The user's rest preference for an exercise outside a challenge (D50); challenge rows keep their own rest.
+            val pref = if (card.item.se.challenge_item_key == null) runCatching { c.prescriptions.userRest(card.item.ex, card.item.se.exercise_id) }.getOrNull() else null
+            RestPolicy.decide(
+                RestInput(RestClass.of(card.item.ex.restClass), targetReps = card.target.reps, userRestPrefS = pref?.restPrefS, userRestMult = pref?.restPrefMult), p,
+            )
         }
         // A challenge row prescribes its own rest (`rest_s`, CHALLENGE_ENGINE 6.1); REST-1 keeps the hard maximum.
         val planned = plannedRow(card.item, card.setIndex, card.side, card.warmup)?.restS

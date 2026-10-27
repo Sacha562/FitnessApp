@@ -18,7 +18,10 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import java.math.BigDecimal
 
-/** The editable fields of one Sets and reps preference (DATA_MODEL 9.3.4); all null = no preference at that scope. */
+/**
+ * The editable fields of one Sets and reps preference (DATA_MODEL 9.3.4); all null = no preference at that scope. Rest
+ * is seconds ([restPrefS]) or a multiplier of the class rest ([restPrefMult], D50), never both.
+ */
 data class RepPrefValues(
     val setsPref: Int? = null,
     val repMin: Int? = null,
@@ -26,10 +29,11 @@ data class RepPrefValues(
     val rirTarget: Double? = null,
     val repScheme: String? = null,
     val restPrefS: Int? = null,
+    val restPrefMult: Double? = null,
 ) {
-    val empty: Boolean get() = setsPref == null && repMin == null && rirTarget == null && repScheme == null && restPrefS == null
+    val empty: Boolean get() = setsPref == null && repMin == null && rirTarget == null && repScheme == null && restPrefS == null && restPrefMult == null
 
-    fun toPref(scope: String) = RepPref(scope, setsPref, repMin, repMax, rirTarget, repScheme, restPrefS?.toDouble())
+    fun toPref(scope: String) = RepPref(scope, setsPref, repMin, repMax, rirTarget, repScheme, restPrefS?.toDouble(), restPrefMult)
 }
 
 /**
@@ -64,9 +68,10 @@ class RepPreferenceRepository(
 
     /**
      * Saves [values] at [scopeKey]; one `rep_preference_changed` per changed field, carrying the warning rules the new
-     * value raises ([warningRuleIds]). Returns the number of changed fields.
+     * value raises ([warningRuleIds]) and the preset that filled the editor ([presetId], D50). Returns the number of
+     * changed fields.
      */
-    suspend fun save(scopeKey: String, values: RepPrefValues, warningRuleIds: List<String> = emptyList()): Int {
+    suspend fun save(scopeKey: String, values: RepPrefValues, warningRuleIds: List<String> = emptyList(), presetId: String? = null): Int {
         val uid = ctx.requireUser()
         val id = idOf(uid, scopeKey)
         var changed = 0
@@ -88,7 +93,8 @@ class RepPreferenceRepository(
                 muscle_group_id = arg.takeIf { kind == "muscle_group" }, exercise_id = arg.takeIf { kind == "exercise" },
                 sets_pref = values.setsPref, rep_min = values.repMin, rep_max = values.repMax,
                 rir_target = values.rirTarget?.let { Scaled.toLong(BigDecimal.valueOf(it), 1) }, rep_scheme = values.repScheme,
-                rest_pref_s = values.restPrefS, deleted_at = null,
+                rest_pref_s = values.restPrefS, rest_pref_mult = values.restPrefMult?.let { Scaled.toLong(BigDecimal.valueOf(it), 2) },
+                deleted_at = null,
                 client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
             )
             db.repPreferences().upsert(row)
@@ -102,6 +108,7 @@ class RepPreferenceRepository(
                             "scope" to JsonPrimitive(scopeKey), "exercise_id" to (arg.takeIf { kind == "exercise" }?.let { JsonPrimitive(it) } ?: JsonNull),
                             "field" to JsonPrimitive(field), "from" to from, "to" to to,
                             "warning_rule_ids" to JsonArray(warningRuleIds.sorted().map { JsonPrimitive(it) }),
+                            "preset_id" to (presetId?.let { JsonPrimitive(it) } ?: JsonNull),
                         ),
                     ),
                 )
@@ -115,6 +122,7 @@ class RepPreferenceRepository(
         Triple("sets_pref", j(a.setsPref), j(b.setsPref)), Triple("rep_min", j(a.repMin), j(b.repMin)),
         Triple("rep_max", j(a.repMax), j(b.repMax)), Triple("rir_target", j(a.rirTarget), j(b.rirTarget)),
         Triple("rep_scheme", j(a.repScheme), j(b.repScheme)), Triple("rest_pref_s", j(a.restPrefS), j(b.restPrefS)),
+        Triple("rest_pref_mult", j(a.restPrefMult), j(b.restPrefMult)),
     ).filter { it.second != it.third }
 
     private fun j(x: Any?): JsonElement = when (x) {
@@ -130,6 +138,7 @@ class RepPreferenceRepository(
 
         fun values(r: RepPreferenceEntity) = RepPrefValues(
             r.sets_pref, r.rep_min, r.rep_max, r.rir_target?.let { Scaled.toDouble(it, 1) }, r.rep_scheme, r.rest_pref_s,
+            r.rest_pref_mult?.let { Scaled.toDouble(it, 2) },
         )
     }
 }

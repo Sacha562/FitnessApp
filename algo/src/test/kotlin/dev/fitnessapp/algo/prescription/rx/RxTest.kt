@@ -205,6 +205,13 @@ class RxTest {
         (user.kind to user.rLo) shouldBe (SchemeKind.FIXED to 12)
         user.sources["rep_min"] shouldBe "user:exercise"
         user.sources["rep_max"] shouldBe "user:exercise"
+        // Rest is one field in two forms (D50): the most specific scope with either wins.
+        val rest = Schemes.resolve(listOf(RepPref("global", restPrefS = 150.0), RepPref("mechanics", restPrefMult = 1.2)), SchemeContext(), params)
+        (rest.restPrefS to rest.restPrefMult) shouldBe (null to 1.2)
+        rest.sources["rest_pref_mult"] shouldBe "user:mechanics"
+        rest.sources.containsKey("rest_pref_s") shouldBe false
+        val exRest = Schemes.resolve(listOf(RepPref("mechanics", restPrefMult = 1.2), RepPref("exercise", restPrefS = 90.0)), SchemeContext(), params)
+        (exRest.restPrefS to exRest.restPrefMult) shouldBe (90.0 to null)
         // A user-set RIR keeps its value under warn-only; the tier-1 action becomes a suggestion (D10, C57).
         val tier = Schemes.resolve(listOf(RepPref("global", rirTarget = 2.0)), SchemeContext(tier = TierAction.TIER1), params)
         tier.qStar shouldBe 2.0

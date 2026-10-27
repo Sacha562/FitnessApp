@@ -1264,7 +1264,8 @@
         "field",
         "from",
         "to",
-        "warning_rule_ids"
+        "warning_rule_ids",
+        "preset_id"
       ],
       "introduced_in": "1.0.0",
       "description": "Emitted by UX 20.8",

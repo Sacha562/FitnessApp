@@ -86,7 +86,7 @@ internal object PrescriptionGolden {
                 val o = e.jsonObject
                 val input = RestInput(
                     restClass = RestClass.of(str(o, "rest_class")), challengeRestS = opt(o, "challenge_rest_s"),
-                    targetReps = opt(o, "target_reps")?.toInt(), userRestPrefS = opt(o, "user_rest_pref_s"),
+                    targetReps = opt(o, "target_reps")?.toInt(), userRestPrefS = opt(o, "user_rest_pref_s"), userRestMult = opt(o, "user_rest_mult"),
                     sideMode = o["side_mode"]?.let { SideMode.valueOf(it.jsonPrimitive.content.uppercase()) } ?: SideMode.NONE,
                     lastQTrue = opt(o, "last_q_true"), lastReps = opt(o, "last_reps")?.toInt(), lastTarget = opt(o, "last_target")?.toInt(),
                     qStar = opt(o, "q_star"), fNext = opt(o, "f_next"),

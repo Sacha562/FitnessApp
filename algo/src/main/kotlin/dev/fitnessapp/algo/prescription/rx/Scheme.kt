@@ -7,7 +7,10 @@ import java.util.TreeMap
 
 enum class SchemeKind(val code: String) { RANGE("range"), FIXED("fixed") }
 
-/** One `rep_preferences` row (DATA_MODEL 9.4); [scope] is `exercise`, `muscle_group`, `mechanics`, `goal` or `global`. */
+/**
+ * One `rep_preferences` row (DATA_MODEL 9.4); [scope] is `exercise`, `muscle_group`, `mechanics`, `goal` or `global`.
+ * Rest comes in seconds ([restPrefS]) or as a multiplier of REST-1's class base ([restPrefMult], D50), never both.
+ */
 data class RepPref(
     val scope: String,
     val setsPref: Int? = null,
@@ -16,6 +19,7 @@ data class RepPref(
     val rirTarget: Double? = null,
     val repScheme: String? = null,
     val restPrefS: Double? = null,
+    val restPrefMult: Double? = null,
 )
 
 /** A challenge item's own scheme: RULE items and `delegate:rx` items (OI-A20, D49) take their sets, reps and RIR. */
@@ -52,6 +56,8 @@ data class Scheme(
     val sources: TreeMap<String, String>,
     val clamps: List<String>,
     val suggestions: List<String>,
+    /** The resolved rest multiplier (D50); at most one of [restPrefS] and this is set. */
+    val restPrefMult: Double? = null,
 ) {
     val rStar: Int get() = rHi
 }
@@ -80,7 +86,9 @@ object Schemes {
         val schemeText = pick("rep_scheme", ctx.item?.let { if (it.repMin == it.repMax) "fixed" else "range" }) { it.repScheme }
         var q = pick("rir_target", ctx.item?.rirTarget) { it.rirTarget }
         val sets = pick("sets_pref", ctx.item?.sets) { it.setsPref }
-        val rest = pick("rest_pref_s", null) { it.restPrefS }
+        // Rest is one field in two forms (D50): the most specific scope with seconds or a multiplier wins.
+        val rest = restPref(prefs)
+        rest?.let { sources[if (it.restPrefS != null) "rest_pref_s" else "rest_pref_mult"] = "user:${it.scope}" }
 
         if (rLo == null || rHi == null) {
             if (strength) {
@@ -130,6 +138,11 @@ object Schemes {
             }
             TierAction.NONE -> Unit
         }
-        return Scheme(kind, rLo!!, rHi!!, q!!, sets, rest, strength, sources, clamps, suggestions)
+        return Scheme(kind, rLo!!, rHi!!, q!!, sets, rest?.restPrefS, strength, sources, clamps, suggestions, rest?.restPrefMult)
     }
+
+    /** The preference whose rest applies (B9.3, D50): the most specific scope that sets seconds or a multiplier. */
+    fun restPref(prefs: List<RepPref>): RepPref? =
+        prefs.sortedBy { SCOPE_ORDER.indexOf(it.scope).let { i -> if (i < 0) SCOPE_ORDER.size else i } }
+            .firstOrNull { it.restPrefS != null || it.restPrefMult != null }
 }
