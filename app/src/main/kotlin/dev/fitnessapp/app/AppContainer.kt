@@ -110,6 +110,9 @@ class AppContainer(private val context: Context) {
     }
     val sync: SyncRepository by lazy { SyncRepository(db, outbox, syncEngine, syncScheduler, writeContext) }
     val preferences: PreferenceRepository by lazy { PreferenceRepository(db, outbox, telemetry, writeContext, syncScheduler) }
+    val repPreferences: dev.fitnessapp.data.repo.RepPreferenceRepository by lazy {
+        dev.fitnessapp.data.repo.RepPreferenceRepository(db, outbox, telemetry, writeContext, syncScheduler)
+    }
     /** Challenge definitions (bundled and pulled), validated against the bundled catalog and reference data. */
     val challengeLibrary: ChallengeLibrary by lazy { ChallengeLibrary(params, CHANGEOVER_MIN) { resource("/fitness/$it") } }
     val challengeFacts: ChallengeFactsProvider by lazy { ChallengeFactsProvider(db, equipment, { catalog.doc }, params, clock::now) }
@@ -135,7 +138,7 @@ class AppContainer(private val context: Context) {
     }
     /** L6 prescriptions for the exercises the user picks (D49, M3.4): targets, probe follow-up, warm-up sets. */
     val prescriptions: dev.fitnessapp.data.engine.PrescriptionRunner by lazy {
-        dev.fitnessapp.data.engine.PrescriptionRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, equipment, params, PARAMS_VERSION)
+        dev.fitnessapp.data.engine.PrescriptionRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, equipment, params, PARAMS_VERSION, repPreferences)
     }
     /** The engine-logged estimates for display (the exercise detail's e1RM history). */
     val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }

@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import dev.fitnessapp.data.db.EpochMsIso
+import dev.fitnessapp.data.db.Scale1
 import dev.fitnessapp.data.db.JsonText
 import dev.fitnessapp.data.db.Scale2
 import kotlinx.serialization.Serializable
@@ -122,4 +123,33 @@ data class UserExercisePrefEntity(
     val preference: String = "neutral",
     val unavailable_until: String? = null,
     val note: String? = null,
+) : MutableRow
+
+/**
+ * `fitness.rep_preferences` (9.3.4, D10); id = UUIDv5 `rep_preferences:<uid>:<scope_key>` (6.4). The engine resolves the
+ * most specific scope (exercise > muscle_group > mechanics > goal > global, B9.3); a deviation from evidence produces a
+ * warning, never a silent change. A cleared preference is a soft delete.
+ */
+@Serializable
+@Entity(tableName = "rep_preferences", indices = [Index("exercise_id"), Index("scope_key")])
+data class RepPreferenceEntity(
+    @PrimaryKey override val id: String,
+    override val user_id: String,
+    @Serializable(with = EpochMsIso::class) override val client_updated_at: Long,
+    override val server_updated_at: String? = null,
+    @Serializable(with = EpochMsIso::class) override val deleted_at: Long? = null,
+    override val device_id: String,
+    override val app_version: String,
+    val scope_kind: String,
+    val scope_key: String,
+    val goal_kind: String? = null,
+    val mechanics: String? = null,
+    val muscle_group_id: String? = null,
+    val exercise_id: String? = null,
+    val sets_pref: Int? = null,
+    val rep_min: Int? = null,
+    val rep_max: Int? = null,
+    @Serializable(with = Scale1::class) val rir_target: Long? = null,
+    val rep_scheme: String? = null,
+    val rest_pref_s: Int? = null,
 ) : MutableRow

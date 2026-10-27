@@ -18,6 +18,8 @@ import dev.fitnessapp.data.repo.EquipmentRepository
 import dev.fitnessapp.data.repo.GymDraft
 import dev.fitnessapp.data.repo.LogSetCommand
 import dev.fitnessapp.data.repo.PlannedValues
+import dev.fitnessapp.data.repo.RepPrefValues
+import dev.fitnessapp.data.repo.RepPreferenceRepository
 import dev.fitnessapp.data.repo.ProfileRepository
 import dev.fitnessapp.data.repo.SessionRepository
 import dev.fitnessapp.data.repo.WriteContext
@@ -26,6 +28,7 @@ import dev.fitnessapp.data.sync.SyncConfig
 import dev.fitnessapp.data.sync.SyncScheduler
 import dev.fitnessapp.data.telemetry.EventRegistry
 import dev.fitnessapp.data.telemetry.TelemetryWriter
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.nulls.shouldBeNull
@@ -34,6 +37,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
@@ -55,6 +59,8 @@ class PrescriptionRunnerTest {
     private lateinit var bodyweight: BodyweightRepository
     private lateinit var runner: PrescriptionRunner
     private lateinit var estimation: EstimationRunner
+    private lateinit var repPrefs: RepPreferenceRepository
+    private lateinit var warnings: WarningRunner
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val catalog = CatalogRepository.bundled()
     private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
@@ -76,7 +82,9 @@ class PrescriptionRunnerTest {
         equipment = EquipmentRepository(db, outbox, telemetry, ctx, scheduler)
         bodyweight = BodyweightRepository(db, outbox, ctx, scheduler)
         sessions = SessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, ProfileRepository(db, outbox, telemetry, ctx, scheduler))
-        runner = PrescriptionRunner(db, outbox, ctx, scheduler, catalog, { model }, equipment, params, "1.0.2")
+        repPrefs = RepPreferenceRepository(db, outbox, telemetry, ctx, scheduler)
+        runner = PrescriptionRunner(db, outbox, ctx, scheduler, catalog, { model }, equipment, params, "1.0.2", repPrefs)
+        warnings = WarningRunner(db, outbox, ctx, scheduler, catalog, runner, params, "1.0.2")
         estimation = EstimationRunner(db, outbox, ctx, scheduler, catalog, { model }, params, "1.0.2")
     }
 
@@ -186,6 +194,74 @@ class PrescriptionRunnerTest {
         val rx = runner.get(runner.ensure(RxSlot(copied.single().id))!!)!!
         rx.probe shouldBe false
         rx.sets.all { it.wSys != null } shouldBe true
+    }
+
+    /** One finished session of three sets, then the L8 update: the next session prescribes from the model. */
+    private suspend fun history(): String {
+        gym()
+        now += 60_000
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        runner.ensure(RxSlot(seId))
+        log(sid, seId, 1, 20.0, 12, 3.0)
+        runner.followUp(RxSlot(seId))
+        log(sid, seId, 2, 20.0, 10, 2.0)
+        log(sid, seId, 3, 20.0, 9, 2.0)
+        sessions.finish(sid, null)
+        estimation.run()
+        now += 2 * 86_400_000L
+        return sid
+    }
+
+    @Test
+    fun `a sets and reps preference shapes the prescription and logs one event per field`() = blocking {
+        history()
+        repPrefs.save("exercise:${catalog.idOf(wpu)}", RepPrefValues(setsPref = 4, repMin = 5, repMax = 7, rirTarget = 2.0)) shouldBe 4
+        repPrefs.save("exercise:${catalog.idOf(wpu)}", RepPrefValues(setsPref = 4, repMin = 5, repMax = 7, rirTarget = 2.0)) shouldBe 0
+        db.events().exportAll().count { it.event_type == "rep_preference_changed" } shouldBe 4
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        val rx = runner.get(runner.ensure(RxSlot(seId))!!)!!
+        rx.rLo shouldBe 5
+        rx.rHi shouldBe 7
+        rx.sets.size shouldBe 4
+        db.sessionExercises().get(seId)!!.planned_sets shouldBe 4
+        rx.inputs!!["requests"]!!.jsonArray.first().jsonObject["prefs"]!!.jsonArray.size shouldBe 1
+        // Clearing every field soft-deletes the row and the next prescription is back to the defaults.
+        repPrefs.save("exercise:${catalog.idOf(wpu)}", RepPrefValues())
+        repPrefs.all().shouldBeEmpty()
+    }
+
+    @Test
+    fun `a much easier first set stores one autoreg card and a second set none`() = blocking {
+        history()
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        val rx = runner.get(runner.ensure(RxSlot(seId))!!)!!
+        val first = rx.sets.first()
+        val added = equipment.loadables(wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 70.7, params).second.first { kotlin.math.abs(it.wSys!! - first.wSys!!) < 0.01 }.nativeValue!!
+        log(sid, seId, 1, added, first.targetReps!!, 6.0, PlannedValues(reps = first.targetReps, rir = first.rir, source = "engine"))
+        val s = runner.suggest(RxSlot(seId), "both").shouldNotBeNull()
+        s.result.trigger shouldBe "first_set"
+        s.result.card shouldBe true
+        s.recommendationId.shouldNotBeNull()
+        db.recommendations().byScope(PrescriptionRunner.AUTOREG_KIND, "session_exercise:$seId").size shouldBe 1
+        log(sid, seId, 2, added, first.targetReps!!, 6.0)
+        runner.suggest(RxSlot(seId), "both")!!.result.card shouldBe false
+    }
+
+    @Test
+    fun `RIR 0 on a high-risk working set is a WE-S1 notice in the session evaluation`() = blocking {
+        history()
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        runner.ensure(RxSlot(seId))
+        log(sid, seId, 1, 20.0, 9, 0.0)
+        val ws = warnings.session(sid)
+        ws.single { it.ruleId == "WE-S1" }.enforced shouldBe false
+        warnings.store(sid, ws).shouldNotBeNull()
+        warnings.store(sid, ws) shouldBe warnings.store(sid, ws)
+        db.recommendations().bySession(WarningRunner.KIND, sid).size shouldBe 1
     }
 
     private companion object {

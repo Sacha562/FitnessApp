@@ -63,6 +63,22 @@ class ProfileRepository(
 
     suspend fun setRestAlarmMode(mode: String) = update { it.copy(rest_alarm_mode = mode) }
 
+    /** The opt-in RIR check set (F14, UX 15.4 Sessions): off until the user switches it on (D49). */
+    suspend fun setRirCalibrationOptIn(on: Boolean) {
+        val before = get()?.rir_calibration_opt_in ?: false
+        if (before == on) return
+        update { it.copy(rir_calibration_opt_in = on) }
+        db.withTransaction {
+            telemetry.write(
+                EventDraft(
+                    type = "settings_changed", entityType = "none", screen = "you.preferences",
+                    payload = mapOf("key" to JsonPrimitive("rir_calibration_opt_in"), "from" to JsonPrimitive(before), "to" to JsonPrimitive(on)),
+                ),
+            )
+        }
+        scheduler.request()
+    }
+
     suspend fun completeOnboarding() {
         update { it.copy(onboarding_completed_at = it.onboarding_completed_at ?: ctx.nowMs()) }
         stepCompleted("done", emptyList())

@@ -8,7 +8,16 @@ import dev.fitnessapp.algo.core.det.Det
 import dev.fitnessapp.algo.core.det.Grid
 import dev.fitnessapp.algo.core.load.LoadMode
 import dev.fitnessapp.algo.core.params.ParamView
+import dev.fitnessapp.algo.estimation.ExerciseFacts
+import dev.fitnessapp.algo.estimation.LoggedSet
+import dev.fitnessapp.algo.estimation.CurveClass
+import dev.fitnessapp.algo.estimation.rircal.CheckCandidate
 import dev.fitnessapp.algo.estimation.rircal.ClassCal
+import dev.fitnessapp.algo.estimation.sse.Sse
+import dev.fitnessapp.algo.prescription.autoreg.Autoreg
+import dev.fitnessapp.algo.prescription.autoreg.AutoregInput
+import dev.fitnessapp.algo.prescription.autoreg.AutoregJson
+import dev.fitnessapp.algo.prescription.autoreg.AutoregResult
 import dev.fitnessapp.algo.estimation.rircal.RirCal
 import dev.fitnessapp.algo.estimation.rircal.RirCalState
 import dev.fitnessapp.algo.estimation.sse.SseState
@@ -33,10 +42,12 @@ import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.db.entity.ExerciseModelStateEntity
 import dev.fitnessapp.data.db.entity.RecommendationEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
+import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.outbox.OutboxWriter
 import dev.fitnessapp.data.repo.CatalogRepository
 import dev.fitnessapp.data.repo.EquipmentRepository
+import dev.fitnessapp.data.repo.RepPreferenceRepository
 import dev.fitnessapp.data.repo.SessionRepository
 import dev.fitnessapp.data.repo.WriteContext
 import dev.fitnessapp.data.sync.SyncScheduler
@@ -44,16 +55,19 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.time.Instant
 import java.time.LocalDate
 import java.util.TreeMap
@@ -85,17 +99,25 @@ data class Prescription(
     val outputs: JsonObject,
     val trace: JsonObject,
     val inputs: JsonObject?,
+    /** The working set that is today's explicit RIR check (F14, B4.3), or null. */
+    val calibrationSet: Int? = null,
 ) {
     fun target(setIndex: Int, side: String): RxTarget? =
         sets.firstOrNull { it.setIndex == setIndex && it.side == side } ?: sets.firstOrNull { it.setIndex == setIndex && it.side == "both" }
 }
 
 /**
+ * AUTO-1's verdict after a logged working set (B13): [result] with the stored `autoreg.suggestion` id when a card is
+ * shown, and whether the exercise is `high_risk` (WE-S5 reads `rir_next_cur`).
+ */
+data class Suggestion(val recommendationId: String?, val sessionExerciseId: String, val side: String, val result: AutoregResult, val highRisk: Boolean)
+
+/**
  * L6 on the phone for the exercises the user picks (D49, M3.4): builds RX-1's request for a session exercise from the
  * stored facts (SSE-1, RCM-1 and RIRCAL-1 states, the earlier exposures and their prescriptions, the loadables), runs
  * [Prescribing], stores the `rx.prescription` snapshot and pins it on the session exercise (`recommendation_id` and
  * the planned columns). A prescription is made once per session exercise; the probe's follow-up supersedes it (B9.8).
- * Timed holds and eccentric-only items keep "last time" until HOLD-1's prescription is wired (M3.5).
+ * The user's Sets and reps preferences (M3.5) enter the scheme; timed holds and eccentric-only items keep "last time".
  */
 class PrescriptionRunner(
     private val db: FitnessDatabase,
@@ -107,6 +129,7 @@ class PrescriptionRunner(
     private val equipment: EquipmentRepository,
     private val params: ParamView,
     private val paramsVersion: String,
+    private val repPrefs: RepPreferenceRepository? = null,
 ) {
     private val mutex = Mutex()
 
@@ -123,7 +146,33 @@ class PrescriptionRunner(
         val requests = requests(session, se, ex, slot) ?: return@withLock null
         val results = requests.map { Prescribing.plan(it, params.fork()) }
         val out = combine(results.map { it.output })
-        store(user, session, se, requests, out, results.firstNotNullOfOrNull { it.warmup }?.let { PrescriptionJson.warmup(it) }, null)
+        val check = checkSet(user, session, se, ex, out, slot, requests.first())
+        store(user, session, se, requests, out, results.firstNotNullOfOrNull { it.warmup }?.let { PrescriptionJson.warmup(it) }, null, check)
+    }
+
+    /**
+     * The explicit RIR check of the session (F14, B4.3): with the opt-in on and no check yet in this session, RIRCAL-1
+     * chooses among the session's exercises in plan order; when it is [se], its last working set is the check.
+     */
+    private suspend fun checkSet(
+        user: String, session: WorkoutSessionEntity, se: SessionExerciseEntity, ex: CatalogExercise, out: RxOutput, slot: RxSlot, req: RxRequest,
+    ): Int? {
+        if (db.profiles().get(user)?.rir_calibration_opt_in != true) return null
+        if (out.probe || (out.mode != RxMode.MODEL && out.mode != RxMode.DOUBLE) || se.challenge_item_key != null) return null
+        val taken = db.recommendations().bySession(KIND, session.id).any { r ->
+            Json.parseToJsonElement(r.outputs).jsonObject["calibration_set_index"]?.let { it !is JsonNull } == true
+        }
+        if (taken) return null
+        val candidates = db.sessionExercises().bySession(session.id).filter { it.status !in setOf("removed", "skipped", "done") }.mapNotNull { o ->
+            val e = catalog.byId(o.exercise_id) ?: return@mapNotNull null
+            CheckCandidate(
+                exerciseId = o.exercise_id, planPosition = o.position.toInt(), curveClass = e.curveClass?.let { CurveClass.of(it) },
+                safetyClass = e.safetyClass, challenge = o.challenge_item_key != null, ruleMode = o.progression_mode == "rule", jointFlagged = false,
+            )
+        }
+        val chosen = RirCal.chooseCheck(candidates, true, slot.deload, LocalDate.parse(session.local_date), req.rircal, params) ?: return null
+        if (chosen.exerciseId != se.exercise_id || chosen.planPosition != se.position.toInt()) return null
+        return out.sets.maxOfOrNull { it.setIndex }
     }
 
     /**
@@ -184,6 +233,125 @@ class PrescriptionRunner(
         return now to combine(requests.map { Prescribing.plan(it, params.fork()).output })
     }
 
+    /**
+     * AUTO-1 after a logged working set of [slot] on [side] (B13, UI-06): `delta_ex` from today's sets, the trigger and,
+     * when it fires, a proposal for the remaining sets. A shown card is stored as `autoreg.suggestion` (scope
+     * `session_exercise:<id>`); at most `autoreg.max_suggestions_per_exercise` per exercise and session. RULE items
+     * have no prescription here, so their shadow waits for the RULE shadow snapshot.
+     */
+    suspend fun suggest(slot: RxSlot, side: String, feelingGood: Boolean = false): Suggestion? = mutex.withLock {
+        val user = ctx.userId() ?: return@withLock null
+        val se = db.sessionExercises().get(slot.sessionExerciseId) ?: return@withLock null
+        val session = db.sessions().get(se.session_id) ?: return@withLock null
+        val ex = catalog.byId(se.exercise_id)?.takeIf(::eligible) ?: return@withLock null
+        val sideKey = if (se.side_mode == "bilateral") "both" else side
+        val sessionSets = sessionLogged(session)
+        val base = autoregInput(session, se, ex, slot, sideKey, sessionSets) ?: return@withLock null
+        val scope = "session_exercise:${se.id}"
+        val cards = db.recommendations().byScope(AUTOREG_KIND, scope)
+            .count { Json.parseToJsonElement(it.outputs).jsonObject["card"]?.jsonPrimitive?.booleanOrNull == true }
+        val delta = deltaToday(session, se, sessionSets, feelingGood)
+        val input = base.copy(deltaStart = delta, cardsShown = cards)
+        val r = Autoreg.evaluate(input, params.fork())
+        val highRisk = ex.safetyClass == "high_risk"
+        if (!r.card) return@withLock Suggestion(null, se.id, sideKey, r, highRisk)
+        val lastSet = input.logged.last().set.id
+        val inputs = buildJsonObject {
+            put("session_exercise_id", se.id)
+            put("side", sideKey)
+            put("set_ids", JsonArray(input.logged.map { JsonPrimitive(it.set.id) }))
+            put("prescription_id", se.recommendation_id?.let { JsonPrimitive(it) } ?: JsonNull)
+            put("delta_start", JsonPrimitive(delta))
+            put("cards_shown", JsonPrimitive(cards))
+            put("technique_events", JsonPrimitive(input.techniqueEvents))
+        }
+        val id = storeSnapshot(
+            user, session, se, AUTOREG_KIND, Autoreg.ref.id.value, Autoreg.ref.version.toString(), scope, inputs,
+            AutoregJson.result(r), JsonArray(r.trace.map { JsonPrimitive(it) }), lastSet,
+        )
+        Suggestion(id, se.id, sideKey, r, highRisk)
+    }
+
+    /** The session's logged sets as the estimators read them (every exercise, for FAT-1's carry-over). */
+    private suspend fun sessionLogged(session: WorkoutSessionEntity): List<Pair<SetLogEntity, LoggedSet>> =
+        db.setLogs().bySession(session.id).mapNotNull { r ->
+            val c = catalog.byId(r.exercise_id)?.contraction ?: return@mapNotNull null
+            EngineFacts.logged(r, c, ctx)?.let { r to it }
+        }
+
+    /** AUTO-1's input for one exercise and side: the prescription's RX-1 input and output and today's working sets. */
+    private suspend fun autoregInput(
+        session: WorkoutSessionEntity, se: SessionExerciseEntity, ex: CatalogExercise, slot: RxSlot, side: String,
+        sessionSets: List<Pair<SetLogEntity, LoggedSet>>,
+    ): AutoregInput? {
+        val rx = se.recommendation_id?.let { get(it) } ?: return null
+        val req = requests(session, se, ex, slot)?.firstOrNull { it.side == side } ?: return null
+        val mine = sessionSets.filter { (row, _) -> row.session_exercise_id == se.id && row.set_kind in WORKING && (side == "both" || row.side == side) }
+        if (mine.isEmpty()) return null
+        val model = catalogModel()
+        val facts = TreeMap<String, ExerciseFacts>()
+        sessionSets.map { it.first.exercise_id }.distinct().forEach { id -> catalog.byId(id)?.let { facts[id] = EngineFacts.facts(catalog, model, it) } }
+        val ids = mine.map { it.second.id }.toSet()
+        val prepared = Sse.prepare(sessionSets.map { it.second }, facts, req.rircal, params.fork()).filter { it.set.id in ids }
+        val (input, plan) = if ("rx.probe.followup" in rx.steps) {
+            val i = Prescribing.followUpInput(req, mine.first().second, params.fork()) ?: return null
+            val out = Rx.prescribe(i, params.fork())
+            i to out.copy(sets = out.sets.map { it.copy(setIndex = it.setIndex + 1) }, trace = out.trace + "rx.probe.followup")
+        } else {
+            val i = Prescribing.input(req, params.fork())
+            i to Rx.prescribe(i, params.fork())
+        }
+        val technique = mine.count { it.second.reasonCode in TECHNIQUE }
+        return AutoregInput(input, plan, prepared, techniqueEvents = technique, ruleItem = false)
+    }
+
+    /**
+     * `delta_today` for [se] (B13.2): from the other exercises of the session with an engine prescription whose working
+     * sets were all done before [se] started, through [Autoreg.deltaToday].
+     */
+    private suspend fun deltaToday(
+        session: WorkoutSessionEntity, se: SessionExerciseEntity, sessionSets: List<Pair<SetLogEntity, LoggedSet>>, feelingGood: Boolean,
+    ): Double {
+        val firstMine = sessionSets.filter { it.first.session_exercise_id == se.id }.minOfOrNull { it.first.completed_at } ?: Long.MAX_VALUE
+        val finished = db.sessionExercises().bySession(session.id).filter { o ->
+            o.id != se.id && o.recommendation_id != null &&
+                sessionSets.filter { it.first.session_exercise_id == o.id && it.first.set_kind in WORKING }
+                    .let { s -> s.isNotEmpty() && s.maxOf { it.first.completed_at } < firstMine }
+        }
+        val deltas = finished.mapNotNull { o ->
+            val ex = catalog.byId(o.exercise_id)?.takeIf(::eligible) ?: return@mapNotNull null
+            val side = if (o.side_mode == "bilateral") "both" else "L"
+            autoregInput(session, o, ex, RxSlot(o.id), side, sessionSets)?.let { Autoreg.evaluate(it, params.fork()).deltaEx }
+        }
+        return Autoreg.deltaToday(deltas, feelingGood, params)
+    }
+
+    private suspend fun storeSnapshot(
+        user: String, session: WorkoutSessionEntity, se: SessionExerciseEntity, kind: String, moduleId: String, moduleVersion: String,
+        scope: String, inputs: JsonObject, outputs: JsonObject, trace: JsonElement, setLogId: String?,
+    ): String {
+        val inputsText = JsonText.canonical(inputs)
+        val inputsHash = dev.fitnessapp.algo.core.det.Jcs.sha256Hex(inputs)
+        val id = Ids.fitness(listOf("recommendations", user, kind, scope, params.hash, inputsHash, "").joinToString(":")).toString()
+        val now = ctx.nowMs()
+        val date = LocalDate.parse(session.local_date)
+        db.withTransaction {
+            val paramsRow = EngineFacts.paramsSnapshot(ctx, user, params, paramsVersion)
+            if (db.paramsSnapshots().insertIgnore(paramsRow) != -1L) outbox.enqueue("params_snapshots", paramsRow.id, now)
+            val row = RecommendationEntity(
+                id = id, user_id = user, device_id = ctx.device.deviceId(), app_version = ctx.appVersion, kind = kind,
+                module_id = moduleId, module_version = moduleVersion, engine_version = EngineVersion.ENGINE_VERSION,
+                params_hash = params.hash, catalog_version = catalog.version, inputs_hash = inputsHash, inputs = inputsText,
+                inputs_bytes = inputsText.toByteArray(Charsets.UTF_8).size, outputs = JsonText.canonical(outputs), trace = JsonText.canonical(trace),
+                scope_key = scope, scope_date = date.toString(), iso_week = Week.isoWeek(date), session_id = session.id,
+                session_exercise_id = se.id, set_log_id = setLogId,
+            )
+            if (db.recommendations().insertIgnore(listOf(row)).first() != -1L) outbox.enqueue("recommendations", id, now)
+        }
+        scheduler.request()
+        return id
+    }
+
     // ------------------------------------------------------------------------------------------------ request
 
     private suspend fun requests(
@@ -205,7 +373,9 @@ class PrescriptionRunner(
         val rcmK = db.modelStates().forExercise("rcm", se.exercise_id).firstOrNull()?.let { num(it, "k_used") }
         val rircal = rircal()
         val transferM = if (sse.isEmpty()) transfer(se.exercise_id) else null
-        val restS = slot.restS ?: RestPolicy.decide(RestInput(RestClass.of(ex.restClass)), p).timerS
+        val prefs = repPrefs?.resolve(ex, se.exercise_id, primaryGroup(ex, model)).orEmpty()
+        val restPref = prefs.firstNotNullOfOrNull { it.restPrefS }
+        val restS = slot.restS ?: RestPolicy.decide(RestInput(RestClass.of(ex.restClass), userRestPrefS = restPref), p).timerS
         val history = db.setLogs().historyForExercise(se.exercise_id, if (includeThisSession) "" else session.id, HISTORY_LIMIT)
             .filter { it.set.set_kind != "warmup" && it.session_started_at != null && (it.session_started_at <= (session.started_at ?: Long.MAX_VALUE) || includeThisSession) }
         val bySession = history.groupBy { it.set.session_id }
@@ -226,7 +396,7 @@ class PrescriptionRunner(
             RxRequest(
                 exerciseId = se.exercise_id, side = side, facts = facts, isolation = ex.mechanics == "isolation",
                 highRisk = ex.safetyClass == "high_risk", bodyweightOnly = mode == LoadMode.BODYWEIGHT,
-                prefs = emptyList(), item = slot.item, sets = se.planned_sets ?: SessionRepository.DEFAULT_SETS, restS = restS,
+                prefs = prefs, item = slot.item, sets = se.planned_sets ?: SessionRepository.DEFAULT_SETS, restS = restS,
                 loadables = loadables, bodyweightW = bodyweightW,
                 sse = (sse[side] ?: sse["both"])?.let(::sseState), rcmK = rcmK, rircal = rircal, transferM = transferM,
                 exposures = exposures, at = Instant.ofEpochMilli(session.started_at ?: ctx.nowMs()),
@@ -314,9 +484,12 @@ class PrescriptionRunner(
 
     private suspend fun store(
         user: String, session: WorkoutSessionEntity, se: SessionExerciseEntity, requests: List<RxRequest>, out: RxOutput,
-        warmup: JsonObject?, supersedes: String?,
+        warmup: JsonObject?, supersedes: String?, check: Int? = null,
     ): String {
-        val outputs = JsonObject(PrescriptionJson.rx(out) + ("warmup" to (warmup ?: JsonNull)))
+        val outputs = JsonObject(
+            PrescriptionJson.rx(out) + ("warmup" to (warmup ?: JsonNull)) +
+                ("calibration_set_index" to (check?.let { JsonPrimitive(it) } ?: JsonNull)),
+        )
         return storeRaw(user, session, se, requests, out, outputs, Prescribing.trace(out).jsonObject, supersedes, null)
     }
 
@@ -353,6 +526,8 @@ class PrescriptionRunner(
                     planned_rir = Scaled.toLong(java.math.BigDecimal.valueOf(out.scheme.qStar), 1),
                     planned_effective_load_kg = first?.wSys?.let { Scaled.toLong(java.math.BigDecimal.valueOf(it), 2) } ?: fresh.planned_effective_load_kg,
                     planned_rest_s = first?.restS?.toInt() ?: fresh.planned_rest_s,
+                    // A sets preference sets S for an exercise the user picked (B9.3); challenge items keep theirs.
+                    planned_sets = if (fresh.challenge_item_key == null) out.sets.maxOfOrNull { it.setIndex } ?: fresh.planned_sets else fresh.planned_sets,
                     client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion,
                 ),
             )
@@ -388,11 +563,16 @@ class PrescriptionRunner(
             qStar = scheme.getValue("q_star").jsonPrimitive.content.toDouble(), mUse = dbl(t["m_use"]),
             steps = t["steps"]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty(), moduleVersion = r.module_version, paramsHash = r.params_hash,
             outputs = o, trace = t, inputs = r.inputs?.let { Json.parseToJsonElement(it).jsonObject },
+            calibrationSet = o["calibration_set_index"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.intOrNull,
         )
     }
 
     companion object {
         const val KIND = "rx.prescription"
+        const val AUTOREG_KIND = "autoreg.suggestion"
+
+        private val WORKING = setOf("working", "top", "backoff", "amrap")
+        private val TECHNIQUE = setOf("technique_breakdown", "torso_rotation")
 
         /** Page size of the history read; far more than any exposure window RX-1 looks at. */
         private const val HISTORY_LIMIT = 2000

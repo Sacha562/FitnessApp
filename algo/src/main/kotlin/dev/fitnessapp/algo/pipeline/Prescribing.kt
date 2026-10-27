@@ -93,8 +93,8 @@ data class PrescriptionResult(val input: RxInput, val output: RxOutput, val warm
 /**
  * L6 prescription for one exercise of a session the user assembled or repeated (D49, M3.4): turns the stored facts
  * into RX-1's input (B9.2) and runs RX-1 and WARMUP-1. Pure: the same request gives the same prescription, so the
- * `rx.prescription` snapshot's inputs replay it. Scheme preferences arrive with the Preferences screen (M3.5); until
- * then the scheme is the engine default or the challenge item's.
+ * `rx.prescription` snapshot's inputs replay it. The scheme comes from the challenge item, the user's Sets and reps
+ * preferences (M3.5) or the engine defaults, field by field (B9.3).
  */
 object Prescribing {
     private val COUNTED = setOf("working", "top", "backoff", "amrap")
@@ -111,6 +111,13 @@ object Prescribing {
      * carried into them. AUTO-1's same-day offset arrives with M3.5; on the first set it is the same Kalman step.
      */
     fun followUp(req: RxRequest, probe: LoggedSet, params: ParamView): RxOutput? {
+        val input = followUpInput(req, probe, params) ?: return null
+        val out = Rx.prescribe(input, params)
+        return out.copy(sets = out.sets.map { it.copy(setIndex = it.setIndex + 1) }, trace = out.trace + "rx.probe.followup")
+    }
+
+    /** RX-1's input for the sets after the probe (the estimate updated with it); null when nothing follows. */
+    fun followUpInput(req: RxRequest, probe: LoggedSet, params: ParamView): RxInput? {
         val facts = req.facts ?: return null
         val curve = facts.curveClass ?: return null
         val k = req.rcmK ?: req.sse?.k ?: Rcm.k0(curve, params)
@@ -120,16 +127,14 @@ object Prescribing {
         val transfer = req.transferM?.let { mapOf(req.exerciseId to it) } ?: emptyMap()
         val r = Sse.update(prepared, priors, mapOf(req.exerciseId to k), transfer, mapOf(req.exerciseId to facts), req.at, null, params)
         val st = r.next[key] ?: return null
-        val remaining = req.sets - 1
+        val base = input(req, params)
+        val remaining = base.sets - 1
         if (remaining <= 0) return null
         val f1 = prepared.firstOrNull()?.fatigueF ?: 0.0
-        val base = input(req, params)
-        val input = base.copy(
+        return base.copy(
             sets = remaining, k = k, estimate = RxEstimate(st.trend.l, st.trend.pLL), transferM = null, last = null,
             f1 = f1, flags = base.flags.copy(daysSinceLast = null),
         )
-        val out = Rx.prescribe(input, params)
-        return out.copy(sets = out.sets.map { it.copy(setIndex = it.setIndex + 1) }, trace = out.trace + "rx.probe.followup")
     }
 
     fun input(req: RxRequest, params: ParamView): RxInput {
@@ -139,8 +144,9 @@ object Prescribing {
             SchemeContext(isolation = req.isolation, bodyweightOnly = req.bodyweightOnly, highRisk = req.highRisk, item = req.item, deload = req.deload),
             params,
         )
-        // S is the session exercise's planned set count (B9.2: the slot's S; a challenge deload arrives already halved).
-        val sets = req.sets
+        // S is the session exercise's planned set count (B9.2: the slot's S; a challenge deload arrives already halved),
+        // or the user's sets preference for an exercise the user picked (B9.3; a challenge item keeps its own S).
+        val sets = if (req.item == null) scheme.setsPref ?: req.sets else req.sets
         val last = req.exposures.firstOrNull()
         val k = req.rcmK ?: req.sse?.k ?: curve?.let { Rcm.k0(it, params) }
         val estimate = req.sse?.let { Trend.predict(it.trend, req.at, params) }?.let { RxEstimate(it.l, it.pLL) }
@@ -212,6 +218,19 @@ object Prescribing {
                 put("sets", i.sets?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)
             }
         } ?: JsonNull)
+        put("prefs", buildJsonArray {
+            req.prefs.forEach { p ->
+                add(buildJsonObject {
+                    put("scope", p.scope)
+                    put("sets_pref", p.setsPref?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)
+                    put("rep_min", p.repMin?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)
+                    put("rep_max", p.repMax?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)
+                    put("rir_target", p.rirTarget?.let { rep(it) } ?: JsonNull)
+                    put("rep_scheme", p.repScheme?.let { JsonPrimitive(it) } ?: JsonNull)
+                    put("rest_pref_s", p.restPrefS?.let { JsonNumbers.grid(Grid.s(it), GridKind.S) } ?: JsonNull)
+                })
+            }
+        })
         put("sets", JsonNumbers.int(req.sets.toLong()))
         put("rest_s", JsonNumbers.grid(Grid.s(req.restS), GridKind.S))
         put("loadables", JsonArray(req.loadables.sorted().distinct().map { kg(it) }))

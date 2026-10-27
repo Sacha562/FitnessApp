@@ -33,6 +33,7 @@ import dev.fitnessapp.data.db.dao.SessionEventDao
 import dev.fitnessapp.data.db.dao.SessionExerciseDao
 import dev.fitnessapp.data.db.dao.SetLogDao
 import dev.fitnessapp.data.db.dao.SyncCursorDao
+import dev.fitnessapp.data.db.dao.RepPreferenceDao
 import dev.fitnessapp.data.db.dao.UserExercisePrefDao
 import dev.fitnessapp.data.db.dao.WellnessLogDao
 import dev.fitnessapp.data.db.dao.WorkoutSessionDao
@@ -55,6 +56,7 @@ import dev.fitnessapp.data.db.entity.SessionBlockEntity
 import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
+import dev.fitnessapp.data.db.entity.RepPreferenceEntity
 import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
@@ -74,7 +76,7 @@ import java.io.File
  * events, rule audit), version 4 the local live plan of a challenge session and version 5 the interval columns of
  * `rest_timer` (the warm-up row countdown, D33), version 6 (M2b.5) `calendar_events` with the local
  * `calendar_instance` cache and `calendar_link` table, version 7 (M3.2) the estimation layer's `params_snapshots`,
- * `recommendations` and `exercise_model_state`. Later milestones add tables through
+ * `recommendations` and `exercise_model_state`, version 8 (M3.5) `rep_preferences`. Later milestones add tables through
  * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
@@ -97,10 +99,12 @@ import java.io.File
         CalendarEventEntity::class, CalendarInstanceEntity::class, CalendarLinkEntity::class,
         // v7 (M3.2): snapshots, their params and the estimator caches
         ParamsSnapshotEntity::class, RecommendationEntity::class, ExerciseModelStateEntity::class,
+        // v8 (M3.5): the Sets and reps preferences
+        RepPreferenceEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
-        AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7),
+        AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8),
     ],
 )
 @TypeConverters(Converters::class)
@@ -122,6 +126,7 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun alarms(): ScheduledAlarmDao
     abstract fun crashes(): CrashLogDao
     abstract fun exercisePrefs(): UserExercisePrefDao
+    abstract fun repPreferences(): RepPreferenceDao
     abstract fun exports(): ExportDao
     abstract fun challengeDefinitions(): ChallengeDefinitionDao
     abstract fun enrollments(): ChallengeEnrollmentDao
@@ -136,7 +141,7 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun modelStates(): ExerciseModelStateDao
 
     companion object {
-        const val VERSION = 7
+        const val VERSION = 8
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 

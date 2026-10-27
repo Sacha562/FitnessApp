@@ -84,6 +84,8 @@ data class LogSetCommand(
     val attemptIndex: Int? = null,
     /** Eccentric-only sets (UX 11.7.5, C66): the shortest lowering of the set and its target. */
     val eccSActual: Double? = null,
+    /** An explicit RIR check (F14, B4.3): the reps done after the chip, to technical failure (`set_kind` `calibration`). */
+    val calibExtraReps: Int? = null,
     val eccSTarget: Double? = null,
     /** `assisted_ordinal` (fingers of assistance, 0-4): the load point is null and this is the load. */
     val assistOrdinal: Int? = null,
@@ -505,6 +507,7 @@ class SessionRepository(
                 reps = cmd.reps, duration_s = cmd.durationS?.let { Scaled.fromDouble(it, 1) },
                 hold_reserve_s = cmd.holdReserveS?.let { Scaled.fromDouble(it, 1) }, hold_reserve_is_lower_bound = cmd.holdReserveLowerBound,
                 ecc_s_target = cmd.eccSTarget?.let { Scaled.fromDouble(it, 1) }, ecc_s_actual = cmd.eccSActual?.let { Scaled.fromDouble(it, 1) },
+                calib_extra_reps = cmd.calibExtraReps,
                 rir_reported = cmd.rir?.let { Scaled.fromDouble(it, 1) }, rir_is_lower_bound = cmd.rirLowerBound,
                 rir_source = if (cmd.rir == null && cmd.holdReserveS == null) "missing" else cmd.rirSource ?: "chip",
                 flags = cmd.flags.distinct().sorted(), deviation_reason_code = cmd.deviationReason,

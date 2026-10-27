@@ -15,6 +15,7 @@ import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
+import dev.fitnessapp.data.db.entity.RepPreferenceEntity
 import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
 import kotlinx.coroutines.flow.Flow
@@ -184,6 +185,9 @@ data class SessionWorkUnits(val session_id: String, val units: Int)
 /** Sessions in which an exercise was trained since a date (the "most used" sort, UX 13.2). */
 data class ExerciseUsage(val exercise_id: String, val sessions: Int)
 
+/** One deviation reason of a working set since a date (WE-P10, WE-T2). */
+data class ReasonRow(val exercise_id: String, val deviation_reason_code: String, val local_date: String)
+
 /** One logged set joined with its session start (for "last time" history, UI-04). */
 data class SetWithSessionStart(
     val session_started_at: Long?,
@@ -241,6 +245,15 @@ interface SetLogDao : SyncDao<SetLogEntity> {
            GROUP BY l.exercise_id""",
     )
     fun observeUsageSince(sinceDate: String): Flow<List<ExerciseUsage>>
+
+    @Query(
+        """SELECT l.exercise_id AS exercise_id, l.deviation_reason_code AS deviation_reason_code, s.local_date AS local_date
+           FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
+           WHERE l.deleted_at IS NULL AND s.deleted_at IS NULL AND s.local_date >= :sinceDate
+             AND l.deviation_reason_code IN (:codes)
+           ORDER BY s.local_date, l.id""",
+    )
+    suspend fun reasonsSince(sinceDate: String, codes: List<String>): List<ReasonRow>
 
     @Query("SELECT * FROM set_logs WHERE id = :id")
     suspend fun get(id: String): SetLogEntity?
@@ -352,6 +365,27 @@ interface UserExercisePrefDao : SyncDao<UserExercisePrefEntity> {
 
     @Query("SELECT * FROM user_exercise_prefs WHERE id = :id")
     suspend fun get(id: String): UserExercisePrefEntity?
+}
+
+@Dao
+interface RepPreferenceDao : SyncDao<RepPreferenceEntity> {
+    @Query("SELECT * FROM rep_preferences WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<RepPreferenceEntity>
+
+    @Query("SELECT id FROM rep_preferences")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM rep_preferences ORDER BY id")
+    override suspend fun exportAll(): List<RepPreferenceEntity>
+
+    @Query("SELECT * FROM rep_preferences WHERE deleted_at IS NULL ORDER BY scope_key, id")
+    fun observeAll(): Flow<List<RepPreferenceEntity>>
+
+    @Query("SELECT * FROM rep_preferences WHERE deleted_at IS NULL ORDER BY scope_key, id")
+    suspend fun active(): List<RepPreferenceEntity>
+
+    @Query("SELECT * FROM rep_preferences WHERE id = :id")
+    suspend fun get(id: String): RepPreferenceEntity?
 }
 
 @Dao

@@ -20,6 +20,7 @@ import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.SyncedRow
+import dev.fitnessapp.data.db.entity.RepPreferenceEntity
 import dev.fitnessapp.data.db.entity.UserExercisePrefEntity
 import dev.fitnessapp.data.db.entity.WellnessLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
@@ -81,6 +82,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("gym_equipment", false, true, db.gymEquipment(), GymEquipmentEntity.serializer()),
     SyncTable("profiles", false, true, db.profiles(), ProfileEntity.serializer()),
     SyncTable("user_exercise_prefs", false, true, db.exercisePrefs(), UserExercisePrefEntity.serializer()),
+    SyncTable("rep_preferences", false, true, db.repPreferences(), RepPreferenceEntity.serializer()),
     SyncTable("challenge_enrollments", false, true, db.enrollments(), ChallengeEnrollmentEntity.serializer()),
     SyncTable("workout_sessions", false, true, db.sessions(), WorkoutSessionEntity.serializer()),
     SyncTable("session_blocks", false, true, db.blocks(), SessionBlockEntity.serializer()),
@@ -98,7 +100,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
 
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
-    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "challenge_enrollments", "workout_sessions",
+    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "rep_preferences", "challenge_enrollments", "workout_sessions",
     "session_blocks", "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events",
     "challenge_rule_events", "session_events", "exports", "exercise_model_state",
 )

@@ -39,6 +39,12 @@ interface RecommendationDao : SyncDao<RecommendationEntity> {
     @Query("SELECT id FROM recommendations WHERE kind IN (:kinds)")
     suspend fun idsOfKinds(kinds: List<String>): List<String>
 
+    @Query("SELECT * FROM recommendations WHERE kind = :kind AND scope_key = :scope ORDER BY id")
+    suspend fun byScope(kind: String, scope: String): List<RecommendationEntity>
+
+    @Query("SELECT * FROM recommendations WHERE kind = :kind AND session_id = :sessionId ORDER BY id")
+    suspend fun bySession(kind: String, sessionId: String): List<RecommendationEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(rows: List<RecommendationEntity>): List<Long>
 
