@@ -459,3 +459,14 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   pain stop removes only exercises with joint stress 2 or more on the painful joint (`reason.pain_stop_js_min`, resolves
   OI-A25). M3 is built in six steps, M3.1 to M3.6. PLAN.md 11, ALGORITHMS (B12.3, Part C, open issues, build order),
   ALGORITHMS_PLANNING 15.1 and 26, UX 27.2, DATA_MODEL E9 and OAP_CHALLENGE (OAP-OI-05 resolved) updated.
+- 2026-10-27 — M3.1 built (D49): `fatigue`, `rcm`, `rircal`, `sse` and `hold` in `:algo`, with the 15 golden fixtures
+  of ALGORITHMS D2 "Estimation" and unit tests on every worked example of B4-B8 (all reproduce; GF-SSE-02's 107.65 is
+  107.655, so 107.66 on the KG grid). Build notes (defaults, no user decision needed): the estimator column of REASON-1
+  (classes and the missing-RIR imputation, B12.2-B12.4) is built now because the estimators need it; the rest of
+  REASON-1 stays in M3.3. A session that moves no SSE-1 or HOLD-1 state (only a lower bound below its gate) keeps the
+  stored state, because a re-prediction would change the decaying trend (ALGORITHMS B6.4). RIRCAL-1 keeps the number of
+  checks in the last check week next to the week (B4.1); the implicit update uses `reps + q_rep + b` as the capacity
+  of every earlier set and `fatigue.rest_ref_s` when no rest is known (B4.4). RCM-1 writes `sd_lnk = sigma_lnk` and a
+  new `pooled` flag when no window is informative, and the pooled class fit uses `k0` for the per-set sd (B5.1,
+  DATA_MODEL 10.2). `GoldenRunner.run` takes the params view (the self-test and `sim golden` pass the bundled params).
+  The app does not call the estimators before M3.2, so `ENGINE_VERSION` stays 1.7.0.

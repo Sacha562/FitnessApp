@@ -1,0 +1,57 @@
+{
+    "id": "GF-FAT-02",
+    "module": "fatigue",
+    "description": "4 x 5 at +20 kg, rest 150 s: predicted RIR, F and the live readout after set 1",
+    "input": {
+        "module": "fatigue@1.0.0",
+        "scope_key": "golden:GF-FAT-02",
+        "payload": {
+            "planned": {
+                "w_sys": 90.7,
+                "m_kg": 109.94,
+                "k": 30.63,
+                "reps": [
+                    5,
+                    5,
+                    5,
+                    5
+                ],
+                "rest_s": 150,
+                "q_star": 2,
+                "readout_s": [
+                    60,
+                    90,
+                    120,
+                    150,
+                    180
+                ]
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "cap_fresh": 7.5,
+            "fatigue_f": [
+                0,
+                0.1167,
+                0.2197,
+                0.3143
+            ],
+            "rir_pred": [
+                2.5,
+                1.62,
+                0.85,
+                0.14
+            ],
+            "readout_reps_at_q_star": [
+                3.98,
+                4.31,
+                4.5,
+                4.62,
+                4.71
+            ]
+        },
+        "outputs_jcs_sha256": "a86c3c9d800ed68d32a7ea796301f3b784a13004f1706c2866211809f97066ec"
+    }
+}

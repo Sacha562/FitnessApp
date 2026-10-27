@@ -1,0 +1,93 @@
+{
+    "id": "GF-HOLD-01",
+    "module": "hold",
+    "description": "90-degree hold at pin 35 (w 48.32): 8 s + Hard; then pin 30 (w 50.59) for a 6-8 s range",
+    "input": {
+        "module": "hold@1.0.0",
+        "scope_key": "golden:GF-HOLD-01",
+        "payload": {
+            "session_start": "2026-10-08T17:45:00Z",
+            "facts": [
+                {
+                    "exercise_id": "hold_90",
+                    "hold_class": "elbow",
+                    "pattern": "skill_static",
+                    "f_bw": 1.0
+                }
+            ],
+            "sets": [
+                {
+                    "id": "h1",
+                    "exercise_id": "hold_90",
+                    "side": "R",
+                    "performed_at": "2026-10-08T18:20:00Z",
+                    "set_kind": "working",
+                    "w_sys": 48.32,
+                    "t_done_s": 8,
+                    "chip": "hard"
+                }
+            ],
+            "prescribe": {
+                "exercise_id": "hold_90",
+                "side": "R",
+                "options": [
+                    48.32,
+                    50.59
+                ],
+                "t_lo": 6,
+                "t_hi": 8
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "outputs": {
+                "sets": [
+                    {
+                        "set_id": "h1",
+                        "t_done": 8,
+                        "s_res": 2,
+                        "fatigue_f": 0,
+                        "w_sys": 48.32,
+                        "z": 2.30258509299,
+                        "sigma": 0.4,
+                        "estimator_class": "normal"
+                    }
+                ],
+                "states": [
+                    {
+                        "exercise_id": "hold_90",
+                        "side": "R",
+                        "hold_class": "elbow",
+                        "t_s": 10,
+                        "ci80_lo_s": 9,
+                        "ci80_hi_s": 11.1,
+                        "g_per_week": 0,
+                        "beta": -2.21,
+                        "w_ref_kg": 48.32
+                    }
+                ]
+            },
+            "steps": [],
+            "prescribe": {
+                "options": [
+                    {
+                        "w_sys": 48.32,
+                        "t_cap_s": 10,
+                        "t_target_s": 8
+                    },
+                    {
+                        "w_sys": 50.59,
+                        "t_cap_s": 9.04,
+                        "t_target_s": 7.04
+                    }
+                ],
+                "w_sys": 50.59,
+                "t_star_s": 7,
+                "feasible": true
+            }
+        },
+        "outputs_jcs_sha256": "61131e7db3b0ab57914a041902caa8e0638787d7214b705883a8ac96789461ef"
+    }
+}

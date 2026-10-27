@@ -1,0 +1,29 @@
+{
+    "id": "GF-RCM-05",
+    "module": "rcm",
+    "description": "Cutover state (C59): the class prior; gate input of a 3RM of +32.5 at BW 70.7",
+    "input": {
+        "module": "rcm@1.0.0",
+        "scope_key": "golden:GF-RCM-05",
+        "payload": {
+            "initial": "upper_compound",
+            "interval": {
+                "w_sys": 103.2,
+                "reps": 3,
+                "q": 0,
+                "bw_kg": 70.7
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "interval": {
+                "e1rm_added_kg": 39.38,
+                "ci80_lo_added_kg": 37.18,
+                "ci80_hi_added_kg": 42.61
+            }
+        },
+        "outputs_jcs_sha256": "07fb9d6f8b4a45b285856381485d45fc4cb81a96d89977b8e39a57b5961bcf03"
+    }
+}

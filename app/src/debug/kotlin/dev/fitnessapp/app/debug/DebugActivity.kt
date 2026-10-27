@@ -24,6 +24,7 @@ import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.fitexpr.ValueJson
+import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.app.FitnessApplication
 import dev.fitnessapp.app.ui.challenges.DraftTest
@@ -130,7 +131,7 @@ class DebugActivity : ComponentActivity() {
     }
 
     private fun runSelfTest() {
-        val lines = DeterminismSelfTest.run(assets)
+        val lines = DeterminismSelfTest.run(assets, (application as FitnessApplication).container.params)
         lines.forEach { Log.i(TAG, it) }
         report.value = lines.joinToString("\n")
     }
@@ -313,7 +314,7 @@ class DebugActivity : ComponentActivity() {
 }
 
 object DeterminismSelfTest {
-    fun run(assets: AssetManager): List<String> {
+    fun run(assets: AssetManager, params: ParamView): List<String> {
         val names = assets.list("algo").orEmpty().filter { it.endsWith(".json") }.sorted()
         var failures = 0
         val lines = names.map { name ->
@@ -321,7 +322,7 @@ object DeterminismSelfTest {
                 val text = assets.open("algo/$name").use { it.readBytes().toString(Charsets.UTF_8) }
                 val fixture = Json.parseToJsonElement(text).jsonObject
                 val expected = fixture.getValue("expected").jsonObject.getValue("outputs_jcs_sha256").jsonPrimitive.content
-                val actual = GoldenRunner.run(fixture).outputsSha256
+                val actual = GoldenRunner.run(fixture, params).outputsSha256
                 if (actual == expected) "ok   ${name.removeSuffix(".json")} $actual"
                 else { failures++; "FAIL ${name.removeSuffix(".json")} expected $expected got $actual" }
             } catch (e: Exception) {

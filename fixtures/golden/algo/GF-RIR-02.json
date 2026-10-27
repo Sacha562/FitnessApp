@@ -1,0 +1,35 @@
+{
+    "id": "GF-RIR-02",
+    "module": "rircal",
+    "description": "One check per ISO week across 2026-10-25 (DST); the class cooldown of 21 days",
+    "input": {
+        "module": "rircal@1.0.0",
+        "scope_key": "golden:GF-RIR-02",
+        "payload": {
+            "schedule": {
+                "candidate": {
+                    "exercise_id": "leg_extension",
+                    "plan_position": 1,
+                    "curve_class": "lower_isolation",
+                    "safety_class": "machine"
+                },
+                "dates": [
+                    "2026-10-24",
+                    "2026-10-25",
+                    "2026-11-16"
+                ]
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "chosen": [
+                "leg_extension",
+                null,
+                "leg_extension"
+            ]
+        },
+        "outputs_jcs_sha256": "4ba4fb0982508d9e28f7390be6201f4b5b14be6a75fd0e4a8f0544642bac2afb"
+    }
+}

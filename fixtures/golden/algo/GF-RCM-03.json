@@ -1,0 +1,101 @@
+{
+    "id": "GF-RCM-03",
+    "module": "rcm",
+    "description": "Fitting procedure on the 30-08 test window alone (not the cutover state, C59)",
+    "input": {
+        "module": "rcm@1.0.0",
+        "scope_key": "golden:GF-RCM-03",
+        "payload": {
+            "fit": {
+                "curve_class": "upper_compound",
+                "fit_date": "2026-08-30",
+                "prev": null,
+                "pooled_k": null,
+                "facts": [
+                    {
+                        "exercise_id": "weighted_pullup",
+                        "curve_class": "upper_compound",
+                        "f_bw": 1.0,
+                        "implement_base_kg": 0.0,
+                        "group_coeffs": {
+                            "biceps": 0.5,
+                            "lats": 1.0,
+                            "upper_back": 0.75
+                        }
+                    }
+                ],
+                "sets": [
+                    {
+                        "id": "bw18",
+                        "session_id": "bw18",
+                        "exercise_id": "weighted_pullup",
+                        "performed_at": "2026-08-30T10:00:00Z",
+                        "set_kind": "test",
+                        "w_sys": 71.0,
+                        "reps": 18,
+                        "rir": 0
+                    },
+                    {
+                        "id": "rm3",
+                        "session_id": "rm3",
+                        "exercise_id": "weighted_pullup",
+                        "performed_at": "2026-08-30T10:00:00Z",
+                        "set_kind": "test",
+                        "w_sys": 97.0,
+                        "reps": 3,
+                        "rir": 0
+                    }
+                ]
+            },
+            "interval": {
+                "w_sys": 103.2,
+                "reps": 3,
+                "q": 0,
+                "bw_kg": 70.7
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "fit": {
+                "k_prev": 30,
+                "k_hat": 34.144988047,
+                "k_used": 31.3225053067,
+                "sd_lnk": 0.202403515133,
+                "m": 1,
+                "n_sets": 2,
+                "rate_limited": false,
+                "pooled": false,
+                "j_min": 0.192057319083,
+                "j_k0": 0.421129207739,
+                "sets": [
+                    {
+                        "set_id": "bw18",
+                        "w_sys": 71,
+                        "n_eff": 18,
+                        "fatigue_f": 0,
+                        "n_fresh": 18,
+                        "window": 0,
+                        "residual": 0.0295851554491
+                    },
+                    {
+                        "set_id": "rm3",
+                        "w_sys": 97,
+                        "n_eff": 3,
+                        "fatigue_f": 0,
+                        "n_fresh": 3,
+                        "window": 0,
+                        "residual": -0.00550994953308
+                    }
+                ]
+            },
+            "interval": {
+                "e1rm_added_kg": 39.09,
+                "ci80_lo_added_kg": 37.58,
+                "ci80_hi_added_kg": 41.04
+            }
+        },
+        "outputs_jcs_sha256": "cc48f48b39ff55b89e6af8a3400b6760ac04ff2c265863bdafd5bd159a1672ef"
+    }
+}

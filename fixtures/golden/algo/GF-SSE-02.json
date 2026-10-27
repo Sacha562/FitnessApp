@@ -1,0 +1,44 @@
+{
+    "id": "GF-SSE-02",
+    "module": "sse",
+    "description": "Detraining: the same prior predicted 21 and 49 days later",
+    "input": {
+        "module": "sse@1.0.0",
+        "scope_key": "golden:GF-SSE-02",
+        "payload": {
+            "predict": {
+                "state": {
+                    "m_kg": 109.94,
+                    "g": 0.003,
+                    "p_ll": 9.0E-4,
+                    "p_lg": 0.0,
+                    "p_gg": 2.5E-5,
+                    "t_last": "2026-10-01T17:45:00Z",
+                    "n_obs": 10
+                },
+                "at": [
+                    "2026-10-22T17:45:00Z",
+                    "2026-11-19T17:45:00Z"
+                ]
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "predict": [
+                {
+                    "m_kg": 110.93,
+                    "sd_ln": 0.0377491721764,
+                    "g_per_week": 0.001842375
+                },
+                {
+                    "m_kg": 107.66,
+                    "sd_ln": 0.0585234995536,
+                    "g_per_week": 0
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "736ae464b0bd3edbbe8e4cd351516e2280af0cf3c08a982e354ec67c3c5c1171"
+    }
+}

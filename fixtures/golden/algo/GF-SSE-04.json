@@ -1,0 +1,180 @@
+{
+    "id": "GF-SSE-04",
+    "module": "sse",
+    "description": "Lower bound: a 5+ set below L + 0.5 sd has no effect, one above raises L",
+    "input": {
+        "module": "sse@1.0.0",
+        "scope_key": "golden:GF-SSE-04",
+        "payload": {
+            "priors": [
+                {
+                    "m_kg": 109.94,
+                    "g": 0.003,
+                    "p_ll": 9.0E-4,
+                    "p_lg": 0.0,
+                    "p_gg": 2.5E-5,
+                    "t_last": "2026-10-01T17:45:00Z",
+                    "n_obs": 10,
+                    "exercise_id": "weighted_pullup",
+                    "side": "both",
+                    "k": 30.63
+                }
+            ],
+            "runs": [
+                {
+                    "session_start": "2026-10-08T17:45:00Z",
+                    "bw_kg": 70.7,
+                    "k_by_exercise": {
+                        "weighted_pullup": 30.63
+                    },
+                    "facts": [
+                        {
+                            "exercise_id": "weighted_pullup",
+                            "curve_class": "upper_compound",
+                            "f_bw": 1.0,
+                            "implement_base_kg": 0.0,
+                            "group_coeffs": {
+                                "biceps": 0.5,
+                                "lats": 1.0,
+                                "upper_back": 0.75
+                            }
+                        }
+                    ],
+                    "sets": [
+                        {
+                            "id": "lb1",
+                            "exercise_id": "weighted_pullup",
+                            "performed_at": "2026-10-08T18:00:00Z",
+                            "w_sys": 80.0,
+                            "reps": 5,
+                            "rir": 5,
+                            "rir_lower_bound": true
+                        }
+                    ]
+                },
+                {
+                    "session_start": "2026-10-08T17:45:00Z",
+                    "bw_kg": 70.7,
+                    "k_by_exercise": {
+                        "weighted_pullup": 30.63
+                    },
+                    "facts": [
+                        {
+                            "exercise_id": "weighted_pullup",
+                            "curve_class": "upper_compound",
+                            "f_bw": 1.0,
+                            "implement_base_kg": 0.0,
+                            "group_coeffs": {
+                                "biceps": 0.5,
+                                "lats": 1.0,
+                                "upper_back": 0.75
+                            }
+                        }
+                    ],
+                    "sets": [
+                        {
+                            "id": "lb2",
+                            "exercise_id": "weighted_pullup",
+                            "performed_at": "2026-10-08T18:00:00Z",
+                            "w_sys": 100.0,
+                            "reps": 5,
+                            "rir": 5,
+                            "rir_lower_bound": true
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "runs": [
+                {
+                    "outputs": {
+                        "sets": [
+                            {
+                                "set_id": "lb1",
+                                "q_true": 5.5,
+                                "n_eff": 10.5,
+                                "n_fresh": 10.5,
+                                "fatigue_f": 0,
+                                "z": 4.65217089811,
+                                "s": 0.0515551305288,
+                                "estimator_class": "lower_bound",
+                                "e1rm_kg": 104.81,
+                                "e1rm_added_kg": 34.11,
+                                "k_used": 30.63,
+                                "residual": -0.0507638643245,
+                                "n_eff_pred": 12.59,
+                                "z_pred_lo": 4.61315018472,
+                                "z_pred_hi": 4.79271934014
+                            }
+                        ],
+                        "states": []
+                    },
+                    "trace": {
+                        "innovations": [],
+                        "steps": [
+                            {
+                                "code": "sse.no_update",
+                                "entity": "weighted_pullup"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "outputs": {
+                        "sets": [
+                            {
+                                "set_id": "lb2",
+                                "q_true": 5.5,
+                                "n_eff": 10.5,
+                                "n_fresh": 10.5,
+                                "fatigue_f": 0,
+                                "z": 4.87531444942,
+                                "s": 0.0515551305288,
+                                "estimator_class": "lower_bound",
+                                "e1rm_kg": 131.02,
+                                "e1rm_added_kg": 60.32,
+                                "k_used": 30.63,
+                                "residual": 0.17237968699,
+                                "n_eff_pred": 4.15,
+                                "z_pred_lo": 4.61315018472,
+                                "z_pred_hi": 4.79271934014
+                            }
+                        ],
+                        "states": [
+                            {
+                                "exercise_id": "weighted_pullup",
+                                "side": "both",
+                                "m_kg": 112.51,
+                                "ci80_lo_kg": 108.25,
+                                "ci80_hi_kg": 116.93,
+                                "g_per_week": 0.00296669041617,
+                                "l_prior": 4.70293476243,
+                                "p_ll_prior": 0.001025,
+                                "huber_applied": false,
+                                "lb_applied": true
+                            }
+                        ]
+                    },
+                    "trace": {
+                        "innovations": [
+                            {
+                                "exercise_id": "weighted_pullup",
+                                "side": "both",
+                                "nu": null,
+                                "s": null,
+                                "k0": null,
+                                "k1": null
+                            }
+                        ],
+                        "steps": []
+                    }
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "c2bd588321bfccc02ba585a6aad65afde9542b3eb9a0cd689bdc9cea8c481e5f"
+    }
+}

@@ -51,6 +51,16 @@ class ParamView(private val values: JsonObject) {
         return out
     }
 
+    /** An array of strings (enum lists such as `rircal.eligible_safety_classes`), in file order. */
+    fun strings(key: String): List<String> {
+        val arr = element(key) as? JsonArray ?: throw IllegalArgumentException("params key $key is not an array")
+        return arr.map {
+            val p = it as? JsonPrimitive ?: throw IllegalArgumentException("params key $key holds a non-scalar")
+            require(p.isString) { "params key $key holds a non-string" }
+            p.content
+        }
+    }
+
     fun doubles(key: String): List<Double> {
         val arr = element(key) as? JsonArray ?: throw IllegalArgumentException("params key $key is not an array")
         return arr.map { number(it as JsonPrimitive, key) }

@@ -869,7 +869,8 @@ evaluate the raw `rir_reported` (CHALLENGE_ENGINE); RIRCAL-1 never changes a sto
 
 `exercise_model_state` rows with `model = 'rircal'`: one user row (`class_key = 'user'`) with `{b, s_q, n}`
 and one row per curve class (`class_key = <curve_class>`) with `{b_c, n_c, last_check_date}`; plus
-`last_check_week` (ISO week of the last explicit check). Initial values: `b = rircal.b0` (0.5),
+`last_check_week` (ISO week of the last explicit check) with the number of checks in that week, so that
+`rircal.max_checks_per_week` above 1 stays meaningful. Initial values: `b = rircal.b0` (0.5),
 `s_q = rircal.sq0` (1.0), `b_c = b0`, `n = n_c = 0`.
 
 ### B4.2 Applying the calibration
@@ -931,7 +932,8 @@ has a reason in {`grip_failure`, `pain`, `technique_breakdown`, `torso_rotation`
 `equipment_missing`, `no_time`}:
 
 ```
-F_{j-1}, F_j from FAT-1 (estimation recursion, B7.3) with cap_{j-1} = reps_{j-1} + q_rep_{j-1} + b
+F_{j-1}, F_j from FAT-1 (estimation recursion, B7.3) with cap_i = reps_i + q_rep_i + b for every i < j
+         (a missing rest takes fatigue.rest_ref_s, where c(rest) = c_ref)
 n_{j-1}^implied = reps_j * (1 - F_{j-1}) / (1 - F_j)     // set j ended at true failure (q = 0)
 e_impl = (n_{j-1}^implied - reps_{j-1}) - q_rep_{j-1}    // true RIR of set j-1 minus the reported one
 b = clamp(b + rircal.lr_implicit * (e_impl - b), b_min, b_max)         // s_q is not updated
@@ -1012,7 +1014,7 @@ RATE LIMIT: k_used = clamp(k_used, (1 - rcm.rate_limit) * k_prev, (1 + rcm.rate_
 ```
 
 **Outputs.** Snapshot `estimation.rcm` (scope `exercise:<uuid>`): `k_prev`, `k_hat`, `k_used`, `sd_lnk`,
-`m`, `n_sets`, `rate_limited`, `j_min` (`J` at `k_hat`), `j_k0` (`J` at `k0`), and `sets[]: {set_id, w_sys,
+`m`, `n_sets`, `rate_limited`, `pooled` (the pooled class value was used), `j_min` (`J` at `k_hat`), `j_k0` (`J` at `k0`), and `sets[]: {set_id, w_sys,
 n_eff, fatigue_f, n_fresh, window, residual = e_i - mu_W}` (review keys, D5). Functions exported to other
 modules: `cap`, `load`, `e1RM`, `pctPerRep`, and
 
@@ -1020,6 +1022,10 @@ modules: `cap`, `load`, `e1RM`, `pctPerRep`, and
 e1rmInterval(w, r, q, k, sd_lnk, z = sse.ci_z) =
    [ e1RM(w, r, q; k * exp(+z * sd_lnk)), e1RM(w, r, q; k * exp(-z * sd_lnk)) ]   // higher k -> lower e1RM
 ```
+
+With `m = 0` the snapshot carries `k_hat`, `j_min` and `j_k0` as null and `sd_lnk = sigma_lnk`; `residual` is null
+for a set outside an informative window. `pooledClassK` evaluates the per-set sd with the class prior `k0`, shrinks
+like the exercise fit and is not rate limited; the exercise's rate limit applies afterwards (M3.1 build note).
 
 **D7 gate input.** CHALLENGE_ENGINE computes the OAP gate metric `wpu_e1rm_added` from the test-day 3RM
 with `k_used` of `weighted_pullup` (FitExpr `userK('weighted_pullup')` reads this module's value) and shows
@@ -1146,6 +1152,10 @@ LOWER BOUND (if lower_bound sets exist; applied after NORMAL):
        same update with nu = z_lb - L and R = sse.lb_r_mult * (sd_day^2 + s_lb^2)     // can only raise L
 t_last = session start Instant; n_obs += number of used sets; k = current RCM-1 k_used
 ```
+
+When no set of the session moves the state (only a lower bound below its gate), the stored state is kept as it
+was, trace `sse.no_update`: predicting it to the session start and storing that would change later predictions,
+because the decaying trend `g * rho^wk` is not additive over split intervals (M3.1 build note).
 
 **Cold start.** No state yet: if a transfer prior exists (`exercise_transfer_ratios` from an exercise with
 state), `L = ln(ratio * M_related)`, `P_LL = sse.transfer_sd^2` (0.15^2), `g = 0`, `P_gg = sg0^2`, and the
@@ -2643,7 +2653,7 @@ self-test compares hashes on the phone (ANDROID.md 6.3 item 4). Numbers below ar
 | GF-FAT-01 | `c(rest)` for 60/90/120/150/180/240/300 s; to-failure sets at 120 s | 0.455/0.357/0.300/0.262/0.235/0.198/0.173; 1.00, 0.70, 0.565, 0.504, 0.477, 0.465 |
 | GF-FAT-02 | 4 x 5 at +20, rest 150 | RIR 2.50, 1.62, 0.85, 0.14; `F` 0, 0.117, 0.220, 0.314; readout after set 1: 3.98 / 4.50 / 4.62 / 4.71 reps at 60 / 120 / 150 / 180 s |
 | GF-SSE-01 | B6.6 session (4 x 5 at +22.5, RIR 2/1/1/0, one week after the prior) | `M_pred` 110.27 (sd 3.20 %); posterior 111.55 (+40.85; 80 % +37.34 .. +44.48), `g` 0.28 %/week, `K` (0.391, 0.0081), no Huber |
-| GF-SSE-02 | detraining: the same prior, next session 49 days later | after the 21-day grace `M` 110.93; final `M_pred` 107.65, sd 5.85 %, `g` 0 |
+| GF-SSE-02 | detraining: the same prior, next session 49 days later | after the 21-day grace `M` 110.93; final `M_pred` 107.66 (107.655 before KG rounding), sd 5.85 %, `g` 0 |
 | GF-SSE-03 | eligibility: negatives 47.5 x 2, one-arm hang, finger-assisted set, a set with `n_eff` 26 | all excluded, each with its trace code |
 | GF-SSE-04 | lower bound: one "5+" set above `L + 0.5 sd` and one below | the first raises `L`, the second has no effect |
 | GF-HOLD-01 | 90-degree hold pin 35: 8 s + "Hard"; then pin 30 | `T` 10.0 s at `w_ref` 48.32; `t_cap(50.59)` 9.04 s; `t_target` 7.04 -> step feasible for 6-8 s |
@@ -2756,7 +2766,7 @@ below are the ones the modules emit, and DATA_MODEL 10.2 lists them unchanged (O
 | kind | Review keys in `outputs` (in addition to those DATA_MODEL 10.2 already lists) | Used by |
 |------|-------------------------------------------------------------------------------|---------|
 | `estimation.sse` | `sets[]: {n_eff_pred, z_pred_lo, z_pred_hi}`; `states[]: {l_prior, p_ll_prior, huber_applied, lb_applied}` (B6.5) | M1, M2, M3, M5 |
-| `estimation.rcm` | `k_prev`, `k_hat`, `k_used`, `sd_lnk`, `m`, `n_sets`, `rate_limited`, `j_min`, `j_k0`; `sets[]: {set_id, w_sys, n_eff, fatigue_f, n_fresh, window, residual}` (B5.1) | M7, M3 |
+| `estimation.rcm` | `k_prev`, `k_hat`, `k_used`, `sd_lnk`, `m`, `n_sets`, `rate_limited`, `pooled`, `j_min`, `j_k0`; `sets[]: {set_id, w_sys, n_eff, fatigue_f, n_fresh, window, residual}` (B5.1) | M7, M3 |
 | `estimation.rircal` | `type`, `class`, `n_c` (B4.6) | M6 |
 | `estimation.fatigue` | `c_hat`, `c_used`, `d_hat`, `d_used`, `m`, `resid_by_rest_bucket`, `resid_by_rir_bucket`, `resid_by_set_index` (B7.5) | M9 |
 | `estimation.hold` | `sets[]: {set_id, t_done, s_res, fatigue_f, w_sys, z, sigma, estimator_class}`; `states[]: {exercise_id, side, hold_class, t_s, ci80_lo_s, ci80_hi_s, g_per_week, beta, w_ref_kg}` (B8.4) | hold trends, Part C `hold.*` tuning |
@@ -2832,7 +2842,7 @@ already follows the resolution.
 | `core/clock` | `Clock` interface (adapters only), `ClockSnapshot`, `Week` (B1) |
 | `core/load` | `LoadModel`, `AssistCalibration`, `Loadables`, `Rounding`, `PlateBreakdown` (B2) |
 | `core/bodyweight` | `Bodyweight` (B3) |
-| `estimation/rircal`, `estimation/rcm`, `estimation/sse`, `estimation/fatigue`, `estimation/hold`, `estimation/stall` | B4-B8, B14; value classes `Kg`, `Sec`, `Ratio`, `Rep`, `Stat` with grid-rounding serializers |
+| `estimation/rircal`, `estimation/rcm`, `estimation/sse`, `estimation/fatigue`, `estimation/hold`, `estimation/stall` | B4-B8, B14 (as built in M3.1: the shared set and fact types and the snapshot writers in the `estimation` package root, the trend filter shared by SSE-1 and HOLD-1 in `estimation/sse/Trend.kt`) |
 | `prescription/rx`, `prescription/warmup`, `prescription/rest`, `prescription/reason`, `prescription/autoreg`, `prescription/warnings` | B9-B13, B15 |
 | `pipeline` | pure stage helpers that assemble module calls in the A12 order (no IO) |
 
@@ -2867,7 +2877,9 @@ ANDROID.md 6.3.
 **Practical rules.**
 
 - Write the value classes and `Grid` first; make every `@Serializable` output field a grid value class, so
-  nothing un-rounded can be serialised.
+  nothing un-rounded can be serialised. As built from M1 on, the modules keep plain `Double`s rounded with `Grid`
+  and write outputs through `JsonNumbers.grid` (the estimators of M3.1 included, `estimation/EstimationJson.kt`);
+  no value classes exist.
 - Keep each module's internal functions in an `impl` sub-package of its package; other modules import only
   the public API, which is what the P16 pattern of `AlgoPurityTest` checks (ANDROID.md 6.3 and 27.1).
 - Snapshot output keys are lower snake_case and must match the D5 review-key table and DATA_MODEL 10.2

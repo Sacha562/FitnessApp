@@ -1,0 +1,35 @@
+{
+    "id": "GF-RCM-01",
+    "module": "rcm",
+    "description": "Two-point closed form: BW x 18 and 3RM +32.5, and with +2 % strength on the second date",
+    "input": {
+        "module": "rcm@1.0.0",
+        "scope_key": "golden:GF-RCM-01",
+        "payload": {
+            "two_point": [
+                [
+                    70.7,
+                    18,
+                    103.2,
+                    3
+                ],
+                [
+                    70.7,
+                    18,
+                    101.1765,
+                    3
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "two_point_k": [
+                30.6307692308,
+                32.7973028399
+            ]
+        },
+        "outputs_jcs_sha256": "d91536d20a80f5508facb80a45030e2cc75ca9cb92273663a38b1efc4f2615db"
+    }
+}

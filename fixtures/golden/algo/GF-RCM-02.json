@@ -1,0 +1,101 @@
+{
+    "id": "GF-RCM-02",
+    "module": "rcm",
+    "description": "Fit with the user's two points forced into one window, k_prev = k0 = 30; gate input of the 3RM",
+    "input": {
+        "module": "rcm@1.0.0",
+        "scope_key": "golden:GF-RCM-02",
+        "payload": {
+            "fit": {
+                "curve_class": "upper_compound",
+                "fit_date": "2026-09-20",
+                "prev": null,
+                "pooled_k": null,
+                "facts": [
+                    {
+                        "exercise_id": "weighted_pullup",
+                        "curve_class": "upper_compound",
+                        "f_bw": 1.0,
+                        "implement_base_kg": 0.0,
+                        "group_coeffs": {
+                            "biceps": 0.5,
+                            "lats": 1.0,
+                            "upper_back": 0.75
+                        }
+                    }
+                ],
+                "sets": [
+                    {
+                        "id": "bw18",
+                        "session_id": "bw18",
+                        "exercise_id": "weighted_pullup",
+                        "performed_at": "2026-09-19T10:00:00Z",
+                        "set_kind": "test",
+                        "w_sys": 70.7,
+                        "reps": 18,
+                        "rir": 0
+                    },
+                    {
+                        "id": "rm3",
+                        "session_id": "rm3",
+                        "exercise_id": "weighted_pullup",
+                        "performed_at": "2026-09-20T10:00:00Z",
+                        "set_kind": "test",
+                        "w_sys": 103.2,
+                        "reps": 3,
+                        "rir": 0
+                    }
+                ]
+            },
+            "interval": {
+                "w_sys": 103.2,
+                "reps": 3,
+                "q": 0,
+                "bw_kg": 70.7
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "fit": {
+                "k_prev": 30,
+                "k_hat": 30.056841473,
+                "k_used": 30.0189352038,
+                "sd_lnk": 0.197531782489,
+                "m": 1,
+                "n_sets": 2,
+                "rate_limited": false,
+                "pooled": false,
+                "j_min": 0.00256092863312,
+                "j_k0": 0.0030784380967,
+                "sets": [
+                    {
+                        "set_id": "bw18",
+                        "w_sys": 70.7,
+                        "n_eff": 18,
+                        "fatigue_f": 0,
+                        "n_fresh": 18,
+                        "window": 0,
+                        "residual": 0.00473964726107
+                    },
+                    {
+                        "set_id": "rm3",
+                        "w_sys": 103.2,
+                        "n_eff": 3,
+                        "fatigue_f": 0,
+                        "n_fresh": 3,
+                        "window": 0,
+                        "residual": -0.000882713537135
+                    }
+                ]
+            },
+            "interval": {
+                "e1rm_added_kg": 39.38,
+                "ci80_lo_added_kg": 37.84,
+                "ci80_hi_added_kg": 41.36
+            }
+        },
+        "outputs_jcs_sha256": "f4f38d270cafe685b3e10f7d48675b2ad6cd1e543f18e3a51d60a81c016cdd76"
+    }
+}

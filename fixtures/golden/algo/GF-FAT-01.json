@@ -1,0 +1,47 @@
+{
+    "id": "GF-FAT-01",
+    "module": "fatigue",
+    "description": "c(rest) table and to-failure sets at 120 s (Nuzzo check)",
+    "input": {
+        "module": "fatigue@1.0.0",
+        "scope_key": "golden:GF-FAT-01",
+        "payload": {
+            "c_rest_s": [
+                60,
+                90,
+                120,
+                150,
+                180,
+                240,
+                300
+            ],
+            "to_failure": {
+                "sets": 6,
+                "rest_s": 120
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "c": [
+                0.4547,
+                0.3565,
+                0.3,
+                0.2624,
+                0.2352,
+                0.1979,
+                0.1731
+            ],
+            "relative_reps": [
+                1,
+                0.7,
+                0.565,
+                0.5043,
+                0.4769,
+                0.4646
+            ]
+        },
+        "outputs_jcs_sha256": "706a8a4e87c1dc4b40ee8bda67e566c367203df4c1cce4bc92a227fae9ef0a81"
+    }
+}

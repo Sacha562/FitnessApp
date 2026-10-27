@@ -9,6 +9,12 @@ import dev.fitnessapp.algo.challenge.plan.WeekPlanner
 import dev.fitnessapp.algo.core.bodyweight.Bodyweight
 import dev.fitnessapp.algo.core.calendar.CalendarClassifier
 import dev.fitnessapp.algo.core.load.LoadModel
+import dev.fitnessapp.algo.estimation.fatigue.Fatigue
+import dev.fitnessapp.algo.estimation.hold.Hold
+import dev.fitnessapp.algo.estimation.rcm.Rcm
+import dev.fitnessapp.algo.estimation.rircal.RirCal
+import dev.fitnessapp.algo.estimation.sse.Sse
+import dev.fitnessapp.algo.prescription.reason.ReasonSemantics
 import dev.fitnessapp.algo.prescription.rest.RestPolicy
 import dev.fitnessapp.algo.prescription.warmup.WarmupRest
 import dev.fitnessapp.algo.testing.TestParams
@@ -24,14 +30,18 @@ import org.junit.jupiter.api.Test
  * is declared, and no key is declared by two modules. Grows with every module.
  */
 class ParamsCoverageTest {
-    /** Modules whose whole key slice is declared. WarmupRest is partial (rest keys only) until WARMUP-1. */
+    /**
+     * Modules whose whole key slice is declared. WarmupRest is partial (rest keys only) until WARMUP-1, and
+     * ReasonSemantics (the estimator keys of REASON-1) until the rest of REASON-1 in M3.3.
+     */
     private val complete: Map<String, DeclaresParams> = mapOf(
         "load" to LoadModel, "bodyweight" to Bodyweight, "rest" to RestPolicy,
         "challenge.fitexpr" to FitExprLimits, "challenge.enrollment" to EnrollmentFold, "challenge.eca" to RuleEngine,
         "challenge.plan" to WeekPlanner, "challenge.contract" to ContractBuilder,
         "calendar.classify" to CalendarClassifier, "challenge.calendar" to SlotMatcher,
+        "fatigue" to Fatigue, "rcm" to Rcm, "rircal" to RirCal, "sse" to Sse, "hold" to Hold,
     )
-    private val all: List<DeclaresParams> = complete.values.toList() + WarmupRest
+    private val all: List<DeclaresParams> = complete.values.toList() + WarmupRest + ReasonSemantics
 
     private val params = Json.parseToJsonElement(TestParams.text).jsonObject.getValue("params").jsonObject
     private val values = ParamsHashes.values(params)

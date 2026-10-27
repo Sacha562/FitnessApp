@@ -1,0 +1,78 @@
+{
+    "id": "GF-HOLD-02",
+    "module": "hold",
+    "description": "One-arm dead hang: 10 s + OK, range 10-15 s",
+    "input": {
+        "module": "hold@1.0.0",
+        "scope_key": "golden:GF-HOLD-02",
+        "payload": {
+            "session_start": "2026-10-08T17:45:00Z",
+            "facts": [
+                {
+                    "exercise_id": "one_arm_hang",
+                    "hold_class": "grip",
+                    "pattern": "hang",
+                    "f_bw": 1.0
+                }
+            ],
+            "sets": [
+                {
+                    "id": "g1",
+                    "exercise_id": "one_arm_hang",
+                    "side": "R",
+                    "performed_at": "2026-10-08T18:20:00Z",
+                    "set_kind": "working",
+                    "w_sys": null,
+                    "t_done_s": 10,
+                    "chip": "ok"
+                }
+            ],
+            "prescribe": {
+                "exercise_id": "one_arm_hang",
+                "side": "R",
+                "t_lo": 10,
+                "t_hi": 15
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "outputs": {
+                "sets": [
+                    {
+                        "set_id": "g1",
+                        "t_done": 10,
+                        "s_res": 5,
+                        "fatigue_f": 0,
+                        "w_sys": null,
+                        "z": 2.7080502011,
+                        "sigma": 0.333333333333,
+                        "estimator_class": "normal"
+                    }
+                ],
+                "states": [
+                    {
+                        "exercise_id": "one_arm_hang",
+                        "side": "R",
+                        "hold_class": "grip",
+                        "t_s": 15,
+                        "ci80_lo_s": 13.5,
+                        "ci80_hi_s": 16.6,
+                        "g_per_week": 0,
+                        "beta": -1.61,
+                        "w_ref_kg": null
+                    }
+                ]
+            },
+            "steps": [],
+            "prescribe": {
+                "options": [],
+                "w_sys": null,
+                "t_star_s": 12,
+                "feasible": true
+            }
+        },
+        "outputs_jcs_sha256": "7c6bd5a8f307fd7a1ebbfca7f6ef75168183898e82e8234d5cbec279d1d45622"
+    }
+}

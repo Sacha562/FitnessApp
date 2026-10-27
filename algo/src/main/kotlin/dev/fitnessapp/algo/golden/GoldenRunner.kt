@@ -4,6 +4,7 @@ import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.det.Jcs
 import dev.fitnessapp.algo.core.det.JsonNumbers
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.params.ParamView
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -22,16 +23,23 @@ import java.time.ZoneId
 /**
  * Runs one golden fixture (ALGORITHMS.md D1 shape: `{id, module, description, input, expected}`) and
  * returns its outputs with their JCS bytes and hash. Used by `GoldenFixtureTest` on the JVM and by the
- * on-device determinism self-test (ANDROID.md 6.3 item 4, guarantee R2). Pure: the caller does the IO.
+ * on-device determinism self-test (ANDROID.md 6.3 item 4, guarantee R2). Pure: the caller does the IO and
+ * passes the bundled default params (the fixtures' `"params"` label).
  */
 object GoldenRunner {
     class Result(val outputs: JsonElement, val outputsJcs: String, val outputsSha256: String)
 
-    fun run(fixture: JsonObject): Result {
+    fun run(fixture: JsonObject, params: ParamView): Result {
         val input = fixture.getValue("input").jsonObject
         val module = input.getValue("module").jsonPrimitive.content
+        val payload = { input.getValue("payload").jsonObject }
         val outputs = when (module.substringBefore('@')) {
             "clock" -> clock(input)
+            "fatigue" -> EstimationGolden.fatigue(payload(), params.fork())
+            "rcm" -> EstimationGolden.rcm(payload(), params.fork())
+            "rircal" -> EstimationGolden.rircal(payload(), params.fork())
+            "sse" -> EstimationGolden.sse(payload(), params.fork())
+            "hold" -> EstimationGolden.hold(payload(), params.fork())
             else -> throw IllegalArgumentException("no golden adapter for module $module")
         }
         return Result(outputs, Jcs.canonicalize(outputs), Jcs.sha256Hex(outputs))

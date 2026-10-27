@@ -1,0 +1,33 @@
+{
+    "id": "GF-RIR-01",
+    "module": "rircal",
+    "description": "Explicit check: r* 12, q_pred 2, extra 4, b 0.5, s_q 1.0",
+    "input": {
+        "module": "rircal@1.0.0",
+        "scope_key": "golden:GF-RIR-01",
+        "payload": {
+            "explicit": {
+                "curve_class": "lower_isolation",
+                "q_pred": 2,
+                "extra": 4,
+                "date": "2026-10-24"
+            }
+        }
+    },
+    "params": "default-1.0.1",
+    "expected": {
+        "outputs": {
+            "explicit": {
+                "b_before": 0.5,
+                "b_after": 0.8,
+                "s_q_before": 1,
+                "s_q_after": 1.11803398875,
+                "e": 2,
+                "type": "explicit",
+                "class": "lower_isolation",
+                "n_c": 1
+            }
+        },
+        "outputs_jcs_sha256": "14b150d9affb1c55f9e55616295c922c536d13a5d5f3c8f37035a59fc04a6007"
+    }
+}

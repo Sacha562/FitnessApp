@@ -1,6 +1,7 @@
 package dev.fitnessapp.algo.golden
 
 import dev.fitnessapp.algo.core.det.Jcs
+import dev.fitnessapp.algo.testing.TestParams
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.Json
@@ -33,8 +34,8 @@ class GoldenFixtureTest {
             DynamicTest.dynamicTest(file.nameWithoutExtension) {
                 val fixture = Json.parseToJsonElement(file.readText(Charsets.UTF_8)).jsonObject
                 fixture.getValue("id").jsonPrimitive.content shouldBe file.nameWithoutExtension
-                val first = GoldenRunner.run(fixture)
-                val second = GoldenRunner.run(fixture)
+                val first = GoldenRunner.run(fixture, TestParams.defaults())
+                val second = GoldenRunner.run(fixture, TestParams.defaults())
                 second.outputsJcs shouldBe first.outputsJcs // DoubleRunTest: no hidden state (P7)
 
                 if (update) {

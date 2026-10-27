@@ -3,6 +3,7 @@ package dev.fitnessapp.sim
 import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.golden.GoldenRunner
 import dev.fitnessapp.sim.challenge.ChallengeCli
+import dev.fitnessapp.sim.challenge.SimResources
 import dev.fitnessapp.sim.seedgen.CatalogSeedGen
 import dev.fitnessapp.sim.seedgen.ChallengeSeedGen
 import dev.fitnessapp.sim.seedgen.SeedGen
@@ -65,11 +66,12 @@ fun main(args: Array<String>) {
 
 private fun golden(dir: File): Int {
     val files = dir.listFiles { f -> f.name.endsWith(".json") }.orEmpty().sortedBy { it.name }
+    val params = SimResources.params()
     var failures = 0
     for (file in files) {
         val fixture = Json.parseToJsonElement(file.readText(Charsets.UTF_8)).jsonObject
         val expected = fixture["expected"]?.jsonObject?.get("outputs_jcs_sha256")?.jsonPrimitive?.content
-        val result = GoldenRunner.run(fixture)
+        val result = GoldenRunner.run(fixture, params)
         val ok = expected == result.outputsSha256
         if (!ok) failures++
         println("${if (ok) "ok  " else "FAIL"} ${file.nameWithoutExtension} ${result.outputsSha256}")
