@@ -421,7 +421,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val planned = row?.takeIf { rxTarget == null }?.let { r ->
             val native = when (mode) {
                 LoadMode.ASSISTED_MACHINE -> r.pin?.toDouble()
-                LoadMode.BODYWEIGHT_PLUS_EXTERNAL, LoadMode.EXTERNAL -> r.addedKg?.toDouble()
+                LoadMode.BODYWEIGHT_PLUS_EXTERNAL, LoadMode.EXTERNAL -> r.addedKg?.toDouble()?.let { kg -> UiPrefill.nativeForAddedKg(kg, points, params) ?: kg }
                 else -> null
             }
             pf.copy(
@@ -1297,7 +1297,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     /** The target line under the title (UX 11.6 item 2): RX-1's plan for this set, or the probe's instruction. */
     fun targetLine(card: Card): String? {
-        val rx = card.item.rx ?: return null
+        val rx = card.item.rx ?: return planTargetLine(card)
         if (card.warmup) return null
         card.probePickReps?.let { n -> return "Pick a weight you could lift about $n times · do ${card.rxTarget?.targetReps ?: n}" }
         val t = card.rxTarget ?: return null
@@ -1312,6 +1312,23 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val aim = t.rir?.let { " · aim: ${Numbers.num(it, 1)} in reserve" } ?: ""
         return "Target " + listOfNotNull(load, reps).joinToString(" ") + aim
     }
+
+    /** A challenge RULE item's line (UX 11.6 item 2): the plan's load and reps for this set with its RIR aim. */
+    private fun planTargetLine(card: Card): String? {
+        val aim = planAim(card)?.let { "aim: ${Numbers.num(it, 1)} in reserve" } ?: return null
+        if (card.prefillSource != PrefillSource.ENGINE_TARGET) return aim.replaceFirstChar { it.uppercase() }
+        val point = card.target.native?.let { n -> card.points.firstOrNull { nativeOf(it, card.mode) == n } }
+        val load = when {
+            card.mode == LoadMode.BODYWEIGHT -> "BW"
+            point != null -> Numbers.loadMain(point, card.mode)
+            else -> null
+        }
+        val reps = card.target.reps?.let { "× $it" }
+        return "Target " + listOfNotNull(load, reps).joinToString(" ") + " · " + aim
+    }
+
+    /** The plan's RIR aim of a challenge item (CDS `rirTarget`); null for warm-up sets and items without one. */
+    private fun planAim(card: Card): Double? = if (card.warmup) null else planItem(card.item)?.plan?.rirTarget?.toDouble()
 
     /** The Why sheet of the card's prescription (UX 16.1); null when the set has no engine target. */
     fun why(card: Card): WhyContent? {

@@ -122,6 +122,17 @@ class UiPrefillTest {
     }
 
     @Test
+    fun plannedKgOnLbStack() {
+        // The Pallof plan says 11.34 kg = 25 lb; on a lb stack that is 25, not "11.34 lb" snapped to 10.
+        val cable = ExerciseLoadAttrs(1.0, 0.0, Laterality.BILATERAL, listOf(LoadMode.EXTERNAL))
+        val stack = Loadables.enumerate(LoadScheme.Stack("lb", 5.0, 5.0, 220.0, emptyList(), 1.0, null), Loadables.Context(cable, 70.7), params)
+        UiPrefill.nativeForAddedKg(11.34, stack, params) shouldBe 25.0
+        UiPrefill.nativeForAddedKg(10.0, stack, params) shouldBe 20.0
+        UiPrefill.nativeForAddedKg(22.5, belt, params) shouldBe 22.5
+        UiPrefill.nativeForAddedKg(10.0, emptyList(), params) shouldBe null
+    }
+
+    @Test
     fun keypadSnapping() {
         (UiPrefill.snap(23.0, beltScheme, 1, belt, params) as SnapResult.Snapped).let {
             it.point.addedKg shouldBe 22.5

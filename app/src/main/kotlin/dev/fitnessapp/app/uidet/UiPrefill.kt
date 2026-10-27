@@ -261,6 +261,16 @@ object UiPrefill {
         return SnapResult.Snapped(p, kotlin.math.abs(p.scaleKg - scale) > eps)
     }
 
+    /**
+     * The native value of the loadable option nearest a planned added load (a challenge row plans in kg, so a lb stack
+     * must not read the number as pounds; ties to the easier option, C2). Null without kg-scaled options.
+     */
+    fun nativeForAddedKg(addedKg: Double, points: List<LoadPoint>, params: ParamView): Double? {
+        val scaled = points.filter { !it.ordinal }
+        if (scaled.isEmpty()) return null
+        return Rounding.nearest(scaled, addedKg, params) { it.addedKg }.nativeValue
+    }
+
     /** The keypad chips: nearest loadable at or below and at or above the typed value. */
     fun keypadChips(typed: Double, scheme: LoadScheme, implementCount: Int, points: List<LoadPoint>, params: ParamView): Pair<LoadPoint?, LoadPoint?> {
         val scale = LoadModel.scaleOfNative(scheme, typed, implementCount, params) ?: return null to null

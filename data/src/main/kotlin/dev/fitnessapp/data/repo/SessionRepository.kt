@@ -2,6 +2,7 @@ package dev.fitnessapp.data.repo
 
 import androidx.room.withTransaction
 import dev.fitnessapp.algo.EngineVersion
+import dev.fitnessapp.algo.challenge.materialize.PlanJson
 import dev.fitnessapp.algo.core.bodyweight.BwSession
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.core.load.LoadMode
@@ -22,10 +23,12 @@ import dev.fitnessapp.data.sync.SyncScheduler
 import dev.fitnessapp.data.telemetry.EventDraft
 import dev.fitnessapp.data.telemetry.TelemetryWriter
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import java.time.Instant
 
 /** The rest columns of the set that follows a rest (DATA_MODEL 9.6.4, C55), filled by the rest timer. */
@@ -213,18 +216,22 @@ class SessionRepository(
             val s = db.sessions().get(sessionId) ?: return@withTransaction
             val exs = db.sessionExercises().bySession(sessionId)
             val sets = db.setLogs().bySession(sessionId)
+            // A challenge warm-up item (role `warmup`) plans and logs warm-up sets only: neither planned nor done work.
+            val warmupItems = warmupItemKeys(sessionId)
             val working = sets.filter { it.set_kind != "warmup" }
             val doneUnits = working.sumOf { if (it.side == "both") 2 else 1 } / 2.0
-            val planned = exs.filter { it.status != "removed" }.sumOf { it.planned_sets ?: 0 }
+            val planned = exs.filter { it.status != "removed" && it.challenge_item_key !in warmupItems }.sumOf { it.planned_sets ?: 0 }
             val notDone = exs.filter { it.status in setOf("pending", "active", "deferred") }
             for (e in notDone) {
-                val done = working.count { it.session_exercise_id == e.id }
+                val done = sets.count { it.session_exercise_id == e.id && (it.set_kind != "warmup" || e.challenge_item_key in warmupItems) }
                 val status = if (done > 0) "done" else "not_done"
                 writeExercise(e.copy(status = status, completed_at = if (done > 0) now else e.completed_at))
             }
             val ratio = if (planned > 0) minOf(1.0, doneUnits / planned) else null
             for (b in db.blocks().bySession(sessionId)) {
-                if (exs.any { it.block_id == b.id }) blockEvent("block_finished", sessionId, b.id, "done")
+                if (exs.none { it.block_id == b.id }) continue
+                writeBlock(b.copy(status = "done"))
+                blockEvent("block_finished", sessionId, b.id, "done")
             }
             writeSession(
                 s.copy(
@@ -633,6 +640,19 @@ class SessionRepository(
         val row = e.copy(client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion)
         db.sessionExercises().upsert(row)
         outbox.enqueue("session_exercises", row.id, ctx.nowMs())
+    }
+
+    private suspend fun writeBlock(b: SessionBlockEntity) {
+        val row = b.copy(client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion)
+        db.blocks().upsert(row)
+        outbox.enqueue("session_blocks", row.id, ctx.nowMs())
+    }
+
+    /** The item keys of a challenge session's warm-up items (CDS role `warmup`); empty for other sessions. */
+    private suspend fun warmupItemKeys(sessionId: String): Set<String> {
+        val live = db.challengeLive().get(sessionId) ?: return emptySet()
+        return PlanJson.decode(Json.parseToJsonElement(live.plan_json).jsonObject).items
+            .filter { it.role == "warmup" }.mapTo(HashSet()) { it.key }
     }
 
     private suspend fun writeSession(s: WorkoutSessionEntity) {

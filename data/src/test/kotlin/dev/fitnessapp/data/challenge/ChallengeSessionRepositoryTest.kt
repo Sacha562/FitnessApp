@@ -171,6 +171,28 @@ class ChallengeSessionRepositoryTest {
     }
 
     @Test
+    fun `a session with every planned set logged is complete, warm-up items aside, and its block is done`() = blocking {
+        val enrollmentId = enroll()
+        val sessionId = live.start(enrollmentId, "C")
+        val plan = live.live(sessionId)!!.plan.items.associate { it.key to it.role }
+        val exercises = db.sessionExercises().bySession(sessionId)
+        exercises.any { plan[it.challenge_item_key] == "warmup" } shouldBe true
+        for (e in exercises) for (i in 1..(e.planned_sets ?: 0)) {
+            now += 30_000
+            val kind = if (plan[e.challenge_item_key] == "warmup") "warmup" else "working"
+            sessions.logSet(
+                LogSetCommand(sessionId, e.id, e.exercise_id, i, "both", kind, null, 5, null, 2.0, false, null, false, emptyList(), null, null, null, null, now, emptyMap()),
+            )
+        }
+        now += 60_000
+        sessions.finish(sessionId, null)
+        db.sessions().get(sessionId)!!.completion_ratio shouldBe 10000L
+        db.blocks().bySession(sessionId).single().status shouldBe "done"
+        val finished = db.events().exportAll().single { it.event_type == "session_finished" }.payload
+        finished.contains("\"working_sets_planned\":${exercises.filter { plan[it.challenge_item_key] != "warmup" }.sumOf { it.planned_sets ?: 0 }}") shouldBe true
+    }
+
+    @Test
     fun `added kg is a belt load only on a belt lift, the Pallof press stays an external cable load`() = blocking {
         val enrollmentId = enroll()
         val sessionId = live.start(enrollmentId, "B")
