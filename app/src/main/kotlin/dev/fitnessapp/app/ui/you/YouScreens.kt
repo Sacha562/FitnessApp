@@ -112,7 +112,7 @@ fun YouRoute(
             NavRow("Preferences", "Sets and reps, RIR check sets", onPreferences)
             TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Data and sync", when {
-                dead > 0 -> "$dead could not be uploaded"
+                dead > 0 -> failedLine(dead)
                 pending is PendingStatus.Offline -> "Offline · ${pending.count} saved on this phone"
                 pending is PendingStatus.Long -> "Upload retrying · oldest ${pending.oldestAgeH} h"
                 else -> "Everything uploaded"
@@ -218,7 +218,8 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
             TileLabel("Sync")
             Text(describe(state), style = MaterialTheme.typography.titleLarge)
             Text(
-                (pendingLine(pending) ?: "All changes uploaded") + if (dead > 0) " · $dead could not be uploaded" else "",
+                // "All changes uploaded" only when nothing waits and nothing failed; failed uploads are not uploaded.
+                listOfNotNull(pendingLine(pending), failedLine(dead).takeIf { dead > 0 }).joinToString(" · ").ifEmpty { "All changes uploaded" },
                 style = MaterialTheme.typography.bodyMedium,
             )
             PrimaryButton("Sync now", {
@@ -332,3 +333,6 @@ fun EquipmentRoute(c: AppContainer, onBack: () -> Unit) {
 fun ReliabilityRoute(c: AppContainer, onBack: () -> Unit) {
     SubScreen("Rest timer reliability", onBack) { ReliabilityContent(c, showStats = true) }
 }
+
+/** "5 changes could not be uploaded" (dead letters, ANDROID.md 9.5). */
+private fun failedLine(n: Int) = if (n == 1) "1 change could not be uploaded" else "$n changes could not be uploaded"

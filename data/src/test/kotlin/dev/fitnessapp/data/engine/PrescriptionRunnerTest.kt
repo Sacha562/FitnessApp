@@ -242,6 +242,8 @@ class PrescriptionRunnerTest {
         repPrefs.save(RepPreferenceRepository.GLOBAL, RepPrefValues(repMin = 8, repMax = 12, repScheme = "range", restPrefMult = 1.5), presetId = "hypertrophy") shouldBe 4
         val ev = db.events().exportAll().filter { it.event_type == "rep_preference_changed" }
         ev.map { Json.parseToJsonElement(it.payload).jsonObject["preset_id"]!!.jsonPrimitive.content }.distinct() shouldBe listOf("hypertrophy")
+        // The server accepts only its entity types (session_events_entity_type_check); this event's entity is none.
+        ev.map { it.entity_type to it.entity_id }.distinct() shouldBe listOf("none" to null)
         db.repPreferences().exportAll().single().rest_pref_mult shouldBe 150L
         runner.userRest(wpu, catalog.idOf(wpu))!!.restPrefMult shouldBe 1.5
         val sid = sessions.start(params)

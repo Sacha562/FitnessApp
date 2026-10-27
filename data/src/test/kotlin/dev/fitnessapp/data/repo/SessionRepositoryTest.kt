@@ -13,6 +13,7 @@ import dev.fitnessapp.data.ids.UuidV7Generator
 import dev.fitnessapp.data.outbox.OutboxWriter
 import dev.fitnessapp.data.sync.SyncConfig
 import dev.fitnessapp.data.sync.SyncScheduler
+import dev.fitnessapp.data.telemetry.EventDraft
 import dev.fitnessapp.data.telemetry.EventRegistry
 import dev.fitnessapp.data.telemetry.TelemetryWriter
 import io.kotest.matchers.shouldBe
@@ -123,6 +124,14 @@ class SessionRepositoryTest {
             it.implement_count shouldBe 2
             it.added_kg shouldBe 2500L
         }
+    }
+
+    @Test
+    fun `an entity type the server refuses is written as none`() = blocking {
+        sessions.event(EventDraft(type = "settings_changed", entityType = "rep_preference", entityId = "x", screen = "you.preferences"))
+        sessions.event(EventDraft(type = "settings_changed", entityType = "session", entityId = "y", screen = "you.preferences"))
+        db.events().exportAll().filter { it.event_type == "settings_changed" }.map { it.entity_type to it.entity_id }.toSet() shouldBe
+            setOf("none" to null, "session" to "y")
     }
 
     @Test

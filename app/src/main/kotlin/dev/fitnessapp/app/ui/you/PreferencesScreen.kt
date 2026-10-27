@@ -149,7 +149,7 @@ fun PreferencesRoute(c: AppContainer, onBack: () -> Unit) {
             if (shown.add(w.ruleId + "|" + w.entity)) scope.launch {
                 c.sessionRepository.event(
                     EventDraft(
-                        type = "warning_shown", screen = "you.preferences", entityType = "rep_preference",
+                        type = "warning_shown", screen = "you.preferences", entityType = "none",
                         payload = mapOf(
                             "rule_id" to JsonPrimitive(w.ruleId), "severity" to JsonPrimitive(w.severity.code), "entity" to JsonPrimitive(w.entity),
                             "magnitude" to JsonPrimitive(w.magnitude), "surface" to JsonPrimitive("you.preferences"),

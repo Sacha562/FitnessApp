@@ -51,7 +51,8 @@ class EventRegistry(text: String) {
 /**
  * Writes `session_events` rows (UX 19.10, ANDROID.md 8.4): inside the caller's Room transaction, with the
  * registry's category, payload keys filtered to the registry (unknown keys are dropped, DATA_MODEL 16.3),
- * and an outbox entry. Unknown event types are not written.
+ * and an outbox entry. Unknown event types are not written. An entity type outside the server's list ([ENTITY_TYPES])
+ * is written as `none` without an entity id, so the event still uploads instead of dead-lettering.
  */
 class TelemetryWriter(
     private val db: FitnessDatabase,
@@ -67,6 +68,7 @@ class TelemetryWriter(
         val payload = JsonObject(draft.payload.filterKeys { it in allowed }.toSortedMap())
         val at = draft.occurredAtMs ?: ctx.nowMs()
         val id = ctx.ids.next()
+        val known = draft.entityType == null || draft.entityType in ENTITY_TYPES
         db.events().insert(
             SessionEventEntity(
                 id = id,
@@ -79,8 +81,8 @@ class TelemetryWriter(
                 tz_offset_min = ctx.zone().rules.getOffset(Instant.ofEpochMilli(at)).totalSeconds / 60,
                 screen = draft.screen,
                 session_id = draft.sessionId,
-                entity_type = draft.entityType,
-                entity_id = draft.entityId,
+                entity_type = if (known) draft.entityType else "none",
+                entity_id = if (known) draft.entityId else null,
                 recommendation_id = draft.recommendationId,
                 module_id = draft.moduleId,
                 module_version = draft.moduleVersion,
@@ -89,5 +91,13 @@ class TelemetryWriter(
         )
         outbox.enqueue("session_events", id, ctx.nowMs())
         return id
+    }
+
+    companion object {
+        /** `session_events.entity_type` values the server accepts (DATA_MODEL 9.8.2, `session_events_entity_type_check`). */
+        val ENTITY_TYPES: Set<String> = setOf(
+            "set", "session_exercise", "session", "block", "recommendation", "calendar_event", "enrollment", "exercise",
+            "gym_equipment", "wellness_log", "export", "none",
+        )
     }
 }

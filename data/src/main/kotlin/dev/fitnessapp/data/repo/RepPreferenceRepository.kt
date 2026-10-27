@@ -103,7 +103,8 @@ class RepPreferenceRepository(
                 changed++
                 telemetry.write(
                     EventDraft(
-                        type = "rep_preference_changed", entityType = "rep_preference", entityId = id, screen = "you.preferences",
+                        // The registry's entity is none (UX 20.8); the scope in the payload names the row.
+                        type = "rep_preference_changed", entityType = "none", screen = "you.preferences",
                         payload = mapOf(
                             "scope" to JsonPrimitive(scopeKey), "exercise_id" to (arg.takeIf { kind == "exercise" }?.let { JsonPrimitive(it) } ?: JsonNull),
                             "field" to JsonPrimitive(field), "from" to from, "to" to to,

@@ -33,6 +33,7 @@ import dev.fitnessapp.app.ui.challenges.SetupImport
 import dev.fitnessapp.app.ui.challenges.SetupViewModel
 import dev.fitnessapp.app.ui.theme.FitnessTheme
 import dev.fitnessapp.data.challenge.ChallengeEventDraft
+import dev.fitnessapp.data.telemetry.TelemetryWriter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -62,6 +63,9 @@ import java.time.ZoneId
  * outbox rows deferred on a missing parent (`23503`), which would otherwise dead-letter hours later. The local rows
  * stay; "Re-push all data" queues them again.
  *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action drop_dead_letters
+ *   adb logcat -d -s DebugSync
+ * "repair_events" rewrites unsent events whose entity type the server refuses to `none` and requeues their dead letters:
+ *   adb shell am start -n dev.fitnessapp/dev.fitnessapp.app.debug.DebugActivity --es action repair_events
  *   adb logcat -d -s DebugSync
  * "repair_sets" rewrites the logged sets of one finished session exercise in another load mode (the Pallof press of
  * 2026-10-23 saved as a belt load, which the server refused): every set becomes [input] [unit] on the gym's
@@ -100,6 +104,7 @@ class DebugActivity : ComponentActivity() {
             "abandon_enrollment" -> abandonEnrollment(intent.getStringExtra("enrollment_id"))
             "pause_enrollment", "resume_enrollment" -> pauseResume(intent.getStringExtra("action")!!, intent.getStringExtra("enrollment_id"))
             "drop_dead_letters" -> dropDeadLetters()
+            "repair_events" -> repairEvents()
             "repair_sets" -> repairSets(intent)
             "setup_draft" -> setupDraft(intent.getStringExtra("definition_id"), intent.getStringExtra("draft_b64"))
             "amend_import" -> amendImport(intent.getStringExtra("enrollment_id"), intent.getStringExtra("tests_b64"))
@@ -214,6 +219,31 @@ class DebugActivity : ComponentActivity() {
                 "enrollment $id tests=${tests.size} lastValid=${s.lastValidTest?.date} count=${s.validTestCount} warnings=${out.warnings} baseline: $base"
             }.getOrElse { "failed: ${it.message}" }
             Log.i(SETUP_TAG, result)
+            report.value = result
+        }
+    }
+
+    /**
+     * Events not yet on the server whose entity type the server refuses (the `rep_preference` of 0.0.87-0.0.88) become
+     * `none` without an entity id, as TelemetryWriter now writes them; their dead letters go back to the outbox.
+     */
+    private fun repairEvents() {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            val result = runCatching {
+                c.db.withTransaction {
+                    val bad = c.db.events().exportAll()
+                        .filter { it.server_updated_at == null && it.entity_type != null && it.entity_type !in TelemetryWriter.ENTITY_TYPES }
+                    bad.forEach { c.db.events().upsert(it.copy(entity_type = "none", entity_id = null)) }
+                    val ids = bad.map { it.id }.toSet()
+                    val dead = c.db.deadLetters().all().filter { it.table_name == "session_events" && it.row_id in ids }
+                    val now = c.writeContext.nowMs()
+                    dead.forEach { c.outbox.enqueue("session_events", it.row_id, now); c.db.deadLetters().delete(it.id) }
+                    "repaired ${bad.size} events, requeued ${dead.size} dead letters"
+                }
+            }.getOrElse { "failed: ${it.message}" }
+            c.syncScheduler.request(trigger = "repair_events", immediate = true)
+            Log.i(SYNC_TAG, result)
             report.value = result
         }
     }
