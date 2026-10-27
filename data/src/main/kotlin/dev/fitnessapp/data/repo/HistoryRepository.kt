@@ -340,9 +340,12 @@ class HistoryRepository(
     private suspend fun refresh(sessionId: String, sessionExerciseId: String) {
         val s = db.sessions().get(sessionId) ?: return
         if (s.status == "in_progress") return
-        val sets = db.setLogs().bySession(sessionId).filter { it.set_kind != "warmup" }
+        val all = db.setLogs().bySession(sessionId)
+        val sets = all.filter { it.set_kind != "warmup" }
+        // A challenge warm-up item logs warm-up sets only: done when it has any, never planned work (as at finish).
+        val warmupItems = sessions.warmupItemKeys(sessionId)
         db.sessionExercises().get(sessionExerciseId)?.let { e ->
-            val units = sets.filter { it.session_exercise_id == e.id }.sumOf { if (it.side == "both") 2 else 1 }
+            val units = (if (e.challenge_item_key in warmupItems) all else sets).filter { it.session_exercise_id == e.id }.sumOf { if (it.side == "both") 2 else 1 }
             val status = when {
                 units > 0 -> "done"
                 e.status in setOf("skipped", "removed") -> e.status
@@ -351,7 +354,7 @@ class HistoryRepository(
             if (status != e.status) writeExercise(e.copy(status = status, completed_at = if (status == "done") e.completed_at ?: s.finished_at else e.completed_at))
         }
         if (s.status == "finished") {
-            val planned = db.sessionExercises().bySession(sessionId).filter { it.status != "removed" }.sumOf { it.planned_sets ?: 0 }
+            val planned = db.sessionExercises().bySession(sessionId).filter { it.status != "removed" && it.challenge_item_key !in warmupItems }.sumOf { it.planned_sets ?: 0 }
             val done = sets.sumOf { if (it.side == "both") 2 else 1 } / 2.0
             val ratio = if (planned > 0) Scaled.fromDouble(minOf(1.0, done / planned), 4) else null
             if (ratio != s.completion_ratio) writeSession(s.copy(completion_ratio = ratio))

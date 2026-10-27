@@ -17,8 +17,10 @@ import dev.fitnessapp.data.repo.CatalogRepository
 import dev.fitnessapp.data.repo.EquipmentDraft
 import dev.fitnessapp.data.repo.EquipmentRepository
 import dev.fitnessapp.data.repo.GymDraft
+import dev.fitnessapp.data.repo.HistoryRepository
 import dev.fitnessapp.data.repo.LogSetCommand
 import dev.fitnessapp.data.repo.ProfileRepository
+import dev.fitnessapp.data.repo.SetEdit
 import dev.fitnessapp.data.repo.SessionRepository
 import dev.fitnessapp.data.repo.WriteContext
 import dev.fitnessapp.data.sync.SyncConfig
@@ -48,6 +50,7 @@ class ChallengeSessionRepositoryTest {
     private lateinit var sessions: SessionRepository
     private lateinit var live: ChallengeSessionRepository
     private lateinit var equipment: EquipmentRepository
+    private lateinit var history: HistoryRepository
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
 
@@ -75,6 +78,7 @@ class ChallengeSessionRepositoryTest {
         val facts = ChallengeFactsProvider(db, equipment, { catalog.doc }, params, { Instant.ofEpochMilli(now) })
         challenges = ChallengeRepository(db, outbox, telemetry, ctx, scheduler, params, ChallengeLibrary(params, 5, ::resource), facts)
         sessions = SessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles)
+        history = HistoryRepository(db, outbox, telemetry, ctx, scheduler, sessions)
         live = ChallengeSessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles, challenges, facts, params, 5)
     }
 
@@ -188,6 +192,11 @@ class ChallengeSessionRepositoryTest {
         sessions.finish(sessionId, null)
         db.sessions().get(sessionId)!!.completion_ratio shouldBe 10000L
         db.blocks().bySession(sessionId).single().status shouldBe "done"
+        // A History edit afterwards recomputes the ratio the same way.
+        val set = db.setLogs().bySession(sessionId).first { it.set_kind == "working" }
+        history.editSet(set.id, SetEdit(null, 6, null, 2.0, false, null, false, emptyList(), null), "history") shouldBe 1
+        db.sessions().get(sessionId)!!.completion_ratio shouldBe 10000L
+        exercises.filter { plan[it.challenge_item_key] == "warmup" }.map { db.sessionExercises().get(it.id)!!.status }.distinct() shouldBe listOf("done")
         val finished = db.events().exportAll().single { it.event_type == "session_finished" }.payload
         finished.contains("\"working_sets_planned\":${exercises.filter { plan[it.challenge_item_key] != "warmup" }.sumOf { it.planned_sets ?: 0 }}") shouldBe true
     }

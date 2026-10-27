@@ -649,7 +649,7 @@ class SessionRepository(
     }
 
     /** The item keys of a challenge session's warm-up items (CDS role `warmup`); empty for other sessions. */
-    private suspend fun warmupItemKeys(sessionId: String): Set<String> {
+    internal suspend fun warmupItemKeys(sessionId: String): Set<String> {
         val live = db.challengeLive().get(sessionId) ?: return emptySet()
         return PlanJson.decode(Json.parseToJsonElement(live.plan_json).jsonObject).items
             .filter { it.role == "warmup" }.mapTo(HashSet()) { it.key }
