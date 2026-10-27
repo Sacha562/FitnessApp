@@ -1079,7 +1079,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             return t
         }
         val change = apps.lastOrNull { it.kind == "suggest" }
-        val notices = apps.filter { it.kind == "notify" }.mapNotNull { text(it.msg, it.msgParams) }
+        // A capTarget (the right side matches the left) has no message of its own; the banner states its result.
+        val caps = apps.filter { it.kind == "capTarget" && it.to != null }.map { a ->
+            val side = when (a.rowsBefore.firstOrNull()?.side) {
+                "L" -> "Left side"
+                "R" -> "Right side"
+                else -> "Next set"
+            }
+            "$side reduced to ${a.to} reps."
+        }
+        val notices = apps.filter { it.kind == "notify" }.mapNotNull { text(it.msg, it.msgParams) } + caps
         _ui.update { u ->
             u.copy(
                 ruleLine = change?.let { a ->
