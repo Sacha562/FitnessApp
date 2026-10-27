@@ -54,6 +54,17 @@ class ParamView(private val values: JsonObject) {
         return out
     }
 
+    /** An object of number arrays (tier tables such as `warmup.tier_high`), sorted by key. */
+    fun tableArrays(key: String): TreeMap<String, List<Double>> {
+        val obj = element(key) as? JsonObject ?: throw IllegalArgumentException("params key $key is not a table")
+        val out = TreeMap<String, List<Double>>()
+        obj.forEach { (k, v) ->
+            val arr = v as? JsonArray ?: throw IllegalArgumentException("params key $key.$k is not an array")
+            out[k] = arr.map { number(it as JsonPrimitive, "$key.$k") }
+        }
+        return out
+    }
+
     /** An array of strings (enum lists such as `rircal.eligible_safety_classes`), in file order. */
     fun strings(key: String): List<String> {
         val arr = element(key) as? JsonArray ?: throw IllegalArgumentException("params key $key is not an array")

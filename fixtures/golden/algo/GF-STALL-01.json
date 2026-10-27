@@ -1,0 +1,60 @@
+{
+    "id": "GF-STALL-01",
+    "module": "stall",
+    "description": "5 valid exposures, g 0.0005 per week, sd_g 0.002: p_prog 0.106 < 0.2 -> STALL, tier 1",
+    "input": {
+        "module": "stall@1.0.0",
+        "scope_key": "golden:GF-STALL-01",
+        "payload": {
+            "evaluate": {
+                "g": 5.0E-4,
+                "p_gg": 4.0E-6,
+                "today": "2026-10-27",
+                "previous_status": "progressing",
+                "exposures": [
+                    {
+                        "date": "2026-10-27",
+                        "counts": true,
+                        "residual": 0.01
+                    },
+                    {
+                        "date": "2026-10-20",
+                        "counts": true,
+                        "residual": 0.01
+                    },
+                    {
+                        "date": "2026-10-13",
+                        "counts": true,
+                        "residual": 0.01
+                    },
+                    {
+                        "date": "2026-10-06",
+                        "counts": true,
+                        "residual": 0.01
+                    },
+                    {
+                        "date": "2026-09-29",
+                        "counts": true,
+                        "residual": 0.01
+                    }
+                ]
+            }
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "evaluate": {
+                "status": "stall",
+                "g": 0.0005,
+                "sd_g": 0.002,
+                "p_prog": 0.1056,
+                "n_exposures": 5,
+                "event": true,
+                "tier_action": "tier1"
+            },
+            "global": []
+        },
+        "outputs_jcs_sha256": "204013bf3c123d3d94e71548350bd1d2b0df92bc40ac1880616c4ee4dad8c966"
+    }
+}

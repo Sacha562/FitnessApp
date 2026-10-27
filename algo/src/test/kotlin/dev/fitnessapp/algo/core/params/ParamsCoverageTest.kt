@@ -14,9 +14,11 @@ import dev.fitnessapp.algo.estimation.hold.Hold
 import dev.fitnessapp.algo.estimation.rcm.Rcm
 import dev.fitnessapp.algo.estimation.rircal.RirCal
 import dev.fitnessapp.algo.estimation.sse.Sse
-import dev.fitnessapp.algo.prescription.reason.ReasonSemantics
+import dev.fitnessapp.algo.estimation.stall.Stall
+import dev.fitnessapp.algo.prescription.reason.Reason
+import dev.fitnessapp.algo.prescription.rx.Rx
+import dev.fitnessapp.algo.prescription.warmup.Warmup
 import dev.fitnessapp.algo.prescription.rest.RestPolicy
-import dev.fitnessapp.algo.prescription.warmup.WarmupRest
 import dev.fitnessapp.algo.testing.TestParams
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.Json
@@ -30,18 +32,16 @@ import org.junit.jupiter.api.Test
  * is declared, and no key is declared by two modules. Grows with every module.
  */
 class ParamsCoverageTest {
-    /**
-     * Modules whose whole key slice is declared. WarmupRest is partial (rest keys only) until WARMUP-1, and
-     * ReasonSemantics (the estimator keys of REASON-1) until the rest of REASON-1 in M3.3.
-     */
+    /** Modules whose whole key slice is declared (Warmup includes WarmupRest's keys, Reason ReasonSemantics'). */
     private val complete: Map<String, DeclaresParams> = mapOf(
         "load" to LoadModel, "bodyweight" to Bodyweight, "rest" to RestPolicy,
         "challenge.fitexpr" to FitExprLimits, "challenge.enrollment" to EnrollmentFold, "challenge.eca" to RuleEngine,
         "challenge.plan" to WeekPlanner, "challenge.contract" to ContractBuilder,
         "calendar.classify" to CalendarClassifier, "challenge.calendar" to SlotMatcher,
         "fatigue" to Fatigue, "rcm" to Rcm, "rircal" to RirCal, "sse" to Sse, "hold" to Hold,
+        "reason" to Reason, "rx" to Rx, "warmup" to Warmup, "stall" to Stall,
     )
-    private val all: List<DeclaresParams> = complete.values.toList() + WarmupRest + ReasonSemantics
+    private val all: List<DeclaresParams> = complete.values.toList()
 
     private val params = Json.parseToJsonElement(TestParams.text).jsonObject.getValue("params").jsonObject
     private val values = ParamsHashes.values(params)

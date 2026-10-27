@@ -40,6 +40,11 @@ object GoldenRunner {
             "rircal" -> EstimationGolden.rircal(payload(), params.fork())
             "sse" -> EstimationGolden.sse(payload(), params.fork())
             "hold" -> EstimationGolden.hold(payload(), params.fork())
+            "rx" -> PrescriptionGolden.rx(payload(), params.fork())
+            "warmup" -> PrescriptionGolden.warmup(payload(), params.fork())
+            "rest" -> PrescriptionGolden.rest(payload(), params.fork())
+            "reason" -> PrescriptionGolden.reason(payload(), params.fork())
+            "stall" -> PrescriptionGolden.stall(payload(), params.fork())
             else -> throw IllegalArgumentException("no golden adapter for module $module")
         }
         return Result(outputs, Jcs.canonicalize(outputs), Jcs.sha256Hex(outputs))

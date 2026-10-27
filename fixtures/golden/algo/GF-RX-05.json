@@ -1,0 +1,123 @@
+{
+    "id": "GF-RX-05",
+    "module": "rx",
+    "description": "Leg press in the W41 deload: 2 sets, load kept, RIR + 2: 125 kg x 9, 7 (C3.3)",
+    "input": {
+        "module": "rx@1.0.0",
+        "scope_key": "golden:GF-RX-05",
+        "payload": {
+            "cases": [
+                {
+                    "op": "prescribe",
+                    "scheme": {
+                        "kind": "range",
+                        "r_lo": 8,
+                        "r_hi": 10,
+                        "q_star": 2,
+                        "strength": false
+                    },
+                    "sets": 2,
+                    "rest_s": 150,
+                    "loadables": {
+                        "from": 5,
+                        "to": 300,
+                        "step": 5
+                    },
+                    "k": 45,
+                    "m_kg": 158.66666666666666,
+                    "p_ll": 0,
+                    "last": {
+                        "w_last": 125,
+                        "reps": [
+                            10,
+                            9,
+                            8
+                        ],
+                        "q_true": [
+                            3,
+                            2,
+                            2
+                        ],
+                        "targets": [
+                            10,
+                            9,
+                            8
+                        ]
+                    },
+                    "flags": {
+                        "deload": true
+                    }
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "cases": [
+                {
+                    "outputs": {
+                        "mode": "model",
+                        "sets": [
+                            {
+                                "set_index": 1,
+                                "side": "both",
+                                "target_reps": 9,
+                                "target_seconds": null,
+                                "rir": 4,
+                                "effective_load_kg": 125
+                            },
+                            {
+                                "set_index": 2,
+                                "side": "both",
+                                "target_reps": 7,
+                                "target_seconds": null,
+                                "rir": 4,
+                                "effective_load_kg": 125
+                            }
+                        ],
+                        "caps_applied": [],
+                        "rir_pred": [
+                            4.12,
+                            4.5
+                        ],
+                        "rest_s": [
+                            150,
+                            150
+                        ],
+                        "scheme": {
+                            "kind": "range",
+                            "r_lo": 8,
+                            "r_hi": 10,
+                            "r_star": 10,
+                            "q_star": 2,
+                            "sources": {}
+                        },
+                        "double": {
+                            "targets": [
+                                10,
+                                9,
+                                8
+                            ],
+                            "ext": 0
+                        },
+                        "probe": false,
+                        "fail_counter": 0,
+                        "variant_suggestion": null,
+                        "shadow": null
+                    },
+                    "trace": {
+                        "m_use": null,
+                        "z_c": null,
+                        "reps_per_step": null,
+                        "candidates": [],
+                        "steps": [
+                            "rx.deload"
+                        ]
+                    }
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "9aff0ba95d0ca623346d8ad639b8b23b4ca46cb559f72bbcd3ea14843b27a93b"
+    }
+}

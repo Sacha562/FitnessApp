@@ -1,0 +1,140 @@
+{
+    "id": "GF-RX-11",
+    "module": "rx",
+    "description": "Fail counter: two failed valid exposures at 60 kg (barbell): next load <= 55.5 -> 55 kg, ladder restart (B9.7)",
+    "input": {
+        "module": "rx@1.0.0",
+        "scope_key": "golden:GF-RX-11",
+        "payload": {
+            "cases": [
+                {
+                    "op": "prescribe",
+                    "scheme": {
+                        "kind": "range",
+                        "r_lo": 6,
+                        "r_hi": 8,
+                        "q_star": 2,
+                        "strength": false
+                    },
+                    "sets": 3,
+                    "rest_s": 150,
+                    "loadables": {
+                        "from": 20,
+                        "to": 200,
+                        "step": 2.5
+                    },
+                    "k": 30,
+                    "m_kg": 80,
+                    "p_ll": 0,
+                    "last": {
+                        "w_last": 60,
+                        "reps": [
+                            5,
+                            4,
+                            4
+                        ],
+                        "q_true": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "targets": [
+                            8,
+                            7,
+                            6
+                        ],
+                        "failed": true
+                    },
+                    "flags": {
+                        "fail_counter": 2
+                    }
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "cases": [
+                {
+                    "outputs": {
+                        "mode": "double",
+                        "sets": [
+                            {
+                                "set_index": 1,
+                                "side": "both",
+                                "target_reps": 8,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 55
+                            },
+                            {
+                                "set_index": 2,
+                                "side": "both",
+                                "target_reps": 8,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 55
+                            },
+                            {
+                                "set_index": 3,
+                                "side": "both",
+                                "target_reps": 8,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 55
+                            }
+                        ],
+                        "caps_applied": [
+                            {
+                                "type": "fail",
+                                "limit_w": 55.5,
+                                "unclamped_w": 60
+                            }
+                        ],
+                        "rir_pred": [
+                            6.64,
+                            5.49,
+                            4.53
+                        ],
+                        "rest_s": [
+                            150,
+                            150,
+                            150
+                        ],
+                        "scheme": {
+                            "kind": "range",
+                            "r_lo": 6,
+                            "r_hi": 8,
+                            "r_star": 8,
+                            "q_star": 2,
+                            "sources": {}
+                        },
+                        "double": {
+                            "targets": [
+                                8,
+                                8,
+                                8
+                            ],
+                            "ext": 0
+                        },
+                        "probe": false,
+                        "fail_counter": 2,
+                        "variant_suggestion": null,
+                        "shadow": null
+                    },
+                    "trace": {
+                        "m_use": 80,
+                        "z_c": 0,
+                        "reps_per_step": 1.98,
+                        "candidates": [],
+                        "steps": [
+                            "stall.fast_path"
+                        ]
+                    }
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "bb31e610c08f36b275383e53183cce8d93eebe1301324ce0162ac59dead4db88"
+    }
+}

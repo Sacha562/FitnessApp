@@ -1,0 +1,433 @@
+{
+    "id": "GF-RX-04",
+    "module": "rx",
+    "description": "The same as a cold start (P_LL 0.08^2, z_c 0.5): 120 kg x 10, 9, 8 (C3.3)",
+    "input": {
+        "module": "rx@1.0.0",
+        "scope_key": "golden:GF-RX-04",
+        "payload": {
+            "cases": [
+                {
+                    "op": "model",
+                    "scheme": {
+                        "kind": "range",
+                        "r_lo": 8,
+                        "r_hi": 10,
+                        "q_star": 2,
+                        "strength": false
+                    },
+                    "sets": 3,
+                    "rest_s": 150,
+                    "loadables": {
+                        "from": 5,
+                        "to": 300,
+                        "step": 5
+                    },
+                    "k": 45,
+                    "m_kg": 158.66666666666666,
+                    "p_ll": 0.0064,
+                    "last": {
+                        "w_last": 120,
+                        "reps": [
+                            12
+                        ],
+                        "q_true": [
+                            3.5
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "cases": [
+                {
+                    "outputs": {
+                        "mode": "model",
+                        "sets": [
+                            {
+                                "set_index": 1,
+                                "side": "both",
+                                "target_reps": 10,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 120
+                            },
+                            {
+                                "set_index": 2,
+                                "side": "both",
+                                "target_reps": 9,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 120
+                            },
+                            {
+                                "set_index": 3,
+                                "side": "both",
+                                "target_reps": 8,
+                                "target_seconds": null,
+                                "rir": 2,
+                                "effective_load_kg": 120
+                            }
+                        ],
+                        "caps_applied": [],
+                        "rir_pred": [
+                            3.17,
+                            2.17,
+                            1.77
+                        ],
+                        "rest_s": [
+                            150,
+                            150,
+                            150
+                        ],
+                        "scheme": {
+                            "kind": "range",
+                            "r_lo": 8,
+                            "r_hi": 10,
+                            "r_star": 10,
+                            "q_star": 2,
+                            "sources": {}
+                        },
+                        "double": null,
+                        "probe": false,
+                        "fail_counter": 0,
+                        "variant_suggestion": null,
+                        "shadow": null
+                    },
+                    "trace": {
+                        "m_use": 152.45,
+                        "z_c": 0.5,
+                        "reps_per_step": null,
+                        "candidates": [
+                            {
+                                "w": 55,
+                                "cap_fresh": 80.73,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    70.73,
+                                    70.4,
+                                    70.16
+                                ],
+                                "j": 42065.968094,
+                                "feasible": null
+                            },
+                            {
+                                "w": 60,
+                                "cap_fresh": 70.33,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    60.33,
+                                    59.96,
+                                    59.68
+                                ],
+                                "j": 30273.1827214,
+                                "feasible": null
+                            },
+                            {
+                                "w": 65,
+                                "cap_fresh": 61.54,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    51.54,
+                                    51.11,
+                                    50.79
+                                ],
+                                "j": 21850.612275,
+                                "feasible": null
+                            },
+                            {
+                                "w": 70,
+                                "cap_fresh": 54,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    44,
+                                    43.51,
+                                    43.15
+                                ],
+                                "j": 15598.4757518,
+                                "feasible": null
+                            },
+                            {
+                                "w": 75,
+                                "cap_fresh": 47.47,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    37.47,
+                                    36.91,
+                                    36.49
+                                ],
+                                "j": 10878.711451,
+                                "feasible": null
+                            },
+                            {
+                                "w": 80,
+                                "cap_fresh": 41.75,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    31.75,
+                                    31.12,
+                                    30.64
+                                ],
+                                "j": 7717.48163873,
+                                "feasible": null
+                            },
+                            {
+                                "w": 85,
+                                "cap_fresh": 36.71,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    26.71,
+                                    25.99,
+                                    25.44
+                                ],
+                                "j": 5195.47438885,
+                                "feasible": null
+                            },
+                            {
+                                "w": 90,
+                                "cap_fresh": 32.22,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    22.22,
+                                    21.41,
+                                    20.78
+                                ],
+                                "j": 3382.18864116,
+                                "feasible": null
+                            },
+                            {
+                                "w": 95,
+                                "cap_fresh": 28.21,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    18.21,
+                                    17.28,
+                                    16.55
+                                ],
+                                "j": 2120.03867156,
+                                "feasible": null
+                            },
+                            {
+                                "w": 100,
+                                "cap_fresh": 24.6,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    14.6,
+                                    13.53,
+                                    12.69
+                                ],
+                                "j": 1273.97144039,
+                                "feasible": null
+                            },
+                            {
+                                "w": 105,
+                                "cap_fresh": 21.33,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    11.33,
+                                    10.1,
+                                    9.11
+                                ],
+                                "j": 591.280950579,
+                                "feasible": null
+                            },
+                            {
+                                "w": 110,
+                                "cap_fresh": 18.36,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    8.36,
+                                    6.94,
+                                    5.74
+                                ],
+                                "j": 232.863239319,
+                                "feasible": null
+                            },
+                            {
+                                "w": 115,
+                                "cap_fresh": 15.65,
+                                "reps": [
+                                    10,
+                                    10,
+                                    10
+                                ],
+                                "rir": [
+                                    5.65,
+                                    3.98,
+                                    2.52
+                                ],
+                                "j": 59.5133363988,
+                                "feasible": null
+                            },
+                            {
+                                "w": 120,
+                                "cap_fresh": 13.17,
+                                "reps": [
+                                    10,
+                                    9,
+                                    8
+                                ],
+                                "rir": [
+                                    3.17,
+                                    2.17,
+                                    1.77
+                                ],
+                                "j": 3.4449657704,
+                                "feasible": null
+                            },
+                            {
+                                "w": 125,
+                                "cap_fresh": 10.88,
+                                "reps": [
+                                    9,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    1.88,
+                                    0.93,
+                                    -0.47
+                                ],
+                                "j": 129.446980316,
+                                "feasible": null
+                            },
+                            {
+                                "w": 130,
+                                "cap_fresh": 8.77,
+                                "reps": [
+                                    8,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    0.77,
+                                    -1.15,
+                                    -2.47
+                                ],
+                                "j": 262.444196797,
+                                "feasible": null
+                            },
+                            {
+                                "w": 135,
+                                "cap_fresh": 6.82,
+                                "reps": [
+                                    8,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    -1.18,
+                                    -2.97,
+                                    -3.85
+                                ],
+                                "j": 507.946424463,
+                                "feasible": null
+                            },
+                            {
+                                "w": 140,
+                                "cap_fresh": 5,
+                                "reps": [
+                                    8,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    -3,
+                                    -4.31,
+                                    -4.95
+                                ],
+                                "j": 782.97918414,
+                                "feasible": null
+                            },
+                            {
+                                "w": 145,
+                                "cap_fresh": 3.31,
+                                "reps": [
+                                    8,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    -4.69,
+                                    -5.56,
+                                    -5.98
+                                ],
+                                "j": 1155.27995024,
+                                "feasible": null
+                            },
+                            {
+                                "w": 150,
+                                "cap_fresh": 1.73,
+                                "reps": [
+                                    8,
+                                    8,
+                                    8
+                                ],
+                                "rir": [
+                                    -6.27,
+                                    -6.72,
+                                    -6.94
+                                ],
+                                "j": 1525.03912976,
+                                "feasible": null
+                            }
+                        ],
+                        "steps": []
+                    }
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "3afcee63c1fc446bb2678de73d955ee1680e094dee916cdbe0b1bf3b00a3997c"
+    }
+}

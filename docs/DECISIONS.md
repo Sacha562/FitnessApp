@@ -487,3 +487,18 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   The exercise detail shows SSE-1's level and 80 % band per session as added kg (`ui.progress.window_weeks`,
   `ui.progress.band_opacity`); holds keep the list only. No server migration; `ENGINE_VERSION` stays 1.7.0 (no module
   version changes).
+- 2026-10-27 — M3.3 built (D49): `reason` (the rest of REASON-1: the table's session and future effects, the pain stop of
+  D49, the history rules), `rx` (RX-1 with scheme resolution, MODEL, DOUBLE, RULE with the shadow, the probe, deload and
+  re-entry, the cap table, HOLD dispatch, the fallback and the unilateral combine), the `warmup` set generator, `rest@1.1.0`
+  (outcome and fatigue modifiers, alternating pair, supersets, readout, adaptation) and `stall` (B14 with erfc), with 16
+  golden fixtures (GF-RX-01 to 09 and 11, GF-WU-01, GF-REST-01/02, GF-REASON-01, GF-STALL-01/02) and unit tests on the
+  Part C and Part D examples. `ENGINE_VERSION` 1.8.0 (`rest` 1.1.0; the other modules start at 1.0.0). Params 1.0.2 adds
+  `reason.pain_stop_js_min` (D49); `:algo` tests use it, while the app and `:sim` stay on 1.0.1 until M3.4 brings the
+  data migration that registers params 1.0.2 and `rest@1.1.0` on the server (shown before it is applied). Build notes
+  (defaults, no user decision needed): `rir_pred[]` is computed at `M_use`, as C3.1 and C3.3 do, so review metric M4
+  reads a too large `z_c` as a positive mean; a transfer prior without a state starts the prescription without a probe
+  (B9.4 step 4, as SUB-1 does); without an SSE-1 state the warm-up uses the mid tier for compounds; the global stall
+  minimum of 5 active exercises gates T1. Found while checking the fixtures: B9.4's coarse-step rule puts most machine and
+  barbell exercises in DOUBLE (a 5 kg step at 125 kg on the leg press is 2.2 reps), as C15 intends; GF-RX-03 to 05 test
+  MODEL itself, and GF-RX-03 needs C3.3's unrounded `M`. GF-WU-01's rests are 45 and 90 s (the last warm-up set takes
+  the rest to work).

@@ -1436,7 +1436,9 @@ Every resolved field keeps its source. User-owned fields are never changed by ev
 3. `w_sys` undefined: a native ladder exists (level stack without `level_kg`, C43; Smith with unknown bar) ->
    `double` on the native value; otherwise (finger assistance, no BW) -> `none`.
 4. No SSE-1 state and no transfer prior, or more than `rx.calibration_gap_days` (21) since the last exposure
-   -> calibration probe (B9.8) inside the mode chosen by steps 5-7.
+   -> calibration probe (B9.8) inside the mode chosen by steps 5-7. With a transfer prior and no state there is no
+   probe: the prescription starts from `ratio * M_related` (as SUB-1 15.1 starts a substitute); B9.8's "else from the
+   transfer prior" applies to a probe after a gap.
 5. Bodyweight-only today (one loadable) -> `double`.
 6. Coarse-step check at the MODEL choice `w*` (B9.5):
    `reps_per_step = (nextHarder(W, w*) - w*) / w* * (k + cap_1(w*) - 1)`; if `reps_per_step >
@@ -1648,7 +1650,9 @@ The cap table and WE-S2 do not apply to HOLD-1 items at all (C70): plate, second
 `rx.prescription` outputs (DATA_MODEL 10.2 keys first): `mode`; `sets[]: {set_index, side, target_reps,
 rir, effective_load_kg}` where `rir` is the **target** RIR; `caps_applied[]`; plus `rir_pred[]`,
 `load_point` (B2.8, with plate breakdown), `scheme {kind, r_lo, r_hi, r_star, q_star, sources}`,
-`double {targets, ext}`, `probe`, `fail_counter`, `variant_suggestion`, `shadow` (RULE), `rest_s[]`.
+`double {targets, ext}`, `probe`, `fail_counter`, `variant_suggestion`, `shadow` (RULE), `rest_s[]`. `rir_pred[]` is computed at
+`M_use` (with `z_c` and `delta`), the estimate the prescription was made with, so review metric M4 shows a too large
+`z_c` as a positive mean (M3.3 build note; C3.1 and C3.3 give their RIR the same way).
 Trace: `M_use` parts (`L_pred`, `sd`, `z_c`, `delta`), the candidate table (`w`, `cap_fresh`, per-set reps
 and RIR, `J` or feasibility), the coarse-step check, `gap_reps`, transforms applied. Prescription error
 (`q_true - rir_pred` per set) is computed later by the review from `set_logs` (Part D).
@@ -1689,6 +1693,9 @@ de-duplicate equal loads, keeping the higher reps; drop a set whose w >= w_work
 rest: warmup.rest_light_s (45) after sets with frac < 0.65, warmup.rest_heavy_s (60) otherwise,
       warmup.rest_to_work_s (90) after the last warm-up set
 ```
+
+Without an SSE-1 state `p_w` is unknown: a compound gets the mid tier, an isolation exercise the low tier when it is
+the first of its group today (M3.3 build note).
 
 **Example (weighted pull-up at +27.5 kg, OAP B load, outside a challenge session).** `w_work` = 98.20,
 `M` = 109.94, `p_w` = 0.893 (high tier). 0.45 -> 44.2 kg < BW -> bodyweight, `cap(70.7)` = 18.0 -> 6 reps;
@@ -2001,6 +2008,7 @@ T1: >= stall.global_frac (40 %) of active exercises had status STALL or REGRESS 
 T2: session readiness (mean delta_ex of the session, RULE items included) <= stall.global_delta (-0.04) in
     >= stall.global_delta_sessions (3) of the last 4 sessions
 T3: feeling_bad + too_tired reasons >= stall.global_bad_events (3) in the last 14 days
+(the minimum of stall.global_min_active active exercises applies to T1, the rule that counts them)
 any -> globalDeloadRecommended {triggers[]} + a checklist prompt (sleep, food, stress, BW trend; UI-07)
 ```
 
@@ -2665,16 +2673,16 @@ self-test compares hashes on the phone (ANDROID.md 6.3 item 4). Numbers below ar
 |----|-------|----------|
 | GF-RX-01 | 6 x 2, `q*` 2, rest 180, `M` 109.94, `z_c * sd = 0` | +27.5 kg; RIR 2.66 .. 1.98 (C3.1 table) |
 | GF-RX-02 | same with sd 3 %, `z_c` 0.5 | `M_use` 108.30; +26.25 kg (min RIR 1.90) |
-| GF-RX-03 | leg press 3 x 8-10, `M` 158.67, `k` 45, `w_last` 120, posterior mean | 125 kg x 10, 9, 8; RIR 3.12, 2.12, 1.71; `J` 3.35 |
+| GF-RX-03 | leg press 3 x 8-10, `M` 158.67, `k` 45, `w_last` 120, posterior mean | 125 kg x 10, 9, 8; RIR 3.12, 2.12, 1.71; `J` 3.35 (MODEL itself: B9.4's coarse-step check puts a 5 kg step at 125 kg, 2.2 reps, in DOUBLE, GF-RX-06; `M` unrounded, 120 x (1 + 14.5 / 45), because at 158.67 set 1's ideal at 120 kg crosses a rounding edge) |
 | GF-RX-04 | same as a cold start (`P_LL` 0.0064, `z_c` 0.5) | 120 kg x 10, 9, 8; `J` 3.44 |
 | GF-RX-05 | leg press in the W41 deload (2 sets, load kept, RIR + 2) | 125 kg x 9, 7 (RIR 4.12, 4.50) |
-| GF-RX-06 | coarse-step check for pins 50 -> 45, 40 -> 35, 35 -> 30 | 1.89, 1.70, 1.63 reps per step -> `double` (general) |
+| GF-RX-06 | coarse-step check for pins 50 -> 45, 40 -> 35, 35 -> 30; the leg press of GF-RX-03 | 1.89, 1.70, 1.63 reps per step -> `double` (general); the leg press's 5 kg step at 125 kg is 2.2 reps -> `double` |
 | GF-RX-07 | DOUBLE ladder, `r_hi` 8, achieved 8-7-6 at target effort, repeated | targets 8-8-6, 8-8-7, 8-8-8, then the next loadable |
 | GF-RX-08 | lateral raise 12-15 at 8 kg per hand, 15/15/15 then 17/17/17 | first: extension to 17 (start at 10 kg would be 7/5/4); second: advance to 10 kg with targets 9/6/5 |
 | GF-RX-09 | RULE item A: weighted pull-up 4 x 4 at +22.5, rest 180 (deload set count as materialised by the challenge) | plan copied exactly; predicted RIR 2.50, 1.92 (2 sets) or 2.50, 1.92, 1.43, 1.01 (4 sets); shadow MODEL +20 kg (mean) / +18.75 kg (`z_c` 0.5, sd 3 %) |
 | GF-RX-10 | high-risk exercise with a user preference `q* = 0` | `q*` clamped to 1, WE-S1 SAFETY `enforced = true` |
 | GF-RX-11 | fail counter: two consecutive failed valid exposures at 60 kg (barbell) | next load <= 55.5 -> 55 kg; counter reset; ladder restart |
-| GF-WU-01 | warm-up before +27.5 (`p_w` 0.893) | BW x 6, +12.5 x 1; rests 45, 60 -> 90 before work |
+| GF-WU-01 | warm-up before +27.5 (`p_w` 0.893) | BW x 6, +12.5 x 1; rests 45 after the first, 90 before work (the last warm-up set always takes `warmup.rest_to_work_s`) |
 | GF-REST-01 | C weighted pull-up (challenge 150 s); 6 x 2 general; leg press after RIR 3 and after RIR 0 | 150; 180 (strength_heavy); 150; 195 |
 | GF-REST-02 | alternating one-arm pair, per-side timer 120 s, second side 5 reps | between sides 0 s; after the pair `max(60, 120 - (5 x 3 + 5) - 10)` = 90 s |
 | GF-REASON-01 | one set per reason code | estimator class and session/future effects of the B12.3 table |

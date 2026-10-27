@@ -1,0 +1,185 @@
+{
+    "id": "GF-REASON-01",
+    "module": "reason",
+    "description": "One row per reason code (B12.3) and the pain stop of D49 (joint stress 2 or more)",
+    "input": {
+        "module": "reason@1.0.0",
+        "scope_key": "golden:GF-REASON-01",
+        "payload": {
+            "codes": [
+                "too_easy",
+                "too_hard",
+                "feeling_good",
+                "feeling_bad",
+                "too_tired",
+                "no_time",
+                "occupied",
+                "equipment_missing",
+                "pain",
+                "grip_failure",
+                "torso_rotation",
+                "technique_breakdown",
+                "other",
+                "none"
+            ],
+            "pain_stop": {
+                "joints": [
+                    "elbow_medial",
+                    "elbow_lateral"
+                ],
+                "scores": [
+                    2,
+                    5,
+                    8
+                ],
+                "exercises": [
+                    {
+                        "id": "curl",
+                        "js": {
+                            "elbow_medial": 2
+                        }
+                    },
+                    {
+                        "id": "row",
+                        "js": {
+                            "elbow_medial": 1
+                        }
+                    },
+                    {
+                        "id": "squat",
+                        "js": {}
+                    }
+                ]
+            }
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "rows": [
+                {
+                    "code": "too_easy",
+                    "session": "autoreg_trigger",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "too_hard",
+                    "session": "autoreg_trigger",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "feeling_good",
+                    "session": "transfer_up",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "feeling_bad",
+                    "session": "offer_lighter",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": true
+                },
+                {
+                    "code": "too_tired",
+                    "session": "offer_lighter",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": true
+                },
+                {
+                    "code": "no_time",
+                    "session": "drop_remaining",
+                    "invalidates_exposure": true,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "occupied",
+                    "session": "substitute",
+                    "invalidates_exposure": true,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "equipment_missing",
+                    "session": "substitute",
+                    "invalidates_exposure": true,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "pain",
+                    "session": "end_exercise",
+                    "invalidates_exposure": true,
+                    "excluded_from_stall": true,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "grip_failure",
+                    "session": "grip_info",
+                    "invalidates_exposure": true,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": true,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "torso_rotation",
+                    "session": "technique_adjust",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "technique_breakdown",
+                    "session": "technique_adjust",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "other",
+                    "session": "none",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                },
+                {
+                    "code": "none",
+                    "session": "none",
+                    "invalidates_exposure": false,
+                    "excluded_from_stall": false,
+                    "excluded_from_fail_counter": false,
+                    "counts_for_recovery": false
+                }
+            ],
+            "pain_stop": [
+                [],
+                [
+                    "curl"
+                ],
+                [
+                    "curl"
+                ]
+            ]
+        },
+        "outputs_jcs_sha256": "17282e7e7be9698a503a9689eb8e42e0ecc2025058a60bceccf84762005e3fa0"
+    }
+}

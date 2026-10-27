@@ -1,0 +1,87 @@
+{
+    "id": "GF-REST-01",
+    "module": "rest",
+    "description": "C weighted pull-up (challenge 150 s); 6 x 2 general; leg press after RIR 3 and after RIR 0",
+    "input": {
+        "module": "rest@1.1.0",
+        "scope_key": "golden:GF-REST-01",
+        "payload": {
+            "decide": [
+                {
+                    "rest_class": "compound_upper",
+                    "challenge_rest_s": 150
+                },
+                {
+                    "rest_class": "compound_upper",
+                    "target_reps": 2
+                },
+                {
+                    "rest_class": "compound_lower",
+                    "target_reps": 9,
+                    "q_star": 2,
+                    "last_q_true": 3.5,
+                    "last_reps": 10,
+                    "last_target": 10,
+                    "f_next": 0.15
+                },
+                {
+                    "rest_class": "compound_lower",
+                    "target_reps": 8,
+                    "q_star": 2,
+                    "last_q_true": 0.5,
+                    "last_reps": 9,
+                    "last_target": 9,
+                    "f_next": 0.26
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "decide": [
+                {
+                    "timer_s": 150,
+                    "between_sides_s": null,
+                    "base_s": 150,
+                    "source": "challenge",
+                    "steps": [
+                        "rest.challenge"
+                    ]
+                },
+                {
+                    "timer_s": 180,
+                    "between_sides_s": null,
+                    "base_s": 180,
+                    "source": "engine",
+                    "steps": [
+                        "rest.class.strength_heavy"
+                    ]
+                },
+                {
+                    "timer_s": 150,
+                    "between_sides_s": null,
+                    "base_s": 150,
+                    "source": "engine",
+                    "steps": [
+                        "rest.class"
+                    ]
+                },
+                {
+                    "timer_s": 195,
+                    "between_sides_s": null,
+                    "base_s": 150,
+                    "source": "engine",
+                    "steps": [
+                        "rest.class",
+                        "rest.mod.hard",
+                        "rest.mod.fatigue"
+                    ]
+                }
+            ],
+            "pair": [],
+            "readout": []
+        },
+        "outputs_jcs_sha256": "b007f6ef5536c7576bbc81b8bf8f8985bcb24252157ac784db8ebd00d8591823"
+    }
+}

@@ -1,0 +1,66 @@
+{
+    "id": "GF-REST-02",
+    "module": "rest",
+    "description": "Alternating one-arm pair, per-side timer 120 s, second side 5 reps: 0 s between sides, 90 s after the pair; readout",
+    "input": {
+        "module": "rest@1.1.0",
+        "scope_key": "golden:GF-REST-02",
+        "payload": {
+            "decide": [
+                {
+                    "rest_class": "compound_upper",
+                    "user_rest_pref_s": 120,
+                    "side_mode": "alternating"
+                }
+            ],
+            "pair": [
+                [
+                    120,
+                    20
+                ]
+            ],
+            "readout": [
+                [
+                    7.4975,
+                    0,
+                    5,
+                    7.4975,
+                    60,
+                    2
+                ],
+                [
+                    7.4975,
+                    0,
+                    5,
+                    7.4975,
+                    150,
+                    2
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "decide": [
+                {
+                    "timer_s": 120,
+                    "between_sides_s": 0,
+                    "base_s": 120,
+                    "source": "user",
+                    "steps": [
+                        "rest.user"
+                    ]
+                }
+            ],
+            "pair": [
+                90
+            ],
+            "readout": [
+                3.98,
+                4.62
+            ]
+        },
+        "outputs_jcs_sha256": "7e1762bfc35153d2bee6dfe4e73aef54b5d81ac2e594e6609007e4a035994392"
+    }
+}

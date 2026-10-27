@@ -1,0 +1,6786 @@
+{
+  "engine_version_range": ">=1.0.0 <2.0.0",
+  "params": {
+    "allocator.indirect": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "Pelland 2026; Mannarino 2021; Kubo 2019",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "[ratio, share] (by source:target group)",
+      "value": {
+        "chest:front_delts": [
+          0.5,
+          1.0
+        ],
+        "chest:triceps": [
+          0.5,
+          1.0
+        ],
+        "front_delts:side_delts": [
+          0.5,
+          1.0
+        ],
+        "front_delts:triceps": [
+          0.5,
+          1.0
+        ],
+        "hamstrings:glutes": [
+          0.5,
+          0.33
+        ],
+        "lats:biceps": [
+          0.5,
+          1.0
+        ],
+        "quads:adductors": [
+          0.5,
+          0.5
+        ],
+        "quads:glutes": [
+          0.5,
+          0.5
+        ],
+        "rear_delts:upper_back": [
+          0.5,
+          1.0
+        ],
+        "upper_back:biceps": [
+          0.5,
+          0.5
+        ],
+        "upper_back:rear_delts": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    "allocator.min_total": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "planning lens; add-on [this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "FS (by session kind)",
+      "value": {
+        "addon": 2,
+        "standalone": 3
+      }
+    },
+    "allocator.primary_order": {
+      "evidence": "engineering-fact",
+      "source": "planning lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "group ids",
+      "value": [
+        "chest",
+        "quads",
+        "hamstrings",
+        "lats",
+        "upper_back",
+        "front_delts"
+      ]
+    },
+    "allocator.sys_rate": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0,
+      "source": "[this doc] (consistent with setcredit.sys_w)",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "systemic weight per direct FS (by group)",
+      "value": {
+        "abductors": 0.4,
+        "abs": 0.4,
+        "adductors": 0.4,
+        "biceps": 0.4,
+        "calves": 0.4,
+        "chest": 0.7,
+        "forearms": 0.4,
+        "front_delts": 0.6,
+        "glutes": 0.8,
+        "hamstrings": 0.6,
+        "lats": 0.7,
+        "lower_back": 0.5,
+        "quads": 0.7,
+        "rear_delts": 0.4,
+        "side_delts": 0.4,
+        "triceps": 0.4,
+        "upper_back": 0.7,
+        "upper_traps": 0.5
+      }
+    },
+    "allocator.tissue_rate": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "tissue weight per direct FS (by group:tissue)",
+      "value": {
+        "abductors:hip": 0.1,
+        "abs:lumbar": 0.1,
+        "adductors:hip": 0.1,
+        "biceps:elbow_medial": 0.5,
+        "chest:shoulder_ant": 0.1,
+        "forearms:grip": 1.0,
+        "front_delts:shoulder_ant": 0.5,
+        "glutes:hip": 0.1,
+        "hamstrings:knee": 0.1,
+        "lats:elbow_medial": 0.1,
+        "lats:grip": 0.5,
+        "lower_back:lumbar": 0.5,
+        "quads:knee": 0.5,
+        "side_delts:shoulder_overhead": 0.1,
+        "triceps:elbow_lateral": 0.1,
+        "upper_back:grip": 0.5,
+        "upper_traps:grip": 0.5
+      }
+    },
+    "autoreg.consec_delta": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0.5,
+      "source": "C16",
+      "tunable": true,
+      "tuned_by": "acceptance, post-change hit rate (M8)",
+      "unit": "RIR",
+      "value": 1.0
+    },
+    "autoreg.delta_max": {
+      "evidence": "expert-opinion",
+      "max": 0.15,
+      "min": 0,
+      "source": "C16",
+      "tunable": true,
+      "tuned_by": "M8",
+      "unit": "ratio",
+      "value": 0.06
+    },
+    "autoreg.delta_min": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -0.2,
+      "source": "C16",
+      "tunable": true,
+      "tuned_by": "M8",
+      "unit": "ratio",
+      "value": -0.08
+    },
+    "autoreg.fatigue_stop_floor": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.6,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "stop acceptance",
+      "unit": "ratio",
+      "value": 0.85
+    },
+    "autoreg.first_set_delta": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "C16; UX UI-06",
+      "tunable": true,
+      "tuned_by": "acceptance, post-change hit rate (M8)",
+      "unit": "RIR",
+      "value": 2.0
+    },
+    "autoreg.hysteresis_rir": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0.5,
+      "source": "C16",
+      "tunable": true,
+      "tuned_by": "M8 (changes that were needed vs not)",
+      "unit": "RIR",
+      "value": 1.5
+    },
+    "autoreg.max_suggestions_per_exercise": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "C16 (general items only, C46)",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "cards",
+      "value": 1
+    },
+    "autoreg.raise_max_rel": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0.01,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M8",
+      "unit": "ratio",
+      "value": 0.05
+    },
+    "autoreg.raise_max_steps_strength": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M8",
+      "unit": "steps",
+      "value": 1
+    },
+    "autoreg.reps_short": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "C16",
+      "tunable": true,
+      "tuned_by": "acceptance, post-change hit rate (M8)",
+      "unit": "reps",
+      "value": 2
+    },
+    "autoreg.safety_drop_margin": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0.5,
+      "source": "load_prescription AUTO-1",
+      "tunable": true,
+      "tuned_by": "M8",
+      "unit": "RIR",
+      "value": 1.0
+    },
+    "autoreg.stop_consec_short": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "stop acceptance",
+      "unit": "sets",
+      "value": 2
+    },
+    "autoreg.technique_stop_events": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "stop acceptance",
+      "unit": "events",
+      "value": 2
+    },
+    "autoreg.transfer": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residual of later exercises",
+      "unit": "dimensionless",
+      "value": 0.5
+    },
+    "autoreg.transfer_min_agree": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residual of later exercises",
+      "unit": "exercises",
+      "value": 2
+    },
+    "autoreg.trigger_basis": {
+      "evidence": "expert-opinion",
+      "source": "C57 (bias-corrected reported RIR vs model-predicted RIR)",
+      "tunable": true,
+      "tuned_by": "Decision (C57); raw_vs_aim only in :sim counterfactuals",
+      "unit": "enum",
+      "value": "model"
+    },
+    "bodyweight.ewma_alpha": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.05,
+      "source": "C32",
+      "tunable": true,
+      "tuned_by": "one-step-ahead weigh-in residual (metric_observations bw)",
+      "unit": "dimensionless",
+      "value": 0.3
+    },
+    "bodyweight.max_kg": {
+      "evidence": "engineering-fact",
+      "max": 300,
+      "min": 300,
+      "source": "DATA_MODEL range",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "kg",
+      "value": 300
+    },
+    "bodyweight.min_kg": {
+      "evidence": "engineering-fact",
+      "max": 20,
+      "min": 20,
+      "source": "DATA_MODEL range",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "kg",
+      "value": 20
+    },
+    "bodyweight.stale_days": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 3,
+      "source": "C32; data_model S4",
+      "tunable": true,
+      "tuned_by": "weigh-in frequency vs BW variance",
+      "unit": "days",
+      "value": 14
+    },
+    "calendar.classify.confirm_score": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.6,
+      "source": "critique (confirm below 0.8)",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "match weight",
+      "value": 0.8
+    },
+    "calendar.classify.dedupe_minutes": {
+      "evidence": "expert-opinion",
+      "max": 240,
+      "min": 30,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "min",
+      "value": 120
+    },
+    "calendar.classify.dur_max": {
+      "evidence": "engineering-fact",
+      "max": 300,
+      "min": 90,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "min",
+      "value": 180
+    },
+    "calendar.classify.dur_min": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 10,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "min",
+      "value": 30
+    },
+    "calendar.classify.high_score": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 3,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 6
+    },
+    "calendar.classify.lex.gym_title": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(^|[^a-z0-9])(gym|sportschool|fitness|krachttraining|workout|training|basic-?fit|basic fit)([^a-z0-9]|$)"
+    },
+    "calendar.classify.lex.neg": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(^|[^a-z0-9])(schaak\\w*|schaken|chess|zwem\\w*|swim\\w*)([^a-z0-9]|$)"
+    },
+    "calendar.classify.lex.run": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(^|[^a-z0-9])(hardlopen|hardloop\\w*|duurloop|tempoloop|intervalloop|run|running|jog|joggen|parkrun|marathon|10 ?km|5 ?km|10k|5k)([^a-z0-9]|$)"
+    },
+    "calendar.classify.lex.run_intervals": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(interval\\w*|fartlek|repeats|herhaling\\w*|[0-9]{3,4} ?m([^a-z]|$))"
+    },
+    "calendar.classify.lex.run_long": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(lange duurloop|long run|lange loop)"
+    },
+    "calendar.classify.lex.run_race": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(wedstrijd|race|parkrun|marathon|10 ?km|5 ?km|10k|5k)"
+    },
+    "calendar.classify.lex.run_tempo": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(tempo\\w*|drempel\\w*|threshold)"
+    },
+    "calendar.classify.lex.type.core": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(core|buik\\w*|abs)"
+    },
+    "calendar.classify.lex.type.full": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(full ?body|volledig|hele lichaam)"
+    },
+    "calendar.classify.lex.type.legs": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(legs?|benen|been|squat\\w*|leg day)"
+    },
+    "calendar.classify.lex.type.lower": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(lower|onderlichaam)"
+    },
+    "calendar.classify.lex.type.pull": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(pull|trek\\w*|rug|back|biceps|optrek\\w*|pull-?ups?)"
+    },
+    "calendar.classify.lex.type.push": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(push|duw\\w*|borst|chest|schouder\\w*|shoulders?|triceps)"
+    },
+    "calendar.classify.lex.type.upper": {
+      "evidence": "engineering-fact",
+      "source": "ALGORITHMS_PLANNING 1.5 lexicons (EN + NL, D12)",
+      "tunable": true,
+      "tuned_by": "T-CAL lexicon additions",
+      "type": "regex",
+      "unit": "regex (Java syntax, applied to normalised text N(s))",
+      "value": "(upper|bovenlichaam)"
+    },
+    "calendar.classify.link_window_h": {
+      "evidence": "engineering-fact",
+      "max": 6,
+      "min": 1,
+      "source": "C35",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "h",
+      "value": 3
+    },
+    "calendar.classify.run_long_minutes": {
+      "evidence": "weak",
+      "max": 120,
+      "min": 60,
+      "source": "planning lens (long-run factor > 75 min)",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "min",
+      "value": 75
+    },
+    "calendar.classify.run_max_minutes": {
+      "evidence": "engineering-fact",
+      "max": 480,
+      "min": 120,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "min",
+      "value": 240
+    },
+    "calendar.classify.run_min_minutes": {
+      "evidence": "engineering-fact",
+      "max": 30,
+      "min": 5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "min",
+      "value": 10
+    },
+    "calendar.classify.thresh": {
+      "evidence": "engineering-fact",
+      "max": 6,
+      "min": 1,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 3
+    },
+    "calendar.classify.w_allday": {
+      "evidence": "engineering-fact",
+      "max": 0,
+      "min": -10,
+      "source": "tech-stack lens (only if all-day is not ignored)",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": -4
+    },
+    "calendar.classify.w_challenge_title": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 0,
+      "source": "[this doc]; UX lens UI-08 (+2)",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 2
+    },
+    "calendar.classify.w_desc": {
+      "evidence": "engineering-fact",
+      "max": 3,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 1
+    },
+    "calendar.classify.w_dur_bad": {
+      "evidence": "engineering-fact",
+      "max": 0,
+      "min": -3,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": -1
+    },
+    "calendar.classify.w_dur_ok": {
+      "evidence": "engineering-fact",
+      "max": 3,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 1
+    },
+    "calendar.classify.w_loc": {
+      "evidence": "engineering-fact",
+      "max": 6,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": 3
+    },
+    "calendar.classify.w_neg": {
+      "evidence": "engineering-fact",
+      "max": 0,
+      "min": -10,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "T-CAL",
+      "unit": "score",
+      "value": -5
+    },
+    "calendar.classify.w_title": {
+      "evidence": "engineering-fact",
+      "max": 6,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "corrections, T-CAL",
+      "unit": "score",
+      "value": 3
+    },
+    "catalog.axial_defaults": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "axial 0-3 (by exercise class)",
+      "value": {
+        "back_squat": 3,
+        "barbell_row": 2,
+        "deadlift": 3,
+        "hip_thrust": 1,
+        "machine": 0,
+        "rdl": 2,
+        "standing_dumbbell": 1,
+        "standing_ohp": 3
+      }
+    },
+    "catalog.coeff_levels": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.25,
+      "source": "C10; Pelland 2026",
+      "tunable": false,
+      "tuned_by": "not tunable (C10 fixes the levels; review only through DECISIONS.md)",
+      "unit": "coeff",
+      "value": [
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ]
+    },
+    "catalog.derived_tags": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "thresholds (attribute levels / coeff)",
+      "value": {
+        "axial_heavy_min_axial": 3,
+        "elbow_flexor_heavy_min_biceps_coeff": 1.0,
+        "elbow_flexor_heavy_min_js_elbow_medial": 2,
+        "grip_heavy_min_grip_demand": 2,
+        "overhead_press_heavy_min_js_shoulder_overhead": 2,
+        "pull_heavy_min_lats_or_upper_back_coeff": 0.75
+      }
+    },
+    "catalog.setup_defaults_s": {
+      "evidence": "expert-opinion",
+      "max": 600,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME (per user via time)",
+      "unit": "s (by setup class)",
+      "value": {
+        "cable_change": 45,
+        "dip_belt_add": 60,
+        "dumbbells": 45,
+        "pin_machine": 40,
+        "plate_machine": 90,
+        "rack_barbell": 150,
+        "smith": 105
+      }
+    },
+    "catalog.sfr_defaults": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sfr 1-5 (by exercise class)",
+      "value": {
+        "barbell_compound": 3,
+        "dumbbell_compound": 4,
+        "heavy_hinge": 2,
+        "machine_cable_isolation": 5,
+        "machine_compound": 4.5,
+        "unilateral_free_weight": 3
+      }
+    },
+    "catalog.validator": {
+      "evidence": "engineering-fact",
+      "max": 10,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "counts / similarity",
+      "value": {
+        "min_direct_per_group": 1,
+        "min_equipment_classes": 2,
+        "min_per_group": 3,
+        "min_sub_similarity": 0.6
+      }
+    },
+    "challenge.calendar.accept_score": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.4,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections (false positives and negatives) in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.6
+    },
+    "challenge.calendar.alias_penalty": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0,
+      "source": "C36; CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.1
+    },
+    "challenge.calendar.confirm_below_score": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.6,
+      "source": "critique (confirm below 0.8); CHALLENGE_ENGINE 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.8
+    },
+    "challenge.calendar.duration_tolerance_min": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 15,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "min",
+      "value": 45
+    },
+    "challenge.calendar.w_duration": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.1
+    },
+    "challenge.calendar.w_gym_evidence": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.2
+    },
+    "challenge.calendar.w_gym_hours": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.05
+    },
+    "challenge.calendar.w_pattern": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.6
+    },
+    "challenge.calendar.w_pref_weekday": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 9.3, 9.9",
+      "tunable": true,
+      "tuned_by": "manual corrections in calendar_correction events",
+      "unit": "match weight",
+      "value": 0.05
+    },
+    "challenge.contract.add_on_recompute_every_set": {
+      "evidence": "engineering-fact",
+      "source": "CHALLENGE_ENGINE 8.8 (live capacity update during the session)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "boolean",
+      "value": true
+    },
+    "challenge.contract.gap_day_pull_biceps_coef_below": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0.5,
+      "source": "C50; CHALLENGE_ENGINE 8.8 (strict inequality: 0.5 is excluded)",
+      "tunable": false,
+      "tuned_by": "not tunable (C50)",
+      "unit": "coeff (strict upper bound)",
+      "value": 0.5
+    },
+    "challenge.contract.gap_day_pull_max_grip_demand": {
+      "evidence": "engineering-fact",
+      "max": 1,
+      "min": 1,
+      "source": "C50; CHALLENGE_ENGINE 8.8",
+      "tunable": false,
+      "tuned_by": "not tunable (C50)",
+      "unit": "grip demand level",
+      "value": 1
+    },
+    "challenge.contract.window_penalty_weight": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 1,
+      "source": "CHALLENGE_ENGINE 8.8 (planning lens)",
+      "tunable": true,
+      "tuned_by": "tuned with the windows: challenge session outcomes after general sessions in windows",
+      "unit": "J per R deficit",
+      "value": 5.0
+    },
+    "challenge.eca.cascade_max_depth": {
+      "evidence": "engineering-fact",
+      "max": 3,
+      "min": 3,
+      "source": "C21; CHALLENGE_ENGINE 5.10",
+      "tunable": false,
+      "tuned_by": "not tunable (C21)",
+      "unit": "levels",
+      "value": 3
+    },
+    "challenge.eca.max_conditional_nesting": {
+      "evidence": "engineering-fact",
+      "max": 4,
+      "min": 4,
+      "source": "CHALLENGE_ENGINE 5.10",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "levels",
+      "value": 4
+    },
+    "challenge.eca.notify_default_once": {
+      "evidence": "engineering-fact",
+      "source": "CHALLENGE_ENGINE 5.10",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "enum",
+      "value": "perDay"
+    },
+    "challenge.eca.stage_order": {
+      "evidence": "engineering-fact",
+      "source": "C21; CHALLENGE_ENGINE 5.10",
+      "tunable": false,
+      "tuned_by": "not tunable (C21)",
+      "unit": "enum list (stages)",
+      "value": [
+        "safety",
+        "data",
+        "structural",
+        "progression"
+      ]
+    },
+    "challenge.enrollment.absence_prompt_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "CHALLENGE_ENGINE 4.14",
+      "tunable": true,
+      "tuned_by": "prompt accepted versus dismissed (prompt_answered / prompt_skipped in session_events)",
+      "unit": "days",
+      "value": 14
+    },
+    "challenge.enrollment.checkpoint_every": {
+      "evidence": "engineering-fact",
+      "source": "CHALLENGE_ENGINE 4.14 (refold checkpoints)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "enum (event type)",
+      "value": "block.started"
+    },
+    "challenge.enrollment.max_block_weeks": {
+      "evidence": "engineering-fact",
+      "max": 10,
+      "min": 6,
+      "source": "CHALLENGE_ENGINE 4.14 (matches the DATA_MODEL check on block_week)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "weeks",
+      "value": 10
+    },
+    "challenge.enrollment.snapshot_cache_blocks": {
+      "evidence": "engineering-fact",
+      "max": 50,
+      "min": 4,
+      "source": "CHALLENGE_ENGINE 4.14 (older snapshots rebuilt by refold)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "blocks",
+      "value": 12
+    },
+    "challenge.enrollment.week_close_local_time": {
+      "evidence": "engineering-fact",
+      "max": 360,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 4.14 (default 04:00, bounds 00:00-06:00; grace for sessions finishing after midnight)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "min after local midnight (04:00)",
+      "value": 240
+    },
+    "challenge.fitexpr.math_context_digits": {
+      "evidence": "engineering-fact",
+      "max": 34,
+      "min": 34,
+      "source": "C22; CHALLENGE_ENGINE 3.11",
+      "tunable": false,
+      "tuned_by": "not tunable (C22)",
+      "unit": "significant digits",
+      "value": 34
+    },
+    "challenge.fitexpr.max_ast_nodes": {
+      "evidence": "engineering-fact",
+      "max": 512,
+      "min": 512,
+      "source": "CHALLENGE_ENGINE 3.11 (engineering limit)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "AST nodes per expression",
+      "value": 512
+    },
+    "challenge.fitexpr.max_call_args": {
+      "evidence": "engineering-fact",
+      "max": 8,
+      "min": 8,
+      "source": "CHALLENGE_ENGINE 3.11 (engineering limit)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "arguments",
+      "value": 8
+    },
+    "challenge.fitexpr.max_depth": {
+      "evidence": "engineering-fact",
+      "max": 32,
+      "min": 32,
+      "source": "CHALLENGE_ENGINE 3.11 (engineering limit)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "levels",
+      "value": 32
+    },
+    "challenge.fitexpr.max_eval_steps": {
+      "evidence": "engineering-fact",
+      "max": 10000,
+      "min": 10000,
+      "source": "CHALLENGE_ENGINE 3.11 (exceeding raises budget_exceeded)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "node visits per evaluation",
+      "value": 10000
+    },
+    "challenge.fitexpr.max_list_length": {
+      "evidence": "engineering-fact",
+      "max": 1000,
+      "min": 1000,
+      "source": "CHALLENGE_ENGINE 3.11 (runtime lists longer raise budget_exceeded)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "elements",
+      "value": 1000
+    },
+    "challenge.fitexpr.max_string_length": {
+      "evidence": "engineering-fact",
+      "max": 256,
+      "min": 256,
+      "source": "CHALLENGE_ENGINE 3.11 (engineering limit)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "characters",
+      "value": 256
+    },
+    "challenge.plan.busy_buffer_min": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "sessions that started later than planned after a busy block (session_events vs calendar)",
+      "unit": "min",
+      "value": 30
+    },
+    "challenge.plan.lead_min": {
+      "evidence": "expert-opinion",
+      "max": 240,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "how often a same-day suggestion is accepted",
+      "unit": "min",
+      "value": 60
+    },
+    "challenge.plan.tie_band": {
+      "evidence": "engineering-fact",
+      "max": 0.05,
+      "min": 0.05,
+      "source": "C52; CHALLENGE_ENGINE 7.8 (same band as weekplan)",
+      "tunable": false,
+      "tuned_by": "not tunable (C52)",
+      "unit": "score",
+      "value": 0.05
+    },
+    "challenge.plan.w_after_busy": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "late starts after busy blocks",
+      "unit": "score",
+      "value": 1.0
+    },
+    "challenge.plan.w_day_distance": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "accepted versus moved app-written events (calendar user_moved links)",
+      "unit": "score per day",
+      "value": 1.0
+    },
+    "challenge.plan.w_gap_evenness": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "performance versus gap length",
+      "unit": "score per day of gap deviation",
+      "value": 0.5
+    },
+    "challenge.plan.w_pref_day": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "accepted versus moved app-written events (calendar user_moved links)",
+      "unit": "score",
+      "value": 3.0
+    },
+    "challenge.plan.w_pref_start": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "accepted versus moved app-written events (calendar user_moved links)",
+      "unit": "score",
+      "value": 1.0
+    },
+    "challenge.plan.w_run_same_day": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": true,
+      "tuned_by": "challenge performance on run days (reps vs target)",
+      "unit": "score",
+      "value": 2.0
+    },
+    "challenge.plan.weekday_step_min": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 5,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "min",
+      "value": 15
+    },
+    "challenge.plan.weekday_window_latest_start": {
+      "evidence": "expert-opinion",
+      "max": 1439,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8 (default 20:30; bound = profile; the artifact habit is 19:45 after dinner)",
+      "tunable": true,
+      "tuned_by": "accepted versus moved suggestions (profile setting)",
+      "unit": "min after local midnight (20:30)",
+      "value": 1230
+    },
+    "challenge.plan.weekday_window_start": {
+      "evidence": "expert-opinion",
+      "max": 1439,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8 (default 17:30; bound = profile)",
+      "tunable": true,
+      "tuned_by": "accepted versus moved suggestions (profile setting)",
+      "unit": "min after local midnight (17:30)",
+      "value": 1050
+    },
+    "challenge.plan.weekend_close": {
+      "evidence": "engineering-fact",
+      "max": 1439,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8 (Basic-Fit weekend hours from the artifact; editable in the gym profile)",
+      "tunable": false,
+      "tuned_by": "not tunable (gym profile overrides)",
+      "unit": "min after local midnight (16:00)",
+      "value": 960
+    },
+    "challenge.plan.weekend_open": {
+      "evidence": "engineering-fact",
+      "max": 1439,
+      "min": 0,
+      "source": "CHALLENGE_ENGINE 7.8 (Basic-Fit weekend hours from the artifact; editable in the gym profile)",
+      "tunable": false,
+      "tuned_by": "not tunable (gym profile overrides)",
+      "unit": "min after local midnight (09:00)",
+      "value": 540
+    },
+    "challenge.plan.weekend_step_min": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 15,
+      "source": "CHALLENGE_ENGINE 7.8",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "min",
+      "value": 30
+    },
+    "clock.meso_weeks": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 3,
+      "source": "F12, C31 (5-week blocks aligned with the OAP block)",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "weeks",
+      "value": 5
+    },
+    "elig.avail_coeff": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "coeff",
+      "value": 0.75
+    },
+    "elig.forbid_coeff": {
+      "evidence": "expert-opinion",
+      "max": 0.75,
+      "min": 0.25,
+      "source": "[this doc] (C12 windows, add-on forbid groups)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "coeff",
+      "value": 0.5
+    },
+    "elig.gate_improve": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.5,
+      "source": "C26",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "coeff",
+      "value": 0.75
+    },
+    "elig.gate_maintain": {
+      "evidence": "expert-opinion",
+      "max": 0.75,
+      "min": 0.25,
+      "source": "C26",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "coeff",
+      "value": 0.5
+    },
+    "elig.skip_coeff": {
+      "evidence": "expert-opinion",
+      "max": 0.75,
+      "min": 0.25,
+      "source": "exercise-selection lens (incidental 0.25 allowed)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "coeff",
+      "value": 0.5
+    },
+    "elig.unlock_repeat_frac": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "ratio of T",
+      "value": 0.5
+    },
+    "fatigue.c_grid": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0.02,
+      "source": "grid definition",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "dimensionless",
+      "value": {
+        "max": 0.5,
+        "min": 0.1,
+        "step": 0.02
+      }
+    },
+    "fatigue.c_ref": {
+      "evidence": "moderate",
+      "max": 0.5,
+      "min": 0.1,
+      "source": "fitted to Nuzzo's set-by-set decline",
+      "tunable": true,
+      "tuned_by": "nightly fit (estimation.fatigue)",
+      "unit": "dimensionless",
+      "value": 0.3
+    },
+    "fatigue.carry_cap": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "dimensionless",
+      "value": 0.25
+    },
+    "fatigue.carry_per_set": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "per set equivalent",
+      "value": 0.04
+    },
+    "fatigue.d": {
+      "evidence": "moderate",
+      "max": 0.9,
+      "min": 0.5,
+      "source": "same fit",
+      "tunable": true,
+      "tuned_by": "nightly fit after 100 sets",
+      "unit": "dimensionless",
+      "value": 0.75
+    },
+    "fatigue.d_fit_min_sets": {
+      "evidence": "expert-opinion",
+      "max": 500,
+      "min": 50,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "fit stability",
+      "unit": "sets",
+      "value": 100
+    },
+    "fatigue.d_grid": {
+      "evidence": "engineering-fact",
+      "max": 0.9,
+      "min": 0.02,
+      "source": "grid definition",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "dimensionless",
+      "value": {
+        "max": 0.9,
+        "min": 0.5,
+        "step": 0.02
+      }
+    },
+    "fatigue.fit_window_exercises": {
+      "evidence": "expert-opinion",
+      "max": 200,
+      "min": 20,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "fit stability",
+      "unit": "instances",
+      "value": 60
+    },
+    "fatigue.gamma": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "velocity-loss literature (Sanchez-Medina 2011, from memory)",
+      "tunable": true,
+      "tuned_by": "residuals by RIR bucket (M9)",
+      "unit": "dimensionless",
+      "value": 2.0
+    },
+    "fatigue.overlap_primary_coeff": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.5,
+      "source": "C9 coefficient levels",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "coeff",
+      "value": 0.75
+    },
+    "fatigue.overlap_secondary_coeff": {
+      "evidence": "expert-opinion",
+      "max": 0.75,
+      "min": 0.25,
+      "source": "C9",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "coeff",
+      "value": 0.5
+    },
+    "fatigue.overlap_secondary_weight": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "dimensionless",
+      "value": 0.5
+    },
+    "fatigue.rest_clamp_hi": {
+      "evidence": "expert-opinion",
+      "max": 2.5,
+      "min": 1.2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residuals at short rests",
+      "unit": "dimensionless",
+      "value": 1.6
+    },
+    "fatigue.rest_clamp_lo": {
+      "evidence": "expert-opinion",
+      "max": 0.8,
+      "min": 0.2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residuals at long rests",
+      "unit": "dimensionless",
+      "value": 0.4
+    },
+    "fatigue.rest_exp": {
+      "evidence": "expert-opinion",
+      "max": -0.2,
+      "min": -1.2,
+      "source": "fit to Willardson 2006 and Senna 2011",
+      "tunable": true,
+      "tuned_by": "residuals by rest bucket (M9)",
+      "unit": "dimensionless",
+      "value": -0.6
+    },
+    "fatigue.rest_ref_s": {
+      "evidence": "engineering-fact",
+      "max": 120,
+      "min": 120,
+      "source": "normalisation point of c_ref",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "s",
+      "value": 120
+    },
+    "fatigue.shrink_pseudo_sets": {
+      "evidence": "expert-opinion",
+      "max": 100,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "fit stability",
+      "unit": "sets",
+      "value": 30
+    },
+    "fatigue.unilateral_side_weight": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.25,
+      "source": "C7 (side row = 0.5 set)",
+      "tunable": true,
+      "tuned_by": "first-set residual vs prior same-muscle work",
+      "unit": "dimensionless",
+      "value": 0.5
+    },
+    "hold.beta": {
+      "evidence": "moderate",
+      "max": -0.5,
+      "min": -4,
+      "source": "Frey Law and Avin 2010; the entry is selected by the catalog's hold_class (C43), general only as the fallback of B8.1",
+      "tunable": true,
+      "tuned_by": "per-user refit when >= 2 loads within 14 days (estimation.hold)",
+      "unit": "dimensionless",
+      "value": {
+        "ankle": -2.06,
+        "elbow": -2.21,
+        "general": -1.98,
+        "grip": -1.61,
+        "knee": -1.88,
+        "shoulder": -1.83,
+        "trunk": -2.27
+      }
+    },
+    "hold.c_ref": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "hold set-to-set decline",
+      "unit": "dimensionless",
+      "value": 0.25
+    },
+    "hold.chip_reserve_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 0,
+      "source": "load_prescription HOLD-1; D9; UX 6.2",
+      "tunable": true,
+      "tuned_by": "hold residuals by chip",
+      "unit": "s",
+      "value": {
+        "easy": 10,
+        "hard": 2,
+        "max": 0,
+        "ok": 5
+      }
+    },
+    "hold.default_t_hi_s": {
+      "evidence": "expert-opinion",
+      "max": 300,
+      "min": 10,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "user edits of hold targets",
+      "unit": "s",
+      "value": 45
+    },
+    "hold.default_t_lo_s": {
+      "evidence": "expert-opinion",
+      "max": 120,
+      "min": 5,
+      "source": "this document (general holds such as planks)",
+      "tunable": true,
+      "tuned_by": "user edits of hold targets",
+      "unit": "s",
+      "value": 20
+    },
+    "hold.obs_sd_base": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "hold residual coverage",
+      "unit": "ln",
+      "value": 0.2
+    },
+    "hold.obs_sd_timing_s": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0.5,
+      "source": "load_prescription (reaction time)",
+      "tunable": true,
+      "tuned_by": "hold_timer_s vs entered result",
+      "unit": "s",
+      "value": 2.0
+    },
+    "hold.reserve_frac": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "hold prescription error",
+      "unit": "dimensionless",
+      "value": 0.2
+    },
+    "hold.reserve_min_s": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "hold prescription error",
+      "unit": "s",
+      "value": 2
+    },
+    "hold.sd_day": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.03,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "hold residual coverage",
+      "unit": "ln",
+      "value": 0.1
+    },
+    "injury.exclude_levels": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "joint-stress level (by flag severity)",
+      "value": {
+        "2": 2,
+        "3": 1
+      }
+    },
+    "injury.joint_pen": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "pain recurrence, review",
+      "unit": "J per stress unit per set",
+      "value": 0.3
+    },
+    "injury.window_set_pen": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "challenge outcomes, review",
+      "unit": "J per set",
+      "value": 0.5
+    },
+    "load.belt_max_items_default": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 1,
+      "source": "load_prescription LOAD-1",
+      "tunable": true,
+      "tuned_by": "user checklist",
+      "unit": "plates",
+      "value": 4
+    },
+    "load.belt_max_kg_default": {
+      "evidence": "expert-opinion",
+      "max": 100,
+      "min": 20,
+      "source": "challenge research (P)",
+      "tunable": true,
+      "tuned_by": "user checklist",
+      "unit": "kg",
+      "value": 60
+    },
+    "load.default_plate_inventory": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 0,
+      "source": "load_prescription LOAD-1; F7 checklist overrides; gym plates unlimited (F7, 2026-10-09)",
+      "tunable": true,
+      "tuned_by": "the equipment checklist (user); equipment_calibration_changed events (DATA_MODEL 9.8.1)",
+      "unit": "kg, count",
+      "value": {
+        "1.25": 20,
+        "10": 20,
+        "15": 20,
+        "2.5": 20,
+        "20": 20,
+        "25": 20,
+        "5": 20,
+        "bar_kg": 20
+      }
+    },
+    "load.epsilon_kg": {
+      "evidence": "engineering-fact",
+      "max": 0.01,
+      "min": 0.001,
+      "source": "half of the KG grid",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "kg",
+      "value": 0.005
+    },
+    "load.lb_kg": {
+      "evidence": "engineering-fact",
+      "max": 0.45359237,
+      "min": 0.45359237,
+      "source": "international pound definition",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "kg/lb",
+      "value": 0.45359237
+    },
+    "load.pin_max_unknown_native": {
+      "evidence": "expert-opinion",
+      "max": 300,
+      "min": 50,
+      "source": "this document (used until the checklist asks the machine maximum)",
+      "tunable": true,
+      "tuned_by": "user checklist",
+      "unit": "lb",
+      "value": 100
+    },
+    "load.review_f_bw_pull_dip": {
+      "evidence": "moderate",
+      "max": 1.0,
+      "min": 0.9,
+      "source": "de Leva 1996 segment masses (review option only, C1)",
+      "tunable": true,
+      "tuned_by": ":sim counterfactual of k and M fits",
+      "unit": "ratio",
+      "value": 0.955
+    },
+    "order.chain_setup_s": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s",
+      "value": 15
+    },
+    "order.fixup_passes": {
+      "evidence": "engineering-fact",
+      "max": 5,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "passes",
+      "value": 3
+    },
+    "order.grip_threshold": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "grip demand level",
+      "value": 2
+    },
+    "order.pair_cos_max": {
+      "evidence": "strong",
+      "max": 0.5,
+      "min": 0,
+      "source": "Zhang 2025; F13",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "cosine",
+      "value": 0.2
+    },
+    "pref.implicit_clamp": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "implicit score",
+      "value": 0.3
+    },
+    "pref.implicit_half_life_d": {
+      "evidence": "expert-opinion",
+      "max": 180,
+      "min": 14,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 56
+    },
+    "pref.implicit_window_d": {
+      "evidence": "engineering-fact",
+      "max": 365,
+      "min": 56,
+      "source": "[this doc]",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "days",
+      "value": 168
+    },
+    "pref.mult": {
+      "evidence": "weak",
+      "max": 2,
+      "min": 0,
+      "source": "C26; Baz-Valle 2019",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "multiplier (by preference tier)",
+      "value": {
+        "dislike": 0.6,
+        "favorite": 1.495,
+        "like": 1.15,
+        "neutral": 1.0,
+        "never": 0
+      }
+    },
+    "pref.prompt_swaps": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "prompt acceptance",
+      "unit": "swaps",
+      "value": 3
+    },
+    "pref.prompt_window_d": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 14,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "prompt acceptance",
+      "unit": "days",
+      "value": 42
+    },
+    "pref.similar_cos": {
+      "evidence": "expert-opinion",
+      "max": 0.99,
+      "min": 0.8,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "cosine",
+      "value": 0.9
+    },
+    "pref.w_add": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "implicit score per event",
+      "value": 0.1
+    },
+    "pref.w_skip": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0,
+      "source": "[this doc] (no \"don't like\" reason code exists)",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "implicit score per event",
+      "value": 0.1
+    },
+    "pref.w_swap": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-PREF",
+      "unit": "implicit score per event",
+      "value": 0.15
+    },
+    "rcm.grid_n": {
+      "evidence": "engineering-fact",
+      "max": 200,
+      "min": 40,
+      "source": "grid resolution about 2.4 % per step",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "points",
+      "value": 80
+    },
+    "rcm.huber_delta": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "robust-statistics convention",
+      "tunable": true,
+      "tuned_by": "residual distribution in estimation.rcm",
+      "unit": "sd",
+      "value": 1.5
+    },
+    "rcm.k0": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 12,
+      "source": "C3; Nuzzo 2024; Shimano 2006; Marzagao 2026 (weak)",
+      "tunable": true,
+      "tuned_by": "pooled class k_hat across the user's exercises (estimation.rcm)",
+      "unit": "reps",
+      "value": {
+        "lower_free_compound": 36,
+        "lower_isolation": 32,
+        "lower_machine_compound": 45,
+        "upper_compound": 30,
+        "upper_isolation": 26
+      }
+    },
+    "rcm.k_max": {
+      "evidence": "expert-opinion",
+      "max": 120,
+      "min": 60,
+      "source": "Nuzzo leg press up to 72",
+      "tunable": true,
+      "tuned_by": "fitted k near the edge",
+      "unit": "reps",
+      "value": 90
+    },
+    "rcm.k_min": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 8,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "fitted k near the edge",
+      "unit": "reps",
+      "value": 12
+    },
+    "rcm.lookback_days": {
+      "evidence": "expert-opinion",
+      "max": 112,
+      "min": 28,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M1 MAE with alternative lookbacks (:sim)",
+      "unit": "days",
+      "value": 56
+    },
+    "rcm.max_n_eff": {
+      "evidence": "moderate",
+      "max": 30,
+      "min": 12,
+      "source": "Reynolds 2006; Halperin 2022",
+      "tunable": true,
+      "tuned_by": "M3 bias in the 13-20 bucket",
+      "unit": "reps",
+      "value": 20
+    },
+    "rcm.max_q_rep": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M3 bias by RIR bucket",
+      "unit": "RIR",
+      "value": 4
+    },
+    "rcm.min_sets_per_window": {
+      "evidence": "engineering-fact",
+      "max": 4,
+      "min": 2,
+      "source": "identifiability needs two points",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "sets",
+      "value": 2
+    },
+    "rcm.min_spread_reps": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "sd_lnk of accepted windows",
+      "unit": "reps",
+      "value": 3
+    },
+    "rcm.rate_limit": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.02,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "k stability (M7)",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "rcm.shrink_pseudo": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M1 with alternative shrinkage",
+      "unit": "windows",
+      "value": 2
+    },
+    "rcm.sigma_lnk": {
+      "evidence": "moderate",
+      "max": 0.6,
+      "min": 0.1,
+      "source": "C3; Nuzzo 2024 between-person SD",
+      "tunable": true,
+      "tuned_by": "distribution of fitted k across exercises",
+      "unit": "ln",
+      "value": 0.3
+    },
+    "rcm.window_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "the user's two-point example (B5.2)",
+      "tunable": true,
+      "tuned_by": "M1 with alternative windows",
+      "unit": "days",
+      "value": 14
+    },
+    "readiness.checkin_valid_h": {
+      "evidence": "engineering-fact",
+      "max": 24,
+      "min": 4,
+      "source": "[this doc]",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "h",
+      "value": 12
+    },
+    "readiness.elbow_check_factor": {
+      "evidence": "expert-opinion",
+      "max": 0.25,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "per elbow score point",
+      "value": 0.1
+    },
+    "readiness.f_ref": {
+      "evidence": "expert-opinion",
+      "max": 12,
+      "min": 4,
+      "source": "C5",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "fatigue units (by group)",
+      "value": {
+        "abductors": 6,
+        "abs": 6,
+        "adductors": 6,
+        "biceps": 6,
+        "calves": 6,
+        "chest": 8,
+        "forearms": 6,
+        "front_delts": 6,
+        "glutes": 8,
+        "hamstrings": 8,
+        "lats": 8,
+        "lower_back": 6,
+        "quads": 8,
+        "rear_delts": 6,
+        "side_delts": 6,
+        "triceps": 6,
+        "upper_back": 8,
+        "upper_traps": 6
+      }
+    },
+    "readiness.kappa_default": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0.7,
+      "source": "C5",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "multiplier of tau (by class)",
+      "value": {
+        "t22": 1.0,
+        "t26": 1.0,
+        "t30": 1.0,
+        "t34": 1.0
+      }
+    },
+    "readiness.r_exclude": {
+      "evidence": "expert-opinion",
+      "max": 0.7,
+      "min": 0.3,
+      "source": "C5",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "R",
+      "value": 0.5
+    },
+    "readiness.r_full": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.6,
+      "source": "C5",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "R",
+      "value": 0.8
+    },
+    "readiness.r_target_improve": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.7,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "R",
+      "value": 0.85
+    },
+    "readiness.r_target_maintain": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.6,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "R",
+      "value": 0.75
+    },
+    "readiness.readiness_worse_g": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.7,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "readiness answers versus PI",
+      "unit": "multiplier of G",
+      "value": 0.9
+    },
+    "readiness.sleep_short_g": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.7,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "multiplier of G",
+      "value": 0.9
+    },
+    "readiness.sleep_short_h": {
+      "evidence": "expert-opinion",
+      "max": 7,
+      "min": 4,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "h",
+      "value": 6
+    },
+    "readiness.soreness_factor": {
+      "evidence": "expert-opinion",
+      "max": 0.25,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "per soreness point",
+      "value": 0.12
+    },
+    "readiness.soreness_points": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "[this doc] (DATA_MODEL open issue 5)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "points (by soreness answer)",
+      "value": {
+        "healed": 1,
+        "never_sore": 0,
+        "still_sore": 3
+      }
+    },
+    "readiness.sys_scale": {
+      "evidence": "weak",
+      "max": 1.0,
+      "min": 0.2,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "per systemic unit",
+      "value": 0.5
+    },
+    "readiness.sys_tau_h": {
+      "evidence": "weak",
+      "max": 96,
+      "min": 24,
+      "source": "C5",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "h",
+      "value": 48
+    },
+    "readiness.tau_h": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 12,
+      "source": "C5; Korak 2015, Morán-Navarro 2017, Soares 2015, MacDougall 1995; abductors C44",
+      "tunable": true,
+      "tuned_by": "via kappa, T-KAPPA",
+      "unit": "h (by group)",
+      "value": {
+        "abductors": 30,
+        "abs": 22,
+        "adductors": 30,
+        "biceps": 22,
+        "calves": 22,
+        "chest": 26,
+        "forearms": 22,
+        "front_delts": 26,
+        "glutes": 30,
+        "hamstrings": 34,
+        "lats": 26,
+        "lower_back": 34,
+        "quads": 30,
+        "rear_delts": 22,
+        "side_delts": 22,
+        "triceps": 22,
+        "upper_back": 26,
+        "upper_traps": 22
+      }
+    },
+    "readiness.tissue_ref": {
+      "evidence": "expert-opinion",
+      "max": 12,
+      "min": 3,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "fatigue units",
+      "value": 6
+    },
+    "readiness.tissue_tau_h": {
+      "evidence": "weak",
+      "max": 96,
+      "min": 24,
+      "source": "C5; Miller 2005",
+      "tunable": true,
+      "tuned_by": "pain versus tissue load, review",
+      "unit": "h",
+      "value": 48
+    },
+    "readiness.window_h": {
+      "evidence": "engineering-fact",
+      "max": 336,
+      "min": 168,
+      "source": "planning lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "h",
+      "value": 240
+    },
+    "reason.busy_frac": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "substitution acceptance",
+      "unit": "share",
+      "value": 0.5
+    },
+    "reason.busy_slot_hours": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "substitution acceptance",
+      "unit": "h",
+      "value": 1
+    },
+    "reason.busy_visits": {
+      "evidence": "expert-opinion",
+      "max": 12,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "substitution acceptance",
+      "unit": "visits",
+      "value": 4
+    },
+    "reason.equipment_missing_days": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 7,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "prompt acceptance",
+      "unit": "days",
+      "value": 28
+    },
+    "reason.equipment_missing_events": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "prompt acceptance",
+      "unit": "events",
+      "value": 2
+    },
+    "reason.feeling_bad_delta": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -0.1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "acceptance of the offer, residuals after it",
+      "unit": "ln",
+      "value": -0.05
+    },
+    "reason.feeling_bad_m": {
+      "evidence": "expert-opinion",
+      "max": 16,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "mean residual of feeling_bad sets",
+      "unit": "variance multiplier",
+      "value": 4
+    },
+    "reason.grip_days": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 7,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "grip-work adoption",
+      "unit": "days",
+      "value": 28
+    },
+    "reason.grip_events": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "grip-work adoption",
+      "unit": "events",
+      "value": 3
+    },
+    "reason.impute_offset": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 0,
+      "source": "load_prescription REASON-1",
+      "tunable": true,
+      "tuned_by": "residuals of imputed sets",
+      "unit": "RIR",
+      "value": 2
+    },
+    "reason.impute_sigma_q": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residuals of imputed sets",
+      "unit": "reps",
+      "value": 2.0
+    },
+    "reason.other_m": {
+      "evidence": "expert-opinion",
+      "max": 9,
+      "min": 1,
+      "source": "load_prescription (sd x 1.5)",
+      "tunable": true,
+      "tuned_by": "residuals of other sets",
+      "unit": "variance multiplier",
+      "value": 2.25
+    },
+    "reason.pain_followup_exposures": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats)",
+      "unit": "exposures",
+      "value": 2
+    },
+    "reason.pain_load_cut": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.05,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats)",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "reason.pain_min_q": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats)",
+      "unit": "RIR",
+      "value": 3
+    },
+    "reason.pain_repeat_days": {
+      "evidence": "expert-opinion",
+      "max": 42,
+      "min": 7,
+      "source": "load_prescription; app_benchmarks (14-day pain flag)",
+      "tunable": true,
+      "tuned_by": "pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats)",
+      "unit": "days",
+      "value": 14
+    },
+    "reason.pain_repeat_events": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 2,
+      "source": "load_prescription; app_benchmarks (14-day pain flag)",
+      "tunable": true,
+      "tuned_by": "pain reports versus later tolerance of the exercise (v_wellness_safety, v_override_stats)",
+      "unit": "events",
+      "value": 2
+    },
+    "reason.pain_stop_js_min": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "D49 (only clear joint stress stops an exercise; light stress 1 stays)",
+      "tunable": true,
+      "tuned_by": "Decision (D49); pain reports versus later tolerance of the exercise (v_wellness_safety)",
+      "unit": "joint-stress level",
+      "value": 2
+    },
+    "reason.pain_stop_score": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 1,
+      "source": "C64 (stop threshold 4; chips Mild 2 / Moderate 5 / Sharp 8); load_prescription",
+      "tunable": true,
+      "tuned_by": "Decision (C64)",
+      "unit": "score 0-10",
+      "value": 4
+    },
+    "reason.recovery_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "prompt usefulness (answers)",
+      "unit": "days",
+      "value": 14
+    },
+    "reason.recovery_events": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "prompt usefulness (answers)",
+      "unit": "events",
+      "value": 3
+    },
+    "reason.technique_next_cut": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "next-set residual after technique events",
+      "unit": "ratio",
+      "value": 0.05
+    },
+    "reason.too_easy_b_step": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "too_easy vs reported RIR disagreement",
+      "unit": "reps",
+      "value": 0.25
+    },
+    "reason.too_easy_exposures": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "too_easy vs reported RIR disagreement",
+      "unit": "exposures",
+      "value": 2
+    },
+    "reason.too_hard_exposures": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "too_easy vs reported RIR disagreement",
+      "unit": "exposures",
+      "value": 2
+    },
+    "reason.too_tired_m": {
+      "evidence": "expert-opinion",
+      "max": 16,
+      "min": 1,
+      "source": "C57 (same effect as feeling_bad)",
+      "tunable": true,
+      "tuned_by": "mean residual of too_tired sets",
+      "unit": "variance multiplier",
+      "value": 4
+    },
+    "rest.adapt_cooldown_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 1,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "days",
+      "value": 7
+    },
+    "rest.adapt_early_frac": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "share",
+      "value": 0.8
+    },
+    "rest.adapt_early_s": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "s",
+      "value": 20
+    },
+    "rest.adapt_floor": {
+      "evidence": "expert-opinion",
+      "max": 240,
+      "min": 30,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "s",
+      "value": {
+        "compound_lower": 120,
+        "compound_upper": 90,
+        "core": 60,
+        "hold": 60,
+        "isolation": 60,
+        "strength_heavy": 120
+      }
+    },
+    "rest.adapt_min_sets": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "sets",
+      "value": 10
+    },
+    "rest.adapt_resid_bad": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "reps",
+      "value": -1.0
+    },
+    "rest.adapt_resid_ok": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "reps",
+      "value": -0.5
+    },
+    "rest.adapt_step_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "adaptation stability",
+      "unit": "s",
+      "value": 15
+    },
+    "rest.base": {
+      "evidence": "weak",
+      "max": 300,
+      "min": 30,
+      "source": "C18; Grgic 2018; Schoenfeld 2016; Singer 2024",
+      "tunable": true,
+      "tuned_by": "adaptation (B11.4), M10",
+      "unit": "s",
+      "value": {
+        "compound_lower": 150,
+        "compound_upper": 120,
+        "core": 60,
+        "hold": 90,
+        "isolation": 90,
+        "strength_heavy": 180
+      }
+    },
+    "rest.between_sides_s": {
+      "evidence": "expert-opinion",
+      "max": 120,
+      "min": 0,
+      "source": "UX 11.7.2 (\"switch now\")",
+      "tunable": true,
+      "tuned_by": "per-side residuals",
+      "unit": "s",
+      "value": 0
+    },
+    "rest.max_s": {
+      "evidence": "expert-opinion",
+      "max": 600,
+      "min": 180,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "s",
+      "value": 300
+    },
+    "rest.min_s": {
+      "evidence": "moderate",
+      "max": 120,
+      "min": 30,
+      "source": "C18; Singer 2024 (benefit above 60 s)",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "s",
+      "value": 60
+    },
+    "rest.mod_easy_rir_margin": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "early-start share",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rest.mod_easy_s": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 0,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "early-start share",
+      "unit": "s",
+      "value": 15
+    },
+    "rest.mod_fatigue_f": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.1,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "next-set residual after hard sets",
+      "unit": "F",
+      "value": 0.25
+    },
+    "rest.mod_fatigue_s": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 0,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "next-set residual after hard sets",
+      "unit": "s",
+      "value": 15
+    },
+    "rest.mod_hard_rir": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "next-set residual after hard sets",
+      "unit": "RIR",
+      "value": 0.5
+    },
+    "rest.mod_hard_s": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 0,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "next-set residual after hard sets",
+      "unit": "s",
+      "value": 30
+    },
+    "rest.mod_short_reps": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "load_prescription (\"reps < target - 1\")",
+      "tunable": true,
+      "tuned_by": "next-set residual after hard sets",
+      "unit": "reps",
+      "value": 1
+    },
+    "rest.side_switch_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 0,
+      "source": "exercise_selection TIME-1",
+      "tunable": true,
+      "tuned_by": "set timestamps",
+      "unit": "s",
+      "value": 10
+    },
+    "rest.strength_heavy_max_reps": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 3,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "reps",
+      "value": 5
+    },
+    "rest.strength_heavy_min_p": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.75,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "ratio of M",
+      "value": 0.85
+    },
+    "rest.superset_between_s": {
+      "evidence": "expert-opinion",
+      "max": 120,
+      "min": 0,
+      "source": "C56; load_prescription REST-1",
+      "tunable": true,
+      "tuned_by": "superset rep drop",
+      "unit": "s",
+      "value": 60
+    },
+    "rest.timer_hard_max_s": {
+      "evidence": "engineering-fact",
+      "max": 900,
+      "min": 900,
+      "source": "C18",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "s",
+      "value": 900
+    },
+    "rest.user_max_s": {
+      "evidence": "engineering-fact",
+      "max": 600,
+      "min": 600,
+      "source": "DATA_MODEL domain",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "s",
+      "value": 600
+    },
+    "rest.user_min_s": {
+      "evidence": "engineering-fact",
+      "max": 30,
+      "min": 30,
+      "source": "DATA_MODEL rest_pref_s domain",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "s",
+      "value": 30
+    },
+    "rircal.b0": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": -1,
+      "source": "between Halperin 2022 (0.95) and Refalo 2024 (0.65)",
+      "tunable": true,
+      "tuned_by": "explicit checks (estimation.rircal), M3 bias by RIR bucket",
+      "unit": "reps",
+      "value": 0.5
+    },
+    "rircal.b_max": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "reps",
+      "value": 3
+    },
+    "rircal.b_min": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "reps",
+      "value": -1
+    },
+    "rircal.class_cooldown_days": {
+      "evidence": "expert-opinion",
+      "max": 56,
+      "min": 7,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "check acceptance (opt-out rate)",
+      "unit": "days",
+      "value": 21
+    },
+    "rircal.class_min_samples": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "per-class b stability",
+      "unit": "checks",
+      "value": 5
+    },
+    "rircal.eligible_safety_classes": {
+      "evidence": "expert-opinion",
+      "source": "F14",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "enum list (safety classes, E42)",
+      "value": [
+        "machine",
+        "cable",
+        "isolation"
+      ]
+    },
+    "rircal.lr_explicit": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "load_prescription RIRCAL-1",
+      "tunable": true,
+      "tuned_by": "stability of b across checks",
+      "unit": "dimensionless",
+      "value": 0.2
+    },
+    "rircal.lr_implicit": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.0,
+      "source": "load_prescription RIRCAL-1",
+      "tunable": true,
+      "tuned_by": "agreement of implicit and explicit e",
+      "unit": "dimensionless",
+      "value": 0.1
+    },
+    "rircal.max_checks_per_week": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "F14",
+      "tunable": true,
+      "tuned_by": "Decision",
+      "unit": "checks",
+      "value": 1
+    },
+    "rircal.sigma_per_rir": {
+      "evidence": "moderate",
+      "max": 0.5,
+      "min": 0,
+      "source": "Halperin 2022 (error grows with distance from failure)",
+      "tunable": true,
+      "tuned_by": "M2 coverage by RIR bucket",
+      "unit": "per RIR",
+      "value": 0.15
+    },
+    "rircal.sq0": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": 0.5,
+      "source": "Halperin 2022; Steele 2017",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "dimensionless",
+      "value": 1.0
+    },
+    "rircal.sq_decay": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "dimensionless",
+      "value": 0.8
+    },
+    "rircal.sq_max": {
+      "evidence": "moderate",
+      "max": 5,
+      "min": 2,
+      "source": "Steele 2017 SE 2.6-3.4 reps",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "dimensionless",
+      "value": 3.0
+    },
+    "rircal.sq_min": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "explicit checks",
+      "unit": "dimensionless",
+      "value": 0.5
+    },
+    "rotate.anchors_per_family": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "exercises",
+      "value": 2
+    },
+    "rotate.mesocycle_weeks": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 4,
+      "source": "F12, C31; Bell 2023",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "weeks",
+      "value": 5
+    },
+    "rotate.progress_slope": {
+      "evidence": "expert-opinion",
+      "max": 0.02,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ln per week",
+      "value": 0.005
+    },
+    "rotate.region_gain": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "score",
+      "value": 0.2
+    },
+    "rotate.rotate_fraction": {
+      "evidence": "moderate",
+      "max": 0.5,
+      "min": 0,
+      "source": "F12; Kassiano 2022",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "share of accessories",
+      "value": 0.3333
+    },
+    "rotate.stall_exposures": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "exposures",
+      "value": 3
+    },
+    "runs.hard_run_h": {
+      "evidence": "moderate",
+      "max": 72,
+      "min": 24,
+      "source": "Doma (24-48 h residual fatigue)",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "h",
+      "value": 48
+    },
+    "runs.hard_run_pen": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "J",
+      "value": 0.4
+    },
+    "runs.intensity": {
+      "evidence": "weak",
+      "max": 3,
+      "min": 0.5,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "multiplier (by run intensity)",
+      "value": {
+        "easy": 1.0,
+        "intervals": 1.8,
+        "race": 2.0,
+        "tempo": 1.5
+      }
+    },
+    "runs.long_factor": {
+      "evidence": "weak",
+      "max": 2,
+      "min": 1,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "multiplier",
+      "value": 1.3
+    },
+    "runs.per_min": {
+      "evidence": "weak",
+      "max": 0.2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "fatigue units per min (by group)",
+      "value": {
+        "calves": 0.06,
+        "glutes": 0.03,
+        "hamstrings": 0.03,
+        "quads": 0.05
+      }
+    },
+    "runs.priority_mult": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "planning lens (high doubles)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "multiplier (by running priority)",
+      "value": {
+        "high": 2.0,
+        "low": 1.0,
+        "medium": 1.0
+      }
+    },
+    "runs.run_after_pen": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "J",
+      "value": 0.3
+    },
+    "runs.run_before_pen": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "J",
+      "value": 0.5
+    },
+    "runs.sys_per_40min": {
+      "evidence": "weak",
+      "max": 1.5,
+      "min": 0.2,
+      "source": "planning lens used 1.0; halved [this doc]",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "systemic units per 40 min",
+      "value": 0.5
+    },
+    "runs.window_h": {
+      "evidence": "moderate",
+      "max": 24,
+      "min": 4,
+      "source": "Sporer & Wenger 2003",
+      "tunable": true,
+      "tuned_by": "T-RUN",
+      "unit": "h",
+      "value": 8
+    },
+    "rx.bw_r_hi": {
+      "evidence": "expert-opinion",
+      "max": 40,
+      "min": 12,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "variant-switch acceptance",
+      "unit": "reps",
+      "value": 20
+    },
+    "rx.bw_switch_exposures": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "variant-switch acceptance",
+      "unit": "exposures",
+      "value": 2
+    },
+    "rx.calibration_gap_days": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 14,
+      "source": "C27 (same as the re-entry threshold)",
+      "tunable": true,
+      "tuned_by": "probe residuals vs gap length",
+      "unit": "days",
+      "value": 21
+    },
+    "rx.cap_down": {
+      "evidence": "expert-opinion",
+      "max": 0.25,
+      "min": 0.05,
+      "source": "C15",
+      "tunable": true,
+      "tuned_by": "recovery after reductions",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "rx.cap_fast_rir_margin": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription (\"RIR >= 4\" at q* 2)",
+      "tunable": true,
+      "tuned_by": "first exposure after an increase: success rate (target 70-85 %)",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rx.cap_up_compound": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0.02,
+      "source": "C15",
+      "tunable": true,
+      "tuned_by": "first exposure after an increase: success rate (target 70-85 %)",
+      "unit": "ratio",
+      "value": 0.05
+    },
+    "rx.cap_up_fast": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0.05,
+      "source": "app_benchmarks A7 fast lane",
+      "tunable": true,
+      "tuned_by": "first exposure after an increase: success rate (target 70-85 %)",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "rx.cap_up_isolation": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0.05,
+      "source": "C15; Gravl about 10 %",
+      "tunable": true,
+      "tuned_by": "first exposure after an increase: success rate (target 70-85 %)",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "rx.coarse_reps_per_step": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0.8,
+      "source": "C15",
+      "tunable": true,
+      "tuned_by": "ladder vs model outcomes (:sim)",
+      "unit": "reps",
+      "value": 1.5
+    },
+    "rx.default_hyp_r_hi": {
+      "evidence": "moderate",
+      "max": 40,
+      "min": 4,
+      "source": "Schoenfeld 2021 (wide effective range); load_prescription",
+      "tunable": true,
+      "tuned_by": "user preference adoption, M4",
+      "unit": "reps",
+      "value": 12
+    },
+    "rx.default_hyp_r_lo": {
+      "evidence": "moderate",
+      "max": 30,
+      "min": 3,
+      "source": "Schoenfeld 2021 (wide effective range); load_prescription",
+      "tunable": true,
+      "tuned_by": "user preference adoption, M4",
+      "unit": "reps",
+      "value": 8
+    },
+    "rx.default_q_hyp_compound": {
+      "evidence": "moderate",
+      "max": 4,
+      "min": 0,
+      "source": "Robinson 2024; Refalo 2024",
+      "tunable": true,
+      "tuned_by": "M4, outcomes",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rx.default_q_hyp_isolation": {
+      "evidence": "moderate",
+      "max": 4,
+      "min": 0,
+      "source": "Robinson 2024; Refalo 2023",
+      "tunable": true,
+      "tuned_by": "M4, outcomes",
+      "unit": "RIR",
+      "value": 1
+    },
+    "rx.default_q_maintain": {
+      "evidence": "moderate",
+      "max": 4,
+      "min": 1,
+      "source": "Spiering 2021 (intensity maintains)",
+      "tunable": true,
+      "tuned_by": "maintain-group trends",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rx.default_q_strength": {
+      "evidence": "moderate",
+      "max": 4,
+      "min": 1,
+      "source": "Robinson 2024 (strength not RIR-dependent)",
+      "tunable": true,
+      "tuned_by": "M4, outcomes",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rx.default_strength_r_star": {
+      "evidence": "moderate",
+      "max": 8,
+      "min": 1,
+      "source": "Schoenfeld 2017; Lopez 2021 (heavier loads for strength)",
+      "tunable": true,
+      "tuned_by": "M4, outcomes",
+      "unit": "reps",
+      "value": 5
+    },
+    "rx.double_entry_below": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 0,
+      "source": "this document (ladder entry below r_lo)",
+      "tunable": true,
+      "tuned_by": "first exposure after an advance",
+      "unit": "reps",
+      "value": 4
+    },
+    "rx.double_extension_step": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "app_benchmarks A7 (Alpha Progression)",
+      "tunable": true,
+      "tuned_by": "first exposure after an advance",
+      "unit": "reps",
+      "value": 2
+    },
+    "rx.double_max_extension": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 0,
+      "source": "app_benchmarks A7",
+      "tunable": true,
+      "tuned_by": "first exposure after an advance",
+      "unit": "reps",
+      "value": 4
+    },
+    "rx.double_success_rir_tol": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0,
+      "source": "app_benchmarks A7 (RIR_t - 0.5)",
+      "tunable": true,
+      "tuned_by": "ladder failure rate",
+      "unit": "RIR",
+      "value": 0.5
+    },
+    "rx.fixed_tol": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4 for FIXED schemes",
+      "unit": "RIR",
+      "value": 0.25
+    },
+    "rx.min_q_high_risk": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "D10 (safety)",
+      "tunable": true,
+      "tuned_by": "Decision (safety)",
+      "unit": "RIR",
+      "value": 1
+    },
+    "rx.probe_rir_add": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "app_benchmarks A12",
+      "tunable": true,
+      "tuned_by": "probe overshoot rate",
+      "unit": "RIR",
+      "value": 2
+    },
+    "rx.range_under_tol": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4",
+      "unit": "RIR",
+      "value": 0.75
+    },
+    "rx.range_w_clamp": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "load_prescription (\"reps outside range\", defined here as the clamp distance)",
+      "tunable": true,
+      "tuned_by": "share of sets inside the range",
+      "unit": "dimensionless",
+      "value": 2
+    },
+    "rx.range_w_dev": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4",
+      "unit": "dimensionless",
+      "value": 1
+    },
+    "rx.range_w_negative": {
+      "evidence": "engineering-fact",
+      "max": 1000,
+      "min": 10,
+      "source": "infeasibility penalty",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "dimensionless",
+      "value": 100
+    },
+    "rx.range_w_under": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4 overshoot share",
+      "unit": "dimensionless",
+      "value": 4
+    },
+    "rx.window_hi": {
+      "evidence": "engineering-fact",
+      "max": 1.0,
+      "min": 0.9,
+      "source": "cannot exceed the 1RM",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "ratio of M",
+      "value": 1.0
+    },
+    "rx.window_lo": {
+      "evidence": "weak",
+      "max": 0.6,
+      "min": 0.2,
+      "source": "Lasevicius 2018: below about 30-35 % 1RM inferior",
+      "tunable": true,
+      "tuned_by": "rarely binding; review only",
+      "unit": "ratio of M",
+      "value": 0.35
+    },
+    "rx.z_c": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4 prescription bias, overshoot share",
+      "unit": "sd",
+      "value": 0.5
+    },
+    "rx.z_c_after_too_hard": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0.5,
+      "source": "load_prescription (REASON-1)",
+      "tunable": true,
+      "tuned_by": "too_hard recurrence",
+      "unit": "sd",
+      "value": 1.0
+    },
+    "rx.z_c_after_too_hard_exposures": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "too_hard recurrence",
+      "unit": "exposures",
+      "value": 2
+    },
+    "rx.z_c_sd_floor": {
+      "evidence": "expert-opinion",
+      "max": 0.05,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M4 prescription bias, overshoot share",
+      "unit": "ln",
+      "value": 0.02
+    },
+    "safety.elbow_check_severity": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "severity (by elbow score 1-3)",
+      "value": {
+        "1": 1,
+        "2": 1,
+        "3": 2
+      }
+    },
+    "safety.escalate_count": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 2,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "events",
+      "value": 3
+    },
+    "safety.escalate_window_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 14
+    },
+    "safety.hold_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 3,
+      "source": "OAP elbow protocol 14 d (A); UI-07 pain guard",
+      "tunable": true,
+      "tuned_by": "pain recurrence after expiry, review",
+      "unit": "days (by severity 1-3)",
+      "value": {
+        "1": 7,
+        "2": 14,
+        "3": 14
+      }
+    },
+    "safety.joint_forbid_tags.elbow_lateral.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.elbow_lateral.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy",
+        "supinated_curl"
+      ]
+    },
+    "safety.joint_forbid_tags.elbow_lateral.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy",
+        "pull_heavy",
+        "supinated_curl"
+      ]
+    },
+    "safety.joint_forbid_tags.elbow_medial.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.elbow_medial.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy",
+        "supinated_curl"
+      ]
+    },
+    "safety.joint_forbid_tags.elbow_medial.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "elbow_flexor_heavy",
+        "grip_heavy",
+        "pull_heavy",
+        "supinated_curl"
+      ]
+    },
+    "safety.joint_forbid_tags.hip.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.hip.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.hip.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.knee.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.knee.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.knee.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.lumbar.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.lumbar.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "axial_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.lumbar.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "axial_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.shoulder_ant.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.shoulder_ant.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "overhead_press_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.shoulder_ant.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "overhead_press_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.shoulder_overhead.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.shoulder_overhead.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "overhead_press_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.shoulder_overhead.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "overhead_press_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.wrist.1": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": []
+    },
+    "safety.joint_forbid_tags.wrist.2": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "grip_heavy"
+      ]
+    },
+    "safety.joint_forbid_tags.wrist.3": {
+      "evidence": "expert-opinion",
+      "source": "ALGORITHMS_PLANNING 2.4 JOINT_FORBID_TAGS table; critique (elbow main risk)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum list (exercise/session tags)",
+      "value": [
+        "grip_heavy"
+      ]
+    },
+    "safety.lookback_days": {
+      "evidence": "expert-opinion",
+      "max": 56,
+      "min": 14,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "pain recurrence, review",
+      "unit": "days",
+      "value": 28
+    },
+    "safety.pain_free_min_days": {
+      "evidence": "expert-opinion",
+      "max": 7,
+      "min": 1,
+      "source": "OAP P-rule (3 pain-free days)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 3
+    },
+    "safety.severity_map": {
+      "evidence": "engineering-fact",
+      "max": 3,
+      "min": 1,
+      "source": "UX pain sheet; the chips are stored as pain scores 2 / 5 / 8 (C64), and a 0-10 score maps as 1-3 → 1, 4-6 → 2, 7-10 → 3",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "severity (by pain chip)",
+      "value": {
+        "mild": 1,
+        "moderate": 2,
+        "sharp": 3
+      }
+    },
+    "select.axial_cap": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 2,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "axial points",
+      "value": 4
+    },
+    "select.b_sfr": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "quality per sfr point",
+      "value": 0.04
+    },
+    "select.b_stretch": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "Maeo 2021/2023; Wolf 2023/2025",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "quality per stretch level",
+      "value": 0.05
+    },
+    "select.beam_width": {
+      "evidence": "engineering-fact",
+      "max": 50,
+      "min": 4,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "beam-versus-exhaustive tests",
+      "unit": "plans",
+      "value": 12
+    },
+    "select.consistency": {
+      "evidence": "moderate",
+      "max": 2,
+      "min": 0,
+      "source": "Kassiano 2022; F12",
+      "tunable": true,
+      "tuned_by": "T-SUB / rotation outcomes",
+      "unit": "J per exercise",
+      "value": 0.5
+    },
+    "select.dedup_cos": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.8,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "cosine",
+      "value": 0.95
+    },
+    "select.lam_axial": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per axial point",
+      "value": 0.3
+    },
+    "select.lam_cap": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "[this doc] (per-session cap, C14)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per FS",
+      "value": 1.0
+    },
+    "select.lam_over": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "J per FS",
+      "value": 0.5
+    },
+    "select.lam_skip": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per FS",
+      "value": 3.0
+    },
+    "select.lam_time": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "J per min",
+      "value": 0.05
+    },
+    "select.lam_time_over": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "J per min",
+      "value": 0.5
+    },
+    "select.max_ex": {
+      "evidence": "expert-opinion",
+      "max": 12,
+      "min": 4,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "exercises",
+      "value": 8
+    },
+    "select.max_per_pattern": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "exercises",
+      "value": 2
+    },
+    "select.over_credit": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "exercise-selection lens 0.25, set to 0.10 [this doc] (§13.6)",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "select.over_tol": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 1.0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-ALLOC",
+      "unit": "ratio of T",
+      "value": 1.25
+    },
+    "select.overrun_cap": {
+      "evidence": "expert-opinion",
+      "max": 1.3,
+      "min": 1.0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "ratio of budget",
+      "value": 1.1
+    },
+    "select.region_bonus": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "Chaves 2020; Larsen 2024; Fonseca 2014",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per region",
+      "value": 0.3
+    },
+    "select.smax": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 2,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sets (by mechanics)",
+      "value": {
+        "compound": 5,
+        "isolation": 4
+      }
+    },
+    "select.stall_pen": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per exercise",
+      "value": 0.5
+    },
+    "select.top_k": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 10,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "beam-versus-exhaustive tests",
+      "unit": "exercises",
+      "value": 25
+    },
+    "select.tune_eps": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "J",
+      "value": 0.05
+    },
+    "select.tune_passes": {
+      "evidence": "engineering-fact",
+      "max": 50,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "passes",
+      "value": 20
+    },
+    "setcredit.ecc_fat": {
+      "evidence": "moderate",
+      "max": 2.0,
+      "min": 1.0,
+      "source": "eccentric damage; McHugh & Tetro 2003",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "multiplier",
+      "value": 1.3
+    },
+    "setcredit.fat_rir": {
+      "evidence": "moderate",
+      "max": 2.0,
+      "min": 0.3,
+      "source": "C6; Morán-Navarro 2017; Refalo 2023",
+      "tunable": true,
+      "tuned_by": "T-KAPPA residuals",
+      "unit": "fatigue weight (by RIR 0-4)",
+      "value": [
+        1.35,
+        1.15,
+        1.0,
+        0.9,
+        0.8
+      ]
+    },
+    "setcredit.fat_rir_above": {
+      "evidence": "moderate",
+      "max": 2.0,
+      "min": 0.3,
+      "source": "C6 (fatigue 0.50 above RIR 4); derived key for the tail of setcredit.fat_rir",
+      "tunable": true,
+      "tuned_by": "T-KAPPA residuals",
+      "unit": "fatigue weight (RIR >= 5)",
+      "value": 0.5
+    },
+    "setcredit.felt_to_q": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "[this doc] (D9 chips)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "RIR (by hold chip)",
+      "value": {
+        "easy": 5,
+        "hard": 1,
+        "max": 0,
+        "ok": 3
+      }
+    },
+    "setcredit.grip_w": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "tissue weight (by grip demand 0-3)",
+      "value": [
+        0,
+        0,
+        0.5,
+        1.0
+      ]
+    },
+    "setcredit.hard_rir_max": {
+      "evidence": "moderate",
+      "max": 5,
+      "min": 3,
+      "source": "C6",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "RIR",
+      "value": 4
+    },
+    "setcredit.hold_factor_long": {
+      "evidence": "weak",
+      "max": 1.0,
+      "min": 0.25,
+      "source": "C8; Oranchuk 2019",
+      "tunable": true,
+      "tuned_by": "T-HOLD (review only)",
+      "unit": "ratio",
+      "value": 0.5
+    },
+    "setcredit.hold_factor_short": {
+      "evidence": "weak",
+      "max": 0.5,
+      "min": 0,
+      "source": "C8",
+      "tunable": true,
+      "tuned_by": "T-HOLD (review only)",
+      "unit": "ratio",
+      "value": 0.25
+    },
+    "setcredit.hold_min_s": {
+      "evidence": "weak",
+      "max": 30,
+      "min": 5,
+      "source": "C8",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "s",
+      "value": 10
+    },
+    "setcredit.hold_near_max_sir": {
+      "evidence": "weak",
+      "max": 5,
+      "min": 0,
+      "source": "C8; HOLD-1 chips",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "s",
+      "value": 2
+    },
+    "setcredit.hold_sys": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "multiplier",
+      "value": 0.5
+    },
+    "setcredit.kind_fat": {
+      "evidence": "expert-opinion",
+      "max": 2.0,
+      "min": 0.2,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "multiplier (by contraction)",
+      "value": {
+        "dynamic": 1.0,
+        "eccentric_only": 1.3,
+        "hang": 0.4,
+        "isometric": 0.6
+      }
+    },
+    "setcredit.level_w": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "pain reports versus tissue load, review",
+      "unit": "tissue weight (by stress level 0-3)",
+      "value": [
+        0,
+        0.1,
+        0.5,
+        1.0
+      ]
+    },
+    "setcredit.min_hyp_coeff": {
+      "evidence": "moderate",
+      "max": 0.75,
+      "min": 0.25,
+      "source": "Pelland 2026 fractional counting; C44 (0.25 counts toward fatigue only)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "coeff",
+      "value": 0.5
+    },
+    "setcredit.novelty": {
+      "evidence": "moderate",
+      "max": 2.0,
+      "min": 1.0,
+      "source": "repeated-bout effect (McHugh & Tetro 2003; Kwiecien 2020)",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "multiplier (by days since last exposure)",
+      "value": {
+        "d14_21": 1.25,
+        "over_21d": 1.5
+      }
+    },
+    "setcredit.q_missing": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "missing-RIR share, review",
+      "unit": "RIR",
+      "value": 3
+    },
+    "setcredit.side_factor": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0.5,
+      "source": "C7",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "sets per side row",
+      "value": 0.5
+    },
+    "setcredit.stim_rir": {
+      "evidence": "moderate",
+      "max": 1,
+      "min": 0,
+      "source": "C6; Robinson 2024",
+      "tunable": true,
+      "tuned_by": "review (e1RM trend versus volume)",
+      "unit": "stimulus weight (by RIR 0-5)",
+      "value": [
+        1.0,
+        1.0,
+        0.95,
+        0.9,
+        0.8,
+        0.5
+      ]
+    },
+    "setcredit.stim_rir_above": {
+      "evidence": "moderate",
+      "max": 0.5,
+      "min": 0,
+      "source": "C6 (stimulus 0 above RIR 5); derived key for the tail of setcredit.stim_rir",
+      "tunable": true,
+      "tuned_by": "review (e1RM trend versus volume)",
+      "unit": "stimulus weight (RIR >= 6)",
+      "value": 0
+    },
+    "setcredit.sys_divisor": {
+      "evidence": "expert-opinion",
+      "max": 25,
+      "min": 8,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "hard sets",
+      "value": 15
+    },
+    "setcredit.sys_w": {
+      "evidence": "expert-opinion",
+      "max": 1.5,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-KAPPA (G versus performance)",
+      "unit": "systemic weight (by systemic level 1-3)",
+      "value": {
+        "1": 0.4,
+        "2": 0.7,
+        "3": 1.0
+      }
+    },
+    "setcredit.trained_min_credit": {
+      "evidence": "expert-opinion",
+      "max": 2.0,
+      "min": 0.5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "Vhyp",
+      "value": 1.0
+    },
+    "sim.cap_mult": {
+      "evidence": "weak",
+      "max": 2,
+      "min": 1.1,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio of initial e1RM",
+      "value": 1.4
+    },
+    "sim.detrain_after_days": {
+      "evidence": "weak",
+      "max": 28,
+      "min": 3,
+      "source": "tech-stack lens; Bosquet 2013 (detraining after 10 missed days); derived from the sim.detrain_rate default",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 10
+    },
+    "sim.detrain_rate": {
+      "evidence": "weak",
+      "max": 0.02,
+      "min": 0,
+      "source": "tech-stack lens; Bosquet 2013",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio per week",
+      "value": 0.005
+    },
+    "sim.g": {
+      "evidence": "weak",
+      "max": 0.02,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "fitted from logs",
+      "unit": "relative e1RM per effective set",
+      "value": 0.004
+    },
+    "sim.p_occupied": {
+      "evidence": "weak",
+      "max": 0.3,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "station occupancy logs",
+      "unit": "probability",
+      "value": 0.05
+    },
+    "sim.p_override": {
+      "evidence": "weak",
+      "max": 0.5,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "fitted from logs",
+      "unit": "probability",
+      "value": 0.1
+    },
+    "sim.seeds": {
+      "evidence": "engineering-fact",
+      "max": 500,
+      "min": 1,
+      "source": "tech-stack lens (1..200)",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "seeds",
+      "value": 50
+    },
+    "sim.set_drop": {
+      "evidence": "weak",
+      "max": 3,
+      "min": 0,
+      "source": "tech-stack lens",
+      "tunable": true,
+      "tuned_by": "fitted from logs",
+      "unit": "reps per set",
+      "value": 1
+    },
+    "sim.set_drop_rir_max": {
+      "evidence": "weak",
+      "max": 5,
+      "min": 0,
+      "source": "tech-stack lens (set drop applies at RIR <= 2); derived from the sim.set_drop default",
+      "tunable": true,
+      "tuned_by": "fitted from logs",
+      "unit": "RIR",
+      "value": 2
+    },
+    "sim.sigma_rir": {
+      "evidence": "moderate",
+      "max": 2,
+      "min": 0.5,
+      "source": "Halperin 2022 (≈ 0.95 reps)",
+      "tunable": true,
+      "tuned_by": "fitted from logs",
+      "unit": "RIR",
+      "value": 1.0
+    },
+    "sim.weeks": {
+      "evidence": "engineering-fact",
+      "max": 104,
+      "min": 4,
+      "source": "critique (26-week personas)",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "weeks",
+      "value": 26
+    },
+    "sse.ci_z": {
+      "evidence": "engineering-fact",
+      "max": 1.2816,
+      "min": 1.2816,
+      "source": "80 % two-sided normal quantile",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "z",
+      "value": 1.2816
+    },
+    "sse.cold_start_sd": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0.03,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first 3 exposures' residuals",
+      "unit": "ln",
+      "value": 0.08
+    },
+    "sse.detrain_cap": {
+      "evidence": "expert-opinion",
+      "max": 0.4,
+      "min": 0.05,
+      "source": "C27 (cap 15 %: ln(1/0.85) = 0.1625; user decision 2026-10-08)",
+      "tunable": true,
+      "tuned_by": "first-exposure residual after gaps > 21 days",
+      "unit": "ln",
+      "value": 0.1625
+    },
+    "sse.detrain_per_week": {
+      "evidence": "expert-opinion",
+      "max": 0.03,
+      "min": 0,
+      "source": "C27",
+      "tunable": true,
+      "tuned_by": "first-exposure residual after gaps > 21 days",
+      "unit": "ln per week",
+      "value": 0.0075
+    },
+    "sse.detrain_var_per_week": {
+      "evidence": "expert-opinion",
+      "max": 0.004,
+      "min": 0,
+      "source": "load_prescription (0.02^2)",
+      "tunable": true,
+      "tuned_by": "M2 coverage after gaps",
+      "unit": "ln^2 per week",
+      "value": 0.0004
+    },
+    "sse.fatigue_err": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residuals by set index",
+      "unit": "ln at F = 0.3",
+      "value": 0.03
+    },
+    "sse.form_err_free_reps": {
+      "evidence": "moderate",
+      "max": 10,
+      "min": 1,
+      "source": "Reynolds 2006 (5RM most accurate)",
+      "tunable": true,
+      "tuned_by": "M3",
+      "unit": "reps",
+      "value": 5
+    },
+    "sse.form_err_per_rep": {
+      "evidence": "moderate",
+      "max": 0.02,
+      "min": 0,
+      "source": "LeSuer 1997; Reynolds 2006",
+      "tunable": true,
+      "tuned_by": "M3 bias at high reps",
+      "unit": "ln per rep",
+      "value": 0.005
+    },
+    "sse.grace_days": {
+      "evidence": "moderate",
+      "max": 42,
+      "min": 7,
+      "source": "C27; Bosquet 2013 (no meaningful loss up to 28 days)",
+      "tunable": true,
+      "tuned_by": "first-exposure residual after gaps (M1 by gap)",
+      "unit": "days",
+      "value": 21
+    },
+    "sse.huber_gate_sd": {
+      "evidence": "engineering-fact",
+      "max": 5,
+      "min": 2,
+      "source": "robust Kalman convention",
+      "tunable": false,
+      "tuned_by": "M5 Huber rate",
+      "unit": "sd",
+      "value": 3.0
+    },
+    "sse.lb_gate_sd": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "lower-bound usage vs later residuals",
+      "unit": "sd",
+      "value": 0.5
+    },
+    "sse.lb_r_mult": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "lower-bound usage vs later residuals",
+      "unit": "dimensionless",
+      "value": 2.0
+    },
+    "sse.max_n_eff": {
+      "evidence": "expert-opinion",
+      "max": 40,
+      "min": 15,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M3",
+      "unit": "reps",
+      "value": 25
+    },
+    "sse.q_g": {
+      "evidence": "expert-opinion",
+      "max": 0.005,
+      "min": 0.0001,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "trend residual autocorrelation",
+      "unit": "ln per week per sqrt(week)",
+      "value": 0.001
+    },
+    "sse.q_l": {
+      "evidence": "expert-opinion",
+      "max": 0.05,
+      "min": 0.002,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "M2 coverage, innovation variance",
+      "unit": "ln per sqrt(week)",
+      "value": 0.01
+    },
+    "sse.rho": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.5,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "forecast error at 2-4 weeks",
+      "unit": "per week",
+      "value": 0.85
+    },
+    "sse.sd_day": {
+      "evidence": "strong",
+      "max": 0.1,
+      "min": 0.01,
+      "source": "Grgic 2020 (1RM CV median 4.2 %)",
+      "tunable": true,
+      "tuned_by": "M1, M2 coverage",
+      "unit": "ln",
+      "value": 0.035
+    },
+    "sse.sg0": {
+      "evidence": "expert-opinion",
+      "max": 0.02,
+      "min": 0.001,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "cold-start trend error",
+      "unit": "ln per week",
+      "value": 0.005
+    },
+    "sse.sigma_q_base_gt20": {
+      "evidence": "moderate",
+      "max": 6,
+      "min": 1,
+      "source": "Halperin 2022; Steele 2017",
+      "tunable": true,
+      "tuned_by": "M2 by rep bucket",
+      "unit": "reps",
+      "value": 2.5
+    },
+    "sse.sigma_q_base_le12": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": 0.3,
+      "source": "Halperin 2022; Refalo 2024",
+      "tunable": true,
+      "tuned_by": "M2 by rep bucket",
+      "unit": "reps",
+      "value": 1.0
+    },
+    "sse.sigma_q_base_le20": {
+      "evidence": "moderate",
+      "max": 4,
+      "min": 0.5,
+      "source": "Halperin 2022 (worse above 12)",
+      "tunable": true,
+      "tuned_by": "M2 by rep bucket",
+      "unit": "reps",
+      "value": 1.5
+    },
+    "sse.transfer_sd": {
+      "evidence": "expert-opinion",
+      "max": 0.4,
+      "min": 0.05,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "residuals after substitutions (v_set_estimates)",
+      "unit": "ln",
+      "value": 0.15
+    },
+    "stall.fail_load_cut": {
+      "evidence": "expert-opinion",
+      "max": 0.15,
+      "min": 0.025,
+      "source": "C15 (between Stronglifts/Dr Muscle 10 % and microloading)",
+      "tunable": true,
+      "tuned_by": "success after the cut",
+      "unit": "ratio",
+      "value": 0.075
+    },
+    "stall.fail_threshold": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 2,
+      "source": "C15 (A7; Stronglifts uses 3)",
+      "tunable": true,
+      "tuned_by": "success after the cut",
+      "unit": "exposures",
+      "value": 2
+    },
+    "stall.global_active_window_days": {
+      "evidence": "expert-opinion",
+      "max": 56,
+      "min": 14,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "days",
+      "value": 28
+    },
+    "stall.global_bad_events": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "events",
+      "value": 3
+    },
+    "stall.global_delta": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -0.1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "ln",
+      "value": -0.04
+    },
+    "stall.global_delta_sessions": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "of 4 sessions",
+      "value": 3
+    },
+    "stall.global_frac": {
+      "evidence": "expert-opinion",
+      "max": 0.8,
+      "min": 0.2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "share",
+      "value": 0.4
+    },
+    "stall.global_min_active": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 3,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "exercises",
+      "value": 5
+    },
+    "stall.global_window_days": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "deload outcomes (rebound after 2 weeks)",
+      "unit": "days",
+      "value": 14
+    },
+    "stall.min_exposures": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "exposures",
+      "value": 4
+    },
+    "stall.p_progress_max": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "probability",
+      "value": 0.2
+    },
+    "stall.regress_resid_count": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "of 4 exposures",
+      "value": 3
+    },
+    "stall.slope_progress": {
+      "evidence": "expert-opinion",
+      "max": 0.01,
+      "min": 0.001,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "ln per week",
+      "value": 0.003
+    },
+    "stall.slope_regress": {
+      "evidence": "expert-opinion",
+      "max": 0,
+      "min": -0.02,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "ln per week",
+      "value": -0.003
+    },
+    "stall.slope_stall": {
+      "evidence": "expert-opinion",
+      "max": 0.005,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "ln per week",
+      "value": 0.001
+    },
+    "stall.tier1_load_cut": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "C13 (among deload-type transforms only tier 1 cuts load)",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "stall.tier1_q_add": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "RIR",
+      "value": 1
+    },
+    "stall.tier1_sets_mult": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "ratio",
+      "value": 0.6
+    },
+    "stall.tier2_rep_shift": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 2,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "reps",
+      "value": 4
+    },
+    "stall.tier2_weeks": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 4,
+      "source": "load_prescription (4-6 weeks), aligned to F12",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "weeks",
+      "value": 5
+    },
+    "stall.tier_window_weeks": {
+      "evidence": "expert-opinion",
+      "max": 16,
+      "min": 4,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "weeks",
+      "value": 8
+    },
+    "stall.window_days": {
+      "evidence": "expert-opinion",
+      "max": 84,
+      "min": 21,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "slope after interventions (M11)",
+      "unit": "days",
+      "value": 42
+    },
+    "substitute.max_defers": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "UX lens UI-05",
+      "tunable": true,
+      "tuned_by": "defer-to-done rate",
+      "unit": "deferrals",
+      "value": 2
+    },
+    "substitute.region_weight": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "vector weight",
+      "value": 0.5
+    },
+    "substitute.setup_fast_s": {
+      "evidence": "engineering-fact",
+      "max": 600,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s (by setup speed class)",
+      "value": {
+        "fast": 60,
+        "medium": 120
+      }
+    },
+    "substitute.sim_min": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.4,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-SUB",
+      "unit": "cosine",
+      "value": 0.6
+    },
+    "substitute.w_inj": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "score weight",
+      "value": 0.1
+    },
+    "substitute.w_pattern": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-SUB",
+      "unit": "score weight",
+      "value": 0.15
+    },
+    "substitute.w_pref": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-SUB",
+      "unit": "score weight",
+      "value": 0.15
+    },
+    "substitute.w_setup": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-SUB",
+      "unit": "score weight",
+      "value": 0.1
+    },
+    "substitute.w_sim": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-SUB",
+      "unit": "score weight",
+      "value": 0.6
+    },
+    "targets.age_60": {
+      "evidence": "moderate",
+      "max": 60,
+      "min": 60,
+      "source": "Bickel 2011",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "years",
+      "value": 60
+    },
+    "targets.base_by_age": {
+      "evidence": "moderate",
+      "max": 20,
+      "min": 6,
+      "source": "C14; ACSM 2026; Baz-Valle 2022",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "Vhyp sets/week (by training age)",
+      "value": {
+        "advanced": 14,
+        "intermediate": 12,
+        "novice": 10
+      }
+    },
+    "targets.cap_s": {
+      "evidence": "weak",
+      "max": 15,
+      "min": 4,
+      "source": "Remmert preprint (PUOS ≈ 11), C14, C29",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "FS per session (by goal)",
+      "value": {
+        "improve": 10,
+        "maintain": 4
+      }
+    },
+    "targets.combine_rule": {
+      "evidence": "expert-opinion",
+      "source": "C51",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "enum",
+      "value": "min_factor_max_offset"
+    },
+    "targets.default_training_age": {
+      "evidence": "expert-opinion",
+      "source": "C64",
+      "tunable": true,
+      "tuned_by": "onboarding answer",
+      "unit": "enum",
+      "value": "novice"
+    },
+    "targets.deload_rir_offset": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "C13",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "RIR",
+      "value": 2
+    },
+    "targets.deload_set_factor": {
+      "evidence": "expert-opinion",
+      "max": 0.7,
+      "min": 0.3,
+      "source": "C13; Bell 2023 Delphi; OAP artifact",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.5
+    },
+    "targets.focus_bonus": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 0,
+      "source": "C14",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "Vhyp sets/week",
+      "value": 4
+    },
+    "targets.freq_target": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": 1,
+      "source": "ACSM 2026; Spiering 2021",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions/week (by goal)",
+      "value": {
+        "improve": 2,
+        "maintain": 1,
+        "maintain_60": 2
+      }
+    },
+    "targets.maintain_divisor": {
+      "evidence": "moderate",
+      "max": 9,
+      "min": 2,
+      "source": "Bickel 2011 (1/3 and 1/9 doses)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "dimensionless",
+      "value": 3
+    },
+    "targets.maintain_load_frac": {
+      "evidence": "moderate",
+      "max": 0.95,
+      "min": 0.7,
+      "source": "Spiering 2021 (intensity kept)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio of 8-week working load",
+      "value": 0.85
+    },
+    "targets.maintain_min": {
+      "evidence": "moderate",
+      "max": 6,
+      "min": 1,
+      "source": "C14; Bickel 2011; Spiering 2021",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "Vhyp sets/week",
+      "value": 3
+    },
+    "targets.maintain_min_60": {
+      "evidence": "moderate",
+      "max": 10,
+      "min": 3,
+      "source": "Bickel 2011 (older adults); Spiering 2021",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "Vhyp sets/week",
+      "value": 6
+    },
+    "targets.maintain_over_slope": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "utility per set over T",
+      "value": 0.05
+    },
+    "targets.min_touch": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "FS per session (by goal)",
+      "value": {
+        "improve": 2,
+        "maintain": 1
+      }
+    },
+    "targets.mrv": {
+      "evidence": "expert-opinion",
+      "max": 35,
+      "min": 10,
+      "source": "C14; planning lens; others [this doc]",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "Vhyp sets/week (by group)",
+      "value": {
+        "abductors": 20,
+        "abs": 20,
+        "adductors": 20,
+        "biceps": 20,
+        "calves": 20,
+        "chest": 22,
+        "forearms": 20,
+        "front_delts": 20,
+        "glutes": 22,
+        "hamstrings": 22,
+        "lats": 22,
+        "lower_back": 16,
+        "quads": 22,
+        "rear_delts": 24,
+        "side_delts": 24,
+        "triceps": 20,
+        "upper_back": 22,
+        "upper_traps": 20
+      }
+    },
+    "targets.over_mrv_slope": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "utility per set over MRV",
+      "value": 0.5
+    },
+    "targets.perf_thresholds": {
+      "evidence": "expert-opinion",
+      "max": 0.1,
+      "min": -0.1,
+      "source": "app-benchmarks A9",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "relative e1RM change",
+      "value": {
+        "p1": 0.02,
+        "p2": -0.01,
+        "p3": -0.03
+      }
+    },
+    "targets.ramp_cap_frac": {
+      "evidence": "weak",
+      "max": 0.3,
+      "min": 0.1,
+      "source": "C14; Camargo 2026 preprint (C29)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio of T",
+      "value": 0.2
+    },
+    "targets.ramp_start_week": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 1,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "mesocycle week",
+      "value": 2
+    },
+    "targets.ramp_table": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": -3,
+      "source": "RP via app-benchmarks A9; C14",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "sets/week delta (by rule)",
+      "value": {
+        "missing": 0,
+        "p4": -2,
+        "p_le2_and_s_le2": 1,
+        "s1_and_p1": 2,
+        "s4_or_p3": 0
+      }
+    },
+    "targets.reactive": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "C13 (planning + STALL-1 global rules)",
+      "tunable": true,
+      "tuned_by": "deload outcomes, review",
+      "unit": "mixed (counts, ratio, G)",
+      "value": {
+        "consecutive_exposures": 2,
+        "e1rm_drop": 0.03,
+        "feeling_bad_sessions": 2,
+        "g": 0.6,
+        "g_sessions": 2,
+        "key_exercises": 2
+      }
+    },
+    "targets.reentry_gap_days": {
+      "evidence": "moderate",
+      "max": 35,
+      "min": 14,
+      "source": "C27; Ogasawara 2013; Bosquet 2013",
+      "tunable": true,
+      "tuned_by": "re-entry first-exposure residuals",
+      "unit": "days",
+      "value": 21
+    },
+    "targets.reentry_rir_offset": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "C27",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "RIR",
+      "value": 1
+    },
+    "targets.reentry_sessions": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "C27",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions",
+      "value": 2
+    },
+    "targets.reentry_set_factor": {
+      "evidence": "expert-opinion",
+      "max": 0.8,
+      "min": 0.4,
+      "source": "C27",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.6
+    },
+    "targets.soreness_scores": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "score (by soreness answer)",
+      "value": {
+        "healed": 2,
+        "never_sore": 1,
+        "still_sore": 4
+      }
+    },
+    "targets.special_improve": {
+      "evidence": "expert-opinion",
+      "max": 12,
+      "min": 2,
+      "source": "planning lens; abductors [this doc]",
+      "tunable": true,
+      "tuned_by": "T-TARGET",
+      "unit": "Vhyp sets/week (by group)",
+      "value": {
+        "abductors": 6,
+        "adductors": 6,
+        "forearms": 6,
+        "front_delts": 6,
+        "lower_back": 4,
+        "upper_traps": 6
+      }
+    },
+    "targets.w": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT",
+      "unit": "utility weight (by goal)",
+      "value": {
+        "focus": 1.5,
+        "improve": 1.0,
+        "maintain": 0.6
+      }
+    },
+    "time.attempt_reset_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 5,
+      "source": "challenge lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s per attempt",
+      "value": 15
+    },
+    "time.calib_min_exposures": {
+      "evidence": "engineering-fact",
+      "max": 6,
+      "min": 1,
+      "source": "exercise-selection lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "exposures",
+      "value": 3
+    },
+    "time.ecc_extra_s": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "challenge lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s per rep",
+      "value": 2
+    },
+    "time.ewma_alpha": {
+      "evidence": "engineering-fact",
+      "max": 0.6,
+      "min": 0.1,
+      "source": "C19",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "dimensionless",
+      "value": 0.3
+    },
+    "time.general_warmup_s": {
+      "evidence": "engineering-fact",
+      "max": 1200,
+      "min": 0,
+      "source": "C19 (OAP warm-up 10 min)",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s",
+      "value": 600
+    },
+    "time.group_profile": {
+      "evidence": "expert-opinion",
+      "max": 600,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "[reps, rest s, setup s] (by group)",
+      "value": {
+        "abductors": [
+          15,
+          90,
+          30
+        ],
+        "abs": [
+          12,
+          60,
+          45
+        ],
+        "adductors": [
+          12,
+          90,
+          30
+        ],
+        "biceps": [
+          10,
+          90,
+          30
+        ],
+        "calves": [
+          12,
+          90,
+          45
+        ],
+        "chest": [
+          8,
+          120,
+          60
+        ],
+        "forearms": [
+          15,
+          90,
+          30
+        ],
+        "front_delts": [
+          10,
+          120,
+          45
+        ],
+        "glutes": [
+          10,
+          150,
+          120
+        ],
+        "hamstrings": [
+          10,
+          90,
+          60
+        ],
+        "lats": [
+          8,
+          120,
+          45
+        ],
+        "lower_back": [
+          12,
+          90,
+          30
+        ],
+        "quads": [
+          10,
+          150,
+          90
+        ],
+        "rear_delts": [
+          15,
+          90,
+          30
+        ],
+        "side_delts": [
+          15,
+          90,
+          15
+        ],
+        "triceps": [
+          12,
+          90,
+          45
+        ],
+        "upper_back": [
+          10,
+          120,
+          60
+        ],
+        "upper_traps": [
+          12,
+          90,
+          45
+        ]
+      }
+    },
+    "time.hold_overhead_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 5,
+      "source": "UX lens UI-02",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s per set",
+      "value": 15
+    },
+    "time.min_addon_min": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "add-on acceptance",
+      "unit": "min",
+      "value": 8
+    },
+    "time.min_sets": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "UX lens UI-02",
+      "tunable": true,
+      "tuned_by": "trimming acceptance",
+      "unit": "sets (by trim tier)",
+      "value": {
+        "accessory": 0,
+        "improve": 2,
+        "maintain": 1
+      }
+    },
+    "time.per_set_s": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 0,
+      "source": "C19",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s per set",
+      "value": 5
+    },
+    "time.side_switch_s": {
+      "evidence": "expert-opinion",
+      "max": 30,
+      "min": 0,
+      "source": "exercise-selection lens",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s",
+      "value": 10
+    },
+    "time.specific_warmup_sets": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 0,
+      "source": "WARMUP-1 default",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "sets",
+      "value": 2
+    },
+    "time.tempo_s": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "C19 (TIME-1)",
+      "tunable": true,
+      "tuned_by": "T-TIME (EWMA per user)",
+      "unit": "s per rep",
+      "value": 3
+    },
+    "time.transition_s": {
+      "evidence": "expert-opinion",
+      "max": 180,
+      "min": 20,
+      "source": "C19",
+      "tunable": true,
+      "tuned_by": "T-TIME",
+      "unit": "s",
+      "value": 60
+    },
+    "today.constraint_chip_weight": {
+      "evidence": "engineering-fact",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "chip taps",
+      "unit": "chip weight",
+      "value": 0.4
+    },
+    "today.context_chip_weight": {
+      "evidence": "engineering-fact",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "chip taps",
+      "unit": "chip weight",
+      "value": 0.1
+    },
+    "today.max_budget_min": {
+      "evidence": "engineering-fact",
+      "max": 300,
+      "min": 90,
+      "source": "F11 (\"90+\")",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "min",
+      "value": 180
+    },
+    "today.reason_codes": {
+      "evidence": "engineering-fact",
+      "source": "F19",
+      "tunable": false,
+      "tuned_by": "not tunable (versioned enum; changes need a new enum version, F19)",
+      "unit": "enum",
+      "value": [
+        "SAFETY_JOINT",
+        "SAFETY_PROTOCOL",
+        "REST_BEFORE",
+        "PROTECT_REST",
+        "GAP_DAY",
+        "CHALLENGE_DUE",
+        "NEXT_FIXED",
+        "DELOAD_WEEK",
+        "COVERED_BY_CHALLENGE",
+        "RUN_ON_REST_DAY",
+        "PLANNED_CAL",
+        "MAX_VISITS",
+        "BUDGET_FIT",
+        "NO_SLOT",
+        "TIME_SHORT",
+        "VOLUME_DEFICIT",
+        "RECOVERED",
+        "HOURS_SINCE",
+        "REENTRY",
+        "BETTER_OTHER_DAY",
+        "BETTER_THIS_DAY",
+        "FREQ_BONUS",
+        "LOW_SYSTEMIC",
+        "RECOVERING",
+        "SORE",
+        "HEAVY_LOWER_GAP",
+        "CONSECUTIVE",
+        "RUN_NEAR",
+        "TARGETS_MET",
+        "ONLY_OPTION",
+        "PREF_LIKED",
+        "PAST_DAY",
+        "NOT_NEEDED",
+        "ADDON",
+        "NOTHING_TO_TRAIN",
+        "NO_ELIGIBLE_EXERCISE"
+      ]
+    },
+    "today.transform_chip_weight": {
+      "evidence": "engineering-fact",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "chip taps",
+      "unit": "chip weight",
+      "value": 0.5
+    },
+    "today.ui_scale": {
+      "evidence": "engineering-fact",
+      "max": 5,
+      "min": 0.5,
+      "source": "[this doc]",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "J per score unit",
+      "value": 2.0
+    },
+    "tuner.acceptance_floor": {
+      "evidence": "expert-opinion",
+      "max": 0.8,
+      "min": 0.2,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "rate",
+      "value": 0.5
+    },
+    "tuner.acceptance_min_n": {
+      "evidence": "engineering-fact",
+      "max": 20,
+      "min": 3,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "recommendations",
+      "value": 6
+    },
+    "tuner.alloc_log_ratio": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ln ratio",
+      "value": 0.15
+    },
+    "tuner.alloc_min_sessions": {
+      "evidence": "engineering-fact",
+      "max": 30,
+      "min": 5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions",
+      "value": 10
+    },
+    "tuner.attainment_floor": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.5,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.7
+    },
+    "tuner.attainment_weeks": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "weeks",
+      "value": 3
+    },
+    "tuner.cal_fp_rate": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "rate",
+      "value": 0.2
+    },
+    "tuner.cal_min_corrections": {
+      "evidence": "engineering-fact",
+      "max": 50,
+      "min": 5,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "corrections",
+      "value": 10
+    },
+    "tuner.churn_limit": {
+      "evidence": "expert-opinion",
+      "max": 7,
+      "min": 1,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "replans per week",
+      "value": 3
+    },
+    "tuner.kappa_grid": {
+      "evidence": "engineering-fact",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "kappa grid (min, max, step)",
+      "value": {
+        "max": 1.5,
+        "min": 0.7,
+        "step": 0.1
+      }
+    },
+    "tuner.max_kappa_step": {
+      "evidence": "engineering-fact",
+      "max": 0.5,
+      "min": 0.05,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "kappa",
+      "value": 0.2
+    },
+    "tuner.min_improvement": {
+      "evidence": "engineering-fact",
+      "max": 0.2,
+      "min": 0.01,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "relative SSE improvement",
+      "value": 0.05
+    },
+    "tuner.min_samples": {
+      "evidence": "engineering-fact",
+      "max": 50,
+      "min": 6,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "samples",
+      "value": 12
+    },
+    "tuner.run_max_scale": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.1,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.3
+    },
+    "tuner.run_min_n": {
+      "evidence": "engineering-fact",
+      "max": 20,
+      "min": 4,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions per arm",
+      "value": 8
+    },
+    "tuner.time_delta": {
+      "evidence": "engineering-fact",
+      "max": 0.3,
+      "min": 0.05,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "tuner.time_min_sets": {
+      "evidence": "engineering-fact",
+      "max": 100,
+      "min": 10,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sets",
+      "value": 20
+    },
+    "tuner.too_easy_share": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0.1,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "share",
+      "value": 0.3
+    },
+    "ui.prefill.accel_after": {
+      "evidence": "engineering-fact",
+      "max": 20,
+      "min": 4,
+      "source": "Android auto-repeat conventions",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "repeats",
+      "value": 8
+    },
+    "ui.prefill.accel_factor": {
+      "evidence": "engineering-fact",
+      "max": 10,
+      "min": 2,
+      "source": "Android auto-repeat conventions",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "multiplier",
+      "value": 5
+    },
+    "ui.prefill.hold_delay_ms": {
+      "evidence": "engineering-fact",
+      "max": 800,
+      "min": 200,
+      "source": "Android auto-repeat conventions",
+      "tunable": true,
+      "tuned_by": "keypad use",
+      "unit": "ms",
+      "value": 400
+    },
+    "ui.prefill.hold_fine_below_s": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 5,
+      "source": "C69 (threshold for the fine step)",
+      "tunable": true,
+      "tuned_by": "keypad use on short holds",
+      "unit": "s",
+      "value": 10
+    },
+    "ui.prefill.hold_short_frac": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.5,
+      "source": "UX lens UI-04",
+      "tunable": true,
+      "tuned_by": "deviation rates",
+      "unit": "ratio",
+      "value": 0.8
+    },
+    "ui.prefill.hold_step_fine_s": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0.1,
+      "source": "C69 (fine step for short holds)",
+      "tunable": true,
+      "tuned_by": "keypad use on short holds",
+      "unit": "s",
+      "value": 0.5
+    },
+    "ui.prefill.hold_step_s": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0.5,
+      "source": "C69 (hold stepper step)",
+      "tunable": true,
+      "tuned_by": "keypad use on hold steppers",
+      "unit": "s",
+      "value": 1.0
+    },
+    "ui.prefill.post_rir_delta": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "C69 (post-log RIR deviation)",
+      "tunable": true,
+      "tuned_by": "deviation rates",
+      "unit": "RIR",
+      "value": 2
+    },
+    "ui.prefill.repeat_ms": {
+      "evidence": "engineering-fact",
+      "max": 300,
+      "min": 50,
+      "source": "Android auto-repeat conventions",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "ms",
+      "value": 120
+    },
+    "ui.progress.band_opacity": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.05,
+      "source": "UX 19.7.4 (15.2)",
+      "tunable": false,
+      "tuned_by": "not tunable by data (display)",
+      "unit": "opacity",
+      "value": 0.12
+    },
+    "ui.progress.hold_pr_min_gain_s": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "C69 (hold PR per side)",
+      "tunable": true,
+      "tuned_by": "PR rate",
+      "unit": "s",
+      "value": 0.5
+    },
+    "ui.progress.max_prs_summary": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "UX 19.7.4 (section 12.3)",
+      "tunable": true,
+      "tuned_by": "\"Show all\" taps",
+      "unit": "bests",
+      "value": 3
+    },
+    "ui.progress.pr_min_gain": {
+      "evidence": "expert-opinion",
+      "max": 0.02,
+      "min": 0,
+      "source": "UX lens (loadable-rounding noise)",
+      "tunable": true,
+      "tuned_by": "PR rate",
+      "unit": "ratio",
+      "value": 0.005
+    },
+    "ui.progress.pr_min_history": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "C69 (no PR on the first exposure)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions",
+      "value": 1
+    },
+    "ui.progress.raw_point_opacity": {
+      "evidence": "expert-opinion",
+      "max": 1.0,
+      "min": 0.3,
+      "source": "UX 19.7.4",
+      "tunable": false,
+      "tuned_by": "not tunable by data (display)",
+      "unit": "opacity",
+      "value": 0.6
+    },
+    "ui.progress.window_weeks": {
+      "evidence": "engineering-fact",
+      "max": 52,
+      "min": 4,
+      "source": "UX lens",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "weeks",
+      "value": 12
+    },
+    "ui.prompts.pain_guard_d": {
+      "evidence": "expert-opinion",
+      "max": 28,
+      "min": 7,
+      "source": "UX lens; OAP protocol 14 d",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 14
+    },
+    "ui.prompts.pain_severity_map": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 0,
+      "source": "C64 (stop threshold 4, applied by REASON-1)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "pain score 0-10 (by chip)",
+      "value": {
+        "mild": 2,
+        "moderate": 5,
+        "sharp": 8
+      }
+    },
+    "ui.prompts.reduced_every": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions",
+      "value": 3
+    },
+    "ui.prompts.restore_after": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 1,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "answers",
+      "value": 3
+    },
+    "ui.prompts.skip_streak": {
+      "evidence": "expert-opinion",
+      "max": 6,
+      "min": 2,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "sessions",
+      "value": 3
+    },
+    "ui.prompts.sore_max": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "groups",
+      "value": 3
+    },
+    "ui.prompts.sore_window_h": {
+      "evidence": "expert-opinion",
+      "max": 168,
+      "min": 48,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "answer usefulness",
+      "unit": "h",
+      "value": 96
+    },
+    "ui.prompts.tap_budget": {
+      "evidence": "expert-opinion",
+      "max": 10,
+      "min": 3,
+      "source": "F15",
+      "tunable": true,
+      "tuned_by": "skip rates",
+      "unit": "taps",
+      "value": 6
+    },
+    "ui.reasonchips.max_defers": {
+      "evidence": "expert-opinion",
+      "max": 4,
+      "min": 1,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "defer outcomes",
+      "unit": "deferrals",
+      "value": 2
+    },
+    "ui.reasonchips.max_visible": {
+      "evidence": "engineering-fact",
+      "max": 9,
+      "min": 3,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "chip position data",
+      "unit": "chips",
+      "value": 6
+    },
+    "ui.todaycard.budget_min_chip": {
+      "evidence": "assumption",
+      "max": 45,
+      "min": 10,
+      "source": "UX 19.1.4",
+      "tunable": true,
+      "tuned_by": "sessions started with a calendar chip below 30 min",
+      "unit": "min",
+      "value": 20
+    },
+    "ui.todaycard.budget_round_min": {
+      "evidence": "engineering-fact",
+      "max": 5,
+      "min": 5,
+      "source": "UX 19.1.4 (display grid)",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "min",
+      "value": 5
+    },
+    "ui.todaycard.close_rel": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "C53 (relative close call; replaces UI-01's close_margin 0.15)",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT (non-primary starts, split by CLOSE / CLEAR)",
+      "unit": "ratio of primary score",
+      "value": 0.1
+    },
+    "ui.todaycard.max_alts": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "UX lens (Hick's law)",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "options",
+      "value": 3
+    },
+    "ui.todaycard.max_chips": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "F19",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "chips",
+      "value": 3
+    },
+    "ui.todaycard.next_lookahead_days": {
+      "evidence": "expert-opinion",
+      "max": 14,
+      "min": 1,
+      "source": "UX 19.1.4",
+      "tunable": false,
+      "tuned_by": "not tunable by data (no data needed)",
+      "unit": "days",
+      "value": 7
+    },
+    "ui.todaycard.not_today_max": {
+      "evidence": "expert-opinion",
+      "max": 3,
+      "min": 0,
+      "source": "UX 19.1.4",
+      "tunable": true,
+      "tuned_by": "Why opens on exclusion lines",
+      "unit": "lines",
+      "value": 2
+    },
+    "ui.todaycard.preview_max_lines": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "UX 19.1.4 (card height at font scale 2.0)",
+      "tunable": true,
+      "tuned_by": "rate of option-preview opens (today_action.action = preview)",
+      "unit": "lines",
+      "value": 3
+    },
+    "ui.volumebars.bar_cap": {
+      "evidence": "engineering-fact",
+      "max": 2,
+      "min": 1,
+      "source": "UX lens UI-09",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "ratio of target",
+      "value": 1.25
+    },
+    "ui.warndisplay.max_banners": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 1,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "banners",
+      "value": 1
+    },
+    "ui.warndisplay.min_magnitude": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "UX lens UI-10",
+      "tunable": true,
+      "tuned_by": "dismissal rates",
+      "unit": "magnitude 0-1",
+      "value": 0.2
+    },
+    "ui.warndisplay.snooze_d": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 7,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "dismissal rates",
+      "unit": "days",
+      "value": 28
+    },
+    "ui.warndisplay.worsen_factor": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "UX lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "ratio",
+      "value": 0.25
+    },
+    "warmup.max_cap_frac": {
+      "evidence": "expert-opinion",
+      "max": 0.7,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "test-day first-attempt success",
+      "unit": "of capacity",
+      "value": 0.5
+    },
+    "warmup.p_high": {
+      "evidence": "weak",
+      "max": 0.95,
+      "min": 0.6,
+      "source": "Ribeiro review; load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual with vs without warm-up",
+      "unit": "ratio of M",
+      "value": 0.8
+    },
+    "warmup.p_mid": {
+      "evidence": "weak",
+      "max": 0.8,
+      "min": 0.4,
+      "source": "Ribeiro review; load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual with vs without warm-up",
+      "unit": "ratio of M",
+      "value": 0.6
+    },
+    "warmup.rest_heavy_from_frac": {
+      "evidence": "expert-opinion",
+      "max": 0.9,
+      "min": 0.5,
+      "source": "this document",
+      "tunable": true,
+      "tuned_by": "rest adherence",
+      "unit": "ratio",
+      "value": 0.65
+    },
+    "warmup.rest_heavy_s": {
+      "evidence": "expert-opinion",
+      "max": 120,
+      "min": 30,
+      "source": "C18",
+      "tunable": true,
+      "tuned_by": "rest adherence",
+      "unit": "s",
+      "value": 60
+    },
+    "warmup.rest_light_s": {
+      "evidence": "expert-opinion",
+      "max": 90,
+      "min": 30,
+      "source": "C18 (45-60 s)",
+      "tunable": true,
+      "tuned_by": "rest adherence",
+      "unit": "s",
+      "value": 45
+    },
+    "warmup.rest_to_work_s": {
+      "evidence": "expert-opinion",
+      "max": 180,
+      "min": 60,
+      "source": "load_prescription REST-1",
+      "tunable": true,
+      "tuned_by": "first-set residual",
+      "unit": "s",
+      "value": 90
+    },
+    "warmup.tier_high": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual with vs without warm-up; time spent",
+      "unit": "fracs: ratio of working load; reps: reps",
+      "value": {
+        "fracs": [
+          0.45,
+          0.65,
+          0.85
+        ],
+        "reps": [
+          6,
+          3,
+          1
+        ]
+      }
+    },
+    "warmup.tier_low": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual with vs without warm-up; time spent",
+      "unit": "fracs: ratio of working load; reps: reps",
+      "value": {
+        "fracs": [
+          0.5
+        ],
+        "reps": [
+          10
+        ]
+      }
+    },
+    "warmup.tier_mid": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "first-set residual with vs without warm-up; time spent",
+      "unit": "fracs: ratio of working load; reps: reps",
+      "value": {
+        "fracs": [
+          0.5,
+          0.75
+        ],
+        "reps": [
+          8,
+          3
+        ]
+      }
+    },
+    "warmup.tier_singles": {
+      "evidence": "expert-opinion",
+      "max": 15,
+      "min": 0.3,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "test-day first-attempt success",
+      "unit": "fracs: ratio of working load; reps: reps",
+      "value": {
+        "fracs": [
+          0.92
+        ],
+        "reps": [
+          1
+        ]
+      }
+    },
+    "warmup.warm_min_sets": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 1,
+      "source": "load_prescription",
+      "tunable": true,
+      "tuned_by": "test-day first-attempt success",
+      "unit": "sets",
+      "value": 2
+    },
+    "warnings.compare_hyp_ranges": {
+      "evidence": "expert-opinion",
+      "max": 40,
+      "min": 1,
+      "source": "Schoenfeld 2021 range",
+      "tunable": false,
+      "tuned_by": "not tunable by data (design list)",
+      "unit": "reps",
+      "value": {
+        "r_hi": [
+          8,
+          10,
+          12,
+          15,
+          20,
+          25
+        ],
+        "r_lo": [
+          5,
+          6,
+          8,
+          10,
+          12,
+          15
+        ]
+      }
+    },
+    "warnings.compare_q": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 0,
+      "source": "Robinson 2024",
+      "tunable": false,
+      "tuned_by": "not tunable by data (design list)",
+      "unit": "RIR",
+      "value": [
+        1,
+        2,
+        3
+      ]
+    },
+    "warnings.compare_strength_reps": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 1,
+      "source": "Schoenfeld 2017",
+      "tunable": false,
+      "tuned_by": "not tunable by data (design list)",
+      "unit": "reps",
+      "value": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "warnings.f_int": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "Schoenfeld 2017; Lopez 2021",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "dimensionless",
+      "value": {
+        "p_1": 0.85,
+        "p_2": 0.8,
+        "p_3": 0.7,
+        "p_4": 0.6,
+        "w_1": 1.0,
+        "w_2": 0.95,
+        "w_3": 0.85,
+        "w_4": 0.7,
+        "w_5": 0.5
+      }
+    },
+    "warnings.f_load": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 0,
+      "source": "ordinal fit to Lopez 2021, Lasevicius 2018 (from memory)",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "dimensionless",
+      "value": {
+        "cap_1": 30,
+        "cap_2": 40,
+        "w_1": 1.0,
+        "w_2": 0.85,
+        "w_3": 0.6
+      }
+    },
+    "warnings.l1_max_consecutive": {
+      "evidence": "weak",
+      "max": 7,
+      "min": 3,
+      "source": "planning W8; Bell 2023",
+      "tunable": true,
+      "tuned_by": "outcomes after dense weeks",
+      "unit": "days",
+      "value": 4
+    },
+    "warnings.p1_strong_cap": {
+      "evidence": "moderate",
+      "max": 60,
+      "min": 30,
+      "source": "load_prescription R1",
+      "tunable": true,
+      "tuned_by": "outcomes of high-rep schemes",
+      "unit": "reps",
+      "value": 40
+    },
+    "warnings.p1_warn_cap": {
+      "evidence": "moderate",
+      "max": 40,
+      "min": 20,
+      "source": "load_prescription R1",
+      "tunable": true,
+      "tuned_by": "outcomes of high-rep schemes",
+      "unit": "reps",
+      "value": 30
+    },
+    "warnings.p2_strong_rir": {
+      "evidence": "moderate",
+      "max": 6,
+      "min": 4,
+      "source": "load_prescription R2",
+      "tunable": true,
+      "tuned_by": "outcomes of high-rep schemes",
+      "unit": "RIR",
+      "value": 5
+    },
+    "warnings.p2_warn_rir": {
+      "evidence": "moderate",
+      "max": 5,
+      "min": 3,
+      "source": "load_prescription R2",
+      "tunable": true,
+      "tuned_by": "outcomes of high-rep schemes",
+      "unit": "RIR",
+      "value": 4
+    },
+    "warnings.p4_reps": {
+      "evidence": "moderate",
+      "max": 20,
+      "min": 8,
+      "source": "planning W7; Halperin 2022",
+      "tunable": true,
+      "tuned_by": "M3",
+      "unit": "reps",
+      "value": 12
+    },
+    "warnings.p5_strong_rlo": {
+      "evidence": "moderate",
+      "max": 15,
+      "min": 8,
+      "source": "load_prescription R6",
+      "tunable": true,
+      "tuned_by": "strength outcomes",
+      "unit": "reps",
+      "value": 10
+    },
+    "warnings.p5_warn_rlo": {
+      "evidence": "moderate",
+      "max": 8,
+      "min": 4,
+      "source": "load_prescription R6",
+      "tunable": true,
+      "tuned_by": "strength outcomes",
+      "unit": "reps",
+      "value": 6
+    },
+    "warnings.p6_compound_min_s": {
+      "evidence": "moderate",
+      "max": 90,
+      "min": 30,
+      "source": "load_prescription R7; Singer 2024",
+      "tunable": true,
+      "tuned_by": "strength outcomes",
+      "unit": "s",
+      "value": 60
+    },
+    "warnings.p6_strength_min_s": {
+      "evidence": "moderate",
+      "max": 180,
+      "min": 60,
+      "source": "load_prescription R7; Grgic 2018",
+      "tunable": true,
+      "tuned_by": "strength outcomes",
+      "unit": "s",
+      "value": 90
+    },
+    "warnings.p7_min_width": {
+      "evidence": "engineering-fact",
+      "max": 4,
+      "min": 1,
+      "source": "load_prescription R8",
+      "tunable": false,
+      "tuned_by": "not tunable",
+      "unit": "reps",
+      "value": 2
+    },
+    "warnings.p8_strong_ratio": {
+      "evidence": "expert-opinion",
+      "max": 0.85,
+      "min": 0.5,
+      "source": "load_prescription WARN-1",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "ratio",
+      "value": 0.7
+    },
+    "warnings.p8_time_tol": {
+      "evidence": "expert-opinion",
+      "max": 0.3,
+      "min": 0.05,
+      "source": "load_prescription WARN-1",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "ratio",
+      "value": 0.1
+    },
+    "warnings.p8_warn_ratio": {
+      "evidence": "expert-opinion",
+      "max": 0.95,
+      "min": 0.7,
+      "source": "load_prescription WARN-1",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "ratio",
+      "value": 0.85
+    },
+    "warnings.strength_tau_sets": {
+      "evidence": "weak",
+      "max": 4,
+      "min": 0.5,
+      "source": "Remmert preprint (about 2 direct sets per session)",
+      "tunable": true,
+      "tuned_by": "warned vs unwarned outcomes",
+      "unit": "sets",
+      "value": 1.5
+    },
+    "warnings.v1_info_lt": {
+      "evidence": "moderate",
+      "max": 10,
+      "min": 10,
+      "source": "C14; ACSM 2026; Pelland 2024",
+      "tunable": false,
+      "tuned_by": "Decision (DECISIONS.md); not tunable by data",
+      "unit": "sets/week",
+      "value": 10
+    },
+    "warnings.v1_strong_lt": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": 3,
+      "source": "C14",
+      "tunable": false,
+      "tuned_by": "Decision (DECISIONS.md); not tunable by data",
+      "unit": "sets/week",
+      "value": 3
+    },
+    "warnings.v1_warn_lt": {
+      "evidence": "moderate",
+      "max": 6,
+      "min": 6,
+      "source": "C14",
+      "tunable": false,
+      "tuned_by": "Decision (DECISIONS.md); not tunable by data",
+      "unit": "sets/week",
+      "value": 6
+    },
+    "warnings.v2_intensity_days": {
+      "evidence": "moderate",
+      "max": 28,
+      "min": 7,
+      "source": "planning W5",
+      "tunable": true,
+      "tuned_by": "maintain-group trends",
+      "unit": "days",
+      "value": 14
+    },
+    "warnings.v2_intensity_p": {
+      "evidence": "moderate",
+      "max": 0.95,
+      "min": 0.7,
+      "source": "planning W5; Spiering 2021",
+      "tunable": true,
+      "tuned_by": "maintain-group trends",
+      "unit": "ratio",
+      "value": 0.85
+    },
+    "warnings.v2_intensity_rir": {
+      "evidence": "moderate",
+      "max": 5,
+      "min": 1,
+      "source": "planning W5",
+      "tunable": true,
+      "tuned_by": "maintain-group trends",
+      "unit": "RIR",
+      "value": 3
+    },
+    "warnings.v2_no_sets_days": {
+      "evidence": "moderate",
+      "max": 21,
+      "min": 7,
+      "source": "load_prescription R4; Spiering 2021",
+      "tunable": true,
+      "tuned_by": "maintain-group trends",
+      "unit": "days",
+      "value": 10
+    },
+    "warnings.v3_info_gt": {
+      "evidence": "weak",
+      "max": 11,
+      "min": 11,
+      "source": "C14; Remmert preprint",
+      "tunable": false,
+      "tuned_by": "Decision (DECISIONS.md); not tunable by data",
+      "unit": "sets/session",
+      "value": 11
+    },
+    "warnings.v3_warn_gt": {
+      "evidence": "weak",
+      "max": 15,
+      "min": 15,
+      "source": "C14",
+      "tunable": false,
+      "tuned_by": "Decision (DECISIONS.md); not tunable by data",
+      "unit": "sets/session",
+      "value": 15
+    },
+    "warnings.v5_min_freq": {
+      "evidence": "moderate",
+      "max": 3,
+      "min": 1,
+      "source": "planning W4; ACSM 2026",
+      "tunable": true,
+      "tuned_by": "outcomes by frequency",
+      "unit": "exposures/week",
+      "value": 2
+    },
+    "warnings.v5_min_target": {
+      "evidence": "moderate",
+      "max": 20,
+      "min": 6,
+      "source": "planning W4",
+      "tunable": true,
+      "tuned_by": "outcomes by frequency",
+      "unit": "sets/week",
+      "value": 10
+    },
+    "weekplan.addon_cost": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT (add-ons accepted)",
+      "unit": "J per add-on",
+      "value": 0.1
+    },
+    "weekplan.busy_buffer_min": {
+      "evidence": "expert-opinion",
+      "max": 60,
+      "min": 0,
+      "source": "challenge lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "min",
+      "value": 30
+    },
+    "weekplan.consec_free": {
+      "evidence": "expert-opinion",
+      "max": 5,
+      "min": 2,
+      "source": "app-benchmarks A2",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "days",
+      "value": 3
+    },
+    "weekplan.consec_w": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT",
+      "unit": "J per day",
+      "value": 0.5
+    },
+    "weekplan.freq_bonus": {
+      "evidence": "expert-opinion",
+      "max": 0.5,
+      "min": 0,
+      "source": "ACSM 2026; Schoenfeld 2016",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT",
+      "unit": "J per group",
+      "value": 0.15
+    },
+    "weekplan.g_low": {
+      "evidence": "expert-opinion",
+      "max": 0.7,
+      "min": 0.4,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "G",
+      "value": 0.55
+    },
+    "weekplan.heavy_lower_fs": {
+      "evidence": "expert-opinion",
+      "max": 8,
+      "min": 2,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "FS",
+      "value": 4
+    },
+    "weekplan.heavy_lower_min_h": {
+      "evidence": "expert-opinion",
+      "max": 72,
+      "min": 24,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "h",
+      "value": 40
+    },
+    "weekplan.k_cap": {
+      "evidence": "engineering-fact",
+      "max": 7,
+      "min": 1,
+      "source": "[this doc] (complexity)",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "sessions",
+      "value": 5
+    },
+    "weekplan.lowg_w": {
+      "evidence": "expert-opinion",
+      "max": 2,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-KAPPA",
+      "unit": "J per session",
+      "value": 0.5
+    },
+    "weekplan.max_evals": {
+      "evidence": "engineering-fact",
+      "max": 10000000,
+      "min": 100000,
+      "source": "[this doc]",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "plans",
+      "value": 1000000
+    },
+    "weekplan.min_slot_min": {
+      "evidence": "engineering-fact",
+      "max": 60,
+      "min": 30,
+      "source": "[this doc] (smallest time chip, F11)",
+      "tunable": false,
+      "tuned_by": "not tunable (fixed design constant)",
+      "unit": "min",
+      "value": 45
+    },
+    "weekplan.no_rest_w": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J",
+      "value": 0.3
+    },
+    "weekplan.protect_w": {
+      "evidence": "expert-opinion",
+      "max": 20,
+      "min": 1,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "challenge session outcomes after general sessions in windows",
+      "unit": "J per R deficit",
+      "value": 5
+    },
+    "weekplan.session_cost": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "T-ACCEPT",
+      "unit": "J per session",
+      "value": 0.2
+    },
+    "weekplan.skip_w": {
+      "evidence": "expert-opinion",
+      "max": 1,
+      "min": 0,
+      "source": "planning lens",
+      "tunable": true,
+      "tuned_by": "review",
+      "unit": "J per spilled FS/4",
+      "value": 0.3
+    },
+    "weekplan.stability_w": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "[this doc]",
+      "tunable": true,
+      "tuned_by": "T-WEEK",
+      "unit": "J per day",
+      "value": 0.05
+    },
+    "weekplan.tie_band": {
+      "evidence": "expert-opinion",
+      "max": 0.2,
+      "min": 0,
+      "source": "C52 (ties ordered earlier session, fewer sessions, higher J, lexicographic)",
+      "tunable": true,
+      "tuned_by": "T-WEEK",
+      "unit": "J",
+      "value": 0.05
+    }
+  },
+  "params_version": "1.0.2"
+}

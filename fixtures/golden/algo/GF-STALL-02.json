@@ -1,0 +1,48 @@
+{
+    "id": "GF-STALL-02",
+    "module": "stall",
+    "description": "Global trigger: 4 active exercises with 2 stalled -> off (fewer than 5 active); 5 active -> T1",
+    "input": {
+        "module": "stall@1.0.0",
+        "scope_key": "golden:GF-STALL-02",
+        "payload": {
+            "global": [
+                {
+                    "active": [
+                        true,
+                        true,
+                        false,
+                        false
+                    ]
+                },
+                {
+                    "active": [
+                        true,
+                        true,
+                        false,
+                        false,
+                        false
+                    ]
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "global": [
+                {
+                    "triggers": [],
+                    "recommended": false
+                },
+                {
+                    "triggers": [
+                        "T1"
+                    ],
+                    "recommended": true
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "3a1cfa52bca4eceba8d324fefd1412908658d69685e2c343c00d87066d6b7f18"
+    }
+}
