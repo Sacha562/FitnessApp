@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.8.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.9.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51); the frozen
-1.0.0 to 1.7.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.7.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52); the frozen
+1.0.0 to 1.8.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.8.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -271,8 +271,8 @@ rotation, hip tilt) only show a message and never change a load.
 | `ins.A.oaa.fail` | P (P13) | A assisted pair logged (pair 2 or later) | Weaker arm >= 2 reps below target | + 5 lb assistance for the remaining sets, applied at once (Undo) | P13 | |
 | `ins.h90.fail` | A | 90-degree hold pair logged | Either side under 6 s | + 5 lb on the pin for the remaining rounds, applied at once (Undo) | Artifact 06, Todoist A ("lukt het niet, 5 lbs erbij") | |
 | `ins.B.wpu.grind` | P (P12) | B weighted set logged | Fewer reps than the target, or RIR 0 | - 2.5 kg for the remaining sets, applied at once (Undo) | P12 | |
-| `ins.scap.matchLeft` | A | Scapular pull, left side logged | Always | The right side's target = at most the left side's clean reps | Todoist C ("links eerst, rechts matcht links") | |
-| `ins.rotationStop` | A | Any set logged | Torso rotated | "The set (or the clock) stops here" | Artifact 06, Todoist C | |
+| `ins.scap.matchLeft` | A | Scapular pull, left side logged | Always | The right side's target = at most the left side's clean reps; the banner says so ("Right side reduced to 2 reps.", D52) | Todoist C ("links eerst, rechts matcht links") | |
+| `ins.rotationStop.*` | A | Set of `finger`, `hang`, `oaa`, `scap` or `sth` logged | Torso rotated (`scap`: per side) | One message per item (D52): "end the set here"; hang "the clock stops here, log the time up to the rotation"; scap right side "nothing carries over to the next set"; sth "the hold time does not go up after this session" | Artifact 06, Todoist A and C | Before 1.9.0 one rule for every item: "The set (or the clock) stops here". |
 | `ins.plank.hipStop` | A | Plank set logged | Hip tilted | "The set stops here" | Todoist Core and B | |
 
 ### 4.6 Definitions used by the rules

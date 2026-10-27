@@ -102,7 +102,7 @@ class HabitPlannerTest {
         item.rows.all { it.targetHoldS == BigDecimal(20) && it.logMode == LogMode.HOLD_CHIPS && it.restS == 60 } shouldBe true
         item.rows.all { it.addedKg == null } shouldBe true // no plate yet
         item.stopSetOn shouldBe listOf("hip_rotation")
-        item.inSessionRuleIds shouldBe listOf("ins.rotationStop", "ins.plank.hipStop") // the "*" rule and the plank's own
+        item.inSessionRuleIds shouldBe listOf("ins.plank.hipStop")
     }
 
     @Test

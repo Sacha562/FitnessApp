@@ -1503,8 +1503,8 @@ evaluates the definition's `inSessionRules` whose `item` matches (`*` matches ev
 | Action | Effect |
 |---|---|
 | `suggest {field, scope: remainingSets, op: add \| set, value, round?}` + `msg` | Applied **automatically** to the remaining planned rows of this item in this session (D14, C46); the set card shows "Rule: <message> · Undo" (for example "Rule: hold under 6 s, remaining sets pin 35 -> 40 lb · Undo"). Mass values round through `roundLoad`, pins through `roundPin` (LOAD-1). The actual pin/load is what the logger records, and progression rules read the actual values (for example `last(ex.oaa.pin)`). |
-| `notify` | An instruction toast (for example "Torso rotated: the set stops here"). |
-| `capTarget {scope: nextSet(R), field, value}` | Changes the displayed target of the named next row (for example the right side matches the left). |
+| `notify` | An instruction toast (for example "Torso rotated: end the set here."). |
+| `capTarget {scope: nextSet(R), field, value}` | Changes the displayed target of the named next row (for example the right side matches the left); when the target drops, the notice banner says so ("Right side reduced to 2 reps.", D52). |
 
 Behaviour (D14, C46):
 

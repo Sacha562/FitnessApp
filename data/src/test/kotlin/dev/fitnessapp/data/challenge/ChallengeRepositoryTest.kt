@@ -116,7 +116,7 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled", "1.5.0" to "bundled", "1.6.0" to "bundled", "1.7.0" to "bundled", "1.8.0" to "bundled")
+        db.challengeDefinitions().all().map { it.version to it.source } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled", "1.5.0" to "bundled", "1.6.0" to "bundled", "1.7.0" to "bundled", "1.8.0" to "bundled", "1.9.0" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
         f.state.proposalDecisions.size shouldBe 29
@@ -222,10 +222,10 @@ class ChallengeRepositoryTest {
     }
 
     @Test
-    fun `a definition update moves the enrollment to the newest version and refolds across it (D44, D45, D47, D51)`() = blocking {
+    fun `a definition update moves the enrollment to the newest version and refolds across it (D44, D45, D47, D51, D52)`() = blocking {
         val f = start("1.4.0")
         val to = requireNotNull(repo.updateFor(f.enrollment.id))
-        to.version shouldBe "1.8.0"
+        to.version shouldBe "1.9.0"
         val facts = ChallengeFactsProvider(db, EquipmentRepository(db, OutboxWriter(db), TelemetryWriter(db, OutboxWriter(db), ctx, EventRegistry.bundled()), ctx, SyncScheduler({ error("off") }, SyncConfig(), enabled = false)), { CatalogRepository.bundled().doc }, params, { Instant.ofEpochMilli(now) })
         val today = LocalDate.parse("2026-10-20")
         val preview = MigrationPreviews.preview(
@@ -236,15 +236,15 @@ class ChallengeRepositoryTest {
         preview.rules.map { it.kind to it.id } shouldBe listOf("changed" to "safety.elbow.traceFromPain")
         now += 60_000
         val out = repo.migrate(f.enrollment.id, to, preview)
-        out.folded.def.version shouldBe "1.8.0"
+        out.folded.def.version shouldBe "1.9.0"
         val row = db.enrollments().get(f.enrollment.id)!!
-        row.definition_version shouldBe "1.8.0"
-        row.definition_id shouldBe ChallengeLibrary.idOf("oap", "1.8.0").toString()
-        db.challengeEvents().forEnrollment(f.enrollment.id).last().let { it.event_type to it.definition_version } shouldBe (EventTypes.MIGRATED to "1.8.0")
+        row.definition_version shouldBe "1.9.0"
+        row.definition_id shouldBe ChallengeLibrary.idOf("oap", "1.9.0").toString()
+        db.challengeEvents().forEnrollment(f.enrollment.id).last().let { it.event_type to it.definition_version } shouldBe (EventTypes.MIGRATED to "1.9.0")
         repo.updateFor(f.enrollment.id) shouldBe null
         // A fresh repository folds the stored events across both versions to the same state.
         val g = make().folded(f.enrollment.id)
-        g.def.version shouldBe "1.8.0"
+        g.def.version shouldBe "1.9.0"
         g.enrollment.fold_generation shouldBe 0
         StateJson.hash(g.state) shouldBe row.state_hash
     }

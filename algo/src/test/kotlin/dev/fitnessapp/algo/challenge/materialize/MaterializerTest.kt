@@ -58,7 +58,7 @@ class MaterializerTest {
         oaa.rows.first().assistKg shouldBe BigDecimal("24.64")
         oaa.rows.first().oneArmLoadKg shouldBe BigDecimal("46.06")
         oaa.rows.first().logMode shouldBe LogMode.RIR_CHIPS
-        oaa.inSessionRuleIds shouldBe listOf("ins.A.oaa.calibrate", "ins.A.oaa.fail", "ins.rotationStop")
+        oaa.inSessionRuleIds shouldBe listOf("ins.A.oaa.calibrate", "ins.A.oaa.fail", "ins.rotationStop.oaa")
         p.item("wpu").rows.map { it.addedKg } shouldBe List(4) { BigDecimal("22.5") }
         p.item("wpu").rows.first().systemLoadKg shouldBe BigDecimal("93.20")
         p.item("cal").rows.map { it.logMode } shouldBe listOf(LogMode.ECC_SECONDS, LogMode.ECC_SECONDS)

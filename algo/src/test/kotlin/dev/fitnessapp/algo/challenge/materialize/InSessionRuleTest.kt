@@ -88,6 +88,20 @@ class InSessionRuleTest {
     }
 
     @Test
+    fun `a scap rotation on the left caps the right side, on the right it carries over to nothing (D52)`() {
+        val s = normal()
+        val scap = live(s, "C", "scap")
+        val left = log(scap, s, "C", row("L", 1, reps = 2, rir = "2", flags = listOf("torso_rotation")))
+        left.applications.map { Triple(it.ruleId, it.kind, it.msg ?: it.to) } shouldBe listOf(
+            Triple("ins.rotationStop.scapL", "notify", "rotation_stop_set"),
+            Triple("ins.scap.matchLeft", "capTarget", "2"),
+        )
+        val right = log(left.item, s, "C", row("R", 1, reps = 1, rir = "2", flags = listOf("torso_rotation")))
+        right.applications.map { it.ruleId to it.msg } shouldBe listOf("ins.rotationStop.scapR" to "rotation_stop_scap_right")
+        right.item.rows.drop(2) shouldBe scap.rows.drop(2)
+    }
+
+    @Test
     fun `B grind takes 2_5 kg off the remaining sets`() {
         val s = normal()
         val wpu = live(s, "B", "wpu")
@@ -105,6 +119,9 @@ class InSessionRuleTest {
             .map { it.ruleId to it.msg } shouldBe listOf("ins.wpu.gripStop" to "grip_slip_stop")
         val hang = live(s, "C", "hang")
         log(hang, s, "C", row("L", 1, hold = "8", reserve = "2", flags = listOf("torso_rotation"))).applications
-            .map { it.ruleId } shouldBe listOf("ins.rotationStop")
+            .map { it.ruleId to it.msg } shouldBe listOf("ins.rotationStop.hang" to "rotation_stop_hang")
+        val sth = live(s, "A", "sth")
+        log(sth, s, "A", row("L", 1, hold = "5", reserve = "2", flags = listOf("torso_rotation"))).applications
+            .map { it.ruleId to it.msg } shouldBe listOf("ins.rotationStop.sth" to "rotation_stop_sth")
     }
 }

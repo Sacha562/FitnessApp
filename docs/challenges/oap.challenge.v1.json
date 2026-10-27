@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -827,10 +827,30 @@
       "if": "set.side == 'L'",
       "then": [ { "capTarget": { "scope": "nextSet(R)", "field": "targetReps", "value": "min(set.targetReps, set.reps)" } } ],
       "source": "Todoist C ('Links eerst, rechts matcht links')" },
-    { "id": "ins.rotationStop", "tag": "A", "item": "*", "on": "set.logged",
+    { "id": "ins.rotationStop.finger", "tag": "A", "item": "finger", "on": "set.logged",
       "if": "set.torso_rotation",
-      "then": [ { "notify": "info", "msg": "rotation_stop" } ],
-      "source": "artifact section 06 / Todoist C" },
+      "then": [ { "notify": "info", "msg": "rotation_stop_set" } ],
+      "source": "artifact section 06 / Todoist C; D52: one message per exercise" },
+    { "id": "ins.rotationStop.hang", "tag": "A", "item": "hang", "on": "set.logged",
+      "if": "set.torso_rotation",
+      "then": [ { "notify": "info", "msg": "rotation_stop_hang" } ],
+      "source": "artifact section 06 / Todoist C; D52: one message per exercise" },
+    { "id": "ins.rotationStop.oaa", "tag": "A", "item": "oaa", "on": "set.logged",
+      "if": "set.torso_rotation",
+      "then": [ { "notify": "info", "msg": "rotation_stop_set" } ],
+      "source": "artifact section 06 / Todoist C; D52: one message per exercise" },
+    { "id": "ins.rotationStop.scapL", "tag": "A", "item": "scap", "on": "set.logged",
+      "if": "set.torso_rotation && set.side == 'L'",
+      "then": [ { "notify": "info", "msg": "rotation_stop_set" } ],
+      "source": "artifact section 06 / Todoist C; D52: the app adds the right side's capped target (ins.scap.matchLeft)" },
+    { "id": "ins.rotationStop.scapR", "tag": "A", "item": "scap", "on": "set.logged",
+      "if": "set.torso_rotation && set.side == 'R'",
+      "then": [ { "notify": "info", "msg": "rotation_stop_scap_right" } ],
+      "source": "artifact section 06 / Todoist C; D52: one message per exercise" },
+    { "id": "ins.rotationStop.sth", "tag": "A", "item": "sth", "on": "set.logged",
+      "if": "set.torso_rotation",
+      "then": [ { "notify": "info", "msg": "rotation_stop_sth" } ],
+      "source": "artifact section 06 / Todoist A; D52: one message per exercise (prog.A.sth needs every hold clean)" },
     { "id": "ins.plank.hipStop", "tag": "A", "item": "plank", "on": "set.logged",
       "if": "set.hip_rotation",
       "then": [ { "notify": "info", "msg": "hip_stop" } ],
@@ -861,7 +881,10 @@
     "oaa_fail_up": { "en": "Two or more reps short: +5 lb help for the remaining sets." },
     "h90_fail_up": { "en": "Hold under 6 s: +5 lb on the pin for the remaining rounds." },
     "b_grind_down": { "en": "That set was a grind: -2.5 kg for the remaining sets." },
-    "rotation_stop": { "en": "Torso rotated: the set (or the clock) stops here." },
+    "rotation_stop_set": { "en": "Torso rotated: end the set here." },
+    "rotation_stop_scap_right": { "en": "Torso rotated: end the set here. Nothing carries over to the next set." },
+    "rotation_stop_hang": { "en": "Torso rotated: the clock stops here. Log the time up to the rotation." },
+    "rotation_stop_sth": { "en": "Torso rotated: end the hold here. The hold time does not go up after this session." },
     "hip_stop": { "en": "Hip tilted: the set stops here." }
   },
   "onboarding": {
@@ -899,6 +922,7 @@
     "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."},
     "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."},
     "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."},
-    "1.7.0": {"varMap": {}, "defaults": {}, "notes": "D51: the daily two-arm hang is skipped on every gym day (A, B, C and the test day), not only on A. No state var changes."}
+    "1.7.0": {"varMap": {}, "defaults": {}, "notes": "D51: the daily two-arm hang is skipped on every gym day (A, B, C and the test day), not only on A. No state var changes."},
+    "1.8.0": {"varMap": {}, "defaults": {}, "notes": "D52: the torso-rotation notice says what it means for each exercise (one in-session rule per item instead of one for every item). No state var changes."}
   }
 }
