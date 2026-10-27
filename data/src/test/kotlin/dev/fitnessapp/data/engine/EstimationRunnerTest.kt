@@ -43,7 +43,7 @@ class EstimationRunnerTest {
     private lateinit var runner: EstimationRunner
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val user = "11111111-1111-4111-8111-111111111111"
-    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.1.json"))
+    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
     private val catalog = CatalogRepository.bundled()
     private val wpu = catalog.idOf(catalog.bySlug("chinup_weighted")!!)
     private var now = Instant.parse("2026-10-20T20:00:00Z").toEpochMilli()
@@ -58,7 +58,7 @@ class EstimationRunnerTest {
         val ctx = WriteContext(DeviceIdentity(app), "0.3.0-test", Clock { Instant.ofEpochMilli(now) }, { zone }, UuidV7Generator({ now }), { user })
         val model = Catalog(catalog.doc, Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json")))
         val scheduler = SyncScheduler({ error("sync disabled in this test") }, SyncConfig(), enabled = false)
-        runner = EstimationRunner(db, OutboxWriter(db), ctx, scheduler, catalog, { model }, params, "1.0.1")
+        runner = EstimationRunner(db, OutboxWriter(db), ctx, scheduler, catalog, { model }, params, "1.0.2")
     }
 
     @After

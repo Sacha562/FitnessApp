@@ -1606,7 +1606,8 @@
         "enrollment_mode",
         "params_hash",
         "engine_version",
-        "catalog_version"
+        "catalog_version",
+        "source_session_id"
       ],
       "introduced_in": "1.0.0",
       "description": "Emitted by UX 20.2",

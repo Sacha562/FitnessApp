@@ -43,7 +43,9 @@ import dev.fitnessapp.app.ui.live.PainSheet
 import dev.fitnessapp.app.ui.live.painRegionLabel
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.telemetry.EventDraft
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
 import java.time.ZoneId
@@ -55,8 +57,8 @@ private val PAIN_CHIPS = listOf("none" to "None", "elbow" to "Elbow", "shoulder"
 private val PAIN_PRESELECT = mapOf("shoulder" to "shoulder", "wrist" to "wrist", "knee" to "knee", "other" to "other")
 
 /**
- * Session summary in M1a (UX 12), as Bento tiles (D31): header, duration and set tiles, what was logged, and the optional quick check (sRPE 0-10, joint pain,
- * note). "New best" and "Next time" need `ui.progress` and `rx`, which arrive with later milestones.
+ * Session summary (UX 12), as Bento tiles (D31): header, duration and set tiles, the challenge's and RX-1's "Next time" (M3.4), what
+ * was logged, and the optional quick check (sRPE 0-10, joint pain, note). "New best" needs `ui.progress`, which arrives later.
  */
 @Composable
 fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
@@ -70,12 +72,19 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     val painReported = remember { mutableStateListOf<String>() }
     var note by rememberSaveable { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
+    // "Next time" (UX 12.3): null while the post-session pipeline runs (12.4).
+    var next by remember(sessionId) { mutableStateOf<List<NextLine>?>(null) }
 
     LaunchedEffect(sessionId) {
+        val t0 = System.currentTimeMillis()
+        next = withContext(Dispatchers.Default) { runCatching { nextTimeLines(c, sessionId) }.getOrDefault(emptyList()) }
         c.sessionRepository.event(
             EventDraft(
                 type = "session_summary_shown", sessionId = sessionId, screen = "session.summary",
-                payload = mapOf("prs" to kotlinx.serialization.json.JsonArray(emptyList()), "next_changes_count" to JsonPrimitive(0), "pipeline_ms" to JsonPrimitive(0)),
+                payload = mapOf(
+                    "prs" to kotlinx.serialization.json.JsonArray(emptyList()), "next_changes_count" to JsonPrimitive(next?.size ?: 0),
+                    "pipeline_ms" to JsonPrimitive(System.currentTimeMillis() - t0),
+                ),
             ),
         )
         // UX 20.5: the session-effort prompt of the quick check (the only post-session prompt shown in M1).
@@ -129,6 +138,7 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                 }
 
                 if (s?.enrollment_id != null) ChallengeSummaryTile(c, sessionId)
+                next?.takeIf { it.isNotEmpty() }?.let { NextTimeTile(c, sessionId, it) }
 
                 val done = exercises.filter { it.deleted_at == null }.sortedWith(compareBy({ it.position }, { it.id }))
                 if (done.isNotEmpty()) {

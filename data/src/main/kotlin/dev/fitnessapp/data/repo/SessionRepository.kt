@@ -50,6 +50,10 @@ data class PlannedValues(
     /** The planned lowering of an eccentric-only set (UX 11.7.5) and the planned fingers of finger assistance. */
     val eccS: Double? = null,
     val assistOrdinal: Int? = null,
+    /** The target RIR and rep range of an engine prescription (RX-1), which RIRCAL-1 and the review read back. */
+    val rir: Double? = null,
+    val repMin: Int? = null,
+    val repMax: Int? = null,
 )
 
 /** Everything one RIR / felt / Done tap stores (UX 11.8). [load] is the LOAD-1 point of the logged load. */
@@ -124,8 +128,12 @@ class SessionRepository(
 
     // ------------------------------------------------------------------------------------------ lifecycle
 
-    /** Starts an empty general session (D22) with the BW-1 snapshot and the pinned params hash (A8.5). */
-    suspend fun start(params: ParamView): String {
+    /**
+     * Starts a general session (D22) with the BW-1 snapshot and the pinned params hash (A8.5): empty, or a repeat of the
+     * finished general session [repeatOf] (D49), whose exercises, order, load modes, sides, equipment and planned set
+     * counts are copied. Loads and reps come from RX-1 when the live session asks for them, not from the copy.
+     */
+    suspend fun start(params: ParamView, repeatOf: String? = null): String {
         val uid = ctx.requireUser()
         val now = ctx.nowMs()
         val zone = ctx.zone()
@@ -137,10 +145,13 @@ class SessionRepository(
             profile?.bodyweight_fallback_kg?.let { Scaled.toDouble(it, 2) }, params,
         )
         val gym = equipment.defaultGym()
+        val source = repeatOf?.let { db.sessions().get(it) }?.takeIf { it.status == "finished" && it.enrollment_id == null && it.deleted_at == null }
+        val copied = source?.let { src -> db.sessionExercises().bySession(src.id).filter { it.status != "removed" } }.orEmpty()
+        val templateSource = if (source != null) "repeat" else "empty"
         db.withTransaction {
             val s = WorkoutSessionEntity(
                 id = id, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
-                app_version = ctx.appVersion, kind = "gym", status = "in_progress", template_source = "empty",
+                app_version = ctx.appVersion, kind = "gym", status = "in_progress", template_source = templateSource,
                 local_date = date.toString(), timezone = zone.id, iso_week = Week.isoWeek(date), gym_id = gym?.id,
                 started_at = now, bodyweight_kg = snap.valueKg?.let { Scaled.fromDouble(it, 2) },
                 bodyweight_source = snap.source.code, bodyweight_stale = snap.stale,
@@ -156,11 +167,23 @@ class SessionRepository(
             )
             db.blocks().upsert(block)
             outbox.enqueue("session_blocks", block.id, now)
+            copied.forEachIndexed { i, from ->
+                val row = SessionExerciseEntity(
+                    id = ctx.ids.next(), user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
+                    app_version = ctx.appVersion, session_id = id, block_id = block.id, exercise_id = from.exercise_id,
+                    position = (i + 1L) * POSITION_STEP, origin = "plan", load_mode = from.load_mode, side_mode = from.side_mode,
+                    side_order = from.side_order, equipment_id = from.equipment_id, progression_mode = "none", rep_scheme = from.rep_scheme,
+                    planned_sets = from.planned_sets ?: DEFAULT_SETS,
+                )
+                db.sessionExercises().upsert(row)
+                outbox.enqueue("session_exercises", row.id, now)
+            }
             telemetry.write(
                 EventDraft(
                     type = "session_started", sessionId = id, entityType = "session", entityId = id,
                     payload = mapOf(
-                        "kind" to JsonPrimitive("gym"), "template_source" to JsonPrimitive("empty"),
+                        "kind" to JsonPrimitive("gym"), "template_source" to JsonPrimitive(templateSource),
+                        "source_session_id" to (source?.id?.let { JsonPrimitive(it) } ?: JsonNull),
                         "families" to JsonArray(emptyList()), "started_from" to JsonPrimitive("today"),
                         "budget_min" to (profile?.default_session_min?.let { JsonPrimitive(it) } ?: JsonNull),
                         "budget_source" to JsonPrimitive("default"),
@@ -173,6 +196,12 @@ class SessionRepository(
         scheduler.request()
         return id
     }
+
+    /** "Repeat" (D49): the finished general sessions with at least one exercise, newest first. */
+    suspend fun repeatable(limit: Int): List<WorkoutSessionEntity> =
+        db.sessions().finishedChronological().asReversed()
+            .filter { it.enrollment_id == null && it.kind == "gym" && db.sessionExercises().bySession(it.id).any { e -> e.status != "removed" } }
+            .take(limit)
 
     /** Finishes the session; pending exercises become `not_done` (UX 11.14). */
     suspend fun finish(sessionId: String, endReason: String?) {
@@ -461,6 +490,8 @@ class SessionRepository(
                 exercise_id = cmd.exerciseId, set_index = cmd.setIndex, side = cmd.side, set_kind = cmd.setKind,
                 round_index = cmd.roundIndex, attempt_index = cmd.attemptIndex,
                 planned_reps = cmd.planned?.reps,
+                planned_rep_min = cmd.planned?.repMin, planned_rep_max = cmd.planned?.repMax,
+                planned_rir = cmd.planned?.rir?.let { Scaled.fromDouble(it, 1) },
                 planned_input_value = cmd.planned?.inputValue?.let { Scaled.fromDouble(it, 2) },
                 planned_input_unit = cmd.planned?.inputValue?.let { cmd.planned.inputUnit },
                 planned_added_kg = cmd.planned?.addedKg?.let { Scaled.fromDouble(it, 2) },

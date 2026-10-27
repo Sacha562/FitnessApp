@@ -1546,6 +1546,11 @@ not an AUTO-1 suggestion and does not count toward the C16 limit. SSE-1 cold-sta
 session end. For a `delegate:rx` challenge item, the definition's `bootstrap` (CHALLENGE_ENGINE 2.4.7)
 selects this probe.
 
+M3.4 build note: until AUTO-1 exists (M3.5), the follow-up's estimate is SSE-1's own update with the probe as the only
+observation (from the state predicted to the session start, or a cold start without one), which on the first set is
+the same Kalman step as `delta_ex` from 0 (B13.2); the probe's fatigue is carried into sets 2..S as `F_1`. A
+unilateral exercise follows up once both sides of set 1 are logged.
+
 ### B9.9 Deload, re-entry, pain follow-up
 
 | Transform | Source | Effect in RX-1 |

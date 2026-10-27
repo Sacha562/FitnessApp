@@ -502,3 +502,26 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   barbell exercises in DOUBLE (a 5 kg step at 125 kg on the leg press is 2.2 reps), as C15 intends; GF-RX-03 to 05 test
   MODEL itself, and GF-RX-03 needs C3.3's unrounded `M`. GF-WU-01's rests are 45 and 90 s (the last warm-up set takes
   the rest to work).
+- 2026-10-27 — M3.4 built (D49): the live session shows RX-1's targets. `:algo` `pipeline/Prescribing` turns the stored
+  facts of one session exercise into RX-1's input (B9.2: the SSE-1 state predicted to the session start, RCM-1's `k`,
+  RIRCAL-1's state for `q_true`, the earlier exposures newest first with the prescriptions they were logged against, the
+  loadables in `w_sys`, the transfer prior) and runs RX-1 and WARMUP-1; `:data` `PrescriptionRunner` stores the
+  `rx.prescription` snapshot (scope `session_exercise:<id>`, content-derived id, the warm-up sets in its outputs) and pins
+  it on the session exercise (`recommendation_id`, `progression_mode`, the planned columns). The set card prefills the
+  target as UI-04's second source with "Target ... · aim: N in reserve" and (i) for the Why sheet (summary, numbers,
+  module and params, evidence label, Copy trace); generated warm-up sets come first with Done; a probe asks for a weight
+  and, once logged, a follow-up prescription supersedes the first (B9.8 build note); the B row and the dips
+  (`delegate:rx`) take the item's reps and RIR as their scheme (D49); set rows now store `planned_rir`,
+  `planned_rep_min/max` and `planned_effective_load_kg`. Summary "Next time" runs the L8 update and RX-1's preview for the
+  next day (not stored) and lists changes with a Why. Today gains "Repeat" (D49): the finished general sessions newest
+  first; the copy keeps exercises, order, load modes, sides, equipment and planned set counts (`template_source` `repeat`,
+  `session_started.source_session_id`). The app and `:sim` run params 1.0.2. Migration 036 registers params 1.0.2,
+  `rest@1.1.0`, the `repeat` CHECK value and the payload key; it is shown to the user and applied before the M3.4 APK.
+  Found and fixed: the push order of M3.2 put `recommendations` last, against DATA_MODEL 11.3; a session exercise that
+  points at its prescription needs it pushed first (FK), so `recommendations` now follows `params_snapshots`. Build notes
+  (defaults, no user decision needed): scheme preferences are empty until the Preferences screen (M3.5), so schemes are
+  the engine defaults or the item's; S is the session exercise's planned set count; "used DOUBLE this mesocycle" reads
+  as "the last prescription was DOUBLE" until mesocycles exist (M4); a unilateral exercise keeps each side's own targets
+  (B9.13 `independent`); timed holds and eccentric-only items keep "last time" until HOLD-1's prescription is wired
+  (M3.5); RULE items keep their plan rows and no shadow snapshot is stored yet; "Next time" shows at most six lines
+  without "Show all".

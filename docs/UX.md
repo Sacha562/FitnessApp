@@ -4109,7 +4109,7 @@ sent as null.
 
 | event_type | Emitted when | Entity | Payload |
 |---|---|---|---|
-| `session_started` | Start tapped (any template) and the session row is created | session | `kind` (gym, home, test), `template_source` (E9), `challenge_slot`?, `families[]`, `budget_min`? (null = no limit), `budget_source` (calendar, chip, default), `started_from` (today_primary, today_alt, template_picker, week_day, test_wizard, habit_row, habit_notification), `plan_recommendation_id`?, `enrollment_mode`?, `params_hash`, `engine_version`, `catalog_version` |
+| `session_started` | Start tapped (any template) and the session row is created | session | `kind` (gym, home, test), `template_source` (E9), `challenge_slot`?, `families[]`, `budget_min`? (null = no limit), `budget_source` (calendar, chip, default), `started_from` (today_primary, today_alt, template_picker, week_day, test_wizard, habit_row, habit_notification), `plan_recommendation_id`?, `enrollment_mode`?, `params_hash`, `engine_version`, `catalog_version`, `source_session_id`? (the session a Repeat copied, D49) |
 | `session_minimised` | chevron or system back in Live Session | session | `via` (chevron, back) |
 | `session_resumed` | return to Live Session | session | `via` (mini_bar, today_card, notification, relaunch) |
 | `session_restored` | app relaunched with a session in progress (3.4) | session | `rest_state` (none, running, overtime), `ms_since_last_event` |

@@ -77,7 +77,7 @@ class AppContainer(private val context: Context) {
     }
     val telemetry: TelemetryWriter by lazy { TelemetryWriter(db, outbox, writeContext, EventRegistry.bundled()) }
 
-    /** The bundled params 1.0.1 (A8.4); server params and user overrides arrive with later milestones. */
+    /** The bundled params 1.0.2 (A8.4); server params and user overrides arrive with later milestones. */
     val params: ParamView by lazy {
         ParamView.fromParamsFile(resource("/fitness/params/default-params-$PARAMS_VERSION.json"))
     }
@@ -132,6 +132,10 @@ class AppContainer(private val context: Context) {
     /** The L8 estimation layer (ALGORITHMS.md A12, M3.2): estimator caches and snapshots, replayed from the facts. */
     val estimation: dev.fitnessapp.data.engine.EstimationRunner by lazy {
         dev.fitnessapp.data.engine.EstimationRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, params, PARAMS_VERSION)
+    }
+    /** L6 prescriptions for the exercises the user picks (D49, M3.4): targets, probe follow-up, warm-up sets. */
+    val prescriptions: dev.fitnessapp.data.engine.PrescriptionRunner by lazy {
+        dev.fitnessapp.data.engine.PrescriptionRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, equipment, params, PARAMS_VERSION)
     }
     /** The engine-logged estimates for display (the exercise detail's e1RM history). */
     val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }
@@ -238,7 +242,7 @@ class AppContainer(private val context: Context) {
 
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
-        const val PARAMS_VERSION = "1.0.1"
+        const val PARAMS_VERSION = "1.0.2"
 
         /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
         const val CHANGEOVER_MIN = 5

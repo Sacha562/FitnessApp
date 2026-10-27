@@ -51,7 +51,7 @@ class HistoryRepositoryTest {
     private lateinit var equipment: EquipmentRepository
     private val catalog = CatalogRepository.bundled()
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.1.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.2.json")).readText(Charsets.UTF_8),
     )
     private val uid = "11111111-1111-4111-8111-111111111111"
     private var now = 1_791_482_280_000L

@@ -76,6 +76,7 @@ class SyncTable<E : SyncedRow>(
  */
 fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("params_snapshots", true, false, db.paramsSnapshots(), ParamsSnapshotEntity.serializer()),
+    SyncTable("recommendations", true, false, db.recommendations(), RecommendationEntity.serializer()),
     SyncTable("gyms", false, true, db.gyms(), GymEntity.serializer()),
     SyncTable("gym_equipment", false, true, db.gymEquipment(), GymEquipmentEntity.serializer()),
     SyncTable("profiles", false, true, db.profiles(), ProfileEntity.serializer()),
@@ -92,15 +93,14 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("challenge_rule_events", true, true, db.ruleEvents(), ChallengeRuleEventEntity.serializer()),
     SyncTable("session_events", true, false, db.events(), SessionEventEntity.serializer()),
     SyncTable("exports", true, true, db.exports(), ExportEntity.serializer()),
-    SyncTable("recommendations", true, false, db.recommendations(), RecommendationEntity.serializer()),
     SyncTable("exercise_model_state", false, false, db.modelStates(), ExerciseModelStateEntity.serializer()),
 )
 
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
-    "params_snapshots", "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "challenge_enrollments", "workout_sessions", "session_blocks",
-    "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events", "challenge_rule_events",
-    "session_events", "exports", "recommendations", "exercise_model_state",
+    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "challenge_enrollments", "workout_sessions",
+    "session_blocks", "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events",
+    "challenge_rule_events", "session_events", "exports", "exercise_model_state",
 )
 
 private val APPEND_TABLES = setOf("params_snapshots", "challenge_events", "challenge_rule_events", "session_events", "exports", "recommendations")

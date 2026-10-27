@@ -31,7 +31,7 @@ import java.util.UUID
  */
 class GateRowsGoldenTest {
     private fun resource(path: String) = requireNotNull(javaClass.getResource("/fitness/$path")).readText(Charsets.UTF_8)
-    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.1.json"))
+    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
     private val def by lazy {
         Cds.load(
             resource("challenges/oap.challenge.v1.json"),

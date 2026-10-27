@@ -52,6 +52,7 @@ import dev.fitnessapp.app.ui.common.Banner
 import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.Tile
@@ -73,7 +74,7 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 /**
- * Today in M1 (D22): start an empty session or resume the open one, this week's strip, the bodyweight tile with a
+ * Today (D22, D49): start an empty session, repeat a past one, or resume the open one, this week's strip, the bodyweight tile with a
  * weigh-in prompt when stale, the status banner and recent sessions, laid out as Bento tiles (D31). The
  * recommendation card arrives with M4.
  */
@@ -93,6 +94,7 @@ fun TodayRoute(
     val sync by c.sync.state.collectAsState()
     var weighIn by remember { mutableStateOf(false) }
     var starting by remember { mutableStateOf(false) }
+    var repeat by remember { mutableStateOf(false) }
     val zone = ZoneId.of("Europe/Amsterdam")
     val today = LocalDate.now(zone)
 
@@ -153,16 +155,33 @@ fun TodayRoute(
                     onOpenSession(a.id, true)
                 }, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             } else {
-                PrimaryButton("Start session", onClick = {
-                    if (starting) return@PrimaryButton
-                    starting = true
-                    scope.launch {
-                        val id = c.sessionRepository.start(c.params)
-                        SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
-                        starting = false
-                        onOpenSession(id, false)
-                    }
-                }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PrimaryButton("Start session", onClick = {
+                        if (starting) return@PrimaryButton
+                        starting = true
+                        scope.launch {
+                            val id = c.sessionRepository.start(c.params)
+                            SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
+                            starting = false
+                            onOpenSession(id, false)
+                        }
+                    }, enabled = !starting, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow)
+                    // D49: start as a copy of a past general session; RX-1 sets the loads.
+                    TonalButton("Repeat", { repeat = true }, enabled = !starting, height = 58.dp)
+                }
+            }
+        }
+    }
+
+    if (repeat) RepeatSheet(c, onDismiss = { repeat = false }) { sourceId ->
+        repeat = false
+        if (!starting) {
+            starting = true
+            scope.launch {
+                val id = c.sessionRepository.start(c.params, repeatOf = sourceId)
+                SessionService.start(context)
+                starting = false
+                onOpenSession(id, false)
             }
         }
     }

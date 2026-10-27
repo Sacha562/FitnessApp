@@ -55,7 +55,7 @@ class ChallengeRepositoryTest {
     private lateinit var ctx: WriteContext
     private lateinit var make: () -> ChallengeRepository
     private val zone = ZoneId.of("Europe/Amsterdam")
-    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.1.json"))
+    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
 
     /** Tuesday 2026-10-20 12:00 in Amsterdam. */
     private var now = Instant.parse("2026-10-20T10:00:00Z").toEpochMilli()

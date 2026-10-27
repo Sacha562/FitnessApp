@@ -16,7 +16,7 @@ import java.time.Instant
 /** ALGORITHMS_PLANNING 19.7 tests and UX GF-UX-06, GF-UX-07, GF-UX-15. */
 class UiPrefillTest {
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.1.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.2.json")).readText(Charsets.UTF_8),
     )
     private val pull = ExerciseLoadAttrs(1.0, 0.0, Laterality.BILATERAL, listOf(LoadMode.BODYWEIGHT_PLUS_EXTERNAL))
     private val beltScheme = LoadScheme.Belt(

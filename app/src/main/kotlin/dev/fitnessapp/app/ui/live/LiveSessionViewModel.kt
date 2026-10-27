@@ -15,6 +15,7 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.notify.SessionNotificationText
 import dev.fitnessapp.app.session.SessionService
+import dev.fitnessapp.app.ui.common.WhyContent
 import dev.fitnessapp.app.uidet.ChipContext
 import dev.fitnessapp.app.uidet.ChipSet
 import dev.fitnessapp.app.uidet.Deviation
@@ -31,6 +32,10 @@ import dev.fitnessapp.app.uidet.SnapResult
 import dev.fitnessapp.app.uidet.UiPrefill
 import dev.fitnessapp.app.uidet.UiReasonChips
 import dev.fitnessapp.data.db.Scaled
+import dev.fitnessapp.data.engine.Prescription
+import dev.fitnessapp.data.engine.RxSlot
+import dev.fitnessapp.data.engine.RxTarget
+import dev.fitnessapp.data.engine.WarmupTarget
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
 import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
@@ -54,6 +59,8 @@ data class ExerciseItem(
     val sets: List<SetLogEntity>,
     /** A challenge warm-up item (the row, face pulls, ...): its warm-up sets are its work. */
     val warmupItem: Boolean = false,
+    /** The engine prescription pinned on the item (RX-1, M3.4); null for items RX-1 does not prescribe. */
+    val rx: Prescription? = null,
 ) {
     val working: List<SetLogEntity> get() = if (warmupItem) sets else sets.filter { it.set_kind != "warmup" }
     val unilateral: Boolean get() = se.side_mode != "bilateral"
@@ -61,6 +68,10 @@ data class ExerciseItem(
     val workingDone: Int get() = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
     val planned: Int get() = se.planned_sets ?: 0
     val open: Boolean get() = se.status in setOf("pending", "active", "deferred")
+
+    /** WARMUP-1's generated warm-up sets still to do: only before the first working set (UX 11.5). */
+    val generatedWarmupsLeft: Int
+        get() = if (warmupItem || rx == null || working.isNotEmpty()) 0 else maxOf(0, rx.warmup.size - sets.count { it.set_kind == "warmup" })
 }
 
 enum class HoldPhase { READY, LEAD_IN, HOLDING, RESULT }
@@ -108,6 +119,13 @@ data class Card(
     val attempt: AttemptInfo? = null,
     /** The `gym_equipment` row of a kg or lb machine stack, which "Stack setup" edits (D43); null for other equipment. */
     val stackRowId: String? = null,
+    /** The engine's planned set for this slot (RX-1) and the generated warm-up set (WARMUP-1), when there is one. */
+    val rxTarget: RxTarget? = null,
+    val warmupTarget: WarmupTarget? = null,
+    /** The working set number on this side (1-based), the index RX-1 and "last time" use. */
+    val workIndex: Int = 1,
+    /** A calibration probe without a load (B9.8): the reps "a weight you could lift about N times" refers to. */
+    val probePickReps: Int? = null,
 ) {
     val isHold: Boolean get() = item.ex.measure == "duration"
 
@@ -179,6 +197,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** The live plan of a challenge session (CHALLENGE_ENGINE 6.1, 6.10); null for a free session. */
     @Volatile private var challenge: dev.fitnessapp.data.challenge.ChallengeLive? = null
 
+    /** Decoded prescriptions by recommendation id, and the items whose prescription was already requested. */
+    private val rxCache = java.util.concurrent.ConcurrentHashMap<String, Prescription>()
+    private val rxRequested: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
+
+    /** The warm-up switch of an item as the user set it (UX 11.5); absent = the default (generated warm-ups first). */
+    private val warmupOverride = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
     init {
         viewModelScope.launch {
             combine(
@@ -204,6 +229,33 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     private fun planItem(item: ExerciseItem) = challenge?.item(item.se.challenge_item_key)
+
+    /**
+     * RX-1's slot for an item (D49): a general exercise, or a challenge item with `progression: delegate:rx` (the B row,
+     * the dips) whose scheme, rest and deload come from the plan. Other challenge items keep their RULE rows.
+     */
+    private fun rxSlot(item: ExerciseItem): RxSlot? {
+        val key = item.se.challenge_item_key ?: return RxSlot(item.se.id)
+        val live = challenge ?: return null
+        val p = live.item(key)?.plan ?: return null
+        if (p.progressionMode != "delegate:rx") return null
+        val row = p.rows.firstOrNull { it.setKind != "warmup" } ?: return null
+        val lo = row.targetReps ?: return null
+        return RxSlot(
+            item.se.id, dev.fitnessapp.algo.prescription.rx.ItemScheme(lo, row.targetRepsMax ?: lo, p.rirTarget?.toDouble(), null),
+            deload = live.plan.mode == "deload", restS = row.restS?.toDouble(),
+        )
+    }
+
+    /** Asks the runner once per item for the prescriptions still missing; Room's update rebuilds the cards. */
+    private fun requestPrescriptions(items: List<ExerciseItem>) {
+        for (item in items) {
+            if (!item.open || item.se.recommendation_id != null || !c.prescriptions.eligible(item.ex)) continue
+            val slot = rxSlot(item) ?: continue
+            if (!rxRequested.add(item.se.id)) continue
+            viewModelScope.launch { runCatching { c.prescriptions.ensure(slot) } }
+        }
+    }
 
     /** The planned row of a challenge item for the slot being logged. */
     private fun plannedRow(item: ExerciseItem, setIndex: Int, side: String, warmup: Boolean): dev.fitnessapp.algo.challenge.materialize.PlannedRow? {
@@ -232,9 +284,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 ExerciseItem(
                     e, ex, snap.sets.filter { it.session_exercise_id == e.id }.sortedBy { it.completed_at },
                     warmupItem = challenge?.item(e.challenge_item_key)?.plan?.role == "warmup",
+                    rx = e.recommendation_id?.let { id -> rxCache[id] ?: runCatching { c.prescriptions.get(id) }.getOrNull()?.also { rxCache[id] = it } },
                 )
             }
         }
+        if (snap.s?.status == "in_progress") requestPrescriptions(items)
         val focus = focusOverride?.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
             ?: items.firstOrNull { it.open }?.se?.id
         if (focus != focusOverride) focusOverride = null
@@ -263,10 +317,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** Keeps the draft while the slot is the same; otherwise builds a fresh prefilled card. */
     private suspend fun buildCard(item: ExerciseItem, allSets: List<SetLogEntity>, old: Card?): Card {
         val mode = LoadMode.of(item.se.load_mode)
-        val warmup = old?.takeIf { it.item.se.id == item.se.id }?.warmup ?: (planItem(item)?.plan?.role == "warmup")
+        val warmup = warmupOverride[item.se.id] ?: (planItem(item)?.plan?.role == "warmup" || item.generatedWarmupsLeft > 0)
         val (setIndex, side) = nextSlot(item, warmup)
         val fresh = buildFresh(item, mode, setIndex, side, warmup, allSets)
-        val keep = old != null && old.slotKey == fresh.slotKey && !equipmentChanged
+        // An untouched card takes a target that arrived after it was shown (the prescription or the probe's follow-up).
+        val keep = old != null && old.slotKey == fresh.slotKey && !equipmentChanged &&
+            (old.taps > 0 || (old.target == fresh.target && old.rxTarget == fresh.rxTarget && old.warmupTarget == fresh.warmupTarget))
         equipmentChanged = false
         return if (keep) old!!.copy(item = item) else fresh
     }
@@ -286,17 +342,27 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val todayPrev = todayWorking.maxByOrNull { it.set_index }?.let { valuesOf(it) }
         val default = SetValues(mode, defaultNative(points, mode), if (item.ex.measure == "duration") null else DEFAULT_REPS, null)
         val leftReps = if (side == "R") item.sets.firstOrNull { it.set_index == setIndex && it.side == "L" }?.reps else null
+        // The working set number on this side: RX-1's set index and "last time"'s renumbered index (warm-ups excluded).
+        val workIndex = item.working.count { it.side == side } + 1
+        val rxTarget = if (warmup) null else item.rx?.target(workIndex, side)
+        val warmupTarget = if (warmup && warmupOverride[item.se.id] == null) {
+            item.rx?.warmup?.getOrNull(item.sets.count { it.set_kind == "warmup" && it.side == side })
+        } else null
+        val engine = (rxTarget?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) }
+            ?: warmupTarget?.let { t -> SetValues(mode, nativeAt(points, mode, t.wSys), t.reps, null) })
         val pf = UiPrefill.prefill(
-            SetSlot(setIndex, side, mode),
+            SetSlot(if (warmup) setIndex else workIndex, side, mode),
             PrefillContext(
+                target = engine,
                 history = if (warmup) emptyList() else history, todayPrevious = todayPrev, default = default,
                 // Right side reps never prefill above the left side's (UX 11.7.2); the program rule arrives with M2.
                 sideRule = side == "R", leftLoggedReps = leftReps,
             ),
         ).value
-        // A challenge item's targets come from its plan (CHALLENGE_ENGINE 6.1), as in-session rules left them.
+        // A challenge item's targets come from its plan (CHALLENGE_ENGINE 6.1), as in-session rules left them; a
+        // `delegate:rx` item's come from RX-1 once its prescription exists.
         val row = plannedRow(item, setIndex, side, warmup)
-        val planned = row?.let { r ->
+        val planned = row?.takeIf { rxTarget == null }?.let { r ->
             val native = when (mode) {
                 LoadMode.ASSISTED_MACHINE -> r.pin?.toDouble()
                 LoadMode.BODYWEIGHT_PLUS_EXTERNAL, LoadMode.EXTERNAL -> r.addedKg?.toDouble()
@@ -330,6 +396,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             eccS = if (item.ex.contraction == "eccentric_only") eccPrev ?: eccTarget else null, eccTargetS = eccTarget,
             attemptsS = attempts, fingers = fingers, plannedFingers = row?.fingers,
             stackRowId = resolved.row?.id?.takeIf { (resolved.scheme as? LoadScheme.Stack)?.unit in setOf("kg", "lb") },
+            rxTarget = rxTarget, warmupTarget = warmupTarget, workIndex = workIndex,
+            probePickReps = rxTarget?.takeIf { item.rx?.probe == true && workIndex == 1 && it.wSys == null }?.let { t ->
+                (t.targetReps ?: 0) + Math.round(t.rir ?: 0.0).toInt()
+            },
             attempt = row?.takeIf { it.logMode == dev.fitnessapp.algo.challenge.materialize.LogMode.ATTEMPT_CHECKLIST }?.let {
                 planItem(item)?.plan?.metric?.let { m -> AttemptInfo(m, attemptChecklist()) }
             },
@@ -364,6 +434,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         LoadMode.ASSISTED_MACHINE -> p.assistPinNative
         LoadMode.BODYWEIGHT -> null
         else -> p.nativeValue
+    }
+
+    /** The native value of the loadable point whose system load is [wSys] (RX-1 and WARMUP-1 plan in `w_sys`). */
+    private fun nativeAt(points: List<LoadPoint>, mode: LoadMode, wSys: Double): Double? {
+        if (mode == LoadMode.BODYWEIGHT) return null
+        return points.filter { it.wSys != null }.minByOrNull { kotlin.math.abs(it.wSys!! - wSys) }
+            ?.takeIf { kotlin.math.abs(it.wSys!! - wSys) < LOAD_EPS_KG }?.let { nativeOf(it, mode) }
     }
 
     /** No history: a light, safe start (most assistance, empty bar, lightest dumbbell or stack step). */
@@ -522,6 +599,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun setWarmup(on: Boolean) {
         val card = _ui.value.card ?: return
+        warmupOverride[card.item.se.id] = on
         viewModelScope.launch {
             val s = last ?: return@launch
             val (index, side) = nextSlot(card.item, on)
@@ -628,6 +706,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                     reps = card.target.reps, inputValue = p?.takeIf { card.mode != LoadMode.ASSISTED_MACHINE && !ordinal }?.let { card.target.native },
                     inputUnit = p?.takeIf { !ordinal }?.nativeUnit, assistNative = if (card.mode == LoadMode.ASSISTED_MACHINE) card.target.native else null,
                     durationS = card.holdTargetS, eccS = card.eccTargetS, assistOrdinal = card.plannedFingers,
+                    effectiveKg = card.rxTarget?.wSys, rir = card.rxTarget?.rir,
+                    repMin = card.rxTarget?.let { card.item.rx?.rLo }, repMax = card.rxTarget?.let { card.item.rx?.rHi },
                     source = when {
                         card.prefillSource == PrefillSource.ENGINE_TARGET ->
                             if (plannedRow(card.item, card.setIndex, card.side, card.warmup)?.changedByRule != null) "challenge_rule" else "engine"
@@ -646,6 +726,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val ids = c.sessionRepository.logSets(cmds)
             val setId = ids.first()
             historyCache.remove(card.item.se.exercise_id)
+            // B9.8: once the probe is logged on every side, RX-1 plans the remaining sets from it.
+            if (!card.warmup && card.workIndex == 1 && card.item.rx?.probe == true && card.side != "L") {
+                rxSlot(card.item)?.let { slot -> runCatching { c.prescriptions.followUp(slot) } }
+            }
             if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
             // CHALLENGE_ENGINE 4.2: a phase-3 attempt is an `attempt.logged` event; the gate reads the phase's observations.
             card.attempt?.let { a ->
@@ -707,7 +791,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             _ui.update { it.copy(switchHint = false) }
             return
         }
-        val decision = if (card.warmup) {
+        val generatedRest = card.warmupTarget?.restS
+        val decision = if (card.warmup && generatedRest != null) {
+            RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = generatedRest), p)
+        } else if (card.warmup) {
             val toWork = warmupLeadsToWork(_ui.value.items, card.item.se.id, card.setNumber, card.item.planned, card.item.warmupItem)
             RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = WarmupRest.afterWarmup(null, toWork, p)), p)
         } else {
@@ -956,6 +1043,62 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun loadSecondary(card: Card): String? =
         Numbers.loadSecondary(card.point, card.mode, card.item.unilateral, _ui.value.session?.bodyweight_kg?.let { Scaled.toDouble(it, 2) })
 
+    /** The target line under the title (UX 11.6 item 2): RX-1's plan for this set, or the probe's instruction. */
+    fun targetLine(card: Card): String? {
+        val rx = card.item.rx ?: return null
+        if (card.warmup) return null
+        card.probePickReps?.let { n -> return "Pick a weight you could lift about $n times · do ${card.rxTarget?.targetReps ?: n}" }
+        val t = card.rxTarget ?: return null
+        if (rx.mode == "none") return "Same as last time · no estimate yet"
+        val point = t.wSys?.let { w -> card.points.firstOrNull { p -> p.wSys != null && kotlin.math.abs(p.wSys!! - w) < LOAD_EPS_KG } }
+        val load = when {
+            card.mode == LoadMode.BODYWEIGHT -> "BW"
+            point != null -> Numbers.loadMain(point, card.mode)
+            else -> null
+        }
+        val reps = t.targetReps?.let { "× $it" }
+        val aim = t.rir?.let { " · aim: ${Numbers.num(it, 1)} in reserve" } ?: ""
+        return "Target " + listOfNotNull(load, reps).joinToString(" ") + aim
+    }
+
+    /** The Why sheet of the card's prescription (UX 16.1); null when the set has no engine target. */
+    fun why(card: Card): WhyContent? {
+        val rx = card.item.rx ?: return null
+        val t = card.rxTarget ?: return null
+        val steps = rx.steps
+        val q = Numbers.num(rx.qStar, 1)
+        val summary = dev.fitnessapp.app.format.RxTexts.reason(steps, rx.mode, rx.qStar, card.probePickReps != null || (rx.probe && card.workIndex == 1))
+        val numbers = buildList {
+            add("Plan  " + rx.sets.filter { it.side == card.side || it.side == "both" }.joinToString(", ") { s ->
+                (s.wSys?.let { Numbers.num(it, 2) + " kg" } ?: "?") + " × " + (s.targetReps?.toString() ?: "?")
+            } + " (system load)")
+            add("Range ${rx.rLo}-${rx.rHi} reps, aim $q in reserve")
+            t.rirPred?.let { add("Predicted reserve on this set ${Numbers.num(it, 1)}") }
+            rx.mUse?.let { add("Strength used  " + Numbers.num(it, 1) + " kg max (cautious estimate)") }
+            card.lastLine?.let { add(it) }
+        }
+        val evidence = dev.fitnessapp.app.format.RxTexts.evidence(rx.mode)
+        val trace = dev.fitnessapp.data.db.JsonText.canonical(
+            kotlinx.serialization.json.JsonObject(
+                mapOf("recommendation_id" to JsonPrimitive(rx.recommendationId), "outputs" to rx.outputs, "trace" to rx.trace) +
+                    (rx.inputs?.let { mapOf("inputs" to it) } ?: emptyMap()),
+            ),
+        )
+        val title = targetLine(card)?.removePrefix("Target ")?.substringBefore(" · ") ?: "this set"
+        return WhyContent(
+            title = "Why $title?", summary = summary, numbers = numbers,
+            module = "rx@${rx.moduleVersion} · params ${rx.paramsHash.take(8)} · ${rx.recommendationId.take(8)}",
+            evidence = evidence, trace = trace, recommendationId = rx.recommendationId, codes = steps,
+        )
+    }
+
+    fun whyOpened(w: WhyContent) = emit(
+        "why_opened", null,
+        mapOf("subject_kind" to JsonPrimitive("prescription"), "subject_id" to JsonPrimitive(w.recommendationId), "codes" to JsonArray(w.codes.map { JsonPrimitive(it) })),
+    )
+
+    fun traceExported() = emit("trace_exported", null, mapOf("via" to JsonPrimitive("clipboard")))
+
     private fun nextLine(card: Card): String {
         // No load point (an equipment-free hold) shows the hold alone, not a dash.
         val load = when {
@@ -987,6 +1130,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     companion object {
         const val DEFAULT_REPS = 8
+
+        /** Half of the 0.01 kg grid: two system loads closer than this are the same load. */
+        private const val LOAD_EPS_KG = 0.005
 
         /** The most fingers of assistance (`assisted_ordinal`): the other hand's four fingers. */
         private const val MAX_FINGERS = 4

@@ -1777,7 +1777,7 @@ Event registry. This table is canonical (C39): it is the union of the event name
 
 | Category | event_type | Emitted by (trigger details) | Payload keys |
 |----------|-----------|------------------------------|--------------|
-| lifecycle | `session_started` | UX 20.2 | `kind`, `template_source`, `challenge_slot?`, `families`, `budget_min?`, `budget_source`, `started_from`, `plan_recommendation_id?`, `enrollment_mode?`, `params_hash`, `engine_version`, `catalog_version` |
+| lifecycle | `session_started` | UX 20.2 | `kind`, `template_source`, `challenge_slot?`, `families`, `budget_min?`, `budget_source`, `started_from`, `plan_recommendation_id?`, `enrollment_mode?`, `params_hash`, `engine_version`, `catalog_version`, `source_session_id?` (D49) |
 | lifecycle | `session_minimised`, `session_resumed` | UX 20.2 | `via` |
 | lifecycle | `session_restored` | UX 20.2 | `rest_state`, `ms_since_last_event` |
 | lifecycle | `session_finished` | UX 20.2 | `duration_s`, `working_sets_done`, `working_sets_planned`, `exercises_not_done`, `not_done_reason_codes`, `outbox_depth` |
@@ -2392,6 +2392,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 033 | `fitness_033_oap_v1_6_0` (data; applied 2026-10-25, version 20261025202641) | M2b.6 (D45) | `oap@1.6.0`: 6 jsonb operations on the 1.5.0 row (version, `safety.elbow.traceFromPain` on the two new regions, the per-side Pallof press in A1, B1 and C1, the empty migration from 1.5.0); proven by `server_checksum`. No engine change. | Checks inside the migration (032 first, the 1.5.0 checksum, the new row's `jcs_sha256` and `server_checksum`); advisors. |
 | 034 | `fitness_034_oap_v1_7_0` (data; applied 2026-10-25, version 20261025204534) | M2b.6 (D47) | `oap@1.7.0`: 3 jsonb operations on the 1.6.0 row (version, `structure.modes.deload.exemptRoles` = `warmup`, `prehab`, the empty migration from 1.6.0); proven by `server_checksum`. No engine change. | Checks inside the migration (the 1.6.0 checksum, the new row's `jcs_sha256` and `server_checksum`); advisors. |
 | 035 | `fitness_035_engine_1_7_0` (data; applied 2026-10-25, version 20261025220432) | M2b.6 (D48) | Register `challenge.enrollment@1.4.0` for engine 1.7.0 (a superseding `enrollment.created` may correct the imported earlier tests); no definition change. | Check inside the migration; advisors. |
+| 036 | `fitness_036_params_1_0_2_engine_1_8_0` (data and one CHECK; M3.4) | M3.4 (D49) | `algo_params` 1.0.2 (1.0.1 plus `reason.pain_stop_js_min`, hash `6298d121...`, 1.0.1 superseded); `rest@1.1.0` for engine 1.8.0 (unchanged slice hash); the `workout_sessions.template_source` CHECK gains `repeat` (E9); the `session_started` registry row gains `source_session_id`. Applied before the M3.4 APK is installed (9.1.9 release rule). | Checks inside the migration (622 keys, only the new key differs, one module for 1.8.0, the registry key); advisors. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 

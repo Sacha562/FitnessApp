@@ -49,7 +49,7 @@ class ChallengeSessionRepositoryTest {
     private lateinit var live: ChallengeSessionRepository
     private lateinit var equipment: EquipmentRepository
     private val zone = ZoneId.of("Europe/Amsterdam")
-    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.1.json"))
+    private val params = ParamView.fromParamsFile(resource("params/default-params-1.0.2.json"))
 
     /** Thursday 2026-10-22 19:45 in Amsterdam. */
     private var now = Instant.parse("2026-10-22T17:45:00Z").toEpochMilli()

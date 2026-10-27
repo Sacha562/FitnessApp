@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CloudOff
@@ -47,6 +48,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -132,6 +134,7 @@ private sealed interface Sheet {
     data object Stack : Sheet
     data object Abandon : Sheet
     data object RuleUndo : Sheet
+    data class Why(val content: dev.fitnessapp.app.ui.common.WhyContent) : Sheet
 }
 
 @Composable
@@ -197,7 +200,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                     "pain" -> sheet = Sheet.Pain
                                     "stack" -> sheet = Sheet.Stack
                                 }
-                            }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain })
+                            }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain },
+                                onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } })
                         }
                         Spacer(Modifier.height(2.dp))
                     }
@@ -259,6 +263,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             confirmButton = { TextButton(onClick = { sheet = null; vm.abandon(onAbandoned) }) { Text("Abandon") } },
             dismissButton = { TextButton(onClick = { sheet = null }) { Text("Keep going") } },
         )
+        is Sheet.Why -> dev.fitnessapp.app.ui.common.WhySheet(s.content, onDismiss = { sheet = null }, onShown = { vm.whyOpened(s.content) }, onCopied = vm::traceExported)
         null -> {}
     }
 }
@@ -526,7 +531,10 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit) {
+private fun SetCard(
+    card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit,
+    onWhy: () -> Unit,
+) {
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
     val item = card.item
@@ -541,6 +549,7 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
                 // An L+R pair is one set (C7), so the count of a sided item says it is per side.
                 val each = if (item.unilateral) " each side" else ""
                 val count = when {
+                    card.warmup && card.warmupTarget != null -> "Warm-up ${item.sets.count { it.set_kind == "warmup" && it.side == card.side } + 1} of ${item.rx?.warmup?.size ?: 1}"
                     card.warmup -> "Warm-up set"
                     card.isRound -> "Round ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
                     else -> "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
@@ -553,6 +562,13 @@ private fun SetCard(card: Card, vm: LiveSessionViewModel, intervalRunning: Boole
                     menu, card, vm, beep = beep.takeIf { beepable }, onBeep = { menu = false; beep = !beep },
                     onDismiss = { menu = false }, onAction = { menu = false; onMenu(it) },
                 )
+            }
+        }
+        // UX 11.6 item 2: the engine's target with (i) for the Why sheet.
+        vm.targetLine(card)?.let { line ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(line, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (card.rxTarget != null) IconButton(onClick = onWhy) { Icon(Icons.Outlined.Info, "Why this target", tint = Fit.Muted) }
             }
         }
         card.lastLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
