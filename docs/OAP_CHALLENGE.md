@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.7.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.8.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47); the frozen 1.0.0
-to 1.6.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.6.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51); the frozen
+1.0.0 to 1.7.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.7.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -57,7 +57,7 @@ stop all one-arm work for two weeks.
 | 3 | Attempts | 26+ | one valid rep (either arm if you approve P16, otherwise both) |
 
 **The week.** Three gym sessions with at least one day between them, a rest day before the heaviest
-session, two short home plank sessions, a daily two-arm hang (skipped on session-A days). Sessions:
+session, two short home plank sessions, a daily two-arm hang (skipped on gym days; the artifact skips it on session-A days only, D51). Sessions:
 
 | Session | Content today (block 1) |
 |---|---|
@@ -299,7 +299,7 @@ rotation, hip tilt) only show a message and never change a load.
 
 | Id | Tag | Trigger | Condition | Action | Source | Risk note |
 |---|---|---|---|---|---|---|
-| `daily_hang` | A | Daily 17:15 reminder | Not an A day, no elbow trace, not in the elbow protocol | Two-arm hang 4-5 sets, 2-3 min total, pronated or neutral (never supinated), at least half on a fixed bar or handle, chalk, thumb around, stop 5-10 s before slipping, no one-arm hanging; deload weeks: half the sets and half the time | Todoist Hangen; artifact 06, 08 | First thing dropped on elbow symptoms. |
+| `daily_hang` | A | Daily 17:15 reminder | Not a gym day (A, B, C or the test day; before 1.8.0 only A, D51), no elbow trace, not in the elbow protocol | Two-arm hang 4-5 sets, 2-3 min total, pronated or neutral (never supinated), at least half on a fixed bar or handle, chalk, thumb around, stop 5-10 s before slipping, no one-arm hanging; deload weeks: half the sets and half the time | Todoist Hangen; artifact 06, 08 | First thing dropped on elbow symptoms. |
 | `daily_hang.measure` | A, uses P26 | Once a week | The measurement day (P26: Monday; declined: you mark the day) | One fresh max two-arm hang, recorded as `two_arm_hang_best_s`; the rest of the week stays submaximal | Todoist Hangen (weekly fresh best-time measurement; DECISIONS section 4) | Display only; not a gate. |
 | `home_plank` | A | Tuesday and Thursday 17:30 | Not a gym day, not the day before B or the test | One-arm plank 3 x target per side, stop when the hip tilts | Todoist Core; artifact 06 | Counts toward `prog.plank`. |
 | `sleep_protein_check` | A | Daily 21:30 | Stall stage 1 or 2 | Checklist: slept >= 8 h; protein 1.6-2.0 g/kg (113-141 g at 70.7 kg) | Artifact 09, 10 | |
@@ -848,7 +848,7 @@ tilts; prevention.
 
 | Habit | When | Content | Rules |
 |---|---|---|---|
-| Two-arm hang | Daily 17:15 at home | 4-5 sets, 2-3 min in total, pronated or neutral (never supinated), at least half on a fixed bar or handle, chalk, thumb around, stop 5-10 s before the hand slips, no one-arm hanging | Skipped on A days and at an elbow trace; halved in deload weeks; off in the elbow protocol (first thing dropped). Once a week a fresh max hang is measured (day: P26, Monday). |
+| Two-arm hang | Daily 17:15 at home | 4-5 sets, 2-3 min in total, pronated or neutral (never supinated), at least half on a fixed bar or handle, chalk, thumb around, stop 5-10 s before the hand slips, no one-arm hanging | Skipped on gym days (A, B, C and the test day, D51) and at an elbow trace; halved in deload weeks; off in the elbow protocol (first thing dropped). Once a week a fresh max hang is measured (day: P26, Monday). |
 | One-arm plank | Tue and Thu 17:30 at home (not on a gym day, not the day before B or the test) | 3 x target per side (20 s now), stop when the hip tilts | Counts with B's plank for the 20 -> 30 s -> plate rule. |
 | Sleep and protein check | Daily 21:30, only at stall stage 1 or 2 | Slept >= 8 h; protein 113-141 g (1.6-2.0 g/kg at 70.7 kg) | Artifact 09-10. |
 

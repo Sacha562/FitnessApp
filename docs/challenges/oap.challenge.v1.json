@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -412,7 +412,7 @@
       ] }
   },
   "habits": [
-    { "id": "daily_hang", "name": { "en": "Two-arm hang (grip)", "nl": "Hangen, twee armen" }, "where": "home", "schedule": { "rrule": "FREQ=DAILY", "time": "17:15" }, "skipIf": "todayHas('A') || s.elbowTrace", "disabledInModes": ["injury"], "tag": "A", "source": "Todoist Hangen / artifact section 06",
+    { "id": "daily_hang", "name": { "en": "Two-arm hang (grip)", "nl": "Hangen, twee armen" }, "where": "home", "schedule": { "rrule": "FREQ=DAILY", "time": "17:15" }, "skipIf": "todayHas('A') || todayHas('B') || todayHas('C') || todayHas('TEST') || s.elbowTrace", "disabledInModes": ["injury"], "tag": "A", "source": "Todoist Hangen / artifact section 06 (skipped on A day); D51: skipped on every gym day",
       "prescription": { "key": "dhang", "exercise": "two_arm_dead_hang", "sets": [4, 5], "total_s": [120, 180], "grip": ["pronated", "neutral"], "notGrip": "supinated", "creditRir": 3,
         "rules": [
           { "en": "At least half on a fixed bar or the neutral handle, not only rings" },
@@ -898,6 +898,7 @@
     "1.3.0": {"varMap": {}, "defaults": {}, "notes": "D40: the Pallof press in A, B and C (B's gym plank removed, the plank rule counts the two home days), P28 and P29 (re-entry week after the elbow protocol). New vars pallofKg and reentry start from their init."},
     "1.4.0": {"varMap": {}, "defaults": {}, "notes": "D44: no rowing machine in the warm-up (wu_row and the rower_erg equipment and exercise removed). No state var changes."},
     "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."},
-    "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."}
+    "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."},
+    "1.7.0": {"varMap": {}, "defaults": {}, "notes": "D51: the daily two-arm hang is skipped on every gym day (A, B, C and the test day), not only on A. No state var changes."}
   }
 }

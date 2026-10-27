@@ -62,6 +62,14 @@ class HabitPlannerTest {
     }
 
     @Test
+    fun `the hang is skipped on every gym day, test day included, and due on the days between (D51)`() {
+        val withTest = facts.copy(weekPlanSlots = facts.weekPlanSlots.toSortedMap().apply { put(LocalDate.parse("2026-10-17"), listOf("TEST")) })
+        fun hang(date: String) = HabitPlanner.today(def, params, HabitInput(LocalDate.parse(date), normal(), withTest)).first.single { it.habitId == "daily_hang" }.state
+        listOf("2026-10-14", "2026-10-16", "2026-10-17", "2026-10-18").map(::hang) shouldBe List(4) { "SKIPPED" }
+        listOf("2026-10-13", "2026-10-15").map(::hang) shouldBe List(2) { "DUE" }
+    }
+
+    @Test
     fun `deload halves the hang, injury and pause mute it`() {
         val deload = today(normal().copy(mode = "deload"), "2026-10-12").single()
         deload.state shouldBe "SCALED"
