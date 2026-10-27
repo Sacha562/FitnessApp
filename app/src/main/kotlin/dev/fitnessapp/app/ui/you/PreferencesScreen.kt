@@ -270,7 +270,7 @@ private fun PrefEditor(s: PrefScope, initial: RepPrefValues, params: ParamView, 
                 } else {
                     val m = v.restPrefMult
                     Field("Rest", m?.let { times(it) } ?: "Default (${times(1.0)})", onDefault = { v = v.copy(restPrefS = null, restPrefMult = null) }) {
-                        StepperRow(m?.let { times(it) } ?: "Default", restExample(s, m ?: 1.0, p),
+                        StepperRow(m?.let { times(it) } ?: "Default", restExample(s, m, v.repMax ?: defHi, p),
                             onMinus = { v = v.copy(restPrefS = null, restPrefMult = stepMult(m ?: 1.0, -1)) },
                             onPlus = { v = v.copy(restPrefS = null, restPrefMult = stepMult(m ?: 1.0, 1)) })
                     }
@@ -311,18 +311,21 @@ private fun times(m: Double) = "×" + String.format(Locale.ROOT, "%.1f", m)
 /** The multiplier one step up or down, on the 0.1 grid of the `rest_pref_mult` domain (DATA_MODEL 9.3.4). */
 private fun stepMult(m: Double, dir: Int): Double = (Math.round(m * 10) + dir).coerceIn(MIN_MULT_TENTHS, MAX_MULT_TENTHS) / 10.0
 
-/** What the multiplier does to the scope's own class rests, from `rest.base` ("upper 120 → 144 s"). */
-private fun restExample(s: PrefScope, m: Double, p: ParamView): String {
-    val base = p.table("rest.base")
+/**
+ * The rests REST-1 gives in this scope with multiplier [m] (null = Default), before the after-set modifiers: "upper
+ * compound 132 s · isolation 99 s · heavy sets 198 s". At [targetReps] of `rest.strength_heavy_max_reps` or fewer every
+ * set is heavy (B11.2), so only that rest is shown.
+ */
+private fun restExample(s: PrefScope, m: Double?, targetReps: Int, p: ParamView): String {
+    fun rest(cls: RestClass) = "${Math.round(RestPolicy.decide(RestInput(cls, userRestMult = m), p).timerS)} s"
+    val heavy = "heavy sets " + rest(RestClass.STRENGTH_HEAVY)
+    if (targetReps <= p.double("rest.strength_heavy_max_reps")) return heavy
     val classes = when {
-        s.mixed -> listOf("compound_upper" to "upper compound", "isolation" to "isolation")
-        s.compound -> listOf("compound_upper" to "upper", "compound_lower" to "lower")
-        else -> listOf("isolation" to "isolation")
+        s.mixed -> listOf(RestClass.COMPOUND_UPPER to "upper compound", RestClass.ISOLATION to "isolation")
+        s.compound -> listOf(RestClass.COMPOUND_UPPER to "upper", RestClass.COMPOUND_LOWER to "lower")
+        else -> listOf(RestClass.ISOLATION to "isolation")
     }
-    return classes.joinToString(" · ") { (k, label) ->
-        val b = base.getValue(k)
-        "$label ${Math.round(b)} → ${Math.round(b * m)} s"
-    }
+    return (classes.map { (cls, label) -> "$label ${rest(cls)}" } + listOfNotNull(heavy.takeIf { s.compound })).joinToString(" · ")
 }
 
 @Composable
