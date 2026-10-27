@@ -10,6 +10,10 @@ import dev.fitnessapp.algo.challenge.fitexpr.QV
 import dev.fitnessapp.algo.challenge.fitexpr.StrV
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.app.uidet.UiGateRows
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -84,6 +88,22 @@ object ChallengeTexts {
 
     /** Readable names of the state vars a user may correct (CHALLENGE_ENGINE 4.9); the var name otherwise. */
     fun varLabel(name: String): String = VAR_LABELS[name] ?: name
+
+    /**
+     * A rule audit's `applied` map as "label old → new" pairs. Yes/no vars are left out: "true → false" says nothing
+     * the rule's explanation does not, so that explanation stands alone (D35: no raw codes).
+     */
+    fun changes(applied: String): String = runCatching {
+        Json.parseToJsonElement(applied).jsonObject.entries.mapNotNull { (k, v) ->
+            val o = v.jsonObject
+            val old = o["old"]?.jsonPrimitive?.contentOrNull
+            val new = o["new"]?.jsonPrimitive?.contentOrNull
+            if (old in BOOLS && new in BOOLS) return@mapNotNull null
+            "${varLabel(k.removePrefix("s.").removePrefix("$"))} ${old ?: "–"} → ${new ?: "–"}"
+        }.joinToString(", ")
+    }.getOrDefault("")
+
+    private val BOOLS = setOf("true", "false")
 
     private val VAR_LABELS = mapOf(
         "wpuA" to "Weighted pull-up, session A", "wpuB" to "Weighted pull-up, session B", "wpuC" to "Weighted pull-up, session C (anchor)",

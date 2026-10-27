@@ -41,8 +41,11 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** One "Next time" line (UX 12.3): exercise, today's plan, next time's plan, the reason and its Why. */
-data class NextLine(val name: String, val from: String, val to: String, val reason: String, val why: WhyContent)
+/**
+ * One "Next time" line (UX 12.3): exercise, today's plan, next time's plan, the reason and its Why. [from] is null
+ * when today was a test set: its plan ("a weight to pick × 12, ?, ?") says nothing, so only next time's plan shows.
+ */
+data class NextLine(val name: String, val from: String?, val to: String, val reason: String, val why: WhyContent)
 
 /**
  * Summary "Next time" for the exercises RX-1 prescribed (UX 12.3, M3.4): runs the L8 update of the finished session,
@@ -66,8 +69,8 @@ suspend fun nextTimeLines(c: AppContainer, sessionId: String): List<NextLine> {
         val nextSets = next.sets.filter { it.side == side }.map { RxTarget(it.setIndex, it.side, it.targetReps, it.rir, it.wSys, it.rirPred, it.restS) }
         val to = plan(nextSets, points, mode)
         if (from == to) continue
-        val reason = RxTexts.reason(next.trace, next.mode.code, next.scheme.qStar, next.probe)
-        out += NextLine(ex.nameEn, from, to, reason, why(ex.nameEn, to, reason, next, now.recommendationId))
+        val reason = RxTexts.reason(next.trace, next.mode.code, next.scheme.qStar, next.probe, next.scheme.rHi + (next.double?.ext ?: 0))
+        out += NextLine(ex.nameEn, from.takeUnless { now.probe }, to, reason, why(ex.nameEn, to, reason, next, now.recommendationId))
     }
     return out
 }
@@ -81,7 +84,7 @@ private fun plan(sets: List<RxTarget>, points: List<LoadPoint>, mode: LoadMode):
         else -> points.firstOrNull { p -> p.wSys != null && kotlin.math.abs(p.wSys!! - w) < 0.005 }?.let { Numbers.loadMain(it, mode) }
             ?: (Numbers.num(w, 2) + " kg")
     }
-    return load + " × " + sets.joinToString(" ") { it.targetReps?.toString() ?: "?" }
+    return load + " × " + sets.joinToString(", ") { it.targetReps?.toString() ?: "?" }
 }
 
 private fun why(name: String, to: String, reason: String, next: RxOutput, todayId: String): WhyContent {
@@ -112,7 +115,7 @@ fun NextTimeTile(c: AppContainer, sessionId: String, lines: List<NextLine>) {
             if (i > 0) TileDivider()
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("${l.name}: ${l.from} → ${l.to}", style = MaterialTheme.typography.bodyLarge)
+                    Text(if (l.from == null) "${l.name}: ${l.to}" else "${l.name}: ${l.from} → ${l.to}", style = MaterialTheme.typography.bodyLarge)
                     Text(l.reason, style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
                 IconButton(onClick = { open = l.why }) { Icon(Icons.Outlined.Info, "Why", tint = Fit.Muted) }

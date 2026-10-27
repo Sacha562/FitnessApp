@@ -5,8 +5,10 @@ package dev.fitnessapp.app.format
  * the screen (P15); they stay in the Why sheet's trace.
  */
 object RxTexts {
-    fun reason(steps: List<String>, mode: String, qStar: Double, probeSet: Boolean): String {
+    /** [top] is the rep count at which double progression steps the load up (range top plus extension), when known. */
+    fun reason(steps: List<String>, mode: String, qStar: Double, probeSet: Boolean, top: Int? = null): String {
         val q = Numbers.num(qStar, 1)
+        val climb = "each time you hit every target, one set gets one more rep; when every set reaches ${top ?: "the top of the range"}, the weight goes up."
         return when {
             probeSet -> "A first set after a new start or a long break measures where you are today; the other sets follow from it."
             "rx.probe.followup" in steps -> "Planned from your first set, so each set ends about $q reps short of failure."
@@ -17,7 +19,8 @@ object RxTexts {
             "rx.double.extend" in steps -> "Top of the range, and the next load step is too big a jump: the range extends a little."
             "rx.double.repeat" in steps -> "Not every target was met: the same targets again."
             "rx.probe" in steps || "rx.probe.pick_weight" in steps -> "A first set to measure where you are; the other sets follow from it."
-            mode == "double" -> "Reps first: add reps at this load until every set reaches the top of the range, then step up."
+            "rx.double.start" in steps -> "A new starting point at this weight: $climb"
+            mode == "double" -> "Same weight: $climb"
             mode == "model" -> "Chosen from your estimated strength so each set ends about $q reps short of failure."
             else -> "No estimate yet, so last time's values."
         }

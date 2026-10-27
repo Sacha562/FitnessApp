@@ -239,7 +239,7 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             val label = eventLabel(def, e)
             if (label == null && rows.isEmpty()) return@mapNotNull null
             val lines = rows.mapNotNull { r ->
-                val changes = changes(r.applied)
+                val changes = ChallengeTexts.changes(r.applied)
                 when (r.outcome) {
                     "applied" -> (ChallengeTexts.ruleExplain(def, r.rule_id) + if (changes.isNotEmpty()) " ($changes)" else "") to false
                     "no_effect" -> null
@@ -251,15 +251,6 @@ class DashboardViewModel(private val c: AppContainer, val enrollmentId: String) 
             HistoryUi("${ChallengeTexts.date(LocalDate.parse(e.local_date))} · ${label ?: ChallengeTexts.eventType(e.event_type)}", lines)
         }
     }
-
-    private fun changes(applied: String): String = runCatching {
-        Json.parseToJsonElement(applied).jsonObject.entries.joinToString(", ") { (k, v) ->
-            val o = v.jsonObject
-            val old = o["old"]?.jsonPrimitive?.contentOrNull ?: "–"
-            val new = o["new"]?.jsonPrimitive?.contentOrNull ?: "–"
-            "${ChallengeTexts.varLabel(k.removePrefix("s.").removePrefix("$"))} $old -> $new"
-        }
-    }.getOrDefault("")
 
     private fun eventLabel(def: CompiledDefinition, e: ChallengeEventEntity): String? {
         val p = runCatching { Json.parseToJsonElement(e.payload).jsonObject }.getOrNull()
