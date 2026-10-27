@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -76,7 +77,8 @@ fun StepperRow(
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         StepButton(minusLabel, "Decrease", Icons.Rounded.Remove, onMinus, enabled)
-        val valueModifier = if (onValueClick != null) Modifier.heightIn(min = 48.dp).clip(CircleShape).clickable(onClick = onValueClick) else Modifier
+        // A small corner radius: a pill clip cuts the corners of a two-line secondary text.
+        val valueModifier = if (onValueClick != null) Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onValueClick).padding(4.dp) else Modifier
         Column(Modifier.weight(1f).padding(horizontal = 8.dp).then(valueModifier), horizontalAlignment = Alignment.CenterHorizontally) {
             BasicText(
                 emphasizeNumbers(value), maxLines = 1,
