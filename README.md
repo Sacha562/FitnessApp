@@ -270,3 +270,23 @@ on the phone and fixed:
   toggle it, Today showed "00:16:38.240", an Undo that vanished let the next tap open the habit, planks warned about
   an uncalibrated machine, the "Up next" line read "— 20 s", the finish sheet hid its button under the gesture bar,
   and the summary listed warm-up items as "No working sets".
+
+## M3 log (in progress, from 2026-10-27)
+
+D49 fixed the scope: M3 prescribes the exercises you pick, and automatic session building moves to M4.
+
+**M3.1 (2026-10-27)**: the estimators `fatigue`, `rcm`, `rircal`, `sse` and `hold` in `:algo`, with the 15 golden
+fixtures of ALGORITHMS Part D. Every worked example of B4-B8 reproduces (GF-SSE-02's 107.65 is 107.655, so 107.66 on
+the KG grid).
+
+**M3.2 (2026-10-27)**: Room v7 with `params_snapshots`, `recommendations` and `exercise_model_state` (push-only), the
+L8 replay of every finished session, the challenge's `userK` from the cached RCM-1 state, and the e1RM trend on the
+exercise detail. Phone checks (OnePlus CPH2747, real data): the update from `0.0.76+91641dc` to `0.0.80+ebc5170`
+migrated Room 6 -> 7 with the data kept; at the first start the runner replayed your two finished sessions (session B
+of 23 October, the legs session of 24 October) into 14 snapshots (12 RCM-1 fits, 2 SSE-1 sessions) and 22 estimator
+states, and all of them reached the server with the params snapshot (`fitness_review.v_set_estimates` lists every
+set). The weighted chin-up keeps `k` 30 (no informative window yet, no pooled value in its class), so the OAP gate and
+loads are unchanged; the squat's own window gave `k` 37.5 and the leg curl's 32.7, which the leg extension and calf
+raise take as the pooled lower-isolation value. The on-device determinism self-test passed 22/22 with the JVM hashes
+(the 15 estimator fixtures included). The back squat's detail shows "Estimated 1RM 54.5 kg (51.2 kg to 58 kg)" with its
+band above the 24 October row.
