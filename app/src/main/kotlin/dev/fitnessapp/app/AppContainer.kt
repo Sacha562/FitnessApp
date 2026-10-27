@@ -129,6 +129,12 @@ class AppContainer(private val context: Context) {
             db, outbox, writeContext, syncScheduler, catalog, challenges, challengeSessions, sessionRepository, challengeFacts, params, CHANGEOVER_MIN,
         )
     }
+    /** The L8 estimation layer (ALGORITHMS.md A12, M3.2): estimator caches and snapshots, replayed from the facts. */
+    val estimation: dev.fitnessapp.data.engine.EstimationRunner by lazy {
+        dev.fitnessapp.data.engine.EstimationRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, params, PARAMS_VERSION)
+    }
+    /** The engine-logged estimates for display (the exercise detail's e1RM history). */
+    val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
     val exports: ExportRepository by lazy {
         ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })

@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators) built the same day.*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators) and M3.2 (estimator storage and the L8 update) built the same day.*
 
 ---
 
@@ -646,8 +646,9 @@ M3 is built in six steps (D49), each ending with a green build and checks on the
    estimator column of REASON-1 they need (reason classes and the missing-RIR imputation), and the 15 golden fixtures
    of ALGORITHMS Part D (GF-FAT, GF-RCM, GF-RIR, GF-SSE, GF-HOLD). No screen changes; the app does not call them
    until M3.2, so the engine version stays 1.7.0.
-2. **M3.2 Estimator storage and the session-end update.** Room's `exercise_model_state` with sync, the L8 update when a
-   session finishes (rebuildable from `set_logs`), the snapshots and the review views they fill, the exercise detail's
+2. **M3.2 Estimator storage and the session-end update** (built 2026-10-27). Room v7 with `params_snapshots`,
+   `recommendations` and `exercise_model_state` (push-only sync), the L8 update when a session finishes (a replay of every
+   finished session from `set_logs`, so an edit of a past set is picked up too), the snapshots and the review views they fill, the exercise detail's
    e1RM sparkline (deferred since M1b), and RCM-1's `k` as the OAP's `userK` fact. Under C59 the OAP gate keeps the
    prior `k` of 30 until RCM-1 has informative windows; from then on the gate value and the test recalculation use
    your fitted `k`.

@@ -6,6 +6,9 @@ import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
+import dev.fitnessapp.data.db.entity.ExerciseModelStateEntity
+import dev.fitnessapp.data.db.entity.ParamsSnapshotEntity
+import dev.fitnessapp.data.db.entity.RecommendationEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
@@ -176,5 +179,29 @@ class DtoSchemaDriftTest {
         "export_kind, format, schema_version, table_row_counts, bytes, sha256, destination, period_start, period_end, " +
             "includes_local_only, engine_version, catalog_version",
         standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    // Migrations 012 and 015, read from the live information_schema on 2026-10-27 (M3.2).
+    @Test
+    fun paramsSnapshots() = check(
+        ParamsSnapshotEntity.serializer(),
+        "params_hash, params_version, params, user_param_ids",
+        standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    @Test
+    fun recommendations() = check(
+        RecommendationEntity.serializer(),
+        "kind, module_id, module_version, engine_version, params_hash, catalog_version, challenge_def_sha256, inputs_hash, " +
+            "inputs, inputs_bytes, outputs, trace, warnings, scope_key, scope_date, iso_week, session_id, session_exercise_id, " +
+            "set_log_id, enrollment_id, supersedes_id, inputs_pruned_at",
+        standard = listOf("id", "user_id", "server_updated_at", "device_id", "app_version"),
+    )
+
+    @Test
+    fun exerciseModelState() = check(
+        ExerciseModelStateEntity.serializer(),
+        "model, exercise_id, side, class_key, module_version, engine_version, params_hash, state, state_hash, n_observations, " +
+            "as_of, as_of_session_id",
     )
 }

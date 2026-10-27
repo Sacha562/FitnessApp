@@ -21,6 +21,9 @@ class ParamView(private val values: JsonObject) {
 
     fun fork(): ParamView = ParamView(values)
 
+    /** The resolved `{key: value}` object behind [hash] (stored in `params_snapshots.params`). Not read-tracked. */
+    fun values(): JsonObject = values
+
     /** Keys read through this view, in code point order. */
     fun readKeys(): List<String> = read.toList()
 

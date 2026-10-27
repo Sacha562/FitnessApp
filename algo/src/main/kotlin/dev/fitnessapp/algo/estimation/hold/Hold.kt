@@ -21,7 +21,8 @@ import java.util.TreeMap
 /**
  * One timed hold (`set_logs` with `contraction` isometric or hang, DATA_MODEL 9.6). [wSys] is LOAD-1's system
  * load (null for a hold without a load model); [externalKg] keys the time-only segment (a plate on a plank).
- * [chip] is `max`, `hard`, `ok` or `easy` (D9); [roundId] groups the attempts of one top-hold round.
+ * [reserveS] is `hold_reserve_s`, the seconds of the effort chip (`hold.chip_reserve_s`: Max 0, Hard 2, OK 5,
+ * Easy 10, D9) and [reserveLowerBound] marks Easy; [roundId] groups the attempts of one top-hold round.
  */
 data class HoldSet(
     val id: String,
@@ -32,7 +33,8 @@ data class HoldSet(
     val wSys: Double?,
     val externalKg: Double,
     val tDoneS: Double,
-    val chip: String?,
+    val reserveS: Double,
+    val reserveLowerBound: Boolean = false,
     val torsoRotation: Boolean = false,
     val reasonCode: String? = null,
     val restBeforeS: Double? = null,
@@ -116,6 +118,10 @@ object Hold : DeclaresParams {
 
     fun beta(f: HoldFacts, params: ParamView): Double = params.table("hold.beta").getValue(holdClass(f))
 
+    /** The reserve seconds and lower-bound mark of an effort chip (`max`, `hard`, `ok`, `easy`; D9). */
+    fun chipReserve(chip: String?, params: ParamView): Pair<Double, Boolean> =
+        (chip?.let { params.table("hold.chip_reserve_s")[it] } ?: 0.0) to (chip == "easy")
+
     /** A hold uses the time-only model when it has no load model: `f_bw = 0` and no system load (B8.1). */
     fun timeOnly(f: HoldFacts, s: HoldSet): Boolean = f.fBw == 0.0 || s.wSys == null
 
@@ -134,7 +140,6 @@ object Hold : DeclaresParams {
         val setsOut = ArrayList<HoldSetOut>()
         val statesOut = ArrayList<HoldStateOut>()
         val trace = ArrayList<TraceStep>()
-        val reserve = params.table("hold.chip_reserve_s")
         val k = Fatigue.constants(params, cRef = params.double("hold.c_ref"))
         val neutralRest = params.double("fatigue.rest_ref_s")
         val ordered = sets.filter { it.setKind != "warmup" }.sortedWith(compareBy<HoldSet> { it.performedAt }.thenBy { it.id })
@@ -143,8 +148,8 @@ object Hold : DeclaresParams {
             val f = facts[key.exerciseId] ?: continue
             if (f.holdClass == null) trace += TraceStep("hold.class.fallback", key.exerciseId)
             val beta = beta(f, params)
-            val group = bestOfRounds(raw, reserve)
-            val sRes = group.map { s -> if (s.torsoRotation || s.reasonCode == "technique_breakdown") 0.0 else reserve[s.chip] ?: 0.0 }
+            val group = bestOfRounds(raw)
+            val sRes = group.map { s -> if (s.torsoRotation || s.reasonCode == "technique_breakdown") 0.0 else s.reserveS }
             val caps = group.indices.map { group[it].tDoneS + sRes[it] }
             val rests = group.zipWithNext { _, b -> b.restBeforeS ?: b.plannedRestBeforeS ?: neutralRest }
             val fs = Fatigue.observed(group.map { it.tDoneS }, caps, rests, 0.0, k)
@@ -160,7 +165,7 @@ object Hold : DeclaresParams {
                 val s = group[i]
                 val cls = when {
                     s.reasonCode == "pain" -> EstimatorClass.EXCLUDED
-                    s.chip == "easy" -> EstimatorClass.LOWER_BOUND
+                    s.reserveLowerBound -> EstimatorClass.LOWER_BOUND
                     else -> EstimatorClass.NORMAL
                 }
                 if (cls.kind == EstimatorKind.EXCLUDED || caps[i] <= 0.0) {
@@ -205,7 +210,7 @@ object Hold : DeclaresParams {
     }
 
     /** One observation per top-hold round: the attempt with the longest `t_done + s_res`, ties by id. */
-    private fun bestOfRounds(sets: List<HoldSet>, reserve: Map<String, Double>): List<HoldSet> {
+    private fun bestOfRounds(sets: List<HoldSet>): List<HoldSet> {
         val out = ArrayList<HoldSet>()
         val seenRounds = TreeMap<String, HoldSet>()
         for (s in sets) {
@@ -215,11 +220,11 @@ object Hold : DeclaresParams {
                 continue
             }
             val best = seenRounds[r]
-            val total = s.tDoneS + (reserve[s.chip] ?: 0.0)
+            val total = s.tDoneS + s.reserveS
             if (best == null) {
                 seenRounds[r] = s
                 out += s
-            } else if (total > best.tDoneS + (reserve[best.chip] ?: 0.0)) {
+            } else if (total > best.tDoneS + best.reserveS) {
                 seenRounds[r] = s
                 out[out.indexOf(best)] = s
             }

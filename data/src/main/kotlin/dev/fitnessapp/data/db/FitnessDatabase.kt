@@ -17,12 +17,15 @@ import dev.fitnessapp.data.db.dao.ChallengeLiveDao
 import dev.fitnessapp.data.db.dao.ChallengeRuleEventDao
 import dev.fitnessapp.data.db.dao.CrashLogDao
 import dev.fitnessapp.data.db.dao.DeadLetterDao
+import dev.fitnessapp.data.db.dao.ExerciseModelStateDao
 import dev.fitnessapp.data.db.dao.ExportDao
 import dev.fitnessapp.data.db.dao.GymDao
 import dev.fitnessapp.data.db.dao.GymEquipmentDao
 import dev.fitnessapp.data.db.dao.MetricObservationDao
 import dev.fitnessapp.data.db.dao.OutboxDao
+import dev.fitnessapp.data.db.dao.ParamsSnapshotDao
 import dev.fitnessapp.data.db.dao.ProfileDao
+import dev.fitnessapp.data.db.dao.RecommendationDao
 import dev.fitnessapp.data.db.dao.RestTimerDao
 import dev.fitnessapp.data.db.dao.ScheduledAlarmDao
 import dev.fitnessapp.data.db.dao.SessionBlockDao
@@ -40,11 +43,14 @@ import dev.fitnessapp.data.db.entity.ChallengeDefinitionEntity
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
+import dev.fitnessapp.data.db.entity.ExerciseModelStateEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
+import dev.fitnessapp.data.db.entity.ParamsSnapshotEntity
 import dev.fitnessapp.data.db.entity.ProfileEntity
+import dev.fitnessapp.data.db.entity.RecommendationEntity
 import dev.fitnessapp.data.db.entity.SessionBlockEntity
 import dev.fitnessapp.data.db.entity.SessionEventEntity
 import dev.fitnessapp.data.db.entity.SessionExerciseEntity
@@ -67,7 +73,8 @@ import java.io.File
  * (M1b) adds `user_exercise_prefs` and `exports`; version 3 (M2b) the challenge tables (definitions, enrollments,
  * events, rule audit), version 4 the local live plan of a challenge session and version 5 the interval columns of
  * `rest_timer` (the warm-up row countdown, D33), version 6 (M2b.5) `calendar_events` with the local
- * `calendar_instance` cache and `calendar_link` table. Later milestones add tables through
+ * `calendar_instance` cache and `calendar_link` table, version 7 (M3.2) the estimation layer's `params_snapshots`,
+ * `recommendations` and `exercise_model_state`. Later milestones add tables through
  * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
@@ -88,10 +95,12 @@ import java.io.File
         ChallengeLiveSessionEntity::class,
         // v6 (M2b.5): the synced calendar events and the local instance cache and link table
         CalendarEventEntity::class, CalendarInstanceEntity::class, CalendarLinkEntity::class,
+        // v7 (M3.2): snapshots, their params and the estimator caches
+        ParamsSnapshotEntity::class, RecommendationEntity::class, ExerciseModelStateEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
-        AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7),
     ],
 )
 @TypeConverters(Converters::class)
@@ -122,15 +131,18 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun calendarEvents(): CalendarEventDao
     abstract fun calendarInstances(): CalendarInstanceDao
     abstract fun calendarLinks(): CalendarLinkDao
+    abstract fun paramsSnapshots(): ParamsSnapshotDao
+    abstract fun recommendations(): RecommendationDao
+    abstract fun modelStates(): ExerciseModelStateDao
 
     companion object {
-        const val VERSION = 6
+        const val VERSION = 7
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
         /**
          * Hand-written migrations of every version; [NoDestructiveMigrationTest] checks the builder uses only these.
-         * 1 -> 2, 2 -> 3, 3 -> 4 and 5 -> 6 only add tables, 4 -> 5 only adds nullable columns; all are [AutoMigration]s declared
+         * 1 -> 2, 2 -> 3, 3 -> 4, 5 -> 6 and 6 -> 7 only add tables, 4 -> 5 only adds nullable columns; all are [AutoMigration]s declared
          * on the class.
          */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()

@@ -178,10 +178,11 @@ internal object EstimationGolden {
         }
         val holds = payload.getValue("sets").jsonArray.map { e ->
             val o = e.jsonObject
+            val (reserve, lowerBound) = Hold.chipReserve(o["chip"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content, params)
             HoldSet(
                 str(o, "id"), str(o, "exercise_id"), str(o, "side"), Instant.parse(str(o, "performed_at")), str(o, "set_kind"),
                 o["w_sys"]?.takeUnless { it is JsonNull }?.let { d(it) }, o["external_kg"]?.let { d(it) } ?: 0.0, dbl(o, "t_done_s"),
-                o["chip"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
+                reserve, lowerBound,
             )
         }
         val r = Hold.update(holds, facts, emptyMap(), Instant.parse(str(payload, "session_start")), params)

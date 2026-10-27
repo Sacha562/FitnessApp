@@ -1307,7 +1307,7 @@ The C24 snapshot envelope for every engine decision. Module-specific `inputs`, `
 
 Indexes: `(user_id, server_updated_at)`; `(user_id, kind, scope_key, created_at desc)`; `(user_id, session_id) where session_id is not null`; `(user_id, module_id, module_version)`; `(user_id, params_hash)`.
 
-Reuse rule (S2): if the latest snapshot for `(kind, scope_key)` has the same `(module_version, params_hash, inputs_hash)`, the client reuses it and inserts nothing.
+Reuse rule (S2): if the latest snapshot for `(kind, scope_key)` has the same `(module_version, params_hash, inputs_hash)`, the client reuses it and inserts nothing. The estimation snapshots (M3.2) go one step further: their id is UUIDv5 `recommendations:<uid>:<kind>:<scope_key>:<session_id>:<module_version>:<params_hash>:<inputs_hash>`, because the phone rebuilds them by replaying every finished session; a replay of unchanged facts produces the ids that already exist (locally or on the server after a reinstall), an edited past session adds new rows whose `supersedes_id` names the session's previous snapshot.
 
 ### 9.6 Session facts
 

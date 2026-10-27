@@ -30,6 +30,8 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
     suspend fun run(nowMs: Long) {
         if (c.writeContext.userId() == null) return
         runCatching { c.challenges.catchUp(java.time.Instant.ofEpochMilli(nowMs)) }
+        // A challenge session held back for its completion event is estimated once the wait is over (M3.2).
+        runCatching { c.estimation.run() }
         c.reminders.recompute()
         // ANDROID 16.4: the 05:00 run reads the calendar and writes the (possibly new) current and next week.
         runCatching { c.calendar.refresh("maintenance") }

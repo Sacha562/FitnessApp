@@ -126,6 +126,10 @@ interface WorkoutSessionDao : SyncDao<WorkoutSessionEntity> {
     @Query("SELECT * FROM workout_sessions WHERE iso_week = :isoWeek AND status = 'finished' AND deleted_at IS NULL ORDER BY started_at, id")
     suspend fun finishedInIsoWeek(isoWeek: String): List<WorkoutSessionEntity>
 
+    /** Every finished session in the order the estimation layer replays them (L8). */
+    @Query("SELECT * FROM workout_sessions WHERE status = 'finished' AND deleted_at IS NULL AND started_at IS NOT NULL ORDER BY started_at, id")
+    suspend fun finishedChronological(): List<WorkoutSessionEntity>
+
     /** The last finished gym session before [beforeMs] (the previous week's last gym visit for the gap rule). */
     @Query("SELECT * FROM workout_sessions WHERE kind <> 'home' AND status = 'finished' AND deleted_at IS NULL AND started_at < :beforeMs ORDER BY started_at DESC, id DESC LIMIT 1")
     suspend fun lastGymBefore(beforeMs: Long): WorkoutSessionEntity?

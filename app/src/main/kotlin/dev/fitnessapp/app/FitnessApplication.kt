@@ -16,6 +16,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import dev.fitnessapp.app.ui.equipment.EquipmentUpgrade
 import dev.fitnessapp.data.db.local.CrashLogEntity
 import dev.fitnessapp.data.sync.SyncWorker
+import android.util.Log
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -67,6 +70,17 @@ class FitnessApplication : Application(), Configuration.Provider {
                 if (container.writeContext.userId() != null) container.challenges.catchUp()
             }
             // ANDROID.md 17: any challenge state change (a new event moves the enrollment row) recomputes the horizon.
+            // ALGORITHMS A12 L8 (M3.2): every change of a finished session, its sets or the challenge events replays the
+            // estimation layer; it holds a challenge session back until its completion event (CHALLENGE_ENGINE 3.9).
+            stepS("estimation") {
+                container.appScope.launch {
+                    @OptIn(FlowPreview::class)
+                    container.db.modelStates().observeFactsKey().distinctUntilChanged().debounce(ESTIMATION_DEBOUNCE_MS).collect {
+                        // run() returns at once when nobody is signed in.
+                        runCatching { container.estimation.run() }.onFailure { Log.w("Estimation", "L8 run failed", it) }
+                    }
+                }
+            }
             stepS("reminders") {
                 container.appScope.launch {
                     container.challenges.observeOpen().map { l -> l.map { Triple(it.id, it.last_folded_event_id, it.status) } }.distinctUntilChanged()
@@ -155,3 +169,6 @@ class FitnessApplication : Application(), Configuration.Provider {
                 }
         }).build()
 }
+
+/** Quiet time before an L8 replay: the logging of one action writes several rows in quick succession. */
+private const val ESTIMATION_DEBOUNCE_MS = 2_000L

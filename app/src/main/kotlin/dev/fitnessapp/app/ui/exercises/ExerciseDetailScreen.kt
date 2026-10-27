@@ -67,8 +67,8 @@ fun preferenceHelp(p: String): String = when (p) {
 
 /**
  * Exercise detail (UX 13.3): header, muscle map with the group list (its accessible equivalent), the five-state
- * preference, the last five sessions, loading, rest and flags. Alternatives (SUB-1) and "Used by" arrive with M3/M2
- * (DECISIONS changelog 2026-10-11).
+ * preference, the e1RM trend (SSE-1, M3.2) above the last five sessions, loading, rest and flags. Alternatives (SUB-1)
+ * arrive with M3.6 and "Used by" later (DECISIONS changelog 2026-10-11, D49).
  */
 @Composable
 fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBack: () -> Unit) {
@@ -76,6 +76,7 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
     val prefs by remember { c.preferences.observe() }.collectAsState(initial = emptyMap())
     val pref = prefs[exerciseId] ?: PreferenceRepository.NEUTRAL
     val history by remember(exerciseId) { c.sessionRepository.observeExerciseHistory(exerciseId, 200) }.collectAsState(initial = emptyList())
+    val e1rm by remember(exerciseId) { c.estimates.observeE1rm(exerciseId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var tapped by remember { mutableStateOf<String?>(null) }
 
@@ -139,6 +140,10 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
 
             Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
                 TileLabel("History", Modifier.padding(bottom = 6.dp))
+                if (e1rm.isNotEmpty()) {
+                    val p = c.params.fork()
+                    E1rmTrend(e1rm, ex.bwFraction, ex.implementBaseKg ?: 0.0, p.int("ui.progress.window_weeks"), p.double("ui.progress.band_opacity").toFloat())
+                }
                 val zone = ZoneId.of("Europe/Amsterdam")
                 val sessions = history.groupBy { it.set.session_id }.entries.take(5)
                 if (sessions.isEmpty()) Text("Not logged yet.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)

@@ -17,8 +17,10 @@ class HoldTest {
     private val plank = HoldFacts("plank", "trunk", "core_anti_extension", 0.0)
     private val facts = mapOf(hold90.exerciseId to hold90, hang.exerciseId to hang, plank.exerciseId to plank)
 
-    private fun hold(id: String, ex: String, w: Double?, t: Double, chip: String?, side: String = "R", ext: Double = 0.0, at: Long = 0) =
-        HoldSet(id, ex, side, start.plusSeconds(at), "working", w, ext, t, chip)
+    private fun hold(id: String, ex: String, w: Double?, t: Double, chip: String?, side: String = "R", ext: Double = 0.0, at: Long = 0): HoldSet {
+        val (reserve, lowerBound) = Hold.chipReserve(chip, params)
+        return HoldSet(id, ex, side, start.plusSeconds(at), "working", w, ext, t, reserve, lowerBound)
+    }
 
     @Test
     fun `GF-HOLD-01 the 90-degree hold at pin 35, then pin 30`() {

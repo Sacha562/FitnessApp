@@ -9,6 +9,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.MachineCalibration
 import dev.fitnessapp.algo.challenge.fitexpr.UserKFact
 import dev.fitnessapp.algo.challenge.fitexpr.Value
 import dev.fitnessapp.algo.challenge.materialize.ExerciseResolver
+import dev.fitnessapp.algo.common.Ids
 import dev.fitnessapp.algo.core.load.ExerciseLoadAttrs
 import dev.fitnessapp.algo.core.load.Laterality
 import dev.fitnessapp.algo.core.load.LoadMode
@@ -20,9 +21,14 @@ import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.JsonText
 import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.repo.EquipmentRepository
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -33,7 +39,9 @@ import java.util.TreeMap
  * The engine-fact snapshot of CHALLENGE_ENGINE 3.9 as the phone knows it, frozen into each event the app writes:
  * the latest weigh-in, the assisted machine's calibration (or the definition's defaults until calibrated), the
  * belt's achievable loads, the available equipment, the last pain date per body region and RCM-1's `k` per
- * definition exercise. Until RCM-1 runs (M3) `k` is the class prior `rcm.k0` with `rcm.sigma_lnk` (C59).
+ * definition exercise: the cached `rcm` state of the estimation layer (M3.2), or the class prior `rcm.k0` with
+ * `rcm.sigma_lnk` before the exercise's first fit (C59). The estimation layer runs a challenge session only after its
+ * completion event, so these facts never contain the session's own update (CHALLENGE_ENGINE 3.9).
  */
 class ChallengeFactsProvider(
     private val db: FitnessDatabase,
@@ -94,7 +102,16 @@ class ChallengeFactsProvider(
         for (spec in def.doc.exercises) {
             val slug = resolver.slugOf(spec) ?: continue
             val k = bySlug[slug]?.curveClass?.let { k0[it] } ?: continue
-            userK[spec.key] = UserKFact(slug, Dec.ofParam(k), Dec.ofParam(params.double("rcm.sigma_lnk")), null, 0)
+            val fitted = db.modelStates().forExercise("rcm", Ids.exercise(slug).toString()).firstOrNull()
+            userK[spec.key] = if (fitted == null) {
+                UserKFact(slug, Dec.ofParam(k), Dec.ofParam(params.double("rcm.sigma_lnk")), null, 0)
+            } else {
+                val st = Json.parseToJsonElement(fitted.state).jsonObject
+                UserKFact(
+                    slug, Dec.ofParam(st.getValue("k_used").jsonPrimitive.double), Dec.ofParam(st.getValue("sd_lnk").jsonPrimitive.double),
+                    fitted.state_hash, st.getValue("m").jsonPrimitive.int,
+                )
+            }
         }
         return EngineFacts(
             capturedAt = now(),

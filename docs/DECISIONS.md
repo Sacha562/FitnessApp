@@ -470,3 +470,20 @@ pull-up" task descriptions (read 2026-10-07). Todoist adds rules the artifact do
   new `pooled` flag when no window is informative, and the pooled class fit uses `k0` for the per-set sd (B5.1,
   DATA_MODEL 10.2). `GoldenRunner.run` takes the params view (the self-test and `sim golden` pass the bundled params).
   The app does not call the estimators before M3.2, so `ENGINE_VERSION` stays 1.7.0.
+- 2026-10-27 — M3.2 built (D49): Room v7 adds `params_snapshots`, `recommendations` and `exercise_model_state` (an
+  `AutoMigration`, tables only), all three push-only: a new install rebuilds them from the facts (DATA_MODEL 16 R2). The
+  L8 layer is a pure replay in `:algo` (`pipeline/EstimationReplay`: per session RCM-1 for the exercises it contains,
+  then SSE-1 with the new `k`, HOLD-1, and RIRCAL-1's updates effective from the next session) and a runner in `:data`
+  (`engine/EstimationRunner`) that replays every finished session in order whenever a finished session, its sets or a
+  challenge event change (a debounced Room flow, plus app start and the daily maintenance run). Build notes (defaults,
+  no user decision needed): estimation snapshots get content-derived ids, so a replay of unchanged facts writes nothing
+  and an edit adds superseding rows (DATA_MODEL 9.5.2); a challenge session is held back until its `session.completed`
+  (and a test day's `test.completed`) exists, for at most 6 hours, so the challenge's engine facts never contain the
+  session's own L8 update (CHALLENGE_ENGINE 3.9); the challenge facts' `userK` now come from the cached `rcm` state
+  (`k_used`, `sd_lnk`, informative windows, the state hash as `fit_run_id`), the class prior only before an exercise's
+  first fit (C59); a set's `pain_flag` without a reason code counts as the reason `pain`; RCM-1's pooled class value is
+  used as B5.1 specifies, so another exercise of the class can move `k` before the exercise's own window (within the
+  rate limit); the nightly FAT-1 personalisation (B7.5) does not run yet, every class uses the default `c_ref` and `d`.
+  The exercise detail shows SSE-1's level and 80 % band per session as added kg (`ui.progress.window_weeks`,
+  `ui.progress.band_opacity`); holds keep the list only. No server migration; `ENGINE_VERSION` stays 1.7.0 (no module
+  version changes).
