@@ -675,8 +675,47 @@ M3 is built in six steps (D49), each ending with a green build and checks on the
 - Building a general session automatically (moved from M3 by D49): the eligibility filter's necessity gate, selection,
   ordering and supersets, and the time model with trimming, fed by the allocator's per-group targets; the Preferences
   screen's Muscle goals and Sessions settings.
+- Feedback prompts and the readiness sheet, mesocycle rotation, optional supersets, and You → Progress (D55).
 - **Done when**: Today and Week give sensible, explained recommendations for the real week (golden
   fixture: Wed 2026-10-07 with C Tue, A Thu, test Sun) and respect every challenge constraint.
+
+M4 is built in seven steps (D55), each ending with a green build and checks on the phone. Session building comes before
+the planner, so generated legs and push sessions are usable on gap days as early as possible; the planner reuses the
+allocator. Before a module's goldens are frozen, the expected values of F-W41, F-DST-W43 and F-SEL are regenerated on
+catalog 1.0.2 (OI-16).
+
+1. **M4.1 Accounting and targets.** The pure `:algo` modules `safety` (one `SafetyState` that merges the general joint
+   flags with the challenge's safety modes), `setcredit` (done and committed volume per muscle group, including the
+   challenge contract coverage deferred from M2a), `readiness`, `targets` (weekly targets, the ramp, the DeloadPolicy
+   synced to the challenge block, re-entry, the goal presets file) and `runs`. Tests: the module tests of
+   ALGORITHMS_PLANNING 2-6 and the goldens W41_targets, W41_accounting, W41_readiness and DST_W43_readiness and
+   DST_W43_week. No screen changes, so the engine version stays.
+2. **M4.2 Goals, settings, prompts and this week's volume.** Storage and sync for the profile fields and per-group goals
+   (the migration is shown first). Two new Preferences sections: Muscle goals (the presets, per-group improve, maintain or
+   skip, groups owned by the OAP shown as covered) and Sessions (training age, maximum visits, availability windows,
+   default session length, running priority), opened once from a Today card "Set your goals". The feedback prompts after
+   a session and the pre-session readiness sheet with You → Prompts, so soreness answers start to accumulate. Runs are
+   read from the classified calendar. The Week tab arrives with only its muscle volume bars: done and committed volume
+   against this week's targets.
+3. **M4.3 Session-building engine.** The pure `:algo` modules `time` (duration model, calibration, the dose estimator,
+   the add-on capacity of C49, the time-chip trimming), `allocator`, the `elig` necessity gate and group availability,
+   `select` (beam search with set tuning, checked against an exhaustive search) and `order` with the optional supersets.
+   Goldens: W41_addon_thu, W41_allocation_fri, W41_select_fri and the F-SEL cases.
+4. **M4.4 Building a session in the app.** A general session can start for a session type (Legs, Push, Legs + push,
+   Full and the others of ALGORITHMS_PLANNING 0.3) with time chips; the exercises, order and loads come from `select`,
+   `order` and `rx`. The add-on blocks after C and A are offered at the end of the challenge session, with Skip on the
+   block header. SUB-1's "Do {k} now" follows ORD-1, and busy stations count in the ranking (deferred by D53).
+5. **M4.5 Planner and Today.** `weekplan` (the day model, hard constraints, enumeration, the tie band, rest-day reasons,
+   replanning, next week) and `today`, with `ui.todaycard`: the verdict (train, rest soft, rest hard), the primary option
+   and alternatives with reason chips, "Train anyway" and the week strip. Goldens: W41_weekplan, the W41_today days,
+   W41_trainAnywayWed, the capacity and novice variants, W41_elbowCheck2, W41_testPostponed and DST_W43_windows.
+6. **M4.6 Week tab and Plan it.** Before this step, T17 and the switch to real calendar writes (the open M2b.6 items) are
+   done with your agreement. The Week tab shows recommended versus planned per day with the reasons, the day sheet, Plan
+   it (a marked calendar event that is then read back as a planned gym session and sets the session's time budget) and
+   next week. Golden: W41_planItFri.
+7. **M4.7 Rotation and progress.** `rotate`: main lifts are locked for a mesocycle that follows the challenge block, and
+   accessories rotate only when stalled or disliked. You → Progress with `ui.progress`: e1RM charts, personal bests and
+   the gate bars.
 
 ### M5 — Review tooling (2–3 sessions)
 
