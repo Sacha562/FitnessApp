@@ -35,6 +35,10 @@ import dev.fitnessapp.data.db.dao.SetLogDao
 import dev.fitnessapp.data.db.dao.SyncCursorDao
 import dev.fitnessapp.data.db.dao.RepPreferenceDao
 import dev.fitnessapp.data.db.dao.UserExercisePrefDao
+import dev.fitnessapp.data.db.dao.CustomExerciseDao
+import dev.fitnessapp.data.db.dao.ExerciseStimulusDao
+import dev.fitnessapp.data.db.entity.CustomExerciseEntity
+import dev.fitnessapp.data.db.entity.ExerciseStimulusEntity
 import dev.fitnessapp.data.db.dao.WellnessLogDao
 import dev.fitnessapp.data.db.dao.WorkoutSessionDao
 import dev.fitnessapp.data.db.entity.CalendarEventEntity
@@ -102,11 +106,13 @@ import java.io.File
         ParamsSnapshotEntity::class, RecommendationEntity::class, ExerciseModelStateEntity::class,
         // v8 (M3.5): the Sets and reps preferences
         RepPreferenceEntity::class,
+        // v10 (M3.6): custom exercises and their region coefficients
+        CustomExerciseEntity::class, ExerciseStimulusEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8),
-        AutoMigration(from = 8, to = 9),
+        AutoMigration(from = 8, to = 9), AutoMigration(from = 9, to = 10),
     ],
 )
 @TypeConverters(Converters::class)
@@ -128,6 +134,8 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun alarms(): ScheduledAlarmDao
     abstract fun crashes(): CrashLogDao
     abstract fun exercisePrefs(): UserExercisePrefDao
+    abstract fun customExercises(): CustomExerciseDao
+    abstract fun exerciseStimulus(): ExerciseStimulusDao
     abstract fun repPreferences(): RepPreferenceDao
     abstract fun exports(): ExportDao
     abstract fun challengeDefinitions(): ChallengeDefinitionDao
@@ -143,7 +151,7 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun modelStates(): ExerciseModelStateDao
 
     companion object {
-        const val VERSION = 9
+        const val VERSION = 10
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 

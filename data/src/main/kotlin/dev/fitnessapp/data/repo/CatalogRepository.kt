@@ -11,20 +11,48 @@ import java.util.Locale
 
 /**
  * The bundled catalog (`fitness/catalog/catalog-1.0.1.json`; migration 009 seeded 1.0.0, migration 020 the
- * 1.0.1 delta). Global exercise ids are UUIDv5 `exercise:<slug>` (C38), so the phone and the server agree
- * without a lookup.
+ * 1.0.1 delta) plus the user's custom exercises (M3.6, D27), which [CustomExerciseRepository] keeps current through
+ * [setCustom]. Global exercise ids are UUIDv5 `exercise:<slug>` (C38), so the phone and the server agree
+ * without a lookup; custom rows keep their stored UUIDv7. [doc] stays the bundled file (challenge definitions
+ * resolve against it); [merged] is the document the engine reads.
  */
 class CatalogRepository(text: () -> String) {
     val doc: CatalogDoc by lazy { CatalogDoc.parse(text()) }
     val version: String get() = doc.catalogVersion
 
-    val exercises: List<CatalogExercise> by lazy { doc.exercises.sortedBy { it.nameEn.lowercase(Locale.ROOT) } }
-    private val byId: Map<String, CatalogExercise> by lazy { doc.exercises.associateBy { idOf(it) } }
-    private val bySlug: Map<String, CatalogExercise> by lazy { doc.exercises.associateBy { it.slug } }
+    private class Index(val doc: CatalogDoc, custom: List<Pair<String, CatalogExercise>>, val version: Int) {
+        val customIds: Map<String, String> = custom.associate { it.second.slug to it.first }
+        val all: List<CatalogExercise> = doc.exercises + custom.map { it.second }
+        val sorted: List<CatalogExercise> = all.sortedWith(compareBy({ it.nameEn.lowercase(Locale.ROOT) }, { it.slug }))
+        val bySlug: Map<String, CatalogExercise> = all.associateBy { it.slug }
+        val byId: Map<String, CatalogExercise> = all.associateBy { customIds[it.slug] ?: Ids.exercise(it.slug).toString() }
+        val merged: CatalogDoc = doc.copy(exercises = all)
+    }
 
-    fun idOf(e: CatalogExercise): String = Ids.exercise(e.slug).toString()
-    fun byId(id: String): CatalogExercise? = byId[id]
-    fun bySlug(slug: String): CatalogExercise? = bySlug[slug]
+    @Volatile private var index: Index? = null
+    private fun ix(): Index = index ?: synchronized(this) { index ?: Index(doc, emptyList(), 0).also { index = it } }
+
+    /** Bumps with every change of the custom rows, so read models built from [merged] know when to rebuild. */
+    val customVersion: Int get() = ix().version
+
+    /** Replaces the custom exercises (id to row); custom slugs never collide with global ones (`custom_` prefix). */
+    fun setCustom(rows: List<Pair<String, CatalogExercise>>) = synchronized(this) {
+        val old = ix()
+        if (old.customIds.size == rows.size && rows.all { (id, e) -> old.customIds[e.slug] == id && old.bySlug[e.slug] == e }) return@synchronized
+        index = Index(doc, rows.sortedBy { it.second.slug }, old.version + 1)
+    }
+
+    /** Every exercise, global and custom, sorted by English name. */
+    val exercises: List<CatalogExercise> get() = ix().sorted
+    /** Global then custom rows, the engine's view (estimators, prescriptions, selection). */
+    val allExercises: List<CatalogExercise> get() = ix().all
+    val merged: CatalogDoc get() = ix().merged
+    val custom: List<CatalogExercise> get() = ix().all.filter { isCustom(it) }
+
+    fun isCustom(e: CatalogExercise): Boolean = e.slug in ix().customIds
+    fun idOf(e: CatalogExercise): String = ix().customIds[e.slug] ?: Ids.exercise(e.slug).toString()
+    fun byId(id: String): CatalogExercise? = ix().byId[id]
+    fun bySlug(slug: String): CatalogExercise? = ix().bySlug[slug]
 
     /**
      * Search by English names and aliases, plus Dutch names when [dutch] (D12: the phone's language is Dutch), accent-

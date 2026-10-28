@@ -176,7 +176,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                             onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
                         )
-                        Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) })
+                        Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) }, onCreate = { push(AppKey.CustomExercise(it)) })
                         Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
@@ -218,6 +218,9 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                         push(AppKey.LiveSession(id))
                     },
                 )
+            }
+            entry<AppKey.CustomExercise> { k ->
+                dev.fitnessapp.app.ui.exercises.CustomExerciseRoute(c, k.name, onBack = { pop() }, onSaved = { id -> pop(); push(AppKey.ExerciseDetail(id, "list")) })
             }
             entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }, onOpen = { push(AppKey.ExerciseDetail(it, "alternatives")) }) }
             entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }, onTestDay = { push(AppKey.TestDay(k.enrollmentId, null)) }) }
@@ -266,6 +269,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.History -> "you.history"
     is AppKey.SessionDetail -> "you.session_detail"
     is AppKey.ExerciseDetail -> "exercises.detail"
+    is AppKey.CustomExercise -> "exercises.custom"
     is AppKey.ChallengeDashboard -> "challenges.dashboard"
     is AppKey.ChallengeSetup -> "challenge.setup"
     is AppKey.TestDay -> "test.wizard"

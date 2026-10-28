@@ -18,6 +18,9 @@ sealed interface AppKey {
     data class SessionDetail(val sessionId: String) : AppKey
     data class ExerciseDetail(val exerciseId: String, val from: String) : AppKey
 
+    /** Create a custom exercise (UX 13.5, M3.6); [name] prefills step 4 from an empty search. */
+    data class CustomExercise(val name: String) : AppKey
+
     /** Data and sync opened from the N-EXPORT reminder: starts the monthly export right away (UX 18). */
     data object DataSyncExport : AppKey
 
@@ -44,6 +47,7 @@ sealed interface AppKey {
             History -> "history"
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
+            is CustomExercise -> "custom_exercise:" + k.name
             DataSyncExport -> "data_sync_export"
             is ChallengeDashboard -> "challenge:" + k.enrollmentId
             is ChallengeSetup -> "challenge_setup:" + k.definitionId
@@ -61,6 +65,7 @@ sealed interface AppKey {
             s == "preferences" -> Preferences
             s == "history" -> History
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
+            s.startsWith("custom_exercise:") -> CustomExercise(s.removePrefix("custom_exercise:"))
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
             s == "data_sync_export" -> DataSyncExport
             s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))

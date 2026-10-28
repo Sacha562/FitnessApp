@@ -290,3 +290,11 @@ loads are unchanged; the squat's own window gave `k` 37.5 and the leg curl's 32.
 raise take as the pooled lower-isolation value. The on-device determinism self-test passed 22/22 with the JVM hashes
 (the 15 estimator fixtures included). The back squat's detail shows "Estimated 1RM 54.5 kg (51.2 kg to 58 kg)" with its
 band above the 24 October row.
+
+**M3.6 (2026-10-28, D53)**: `pref`, `injury`, the `elig` hard filters and `substitute` in `:algo` (the ALGORITHMS_PLANNING
+22.3 rankings regenerated on catalog 1.0.1: leg press occupied gives hack squat 0.934, goblet squat 0.857, Bulgarian split
+squat 0.848; machine chest press gives dumbbell bench 0.934, push-up 0.920, decline dumbbell press 0.919). In the app:
+Swap in the Occupied sheet and the exercise menu (with Undo), "Do {k} now, come back after", the exercise detail's
+Alternatives and "Apply to similar", the "Lower your preference?" prompt on the summary, and custom exercises (Room v10,
+`exercises` and `exercise_stimulus` synced; the five-step form; the catalog's Custom filter). No server migration and no
+engine bump: the modules start at 1.0.0. Phone checks: pending.

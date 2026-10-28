@@ -98,9 +98,22 @@ class AppContainer(private val context: Context) {
 
     val catalog: CatalogRepository by lazy { CatalogRepository.bundled() }
 
-    /** CAT-1 read model over the bundled catalog and taxonomy (group coefficients for the Exercises tab). */
-    val catalogModel: Catalog by lazy {
-        Catalog(catalog.doc, Taxonomy.parse(resource("/fitness/reference/muscle_groups.json"), resource("/fitness/reference/muscle_regions.json")))
+    val taxonomy: Taxonomy by lazy { Taxonomy.parse(resource("/fitness/reference/muscle_groups.json"), resource("/fitness/reference/muscle_regions.json")) }
+    @Volatile private var catalogModelCache: Pair<Int, Catalog>? = null
+
+    /**
+     * CAT-1 read model over the bundled catalog, the custom exercises and the taxonomy; rebuilt when the custom rows
+     * change. SUB-1's vector weight is the params value.
+     */
+    val catalogModel: Catalog
+        get() {
+            val v = catalog.customVersion
+            catalogModelCache?.takeIf { it.first == v }?.let { return it.second }
+            return Catalog(catalog.merged, taxonomy, regionWeight = params.fork().double("substitute.region_weight")).also { catalogModelCache = v to it }
+        }
+    /** Custom exercises (M3.6): storage, sync and the merge into [catalog]. */
+    val customExercises: dev.fitnessapp.data.repo.CustomExerciseRepository by lazy {
+        dev.fitnessapp.data.repo.CustomExerciseRepository(db, outbox, telemetry, writeContext, syncScheduler, catalog)
     }
     val profiles: ProfileRepository by lazy { ProfileRepository(db, outbox, telemetry, writeContext, syncScheduler) }
     val equipment: EquipmentRepository by lazy { EquipmentRepository(db, outbox, telemetry, writeContext, syncScheduler) }

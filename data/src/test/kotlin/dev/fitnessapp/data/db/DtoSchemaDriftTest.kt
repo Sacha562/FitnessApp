@@ -204,4 +204,18 @@ class DtoSchemaDriftTest {
         "model, exercise_id, side, class_key, module_version, engine_version, params_hash, state, state_hash, n_observations, " +
             "as_of, as_of_session_id",
     )
+
+    /** Migration 008 (9.2.1, 9.2.2): the MIX tables, of which the app stores only the user's own custom rows (M3.6). */
+    @Test
+    fun customExercises() = check(
+        dev.fitnessapp.data.db.entity.CustomExerciseEntity.serializer(),
+        "slug, name_en, name_nl, aliases, pattern, family, equipment, requires_station, load_mode, allowed_load_modes, bw_fraction, " +
+            "implement_base_kg, laterality, measure, contraction, hold_class, ecc_emphasis, mechanics, curve_class, rest_class, " +
+            "safety_class, grip, stretch_emphasis, stability, skill, axial, systemic, sfr, setup_s, grip_demand, js_elbow_medial, " +
+            "js_elbow_lateral, js_shoulder_ant, js_shoulder_overhead, js_wrist, js_lumbar, js_knee, js_hip, tags, flags_offered, " +
+            "external_refs, evidence_note, prototype_exercise_id, catalog_version, retired_at",
+    )
+
+    @Test
+    fun exerciseStimulus() = check(dev.fitnessapp.data.db.entity.ExerciseStimulusEntity.serializer(), "exercise_id, region_id, coeff, evidence, note")
 }

@@ -201,7 +201,7 @@ class EstimationRunner(
 
     private fun holdFacts(): Map<String, HoldFacts> {
         val out = TreeMap<String, HoldFacts>()
-        for (e in catalog.doc.exercises.filter { it.contraction == "isometric" || it.contraction == "hang" }) {
+        for (e in catalog.allExercises.filter { it.contraction == "isometric" || it.contraction == "hang" }) {
             val id = catalog.idOf(e)
             out[id] = HoldFacts(id, e.holdClass, e.pattern, e.bwFraction)
         }

@@ -6,6 +6,8 @@ import dev.fitnessapp.data.db.entity.CalendarEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
 import dev.fitnessapp.data.db.entity.ChallengeEventEntity
 import dev.fitnessapp.data.db.entity.ChallengeRuleEventEntity
+import dev.fitnessapp.data.db.entity.CustomExerciseEntity
+import dev.fitnessapp.data.db.entity.ExerciseStimulusEntity
 import dev.fitnessapp.data.db.entity.ExerciseModelStateEntity
 import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
@@ -72,7 +74,8 @@ class SyncTable<E : SyncedRow>(
  * is pushed but not pulled yet: its pull scope (11.6) only rebuilds caches that arrive with later milestones.
  * The estimation layer's tables (M3.2) are push-only too: a new install rebuilds them from the facts (DATA_MODEL
  * 16 R2), and their ids are content-derived, so the rebuilt rows are the ones the server already has.
- * `params_snapshots` goes first because `recommendations` references it.
+ * `params_snapshots` goes first because `recommendations` references it. Custom `exercises` and their
+ * `exercise_stimulus` (M3.6) go before every row that references an exercise.
  * `challenge_definitions` is pull-only and global, so [DefinitionPuller] handles it outside this list.
  */
 fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
@@ -81,6 +84,8 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("gyms", false, true, db.gyms(), GymEntity.serializer()),
     SyncTable("gym_equipment", false, true, db.gymEquipment(), GymEquipmentEntity.serializer()),
     SyncTable("profiles", false, true, db.profiles(), ProfileEntity.serializer()),
+    SyncTable("exercises", false, true, db.customExercises(), CustomExerciseEntity.serializer()),
+    SyncTable("exercise_stimulus", false, true, db.exerciseStimulus(), ExerciseStimulusEntity.serializer()),
     SyncTable("user_exercise_prefs", false, true, db.exercisePrefs(), UserExercisePrefEntity.serializer()),
     SyncTable("rep_preferences", false, true, db.repPreferences(), RepPreferenceEntity.serializer()),
     SyncTable("challenge_enrollments", false, true, db.enrollments(), ChallengeEnrollmentEntity.serializer()),
@@ -100,7 +105,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
 
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
-    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "user_exercise_prefs", "rep_preferences", "challenge_enrollments", "workout_sessions",
+    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "exercises", "exercise_stimulus", "user_exercise_prefs", "rep_preferences", "challenge_enrollments", "workout_sessions",
     "session_blocks", "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events",
     "challenge_rule_events", "session_events", "exports", "exercise_model_state",
 )

@@ -32,6 +32,8 @@ data class CatalogFilter(
     val equipment: EquipmentFilter? = null,
     val preference: String? = null,
     val availableOnly: Boolean = true,
+    /** UX 13.2 "Custom": only the user's own exercises (M3.6). */
+    val customOnly: Boolean = false,
 )
 
 /**
@@ -78,13 +80,15 @@ object CatalogQuery {
         available: (CatalogExercise) -> Boolean,
         idOf: (CatalogExercise) -> String,
         dutch: Boolean,
+        isCustom: (CatalogExercise) -> Boolean = { false },
     ): List<CatalogExercise> {
         val ranked = all.mapNotNull { e -> rank(e, query, dutch)?.let { e to it } }
             .filter { (e, _) ->
                 (filter.muscle == null || catalog.groupCoeff(e, filter.muscle) >= MUSCLE_FILTER_MIN) &&
                     (filter.equipment == null || filter.equipment.matches(e)) &&
                     (filter.preference == null || (prefs[idOf(e)] ?: "neutral") == filter.preference) &&
-                    (!filter.availableOnly || available(e))
+                    (!filter.availableOnly || available(e)) &&
+                    (!filter.customOnly || isCustom(e))
             }
         val searching = fold(query).isNotEmpty()
         val cmp: Comparator<Pair<CatalogExercise, Int>> = when (sort) {

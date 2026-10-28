@@ -56,7 +56,7 @@ internal object EngineFacts {
 
     fun exerciseFacts(catalog: CatalogRepository, model: Catalog): Map<String, ExerciseFacts> {
         val out = TreeMap<String, ExerciseFacts>()
-        for (e in catalog.doc.exercises) out[catalog.idOf(e)] = facts(catalog, model, e)
+        for (e in catalog.allExercises) out[catalog.idOf(e)] = facts(catalog, model, e)
         return out
     }
 

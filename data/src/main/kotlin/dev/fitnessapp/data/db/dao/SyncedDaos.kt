@@ -1,5 +1,7 @@
 package dev.fitnessapp.data.db.dao
 
+import dev.fitnessapp.data.db.entity.CustomExerciseEntity
+import dev.fitnessapp.data.db.entity.ExerciseStimulusEntity
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -414,4 +416,43 @@ interface ExportDao : SyncDao<ExportEntity> {
 
     @Query("SELECT * FROM exports WHERE export_kind IN ('monthly_full', 'manual_full') ORDER BY period_end DESC, id DESC LIMIT 1")
     suspend fun lastFull(): ExportEntity?
+}
+
+@Dao
+interface CustomExerciseDao : SyncDao<CustomExerciseEntity> {
+    @Query("SELECT * FROM exercises WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<CustomExerciseEntity>
+
+    @Query("SELECT id FROM exercises")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM exercises ORDER BY id")
+    override suspend fun exportAll(): List<CustomExerciseEntity>
+
+    @Query("SELECT * FROM exercises WHERE deleted_at IS NULL ORDER BY slug")
+    fun observeLive(): Flow<List<CustomExerciseEntity>>
+
+    @Query("SELECT * FROM exercises WHERE deleted_at IS NULL ORDER BY slug")
+    suspend fun live(): List<CustomExerciseEntity>
+
+    @Query("SELECT * FROM exercises WHERE slug = :slug")
+    suspend fun bySlug(slug: String): CustomExerciseEntity?
+}
+
+@Dao
+interface ExerciseStimulusDao : SyncDao<ExerciseStimulusEntity> {
+    @Query("SELECT * FROM exercise_stimulus WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<ExerciseStimulusEntity>
+
+    @Query("SELECT id FROM exercise_stimulus")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM exercise_stimulus ORDER BY id")
+    override suspend fun exportAll(): List<ExerciseStimulusEntity>
+
+    @Query("SELECT * FROM exercise_stimulus WHERE deleted_at IS NULL ORDER BY exercise_id, region_id")
+    fun observeLive(): Flow<List<ExerciseStimulusEntity>>
+
+    @Query("SELECT * FROM exercise_stimulus WHERE deleted_at IS NULL ORDER BY exercise_id, region_id")
+    suspend fun live(): List<ExerciseStimulusEntity>
 }

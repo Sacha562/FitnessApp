@@ -57,6 +57,7 @@ import dev.fitnessapp.algo.selection.catalog.CatalogExercise
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.FitTextField
+import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.dutchNames
 import dev.fitnessapp.app.ui.common.isDutch
@@ -107,11 +108,12 @@ class ExercisesViewModel(private val c: AppContainer) : ViewModel() {
         c.preferences.observe(),
         c.sessionRepository.observeUsageSince(since),
         c.equipment.observeEquipment(),
-    ) { (q, f, s, d), prefs, usage, equipment ->
+        c.customExercises.observe(),
+    ) { (q, f, s, d), prefs, usage, equipment, _ ->
         val stations = equipment.filter { it.available }.map { it.equipment_type }.toSet()
         val available: (CatalogExercise) -> Boolean = { e -> equipment.isEmpty() || e.requiresStation.all { it in stations } }
         val usageMap = usage.associate { it.exercise_id to it.sessions }
-        val list = CatalogQuery.apply(c.catalog.exercises, q, f, s, c.catalogModel, prefs, usageMap, available, c.catalog::idOf, d)
+        val list = CatalogQuery.apply(c.catalog.exercises, q, f, s, c.catalogModel, prefs, usageMap, available, c.catalog::idOf, d, c.catalog::isCustom)
         CatalogUi(
             q, f, s,
             list.map { e ->
@@ -167,14 +169,14 @@ class ExercisesViewModel(private val c: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun ExercisesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Unit) {
+fun ExercisesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Unit, onCreate: (String) -> Unit = {}) {
     val vm: ExercisesViewModel = viewModel(factory = viewModelFactory { initializer { ExercisesViewModel(c) } })
     val ui by vm.ui.collectAsState()
-    ExercisesContent(c, ui, vm, modifier, onOpen)
+    ExercisesContent(c, ui, vm, modifier, onOpen, onCreate)
 }
 
 @Composable
-private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel, modifier: Modifier, onOpen: (String) -> Unit) {
+private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel, modifier: Modifier, onOpen: (String) -> Unit, onCreate: (String) -> Unit) {
     var text by remember { mutableStateOf(ui.query) }
     val dutch = dutchNames()
     LaunchedEffect(text) { vm.setQuery(text) }
@@ -197,11 +199,13 @@ private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewMo
         if (ui.rows.isEmpty()) {
             Text(
                 if (text.isNotBlank()) "No exercise matches '$text'." else "No exercise matches these filters.",
-                style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(20.dp),
+                style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
             )
+            LinkButton("Create a custom exercise", { onCreate(text.trim()) }, Modifier.padding(horizontal = 8.dp))
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(ui.rows, key = { it.id }) { row -> CatalogRowItem(row) { onOpen(row.id) } }
+            if (ui.rows.isNotEmpty()) item(key = "create") { LinkButton("+ Create custom exercise", { onCreate("") }) }
         }
     }
 }
@@ -226,6 +230,10 @@ private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
         ChipButton(
             "Available here", selected = f.availableOnly, role = Role.Checkbox,
             onClick = { vm.setFilter("available_here", (!f.availableOnly).toString()) { it.copy(availableOnly = !it.availableOnly) } },
+        )
+        ChipButton(
+            "Custom", selected = f.customOnly, role = Role.Checkbox,
+            onClick = { vm.setFilter("custom", (!f.customOnly).toString()) { it.copy(customOnly = !it.customOnly) } },
         )
         MenuChip("Sort", ui.sort.label, CatalogSort.entries.map { it.code to it.label }, alwaysSelected = true) { v ->
             vm.setSort(CatalogSort.entries.first { it.code == v })

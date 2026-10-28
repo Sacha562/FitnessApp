@@ -59,6 +59,8 @@ class FitnessApplication : Application(), Configuration.Provider {
         step("maintenance") { MaintenanceWorker.ensureScheduled(this) }
         container.appScope.launch {
             suspend fun stepS(name: String, block: suspend () -> Unit) = runCatching { block() }.onFailure { failed += name to it }
+            // M3.6: custom exercises join the catalog before anything resolves an exercise id.
+            stepS("custom_exercises") { container.customExercises.attach(container.appScope) }
             stepS("rest_timer_recovery") { container.restTimer.reconcile() }
             stepS("crash_report") { reportCrashes() }
             stepS("equipment_upgrade") { EquipmentUpgrade.addMissingTypes(container.equipment) }
