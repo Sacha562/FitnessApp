@@ -1,0 +1,30 @@
+{
+  "presets_version": "1.0.0",
+  "source": "ALGORITHMS_PLANNING 5.6 (D6); groups owned by an active challenge show as covered whatever the preset says",
+  "presets": {
+    "balanced": {
+      "improve": ["chest", "side_delts", "rear_delts", "lats", "upper_back", "biceps", "triceps", "quads", "hamstrings", "glutes"],
+      "maintain": ["front_delts", "upper_traps", "forearms", "abs", "lower_back", "abductors", "adductors", "calves"],
+      "skip": [],
+      "focus": []
+    },
+    "legs_only": {
+      "improve": ["quads", "hamstrings", "glutes", "adductors", "abductors", "calves"],
+      "maintain": ["abs", "lower_back"],
+      "skip": ["chest", "front_delts", "side_delts", "rear_delts", "lats", "upper_back", "upper_traps", "biceps", "triceps", "forearms"],
+      "focus": []
+    },
+    "no_legs": {
+      "improve": ["chest", "side_delts", "rear_delts", "lats", "upper_back", "biceps", "triceps"],
+      "maintain": ["front_delts", "upper_traps", "forearms", "abs", "lower_back"],
+      "skip": ["quads", "hamstrings", "glutes", "adductors", "abductors", "calves"],
+      "focus": []
+    },
+    "pull_focus": {
+      "improve": ["lats", "upper_back", "biceps", "rear_delts", "forearms"],
+      "maintain": ["chest", "front_delts", "side_delts", "triceps", "quads", "hamstrings", "glutes", "calves", "abs", "lower_back", "upper_traps", "adductors", "abductors"],
+      "skip": [],
+      "focus": ["lats", "upper_back"]
+    }
+  }
+}

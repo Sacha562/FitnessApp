@@ -1,0 +1,71 @@
+{
+    "id": "GF-DST-W43-WEEK",
+    "module": "clock",
+    "description": "DST_W43_week (24.2): the seven local dates of ISO week 2026-W43; Sunday 25 October has 25 hours",
+    "input": {
+        "module": "clock@1.0.0",
+        "scope_key": "golden:GF-DST-W43-WEEK",
+        "clock": {
+            "now": "2026-10-21T10:00:00.000Z",
+            "zone": "Europe/Amsterdam",
+            "local_date": "2026-10-21",
+            "iso_week": "2026-W43",
+            "tz_offset_min": 120
+        },
+        "payload": {
+            "iso_week": [
+                "2026-10-19",
+                "2026-10-20",
+                "2026-10-21",
+                "2026-10-22",
+                "2026-10-23",
+                "2026-10-24",
+                "2026-10-25"
+            ],
+            "iso_week_start": [
+                "2026-10-25"
+            ],
+            "elapsed_hours": [
+                [
+                    "2026-10-24T22:00:00Z",
+                    "2026-10-25T23:00:00Z"
+                ]
+            ],
+            "at_local": [
+                [
+                    "2026-10-25",
+                    "00:00"
+                ],
+                [
+                    "2026-10-26",
+                    "00:00"
+                ]
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "iso_week": [
+                "2026-W43",
+                "2026-W43",
+                "2026-W43",
+                "2026-W43",
+                "2026-W43",
+                "2026-W43",
+                "2026-W43"
+            ],
+            "iso_week_start": [
+                "2026-10-19"
+            ],
+            "elapsed_hours": [
+                25
+            ],
+            "at_local": [
+                "2026-10-24T22:00:00Z",
+                "2026-10-25T23:00:00Z"
+            ]
+        },
+        "outputs_jcs_sha256": "f6e0209c71428b60b1048ec78aabe89d9fbdc7c67305fca957689da1b951a7a1"
+    }
+}

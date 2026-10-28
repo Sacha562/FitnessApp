@@ -684,7 +684,7 @@ the planner, so generated legs and push sessions are usable on gap days as early
 allocator. Before a module's goldens are frozen, the expected values of F-W41, F-DST-W43 and F-SEL are regenerated on
 catalog 1.0.2 (OI-16).
 
-1. **M4.1 Accounting and targets.** The pure `:algo` modules `safety` (one `SafetyState` that merges the general joint
+1. **M4.1 Accounting and targets** (built 2026-10-29). The pure `:algo` modules `safety` (one `SafetyState` that merges the general joint
    flags with the challenge's safety modes), `setcredit` (done and committed volume per muscle group, including the
    challenge contract coverage deferred from M2a), `readiness`, `targets` (weekly targets, the ramp, the DeloadPolicy
    synced to the challenge block, re-entry, the goal presets file) and `runs`. Tests: the module tests of

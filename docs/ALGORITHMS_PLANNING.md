@@ -1185,7 +1185,7 @@ critique: "a run that day is a warning only").
 
 `PER_MIN {quads 0.05, calves 0.06, hamstrings 0.03, glutes 0.03}` per minute (planning lens, assumption: a 40-min easy
 run ≈ 2 quad and 2.4 calf set-equivalents of fatigue); `INTENSITY {easy 1.0, tempo 1.5, intervals 1.8, race 2.0}`;
-`LONG_FACTOR 1.3`, `RUN_LONG_MINUTES 75`; `SYS_PER_40MIN 0.5` (the planning lens used 1.0, which would make a 40-min
+`LONG_FACTOR 1.3`, `RUN_LONG_MINUTES 75` (the classifier's key `calendar.classify.run_long_minutes`, shared with §1.4); `SYS_PER_40MIN 0.5` (the planning lens used 1.0, which would make a 40-min
 easy run as taxing as a full 15-set lower-body session; halved [this doc], tunable); `WINDOW_H 8` (Sporer & Wenger
 2003: leg-press volume down 4-8 h after aerobic work, not at 24 h; moderate); `RUN_BEFORE_PEN 0.5`,
 `RUN_AFTER_PEN 0.3`; `HARD_RUN_H 48` (Doma: residual strength-training fatigue impairs running for 24-48 h; moderate),
@@ -3889,7 +3889,7 @@ resolutions of DECISIONS §3.1 are kept, marked, so the history stays traceable.
 | OI-13 | One gym visit per day. | **Resolved by C50** (H8). | — |
 | OI-14 | Slot matching interface for `calendar.classify`. | **Resolved**: CHALLENGE_ENGINE §9.3 defines `challenge.calendar.matchSlots(enrollment, candidates) → List<SlotMatch>` as used in §1.4. | — |
 | OI-15 | **Run systemic load.** The planning lens's 1.0 per 40 min would make an easy 40-min run as taxing as a full 15-set lower-body session. | Open: 0.5 per 40 min | review after runs are logged (T-RUN) |
-| OI-16 | **Prototype catalog versus seed.** The §21/§22 selection outputs come from a prototype catalog (§22.4) with a few coefficients that differ from the seed (§10.8). | Open: prototype values documented | regenerate the golden values on catalog 1.0.2 before freezing them (D55, per M4 step) |
+| OI-16 | **Prototype catalog versus seed.** The §21/§22 selection outputs come from a prototype catalog (§22.4) with a few coefficients that differ from the seed (§10.8). | Open: prototype values documented | regenerate the golden values on catalog 1.0.2 before freezing them (D55, per M4 step); M4.1 froze the §21.3-21.4 goldens (GF-W41-ACCOUNTING, -READINESS, -TARGETS), selection follows in M4.3 |
 | OI-17 | Region count ("~32" in C9). | **Resolved by C44**: 34 regions + optional `neck` (§10.2). | — |
 | OI-18 | **Soreness scale.** UI chips give three answers; the RP-style ramp table uses four levels. | Open: never_sore 1, healed 2, still_sore 4 (ramp) and 0 / 1 / 3 points (`readiness.soreness_points`, which DATA_MODEL E19 points to) | review after 8 weeks of answers |
 | OI-19 | C52 put the lexicographic key before `J` (novice case of §21.11). | **Resolved by C52 amendment** (2026-10-07): higher `J` before the lexicographic key; the novice case now picks Wed FULL. | — |

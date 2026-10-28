@@ -1,0 +1,344 @@
+{
+    "id": "GF-W41-TARGETS",
+    "module": "targets",
+    "description": "W41_targets (21.3): preset balanced, intermediate, the OAP owns lats, biceps and forearms, deload week synced (F8); abs done 1.45 and committed 2.98 Vhyp (21.4), so abs is met by the challenge",
+    "input": {
+        "module": "targets@1.0.0",
+        "scope_key": "golden:GF-W41-TARGETS",
+        "payload": {
+            "iso_week": "2026-W41",
+            "today": "2026-10-07",
+            "training_age": "intermediate",
+            "owned": [
+                "lats",
+                "biceps",
+                "forearms"
+            ],
+            "contract_active": true,
+            "deload_week": true,
+            "done": {
+                "abs": 1.45,
+                "rear_delts": 0.9,
+                "upper_back": 1.4
+            },
+            "committed": {
+                "abs": 2.98,
+                "rear_delts": 0.9,
+                "upper_back": 0.45
+            },
+            "goals": {
+                "chest": {
+                    "goal": "improve"
+                },
+                "side_delts": {
+                    "goal": "improve"
+                },
+                "rear_delts": {
+                    "goal": "improve"
+                },
+                "lats": {
+                    "goal": "improve"
+                },
+                "upper_back": {
+                    "goal": "improve"
+                },
+                "biceps": {
+                    "goal": "improve"
+                },
+                "triceps": {
+                    "goal": "improve"
+                },
+                "quads": {
+                    "goal": "improve"
+                },
+                "hamstrings": {
+                    "goal": "improve"
+                },
+                "glutes": {
+                    "goal": "improve"
+                },
+                "front_delts": {
+                    "goal": "maintain"
+                },
+                "upper_traps": {
+                    "goal": "maintain"
+                },
+                "forearms": {
+                    "goal": "maintain"
+                },
+                "abs": {
+                    "goal": "maintain"
+                },
+                "lower_back": {
+                    "goal": "maintain"
+                },
+                "abductors": {
+                    "goal": "maintain"
+                },
+                "adductors": {
+                    "goal": "maintain"
+                },
+                "calves": {
+                    "goal": "maintain"
+                }
+            }
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "status": "ok",
+            "base": 12,
+            "deload": {
+                "active": true,
+                "source": "challenge",
+                "set_factor": 0.5,
+                "rir_offset": 2
+            },
+            "groups": {
+                "chest": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "front_delts": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "side_delts": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "rear_delts": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "lats": {
+                    "status": "covered",
+                    "t": 0,
+                    "target_effective": 0,
+                    "w": 0,
+                    "cap_s": 0,
+                    "min_touch": 0,
+                    "met_by_challenge": false,
+                    "reentry": true
+                },
+                "upper_back": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "upper_traps": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "biceps": {
+                    "status": "covered",
+                    "t": 0,
+                    "target_effective": 0,
+                    "w": 0,
+                    "cap_s": 0,
+                    "min_touch": 0,
+                    "met_by_challenge": false,
+                    "reentry": true
+                },
+                "triceps": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "forearms": {
+                    "status": "covered",
+                    "t": 0,
+                    "target_effective": 0,
+                    "w": 0,
+                    "cap_s": 0,
+                    "min_touch": 0,
+                    "met_by_challenge": false,
+                    "reentry": true
+                },
+                "abs": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": true,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "lower_back": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "glutes": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "abductors": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "adductors": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "quads": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "hamstrings": {
+                    "status": "improve",
+                    "t": 12,
+                    "target_effective": 6,
+                    "w": 1,
+                    "cap_s": 10,
+                    "min_touch": 2,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                },
+                "calves": {
+                    "status": "maintain",
+                    "t": 4,
+                    "target_effective": 2,
+                    "w": 0.6,
+                    "cap_s": 4,
+                    "min_touch": 1,
+                    "met_by_challenge": false,
+                    "reentry": true,
+                    "transform": {
+                        "set_factor": 0.5,
+                        "rir_offset": 2
+                    }
+                }
+            },
+            "general_target_sum": 124
+        },
+        "outputs_jcs_sha256": "e8bbcd5fee4e6a434a20d36b50cc060e61795bed1e6102162d64f7b2aa403ce7"
+    }
+}

@@ -47,6 +47,9 @@ object GoldenRunner {
             "stall" -> PrescriptionGolden.stall(payload(), params.fork())
             "autoreg" -> PrescriptionGolden.autoreg(payload(), params.fork())
             "warnings" -> PrescriptionGolden.warnings(payload(), params.fork())
+            "setcredit" -> PlanningGolden.setcredit(payload(), params.fork())
+            "readiness" -> PlanningGolden.readiness(payload(), params.fork())
+            "targets" -> PlanningGolden.targets(payload(), params.fork())
             else -> throw IllegalArgumentException("no golden adapter for module $module")
         }
         return Result(outputs, Jcs.canonicalize(outputs), Jcs.sha256Hex(outputs))

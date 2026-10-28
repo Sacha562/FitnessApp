@@ -304,3 +304,26 @@ and "Cardio (bike, rower)" and Next docked; step 2's equipment preselected for k
 from the hack squat, the grouped gym equipment with the prototype's cable station preselected; step 3's "Adjust
 muscles" opening Advanced; step 4 with one name field; the leg extension's five Alternatives opening their detail.
 Open: Swap in a live session, "Apply to similar", saving a custom exercise and the summary prompt (they write real data).
+
+## M4 log (in progress, from 2026-10-29)
+
+D55 fixed the scope and the order: session building first, then the planner and Today, then the Week tab.
+
+**M4.1 (2026-10-29)**: the pure `:algo` modules `safety` (one `SafetyState` from pain reports, pain clears and the
+challenge's safety modes), `setcredit` (per-set FS, Vhyp, strength credit, fatigue, tissue and systemic load; the week
+account; the contract coverage from the materialized challenge rows with the definition's `creditRir`), `readiness`,
+`targets` (goals and the 5.6 presets in `fitness/presets/goal-presets-1.0.0.json`, the ramp and the reactive triggers at
+the week close, the deload policy synced to the challenge, re-entry, the utility `U`) and `runs`. The module tests of
+ALGORITHMS_PLANNING 2.7, 3.7, 4.7, 5.8 and 6.7 pass with the spec's numbers; `weightedChinupRir2` uses the spec's
+coefficients because catalog 1.0.2 gives the weighted chin-up biceps 0.75, not 0.5. Five new golden fixtures:
+GF-W41-ACCOUNTING, GF-W41-READINESS and GF-W41-TARGETS (F-W41 rebuilt on catalog 1.0.2 per D55: the historical week
+without the Pallof press and without the test day's measurement sets), GF-DST-W43-READINESS (R 0.5654 after 25 h) and
+GF-DST-W43-WEEK. The W41 targets match 21.3 exactly (124 Vhyp for the general engine, deload 0.5 and RIR + 2, abs met by
+the challenge). The W41 accounting and readiness match 21.4 for lats, abs, grip and G; biceps, forearms, rear delts and
+the elbow channel differ by the catalog's chin-up and joint-stress values and the fixture's prehab rows (face pull,
+pronation/supination). Choices where the spec is open, all inside the modules: a fractional imputed RIR indexes the C6
+tables at its nearest integer; re-entry counts the sessions after the most recent gap from the dates that trained the
+group (the start of the history counts as a gap); the long-run threshold is the classifier's
+`calendar.classify.run_long_minutes` (the one 75-minute key); a challenge mode's joint flag has no end and wins a tie of
+severity. No app change, no params change and no engine bump: the modules start at 1.0.0 and the app does not call them
+until M4.2.

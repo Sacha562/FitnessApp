@@ -1,0 +1,40 @@
+{
+    "id": "GF-DST-W43-READINESS",
+    "module": "readiness",
+    "description": "DST_W43_readiness (24.2): a quads dose of 8 at Sat 24 October 20:00 CEST read at Sun 25 October 20:00 CET is 25 h old",
+    "input": {
+        "module": "readiness@1.0.0",
+        "scope_key": "golden:GF-DST-W43-READINESS",
+        "payload": {
+            "zone": "Europe/Amsterdam",
+            "doses": [
+                {
+                    "id": "q",
+                    "t": "2026-10-24T18:00:00Z",
+                    "fat": {
+                        "quads": 8
+                    }
+                }
+            ],
+            "at": [
+                "2026-10-25T19:00:00Z"
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "at": [
+                {
+                    "t": "2026-10-25T19:00:00Z",
+                    "r": {
+                        "quads": 0.5654
+                    },
+                    "tissue_r": {},
+                    "g": 1
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "712c8844b68276660e684c85da325d0a35db2b5cecedc1fa8da44f2481b23cf1"
+    }
+}
