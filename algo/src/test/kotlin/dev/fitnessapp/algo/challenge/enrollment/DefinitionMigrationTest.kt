@@ -18,7 +18,7 @@ class DefinitionMigrationTest {
     private val old: CompiledDefinition = Cds.load(ChallengeTestSupport.resource("challenges/oap.challenge.v1.4.0.json"), ChallengeTestSupport.context).orThrow()
     private val new: CompiledDefinition = Cds.load(ChallengeTestSupport.resource("challenges/oap.challenge.v1.5.0.json"), ChallengeTestSupport.context).orThrow()
     private val params = OapFixture.params()
-    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.1.json")) }
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.2.json")) }
     private val imp = OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false)
 
     private fun migrated(date: String = "2026-10-09", hash: String = "preview") = OapFixture.event(

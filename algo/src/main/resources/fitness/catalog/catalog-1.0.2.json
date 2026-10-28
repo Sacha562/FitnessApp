@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.1",
+  "catalog_version": "1.0.2",
   "exercises": [
     {
       "slug": "ab_wheel_rollout",
@@ -1665,6 +1665,68 @@
       "stimulus": {
         "delt_lateral": 1,
         "traps_upper": 0.5
+      }
+    },
+    {
+      "slug": "cable_woodchop",
+      "name_en": "Cable woodchop",
+      "name_nl": "Houthakker met kabel",
+      "aliases": [
+        "wood chop",
+        "woodchopper"
+      ],
+      "pattern": "core_rotation",
+      "family": "core",
+      "equipment": [
+        "cable"
+      ],
+      "requires_station": [
+        "cable_station"
+      ],
+      "load_mode": "external",
+      "allowed_load_modes": [
+        "external"
+      ],
+      "bw_fraction": 0.0,
+      "implement_base_kg": 0,
+      "laterality": "unilateral",
+      "measure": "reps",
+      "contraction": "dynamic",
+      "hold_class": null,
+      "ecc_emphasis": false,
+      "mechanics": "isolation",
+      "curve_class": "upper_isolation",
+      "rest_class": "core",
+      "safety_class": "cable",
+      "grip": "none",
+      "stretch_emphasis": 0,
+      "stability": 1,
+      "skill": 2,
+      "axial": 0,
+      "systemic": 1,
+      "sfr": 4,
+      "setup_s": 45,
+      "grip_demand": 0,
+      "joint_stress": {
+        "elbow_medial": 0,
+        "elbow_lateral": 0,
+        "shoulder_ant": 0,
+        "shoulder_overhead": 0,
+        "wrist": 0,
+        "lumbar": 1,
+        "knee": 0,
+        "hip": 0
+      },
+      "tags": [
+        "core"
+      ],
+      "flags_offered": [],
+      "external_refs": {},
+      "evidence_note": null,
+      "stimulus": {
+        "anti_rotation": 0.5,
+        "obliques": 1,
+        "rectus_abdominis": 0.25
       }
     },
     {
@@ -7384,6 +7446,65 @@
       },
       "evidence_note": null,
       "stimulus": {}
+    },
+    {
+      "slug": "russian_twist",
+      "name_en": "Russian twist",
+      "name_nl": "Russian twist",
+      "aliases": [],
+      "pattern": "core_rotation",
+      "family": "core",
+      "equipment": [
+        "bodyweight"
+      ],
+      "requires_station": [],
+      "load_mode": "external",
+      "allowed_load_modes": [
+        "external"
+      ],
+      "bw_fraction": 0.0,
+      "implement_base_kg": 0,
+      "laterality": "bilateral",
+      "measure": "reps",
+      "contraction": "dynamic",
+      "hold_class": null,
+      "ecc_emphasis": false,
+      "mechanics": "isolation",
+      "curve_class": "upper_isolation",
+      "rest_class": "core",
+      "safety_class": "bodyweight",
+      "grip": "none",
+      "stretch_emphasis": 0,
+      "stability": 2,
+      "skill": 1,
+      "axial": 0,
+      "systemic": 1,
+      "sfr": 3,
+      "setup_s": 10,
+      "grip_demand": 0,
+      "joint_stress": {
+        "elbow_medial": 0,
+        "elbow_lateral": 0,
+        "shoulder_ant": 0,
+        "shoulder_overhead": 0,
+        "wrist": 0,
+        "lumbar": 2,
+        "knee": 0,
+        "hip": 0
+      },
+      "tags": [
+        "core",
+        "home"
+      ],
+      "flags_offered": [],
+      "external_refs": {
+        "fedb_id": "Russian_Twist"
+      },
+      "evidence_note": null,
+      "stimulus": {
+        "obliques": 1,
+        "rectus_abdominis": 0.5
+      }
     },
     {
       "slug": "scap_pull_bar",

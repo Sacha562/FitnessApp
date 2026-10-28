@@ -1804,7 +1804,7 @@ drawn from the group list (C9).
 ### 10.3 Attributes
 
 Stored per exercise (DATA_MODEL 9.2.1): `slug`, `name_en`, `name_nl` (D12: stored in English and Dutch; required for
-seed rows, optional for custom rows), `aliases`, `pattern` (E36, 36 values), `family` (substitution family, §10.6),
+seed rows, optional for custom rows), `aliases`, `pattern` (E36, 37 values since D54), `family` (substitution family, §10.6),
 `equipment[]` (E45), `requires_station[]` (F7; keys of `equipment_types`), `load_mode` and `allowed_load_modes` (E3;
 one exercise can hold assisted / bodyweight / weighted modes on one load scale), `bw_fraction` (C1), `implement_base_kg`,
 `laterality` (E37), `measure` (E38), `contraction` (E39), `hold_class` (E55, C43: `grip`, `elbow`, `shoulder`, `trunk`,
@@ -1872,7 +1872,7 @@ exercise tags are used by ELIG (exclusion when a tag is forbidden) and by the al
 {horiz_pull, rear_delt_fly}; `raise` = {lateral_raise}; `fly` = {chest_fly}; `vpush` = {vert_push}; `curl` =
 {elbow_flex}; `ext` = {elbow_ext, elbow_ext_overhead}; `legiso` = {knee_ext, knee_flex}; `hip` = {hip_abd, hip_add};
 `calf` = {calf}; `trap` = {shrug}; `forearm` = {wrist_flex, wrist_ext, forearm_rot, grip_hold, carry}; `core` =
-{core_flex, core_anti_ext, core_anti_rot}; `skill` = {hang, skill_static}; `cardio` = {conditioning}.
+{core_flex, core_anti_ext, core_anti_rot, core_rotation}; `skill` = {hang, skill_static}; `cardio` = {conditioning}.
 
 ### 10.7 Validator (CI on the seed; on save for custom and challenge-local rows)
 

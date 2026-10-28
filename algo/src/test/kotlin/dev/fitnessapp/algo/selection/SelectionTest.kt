@@ -31,7 +31,7 @@ class SelectionTest {
         requireNotNull(javaClass.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     private val taxonomy = Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"))
-    private val catalog = Catalog(CatalogDoc.parse(resource("catalog/catalog-1.0.1.json")), taxonomy)
+    private val catalog = Catalog(CatalogDoc.parse(resource("catalog/catalog-1.0.2.json")), taxonomy)
     private val params = TestParams.defaults()
     private val today = LocalDate.of(2026, 10, 28)
     private fun ex(slug: String) = requireNotNull(catalog.exercise(slug)) { slug }

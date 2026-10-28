@@ -37,4 +37,6 @@ kotlin {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     systemProperty("file.encoding", "UTF-8")
+    // The Robolectric Compose screen tests ran out of the default 512 MB heap (OutOfMemoryError in TestDayScreensTest).
+    maxHeapSize = "2g"
 }

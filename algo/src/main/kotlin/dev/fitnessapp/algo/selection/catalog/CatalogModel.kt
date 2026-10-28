@@ -83,7 +83,7 @@ object CatalogDomains {
         "squat", "squat_machine", "lunge", "hinge", "hip_ext", "knee_ext", "knee_flex", "hip_abd", "hip_add", "calf",
         "horiz_push", "incline_push", "vert_push", "dip", "chest_fly", "lateral_raise", "rear_delt_fly", "horiz_pull",
         "vert_pull", "straight_arm_pull", "shrug", "elbow_flex", "elbow_ext", "elbow_ext_overhead", "wrist_flex",
-        "wrist_ext", "forearm_rot", "grip_hold", "ext_rotation", "core_flex", "core_anti_ext", "core_anti_rot", "hang",
+        "wrist_ext", "forearm_rot", "grip_hold", "ext_rotation", "core_flex", "core_anti_ext", "core_anti_rot", "core_rotation", "hang",
         "skill_static", "carry", "conditioning",
     )
 
@@ -101,7 +101,7 @@ object CatalogDomains {
         "elbow_ext" to "ext", "elbow_ext_overhead" to "ext", "knee_ext" to "legiso", "knee_flex" to "legiso",
         "hip_abd" to "hip", "hip_add" to "hip", "calf" to "calf", "shrug" to "trap",
         "wrist_flex" to "forearm", "wrist_ext" to "forearm", "forearm_rot" to "forearm", "grip_hold" to "forearm",
-        "carry" to "forearm", "core_flex" to "core", "core_anti_ext" to "core", "core_anti_rot" to "core",
+        "carry" to "forearm", "core_flex" to "core", "core_anti_ext" to "core", "core_anti_rot" to "core", "core_rotation" to "core",
         "hang" to "skill", "skill_static" to "skill", "conditioning" to "cardio", "ext_rotation" to "prehab",
     )
 

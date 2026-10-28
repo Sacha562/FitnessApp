@@ -2416,14 +2416,15 @@ under it changes with the selection:
 A five-step full-screen form; every custom exercise is copied from a pattern prototype so that its
 coefficients are valid from the start.
 
-1. **Pattern**: pick one of about 35 patterns, grouped by family with plain names ("Squat (machine)",
-   "Hip hinge", "Horizontal pull", "Elbow flexion", ...).
+1. **Pattern**: pick one of about 35 patterns, grouped by family with plain names ("Squat", "Hip hinge",
+   "Horizontal pull", "Elbow flexion", ...). "Squat" covers `squat` and `squat_machine`; the equipment of step 2
+   decides which (D54). Next and Save stay docked at the bottom of every step.
 2. **Equipment**: barbell, dumbbell, machine (stack or plate-loaded), cable, bodyweight, assisted
-   machine, belt. The station it needs (`requires_station`), chosen from the gym profile or "new
-   station".
+   machine, belt; preselected when the pattern has only one. The gym equipment it needs (`requires_station`), from
+   the `equipment_types` list grouped as Machines, Racks, bars and benches, Free weights, and Accessories (D53, D54).
 3. **Prototype preview**: the copied group and region coefficients, shown on the muscle map, with the
    note "Estimated from similar exercises (expert estimate). Adjust only if you know better."
-4. **Details**: English name (required), Dutch name (optional), load type, unilateral yes/no, timed
+4. **Details**: one name (required, stored as `name_en`; D54), load type, unilateral yes/no, timed
    yes/no, flags to offer.
 5. **Advanced (optional)**: edit region coefficients; each value is one of 0, 0.25, 0.5, 0.75, 1.0
    (C10, CAT-1 levels).

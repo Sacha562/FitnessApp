@@ -31,6 +31,7 @@ import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.ChoiceChips
+import dev.fitnessapp.app.ui.common.DockedBar
 import dev.fitnessapp.app.ui.common.FitScaffold
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
@@ -47,7 +48,20 @@ private val FAMILY_LABELS = linkedMapOf(
     "squat" to "Legs: squat", "hinge" to "Legs: hinge", "legiso" to "Legs: machines", "hip" to "Hips", "calf" to "Calves",
     "press" to "Chest press", "fly" to "Chest fly", "vpush" to "Overhead press", "raise" to "Shoulders", "hpull" to "Rows",
     "vpull" to "Pulldowns", "trap" to "Traps", "curl" to "Biceps", "ext" to "Triceps", "forearm" to "Forearms and grip",
-    "core" to "Core", "prehab" to "Rotator cuff", "skill" to "Hangs and skills", "cardio" to "Conditioning",
+    "core" to "Core", "prehab" to "Rotator cuff", "skill" to "Hangs and skills", "cardio" to "Cardio",
+)
+
+/**
+ * Step 1 lists these patterns under the one they fold into (D54): the equipment of step 2 picks the pattern, so
+ * "Squat" with a machine is `squat_machine`.
+ */
+private val FOLDED_INTO = mapOf("squat_machine" to "squat")
+
+/** Groups of the gym equipment list (D54), by `equipment_types` key; keys in none of them fall under Machines. */
+private val STATION_GROUPS = linkedMapOf(
+    "Racks, bars and benches" to setOf("pullup_bar", "fixed_neutral_handle", "dip_station", "smith_machine", "adjustable_bench", "cable_station", "back_extension"),
+    "Free weights" to setOf("barbell", "dumbbells", "wide_bar", "rings"),
+    "Accessories" to setOf("dip_belt", "chalk"),
 )
 
 private val EQUIPMENT_LABELS = mapOf(
@@ -73,11 +87,14 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
     val table = remember { Prototypes.table(c.catalog.doc) }
     val scope = rememberCoroutineScope()
     var step by remember { mutableStateOf(1) }
-    var pattern by remember { mutableStateOf<String?>(null) }
+    // The step-1 choice; with the equipment it resolves to the pattern (FOLDED_INTO).
+    var choice by remember { mutableStateOf<String?>(null) }
     var equipment by remember { mutableStateOf<String?>(null) }
+    fun patternsOf(ch: String) = listOf(ch) + FOLDED_INTO.filterValues { it == ch }.keys.sorted()
+    val pattern: String? = choice?.let { ch -> equipment?.let { eq -> patternsOf(ch).firstOrNull { (it to eq) in table } } }
+    fun equipmentChoices(ch: String) = CatalogDomains.EQUIPMENT_CLASSES.filter { eq -> patternsOf(ch).any { (it to eq) in table } }
     var stations by remember { mutableStateOf<List<String>>(emptyList()) }
     var nameEn by remember { mutableStateOf(initialName) }
-    var nameNl by remember { mutableStateOf("") }
     var loadMode by remember { mutableStateOf<String?>(null) }
     var unilateral by remember { mutableStateOf(false) }
     var timed by remember { mutableStateOf(false) }
@@ -86,7 +103,7 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
     var errors by remember { mutableStateOf<List<String>>(emptyList()) }
     var saving by remember { mutableStateOf(false) }
     val proto: CatalogExercise? = pattern?.let { p -> equipment?.let { table[p to it] } }
-    val stationTypes = remember { c.equipment.types.filter { it.category in setOf("station", "implement", "accessory") }.sortedBy { it.sort } }
+    val stationTypes = remember { c.equipment.types.filter { it.category in setOf("station", "implement", "accessory", "cardio") }.sortedBy { it.sort } }
 
     fun pickPrototype(p: CatalogExercise) {
         stations = p.requiresStation
@@ -99,7 +116,7 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
 
     fun draft(slug: String) = proto?.let {
         Prototypes.copy(
-            it, CustomDraft(slug, nameEn, nameNl, pattern!!, equipment!!, stations, loadMode ?: it.loadMode, unilateral, timed, flags, edited),
+            it, CustomDraft(slug, nameEn, null, pattern!!, equipment!!, stations, loadMode ?: it.loadMode, unilateral, timed, flags, edited),
             c.catalog.version,
         )
     }
@@ -110,7 +127,7 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
         scope.launch {
             saving = true
             val problems = ArrayList<String>()
-            if (nameEn.isBlank()) problems += "Give it an English name."
+            if (nameEn.isBlank()) problems += "Give it a name."
             else if (c.customExercises.nameTaken(nameEn)) problems += "Another exercise is already called '${nameEn.trim()}'."
             val slug = c.customExercises.slugFor(nameEn.ifBlank { "exercise" })
             val e = draft(slug)!!
@@ -121,7 +138,28 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
         }
     }
 
-    FitScaffold("New exercise · step $step of 5", onBack = { if (step > 1) step-- else onBack() }) { pad ->
+    val canNext = when (step) {
+        1 -> choice != null
+        2 -> proto != null
+        4 -> nameEn.isNotBlank()
+        else -> true
+    }
+    FitScaffold(
+        "New exercise · step $step of 5", onBack = { if (step > 1) step-- else onBack() },
+        bottomBar = {
+            DockedBar {
+                errors.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Safety) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    if (step == 4) TonalButton("Save", ::save, Modifier.weight(1f).heightIn(min = 58.dp), enabled = canNext && !saving)
+                    if (step < 5) {
+                        PrimaryButton("Next", { errors = emptyList(); step++ }, Modifier.weight(1f), enabled = canNext)
+                    } else {
+                        PrimaryButton("Save", ::save, Modifier.weight(1f), enabled = !saving)
+                    }
+                }
+            }
+        },
+    ) { pad ->
         Column(
             Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -129,13 +167,16 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
             when (step) {
                 1 -> {
                     Text("What kind of movement is it?", style = MaterialTheme.typography.titleLarge)
-                    val byFamily = Prototypes.patterns(table).groupBy { CatalogDomains.FAMILY_OF_PATTERN.getValue(it) }
+                    val byFamily = Prototypes.patterns(table).filter { it !in FOLDED_INTO }.groupBy { CatalogDomains.FAMILY_OF_PATTERN.getValue(it) }
                     FAMILY_LABELS.filterKeys { it in byFamily }.forEach { (fam, label) ->
                         Tile(spacing = 8.dp) {
                             TileLabel(label)
-                            ChoiceChips(byFamily.getValue(fam), pattern, CatalogQuery::patternLabel) { p ->
-                                pattern = p
-                                equipment = null
+                            ChoiceChips(byFamily.getValue(fam), choice, CatalogQuery::patternLabel) { p ->
+                                choice = p
+                                // D54: a single equipment class is chosen for the user.
+                                val only = equipmentChoices(p).singleOrNull()
+                                equipment = only
+                                only?.let { eq -> patternsOf(p).firstNotNullOfOrNull { table[it to eq] }?.let(::pickPrototype) }
                             }
                         }
                     }
@@ -144,20 +185,24 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
                     Text("What equipment?", style = MaterialTheme.typography.titleLarge)
                     Tile(spacing = 8.dp) {
                         TileLabel("Equipment")
-                        ChoiceChips(Prototypes.equipmentFor(table, pattern!!), equipment, { EQUIPMENT_LABELS[it] ?: it }) { eq ->
+                        ChoiceChips(equipmentChoices(choice!!), equipment, { EQUIPMENT_LABELS[it] ?: it }) { eq ->
                             equipment = eq
-                            table[pattern!! to eq]?.let(::pickPrototype)
+                            patternsOf(choice!!).firstNotNullOfOrNull { table[it to eq] }?.let(::pickPrototype)
                         }
                     }
                     if (proto != null) {
-                        Tile(spacing = 8.dp) {
-                            TileLabel("Stations it needs")
-                            Text("Exercises whose station isn't at your gym are hidden from suggestions.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                stationTypes.forEach { t ->
-                                    ChipButton(t.labelEn, selected = t.key in stations, role = Role.Checkbox, onClick = {
-                                        stations = if (t.key in stations) stations - t.key else (stations + t.key).sorted()
-                                    })
+                        Tile(spacing = 10.dp) {
+                            TileLabel("Gym equipment it needs")
+                            Text("If your gym lacks one of these, the exercise isn't suggested.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                            val groups = stationTypes.groupBy { t -> STATION_GROUPS.entries.firstOrNull { t.key in it.value }?.key ?: "Machines" }
+                            (listOf("Machines") + STATION_GROUPS.keys).filter { it in groups }.forEach { g ->
+                                Text(g, style = MaterialTheme.typography.titleSmall)
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    groups.getValue(g).forEach { t ->
+                                        ChipButton(t.labelEn, selected = t.key in stations, role = Role.Checkbox, onClick = {
+                                            stations = if (t.key in stations) stations - t.key else (stations + t.key).sorted()
+                                        })
+                                    }
                                 }
                             }
                         }
@@ -166,15 +211,18 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
                 3 -> {
                     val e = draft("custom_preview")
                     Text("Muscles", style = MaterialTheme.typography.titleLarge)
-                    Text("Estimated from similar exercises (expert estimate). Adjust only if you know better.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                    Text(
+                        "Copied from a similar exercise (an expert estimate). You can change them in the last step, Advanced.",
+                        style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                    )
                     if (e != null) MusclePreview(c, e, proto!!.nameEn)
+                    LinkButton("Adjust muscles", { step = 5 })
                 }
                 4 -> {
                     Text("Details", style = MaterialTheme.typography.titleLarge)
                     Tile(spacing = 8.dp) {
                         TileLabel("Name")
-                        FitTextField(nameEn, { nameEn = it.take(80) }, Modifier.fillMaxWidth(), placeholder = "English name", singleLine = true)
-                        FitTextField(nameNl, { nameNl = it.take(80) }, Modifier.fillMaxWidth(), placeholder = "Dutch name (optional)", singleLine = true)
+                        FitTextField(nameEn, { nameEn = it.take(80) }, Modifier.fillMaxWidth(), placeholder = "Name", singleLine = true)
                     }
                     proto?.let { p ->
                         if (p.allowedLoadModes.size > 1) Tile(spacing = 8.dp) {
@@ -215,21 +263,6 @@ fun CustomExerciseRoute(c: AppContainer, initialName: String, onBack: () -> Unit
                         }
                     }
                     if (edited != null) LinkButton("Reset to the estimate", { edited = null })
-                }
-            }
-            errors.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Safety) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp)) {
-                val canNext = when (step) {
-                    1 -> pattern != null
-                    2 -> proto != null
-                    4 -> nameEn.isNotBlank()
-                    else -> true
-                }
-                if (step == 4) TonalButton("Save", ::save, Modifier.weight(1f), enabled = canNext && !saving)
-                if (step < 5) {
-                    PrimaryButton("Next", { errors = emptyList(); step++ }, Modifier.weight(1f), enabled = canNext)
-                } else {
-                    PrimaryButton("Save", ::save, Modifier.weight(1f), enabled = !saving)
                 }
             }
         }

@@ -129,8 +129,8 @@ object CatalogQuery {
         "straight_arm_pull" to "Straight-arm pull", "shrug" to "Shrug", "elbow_flex" to "Elbow flexion", "elbow_ext" to "Elbow extension",
         "elbow_ext_overhead" to "Overhead elbow extension", "wrist_flex" to "Wrist flexion", "wrist_ext" to "Wrist extension",
         "forearm_rot" to "Forearm rotation", "grip_hold" to "Grip hold", "ext_rotation" to "External rotation",
-        "core_flex" to "Core flexion", "core_anti_ext" to "Core anti-extension", "core_anti_rot" to "Core anti-rotation",
-        "hang" to "Hang", "skill_static" to "Static skill", "carry" to "Carry", "conditioning" to "Conditioning",
+        "core_flex" to "Core flexion", "core_anti_ext" to "Core anti-extension", "core_anti_rot" to "Core anti-rotation", "core_rotation" to "Core rotation",
+        "hang" to "Hang", "skill_static" to "Static skill", "carry" to "Carry", "conditioning" to "Cardio (bike, rower)",
     )
 
     fun patternLabel(p: String): String = PATTERN_LABELS[p] ?: p.replace('_', ' ')

@@ -27,7 +27,7 @@ class CutoverReentryTest {
     private val def = OapFixture.def
     private val params = OapFixture.params()
     private val closeMin = params.int("challenge.enrollment.week_close_local_time")
-    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.1.json")) }
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.2.json")) }
 
     private fun cutoverImport(): ImportBlock {
         val base = OapFixture.import(mode = "injury", blockWeek = 5, plannedTest = null, needsCleanSession = true)
