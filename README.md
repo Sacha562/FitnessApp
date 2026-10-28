@@ -297,4 +297,10 @@ squat 0.848; machine chest press gives dumbbell bench 0.934, push-up 0.920, decl
 Swap in the Occupied sheet and the exercise menu (with Undo), "Do {k} now, come back after", the exercise detail's
 Alternatives and "Apply to similar", the "Lower your preference?" prompt on the summary, and custom exercises (Room v10,
 `exercises` and `exercise_stimulus` synced; the five-step form; the catalog's Custom filter). No server migration and no
-engine bump: the modules start at 1.0.0. Phone checks: pending.
+engine bump: the modules start at 1.0.0. D54 (after the first install): form fixes and the `core_rotation` pattern
+with catalog 1.0.2 (migration 040). Phone checks on `0.0.103+d2379f6` (OnePlus CPH2747, driven over adb, nothing saved):
+Room 9 -> 10 kept the data (4 sessions, 69 sets); 160 exercises; the Custom filter; step 1 with one Squat, Core rotation
+and "Cardio (bike, rower)" and Next docked; step 2's equipment preselected for knee extension, Squat + Machine copied
+from the hack squat, the grouped gym equipment with the prototype's cable station preselected; step 3's "Adjust
+muscles" opening Advanced; step 4 with one name field; the leg extension's five Alternatives opening their detail.
+Open: Swap in a live session, "Apply to similar", saving a custom exercise and the summary prompt (they write real data).
