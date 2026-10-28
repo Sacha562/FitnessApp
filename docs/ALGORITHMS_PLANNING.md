@@ -3361,12 +3361,12 @@ target. Variant: chest press and pec deck occupied → dumbbell bench press × 3
 
 | Occupied | Session already contains | Ranked substitutes (score, similarity) |
 |---|---|---|
-| 45° leg press | RDL, hip thrust, seated leg curl, leg extension, hip abduction, calf press | hack squat (0.884, 1.000), Bulgarian split squat (0.800, 0.986), back squat (0.739, 0.966) |
-| Machine chest press | incline dumbbell press, lateral raise, overhead triceps extension | dumbbell bench press (0.934, 1.000), barbell bench press (0.884, 1.000), dip (0.850, 0.986), Smith incline press (0.764, 0.926), pec deck (0.742, 0.891) |
+| 45° leg press | RDL, hip thrust, seated leg curl, leg extension, hip abduction, calf press | hack squat (0.934, 1.000), goblet squat (0.857, 0.996), Bulgarian split squat (0.848, 0.981) |
+| Machine chest press | incline dumbbell press, lateral raise, overhead triceps extension | dumbbell bench press (0.934, 1.000), push-up (0.920, 0.977), decline dumbbell press (0.919, 0.975) |
 
 Before these lists, SUB-1 first offers "do the next exercise now and come back" (reorder first). The prototype vectors
-used group coefficients plus 0.5 × emphasised-region indicators; with the seed's full region vectors (§15) the scores
-will move slightly and must be regenerated for the golden tests.
+used group coefficients plus 0.5 × emphasised-region indicators; the rows above are regenerated with catalog 1.0.1's full
+region vectors (§15) and pinned in `SelectionTest` (M3.6, 2026-10-28): the top 3 by score, no occupied stations reused.
 
 ### 22.4 Prototype catalog (fixture rows)
 

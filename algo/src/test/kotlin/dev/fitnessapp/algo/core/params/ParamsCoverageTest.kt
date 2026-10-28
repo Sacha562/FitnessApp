@@ -41,6 +41,8 @@ class ParamsCoverageTest {
         "fatigue" to Fatigue, "rcm" to Rcm, "rircal" to RirCal, "sse" to Sse, "hold" to Hold,
         "reason" to Reason, "rx" to Rx, "warmup" to Warmup, "stall" to Stall,
         "autoreg" to dev.fitnessapp.algo.prescription.autoreg.Autoreg, "warnings" to dev.fitnessapp.algo.prescription.warnings.Warnings,
+        "pref" to dev.fitnessapp.algo.selection.pref.Pref, "injury" to dev.fitnessapp.algo.selection.injury.Injury,
+        "elig" to dev.fitnessapp.algo.selection.elig.Elig, "substitute" to dev.fitnessapp.algo.selection.substitute.Substitute,
     )
     private val all: List<DeclaresParams> = complete.values.toList()
 
