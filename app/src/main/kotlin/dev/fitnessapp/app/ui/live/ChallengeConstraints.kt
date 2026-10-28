@@ -7,6 +7,10 @@ import dev.fitnessapp.algo.prescription.warnings.Warning
 import dev.fitnessapp.algo.prescription.warnings.Warnings
 import dev.fitnessapp.algo.prescription.warnings.WindowHit
 import dev.fitnessapp.algo.selection.catalog.CatalogExercise
+import dev.fitnessapp.algo.selection.elig.AddOnFilter
+import dev.fitnessapp.algo.selection.elig.EligContext
+import dev.fitnessapp.algo.selection.elig.HardWindow
+import dev.fitnessapp.algo.selection.elig.LightPullRule
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
@@ -28,25 +32,67 @@ import java.time.LocalDate
 object ChallengeConstraints {
     private val PULL_FAMILY = listOf("lats", "upper_back", "biceps", "forearms")
 
-    suspend fun warnings(c: AppContainer, session: WorkoutSessionEntity, items: List<ExerciseItem>): List<Warning> {
-        val added = items.filter { it.se.challenge_item_key == null && it.se.status != "removed" }
-        if (added.isEmpty()) return emptyList()
-        val enrollment = c.challenges.open().firstOrNull() ?: return emptyList()
+    /** What the active challenge says about a session's day and time (C11, C12, C33, C34); null without an active one. */
+    class Day(
+        val contract: dev.fitnessapp.algo.challenge.contract.ChallengeContract,
+        val restDay: Boolean,
+        val challengeDay: Boolean,
+        val gapTags: List<String>,
+        val windows: List<WindowHit>,
+        val addOnSlot: dev.fitnessapp.algo.challenge.contract.AddOnSlot?,
+        val slot: String?,
+    )
+
+    suspend fun day(c: AppContainer, session: WorkoutSessionEntity): Day? {
+        val enrollment = c.challenges.open().firstOrNull() ?: return null
         val f = c.challenges.folded(enrollment.id)
-        if (f.state.status != EnrollmentState.ACTIVE) return emptyList()
-        val p = c.params.fork()
+        if (f.state.status != EnrollmentState.ACTIVE) return null
         val at = Instant.ofEpochMilli(session.started_at ?: System.currentTimeMillis())
         val date = LocalDate.parse(session.local_date)
         val (_, plan) = ChallengeWeek.plan(c, f, c.challengeFacts.facts(f.def, f.state), at)
         val contract = ContractBuilder.build(f.def, c.params, f.state, plan, AppContainer.CHANGEOVER_MIN)
-        val restDay = plan.blockedDays.any { it.date == date && it.scope == "all_gym" }
-        val challengeDay = session.challenge_slot != null || plan.sessions.any { it.date == date }
-        val gapTags = plan.blockedDays.filter { it.date == date && it.scope == "tags" }.flatMap { it.tags }.distinct()
-        val windows = contract.protectedWindows.filter { it.mode == "hard" && !at.isBefore(it.from) && at.isBefore(it.to) }
-            .map { WindowHit(it.id, it.groups, it.regions, it.sessionTags, it.scope == "all_gym") }
+        return Day(
+            contract,
+            restDay = plan.blockedDays.any { it.date == date && it.scope == "all_gym" },
+            challengeDay = session.challenge_slot != null || plan.sessions.any { it.date == date },
+            gapTags = plan.blockedDays.filter { it.date == date && it.scope == "tags" }.flatMap { it.tags }.distinct(),
+            windows = contract.protectedWindows.filter { it.mode == "hard" && !at.isBefore(it.from) && at.isBefore(it.to) }
+                .map { WindowHit(it.id, it.groups, it.regions, it.sessionTags, it.scope == "all_gym") },
+            addOnSlot = session.challenge_slot?.let { slot -> contract.reservedSessions.firstOrNull { it.slot == slot && it.date == date }?.addOnSlot },
+            slot = session.challenge_slot,
+        )
+    }
+
+    /**
+     * ELIG-1's constraints for a general exercise of [session] (12.2, D53): stations, preferences, the contract's joint
+     * flags and forbidden tags, the gap day's session tags and light pull (C50), the hard windows and the add-on slot.
+     */
+    suspend fun eligContext(c: AppContainer, session: WorkoutSessionEntity, prefs: Map<String, dev.fitnessapp.algo.selection.pref.PrefValue>): EligContext {
+        val stations = c.selection.stations()
+        val d = day(c, session) ?: return EligContext(availableStations = stations, prefs = prefs)
+        val p = c.params.fork()
+        return EligContext(
+            availableStations = stations, prefs = prefs, jointFlags = d.contract.jointFlags,
+            forbidExerciseTags = d.contract.forbiddenExerciseTags,
+            gapDay = !d.challengeDay, forbiddenSessionTags = d.gapTags,
+            hardWindows = d.windows.filter { !it.allGym }.map { HardWindow(it.id, it.groups, it.regions) },
+            lightPull = LightPullRule(p.int("challenge.contract.gap_day_pull_max_grip_demand"), p.double("challenge.contract.gap_day_pull_biceps_coef_below")),
+            addOn = d.addOnSlot?.let { AddOnFilter(it.allowPatterns, it.maxGripDemand, it.forbidGroups, emptyList()) },
+        )
+    }
+
+    suspend fun warnings(c: AppContainer, session: WorkoutSessionEntity, items: List<ExerciseItem>): List<Warning> {
+        val added = items.filter { it.se.challenge_item_key == null && it.se.status != "removed" }
+        if (added.isEmpty()) return emptyList()
+        val d = day(c, session) ?: return emptyList()
+        val p = c.params.fork()
+        val contract = d.contract
+        val restDay = d.restDay
+        val challengeDay = d.challengeDay
+        val gapTags = d.gapTags
+        val windows = d.windows
         // The add-on block of a challenge session (D5, C34): its forbidden groups and tags bind like a hard window.
-        val addOn = session.challenge_slot?.let { slot -> contract.reservedSessions.firstOrNull { it.slot == slot && it.date == date }?.addOnSlot }
-            ?.let { a -> WindowHit("addon.${session.challenge_slot}", a.forbidGroups, emptyList(), a.forbidSessionTags, allGym = false) }
+        val addOn = d.addOnSlot?.let { a -> WindowHit("addon.${d.slot}", a.forbidGroups, emptyList(), a.forbidSessionTags, allGym = false) }
         val tags = sessionTags(c, added, contract.sessionTagRules)
         val maxGrip = p.int("challenge.contract.gap_day_pull_max_grip_demand")
         val bicepsBelow = p.double("challenge.contract.gap_day_pull_biceps_coef_below")

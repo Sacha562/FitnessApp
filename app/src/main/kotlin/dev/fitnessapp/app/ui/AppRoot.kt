@@ -219,7 +219,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                     },
                 )
             }
-            entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }) }
+            entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }, onOpen = { push(AppKey.ExerciseDetail(it, "alternatives")) }) }
             entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }, onTestDay = { push(AppKey.TestDay(k.enrollmentId, null)) }) }
             entry<AppKey.TestDay> { k ->
                 TestDayRoute(

@@ -211,5 +211,65 @@ class SessionRepositoryTest {
         }
     }
 
+    @Test
+    fun `a swap replaces the row in place, logs the event and undoes cleanly`() = blocking {
+        setUpGym()
+        val sid = sessions.start(params)
+        val press = sessions.addExercise(sid, catalog.bySlug("machine_chest_press")!!)
+        val after = sessions.addExercise(sid, catalog.bySlug("db_lateral_raise")!!)
+        now += 60_000
+        val (newId, eventId) = sessions.swap(press, catalog.bySlug("db_bench_press")!!, "occupied", rank = 1, similarity = 1.0, via = "list")!!
+        val old = db.sessionExercises().get(press)!!
+        old.status shouldBe "removed"
+        old.status_reason_code shouldBe "occupied"
+        val new = db.sessionExercises().get(newId)!!
+        new.origin shouldBe "substitute"
+        new.substitutes_id shouldBe press
+        new.substitution_reason_code shouldBe "occupied"
+        new.position shouldBe old.position
+        new.planned_sets shouldBe old.planned_sets
+        (new.position < db.sessionExercises().get(after)!!.position) shouldBe true
+        val ev = db.events().exportAll().single { it.event_type == "exercise_swapped" }
+        ev.id shouldBe eventId
+        Json.parseToJsonElement(ev.payload).jsonObject.keys shouldBe setOf("from_exercise_id", "to_exercise_id", "rank", "similarity", "via", "reason_code")
+
+        // An occupied swap is external: PREF-1 sees only the manual add (+w_add, 11.3).
+        val facts = dev.fitnessapp.data.engine.SelectionFacts(db, { catalog }, params)
+        val today = Instant.ofEpochMilli(now).atZone(ZoneId.of("Europe/Amsterdam")).toLocalDate()
+        val added = facts.prefs(today).getValue("machine_chest_press").z
+        added shouldBe 0.1
+
+        now += 5_000
+        sessions.undoSwap(newId, eventId, 5_000)
+        db.sessionExercises().get(newId)!!.deleted_at shouldBe now
+        db.sessionExercises().get(press)!!.let { it.status shouldBe "pending"; it.status_reason_code shouldBe null }
+        db.events().exportAll().single { it.event_type == "action_undone" }.payload.contains(eventId) shouldBe true
+
+        // A menu swap without a reason counts against the exercise, unless it was undone.
+        val (second, secondEvent) = sessions.swap(press, catalog.bySlug("db_bench_press")!!, null, rank = null, similarity = null, via = "search")!!
+        facts.prefs(today).getValue("machine_chest_press").z shouldBe -0.05
+        sessions.undoSwap(second, secondEvent, 1_000)
+        facts.prefs(today).getValue("machine_chest_press").z shouldBe added
+    }
+
+    @Test
+    fun `a challenge item or an exercise with working sets is not swapped`() = blocking {
+        setUpGym()
+        val sid = sessions.start(params)
+        val ex = catalog.bySlug("db_bench_press")!!
+        val seId = sessions.addExercise(sid, ex)
+        val (_, points) = equipment.loadables(ex, LoadMode.EXTERNAL, null, params)
+        now += 60_000
+        sessions.logSet(
+            LogSetCommand(
+                sid, seId, catalog.idOf(ex), 1, "both", "working", points.first(), reps = 8, durationS = null, rir = 2.0,
+                rirLowerBound = false, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(),
+                deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+            ),
+        )
+        sessions.swap(seId, catalog.bySlug("machine_chest_press")!!, "occupied", 1, 1.0, "list") shouldBe null
+        db.sessionExercises().get(seId)!!.status shouldBe "active"
+    }
+
     private fun serverChecks(r: SetLogEntity): List<String> = SetChecks.of(r)
 }

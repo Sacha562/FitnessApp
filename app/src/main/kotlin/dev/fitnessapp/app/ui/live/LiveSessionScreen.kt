@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -131,6 +132,8 @@ private sealed interface Sheet {
     data object Add : Sheet
     data class Skip(val seId: String) : Sheet
     data class Occupied(val seId: String) : Sheet
+    data class Swap(val seId: String, val reason: String?, val trigger: String) : Sheet
+    data class SwapSearch(val seId: String, val reason: String?) : Sheet
     data class End(val seId: String) : Sheet
     data object Finish : Sheet
     data object Pain : Sheet
@@ -217,6 +220,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                             } else SetCard(card, vm, intervalRunning, onMenu = { action ->
                                 when (action) {
                                     "skip" -> sheet = Sheet.Skip(card.item.se.id)
+                                    "swap" -> sheet = Sheet.Swap(card.item.se.id, null, "user")
                                     "end" -> sheet = Sheet.End(card.item.se.id)
                                     "pain" -> sheet = Sheet.Pain
                                     "stack" -> sheet = Sheet.Stack
@@ -244,8 +248,21 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                 else -> { vm.skip(s.seId, code, pos); sheet = null }
             }
         }
-        is Sheet.Occupied -> OccupiedSheet(nameOf(ui, s.seId), vm.canDoLater(s.seId), onDismiss = { sheet = null },
-            onDoLater = { vm.doLater(s.seId); sheet = null }, onSkip = { vm.skip(s.seId, "occupied", 1); sheet = null })
+        is Sheet.Occupied -> OccupiedSheet(
+            nameOf(ui, s.seId), laterAfter = laterAfter(ui, s.seId).takeIf { vm.canDoLater(s.seId) }, canSwap = vm.canSwap(s.seId),
+            swapPrimary = vm.swapPrimary(s.seId), doNow = vm.doNowTarget(s.seId)?.ex?.nameEn, onDismiss = { sheet = null },
+            onDoLater = { vm.doLater(s.seId); sheet = null }, onDoNow = { vm.doNow(s.seId); sheet = null },
+            onSwap = { sheet = Sheet.Swap(s.seId, "occupied", "occupied") }, onSkip = { vm.skip(s.seId, "occupied", 1); sheet = null },
+        )
+        is Sheet.Swap -> SwapSheet(
+            nameOf(ui, s.seId), s.reason, s.trigger, options = { vm.swapOptions(s.seId, s.trigger) }, onDismiss = { sheet = null },
+            onPick = { option, reason -> vm.swap(s.seId, option.ex, reason, option); sheet = null },
+            onSearch = { reason -> sheet = Sheet.SwapSearch(s.seId, reason) },
+            onSkip = { reason -> if (reason != null) { vm.skip(s.seId, reason, 1); sheet = null } else sheet = Sheet.Skip(s.seId) },
+        )
+        is Sheet.SwapSearch -> AddExerciseSheet(c, onDismiss = { sheet = null }, title = "Replace ${nameOf(ui, s.seId)}") { ex ->
+            vm.swap(s.seId, ex, s.reason, null); sheet = null
+        }
         is Sheet.End -> ReasonSheet(c, ChipContext.SKIP, "End ${nameOf(ui, s.seId)}? Logged sets stay.", onDismiss = { sheet = null }) { code, _ ->
             vm.endExercise(s.seId, code)
             sheet = if (code == "pain") Sheet.Pain else null
@@ -787,6 +804,7 @@ internal fun flagLabel(f: String) = when (f) {
 private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, beep: Boolean?, onBeep: () -> Unit, onDismiss: () -> Unit, onAction: (String) -> Unit) {
     val se = card.item.se
     DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
+        if (vm.canSwap(se.id)) DropdownMenuItem(text = { Text("Swap") }, onClick = { onDismiss(); onAction("swap") })
         if (card.item.workingDone == 0) DropdownMenuItem(text = { Text("Skip") }, onClick = { onAction("skip") })
         if (vm.canDoLater(se.id)) DropdownMenuItem(text = { Text("Do later") }, onClick = { onDismiss(); vm.doLater(se.id) })
         DropdownMenuItem(text = { Text("Add a set") }, onClick = { onDismiss(); vm.addSet(se.id) })
@@ -923,8 +941,19 @@ private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
 
 @Composable
 private fun UndoBar(ui: LiveUi, vm: LiveSessionViewModel) {
-    val l = ui.lastLogged ?: return
     val context = LocalContext.current
+    ui.swapUndo?.let { u ->
+        LaunchedEffect(u.newId) { delay(undoTimeoutMs(context)); vm.dismissSwapUndo() }
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(CircleShape).background(Fit.Line).padding(start = 18.dp, end = 4.dp).heightIn(min = 52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Swapped to ${u.label}", style = MaterialTheme.typography.bodyMedium, color = Fit.Ink, modifier = Modifier.weight(1f))
+            LinkButton("Undo", vm::undoSwap)
+        }
+        return
+    }
+    val l = ui.lastLogged ?: return
     LaunchedEffect(l.setId) { delay(undoTimeoutMs(context)); vm.dismissUndo() }
     Row(
         Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(CircleShape).background(Fit.Line).padding(start = 18.dp, end = 4.dp).heightIn(min = 52.dp),
@@ -943,13 +972,13 @@ private val SheetPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, onPick: (dev.fitnessapp.algo.selection.catalog.CatalogExercise) -> Unit) {
+fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, title: String = "Add exercise", onPick: (dev.fitnessapp.algo.selection.catalog.CatalogExercise) -> Unit) {
     var query by remember { mutableStateOf("") }
     val dutch = dutchNames()
     val results = remember(query, dutch) { c.catalog.search(query, dutch) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Add exercise", style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MaterialTheme.typography.titleLarge)
             FitTextField(
                 value = query, onValueChange = { query = it }, placeholder = if (dutch) "Search (English or Dutch)" else "Search",
                 singleLine = true, leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Fit.Muted) }, modifier = Modifier.fillMaxWidth(),
@@ -985,14 +1014,83 @@ private fun ReasonSheet(c: AppContainer, context: ChipContext, title: String, on
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OccupiedSheet(name: String, canDoLater: Boolean, onDismiss: () -> Unit, onDoLater: () -> Unit, onSkip: () -> Unit) {
+private fun OccupiedSheet(
+    name: String, laterAfter: String?, canSwap: Boolean, swapPrimary: Boolean, doNow: String?, onDismiss: () -> Unit,
+    onDoLater: () -> Unit, onDoNow: () -> Unit, onSwap: () -> Unit, onSkip: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("$name is occupied", style = MaterialTheme.typography.titleLarge)
-            if (canDoLater) PrimaryButton("Do later", onDoLater, Modifier.fillMaxWidth())
-            TonalButton("Skip anyway", onSkip, Modifier.fillMaxWidth())
+            val later = laterAfter?.let { "Do later (after $it)" }
+            // UX 11.12: Do later first; Swap becomes primary after `max_defers` defers or with nothing left to move behind.
+            if (canSwap && (swapPrimary || later == null)) {
+                PrimaryButton("Swap", onSwap, Modifier.fillMaxWidth())
+                later?.let { TonalButton(it, onDoLater, Modifier.fillMaxWidth()) }
+            } else {
+                later?.let { PrimaryButton(it, onDoLater, Modifier.fillMaxWidth()) }
+                if (canSwap) TonalButton("Swap", onSwap, Modifier.fillMaxWidth())
+            }
+            doNow?.let { k ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick = onDoNow).padding(horizontal = 8.dp, vertical = 14.dp)) {
+                    Text("Do $k now, come back after", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(">", color = Fit.Muted)
+                }
+            }
+            LinkButton("Skip anyway", onSkip)
         }
     }
+}
+
+/**
+ * UX 16.5: up to three SUB-1 candidates with tags and how the first set is found, "Search catalog" and "Skip instead".
+ * A swap from the exercise menu ([trigger] `user`) may name a reason (the `substitute` chips, C69); it is optional.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun SwapSheet(
+    name: String, reason: String?, trigger: String, options: suspend () -> List<SwapOption>, onDismiss: () -> Unit,
+    onPick: (SwapOption, String?) -> Unit, onSearch: (String?) -> Unit, onSkip: (String?) -> Unit,
+) {
+    var list by remember { mutableStateOf<List<SwapOption>?>(null) }
+    var why by remember { mutableStateOf(reason) }
+    LaunchedEffect(Unit) { list = options() }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val suffix = when (reason) { "occupied" -> " (occupied)"; "equipment_missing" -> " (equipment missing)"; else -> "" }
+            Text("Replace ${name.replaceFirstChar { it.lowercase() }}$suffix", style = MaterialTheme.typography.titleLarge)
+            if (trigger == "user") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("occupied" to "Occupied", "equipment_missing" to "Equipment missing").forEach { (code, label) ->
+                        FilterChip(selected = why == code, onClick = { why = if (why == code) null else code }, label = { Text(label) })
+                    }
+                }
+            }
+            val l = list
+            when {
+                l == null -> Text("Finding alternatives…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                l.isEmpty() -> Text("No close alternative here. Search the catalog instead.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                else -> l.forEach { o ->
+                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onPick(o, why) }.padding(horizontal = 8.dp, vertical = 12.dp)) {
+                        Text(o.ex.nameEn, style = MaterialTheme.typography.titleMedium)
+                        Text(o.tags.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Accent)
+                        Text(o.start, style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    }
+                    TileDivider()
+                }
+            }
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onSearch(why) }.padding(horizontal = 8.dp, vertical = 14.dp)) {
+                Text("Search catalog", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(">", color = Fit.Muted)
+            }
+            LinkButton("Skip instead", { onSkip(why) })
+        }
+    }
+}
+
+/** The exercise Do later moves behind: the next not-done one after [seId]. */
+private fun laterAfter(ui: LiveUi, seId: String): String? {
+    val i = ui.items.indexOfFirst { it.se.id == seId }
+    return ui.items.drop(i + 1).firstOrNull { it.open }?.ex?.nameEn?.replaceFirstChar { it.lowercase() }
 }
 
 /** UX 16.13: the remaining exercises and a reason (no time preselected). */

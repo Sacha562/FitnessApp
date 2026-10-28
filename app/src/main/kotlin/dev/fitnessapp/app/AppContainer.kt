@@ -144,6 +144,8 @@ class AppContainer(private val context: Context) {
     val warnings: dev.fitnessapp.data.engine.WarningRunner by lazy {
         dev.fitnessapp.data.engine.WarningRunner(db, outbox, writeContext, syncScheduler, catalog, prescriptions, params, PARAMS_VERSION)
     }
+    /** PREF-1's rows and events and the available stations, for ELIG-1 and SUB-1 (M3.6). */
+    val selection: dev.fitnessapp.data.engine.SelectionFacts by lazy { dev.fitnessapp.data.engine.SelectionFacts(db, { catalog }, params) }
     /** The engine-logged estimates for display (the exercise detail's e1RM history). */
     val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }

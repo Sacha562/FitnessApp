@@ -387,6 +387,86 @@ class SessionRepository(
         return id
     }
 
+    /** The Swap sheet opened (UX 16.5): its candidates with their scores and what opened it. */
+    suspend fun swapSheetShown(sessionExerciseId: String, candidates: List<Pair<String, Double>>, trigger: String) = exerciseEvent(sessionExerciseId) { e, _ ->
+        EventDraft(
+            type = "swap_sheet_shown", payload = mapOf(
+                "from_exercise_id" to JsonPrimitive(e.exercise_id), "trigger_reason" to JsonPrimitive(trigger),
+                "candidates" to JsonArray(candidates.map { (id, score) -> kotlinx.serialization.json.buildJsonObject { put("exercise_id", JsonPrimitive(id)); put("score", JsonPrimitive(score)) } }),
+            ),
+        )
+    }
+
+    /**
+     * Swap (SUB-1, UX 16.5): a new row with origin `substitute` takes the place and planned sets of [sessionExerciseId],
+     * which becomes `removed` with the reason (`user` when the menu swap gave none). Only before any working set.
+     * Returns the new row's id and the event id for Undo.
+     */
+    suspend fun swap(
+        sessionExerciseId: String, to: CatalogExercise, reason: String?, rank: Int?, similarity: Double?, via: String,
+    ): Pair<String, String>? {
+        val uid = ctx.requireUser()
+        var out: Pair<String, String>? = null
+        db.withTransaction {
+            val old = db.sessionExercises().get(sessionExerciseId) ?: return@withTransaction
+            val sets = db.setLogs().bySession(old.session_id).count { it.session_exercise_id == old.id && it.set_kind != "warmup" }
+            if (sets > 0 || old.challenge_item_key != null) return@withTransaction
+            val mode = LoadMode.of(to.loadMode)
+            val resolved = equipment.resolve(to, mode)
+            val id = ctx.ids.next()
+            val code = reason ?: "other"
+            writeExercise(old.copy(status = "removed", status_reason_code = code, completed_at = ctx.nowMs()))
+            writeExercise(
+                SessionExerciseEntity(
+                    id = id, user_id = uid, client_updated_at = 0, device_id = "", app_version = "", session_id = old.session_id,
+                    block_id = old.block_id, exercise_id = catalog.idOf(to), position = old.position, origin = "substitute",
+                    substitutes_id = old.id, substitution_reason_code = code, load_mode = mode.code,
+                    side_mode = when (to.laterality) {
+                        "unilateral" -> "unilateral_sequential"
+                        "alternating" -> "unilateral_alternating"
+                        else -> "bilateral"
+                    },
+                    side_order = if (to.laterality == "bilateral") null else "LR",
+                    equipment_id = resolved.row?.id, progression_mode = "none",
+                    rep_scheme = when (to.measure) { "duration" -> "hold"; "attempt" -> "attempt"; else -> "range" },
+                    planned_sets = old.planned_sets ?: DEFAULT_SETS, superset_group = old.superset_group,
+                ),
+            )
+            val payload = buildMap {
+                put("from_exercise_id", JsonPrimitive(old.exercise_id))
+                put("to_exercise_id", JsonPrimitive(catalog.idOf(to)))
+                rank?.let { put("rank", JsonPrimitive(it)) }
+                similarity?.let { put("similarity", JsonPrimitive(it)) }
+                put("via", JsonPrimitive(via))
+                reason?.let { put("reason_code", JsonPrimitive(it)) }
+            }
+            val eventId = telemetry.write(EventDraft(type = "exercise_swapped", sessionId = old.session_id, entityType = "session_exercise", entityId = id, payload = payload))
+            out = id to (eventId ?: "")
+        }
+        scheduler.request()
+        return out
+    }
+
+    /** Undo of a swap (P6): the substitute goes (soft delete, it has no sets yet) and the original is pending again. */
+    suspend fun undoSwap(newId: String, eventId: String, msSince: Long) {
+        db.withTransaction {
+            val new = db.sessionExercises().get(newId) ?: return@withTransaction
+            val old = new.substitutes_id?.let { db.sessionExercises().get(it) } ?: return@withTransaction
+            if (db.setLogs().bySession(new.session_id).any { it.session_exercise_id == new.id }) return@withTransaction
+            writeExercise(new.copy(deleted_at = ctx.nowMs()))
+            writeExercise(old.copy(status = "pending", status_reason_code = null, completed_at = null))
+            telemetry.write(
+                EventDraft(
+                    type = "action_undone", sessionId = new.session_id, entityType = "session_exercise", entityId = newId,
+                    payload = mapOf(
+                        "undone_event_type" to JsonPrimitive("exercise_swapped"), "undone_event_id" to JsonPrimitive(eventId), "ms_since" to JsonPrimitive(msSince),
+                    ),
+                ),
+            )
+        }
+        scheduler.request()
+    }
+
     /** Switches the load mode of an exercise (for example "+ add weight" on a bodyweight exercise). */
     suspend fun setLoadMode(sessionExerciseId: String, mode: LoadMode) {
         db.withTransaction {

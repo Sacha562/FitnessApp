@@ -39,7 +39,11 @@ import dev.fitnessapp.algo.selection.catalog.CatalogExercise
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.format.SetLines
+import dev.fitnessapp.algo.selection.pref.Pref
 import dev.fitnessapp.app.ui.common.FitScaffold
+import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.live.SwapCandidates
+import dev.fitnessapp.app.ui.live.SwapOption
 import dev.fitnessapp.app.ui.common.MoreSection
 import dev.fitnessapp.app.ui.common.Segmented
 import dev.fitnessapp.app.ui.common.Tile
@@ -50,6 +54,7 @@ import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.data.repo.PreferenceRepository
 import dev.fitnessapp.data.telemetry.EventDraft
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -67,11 +72,11 @@ fun preferenceHelp(p: String): String = when (p) {
 
 /**
  * Exercise detail (UX 13.3): header, muscle map with the group list (its accessible equivalent), the five-state
- * preference, the e1RM trend (SSE-1, M3.2) above the last five sessions, loading, rest and flags. Alternatives (SUB-1)
- * arrive with M3.6 and "Used by" later (DECISIONS changelog 2026-10-11, D49).
+ * preference (with PREF-1's "Apply to similar", M3.6), the e1RM trend (SSE-1, M3.2) above the last five sessions,
+ * loading, rest and flags, and the Alternatives (SUB-1 without an occupied context, M3.6). "Used by" comes later.
  */
 @Composable
-fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBack: () -> Unit) {
+fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBack: () -> Unit, onOpen: (String) -> Unit = {}) {
     val ex = c.catalog.byId(exerciseId) ?: run { onBack(); return }
     val prefs by remember { c.preferences.observe() }.collectAsState(initial = emptyMap())
     val pref = prefs[exerciseId] ?: PreferenceRepository.NEUTRAL
@@ -79,6 +84,12 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
     val e1rm by remember(exerciseId) { c.estimates.observeE1rm(exerciseId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var tapped by remember { mutableStateOf<String?>(null) }
+    // "Apply to similar" (PREF-1 11.3): offered after a change, applied only on the user's tap.
+    var similarOffer by remember(exerciseId) { mutableStateOf<Pair<String, List<CatalogExercise>>?>(null) }
+    var alternatives by remember(exerciseId) { mutableStateOf<List<SwapOption>?>(null) }
+    LaunchedEffect(exerciseId, prefs) {
+        alternatives = runCatching { SwapCandidates.alternatives(c, ex, LocalDate.now(ZoneId.of("Europe/Amsterdam"))) }.getOrDefault(emptyList())
+    }
 
     LaunchedEffect(exerciseId) {
         c.sessionRepository.event(
@@ -133,9 +144,26 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
                 TileLabel("Your preference")
                 // No Undo snackbar (D30): tapping the previous state is the way back.
                 Segmented(PreferenceRepository.STATES, pref, ::shortPref, onSelect = { st ->
-                    if (st != pref) scope.launch { c.preferences.set(exerciseId, st, if (from == "session") "session" else "detail") }
+                    if (st != pref) scope.launch {
+                        c.preferences.set(exerciseId, st, if (from == "session") "session" else "detail")
+                        val similar = Pref.similar(ex, catalog, c.params.fork()).filter { (prefs[c.catalog.idOf(it)] ?: PreferenceRepository.NEUTRAL) != st }
+                        similarOffer = if (similar.isEmpty()) null else st to similar
+                    }
                 })
                 Text(preferenceHelp(pref), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                similarOffer?.takeIf { it.first == pref }?.let { (st, similar) ->
+                    Text(
+                        "Also set ${shortPref(st)} for ${similar.size} similar: " + similar.joinToString(", ") { it.nameEn } + "?",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LinkButton("Apply to similar", {
+                            similarOffer = null
+                            scope.launch { similar.forEach { c.preferences.set(c.catalog.idOf(it), st, "detail") } }
+                        })
+                        LinkButton("No", { similarOffer = null }, color = Fit.Muted)
+                    }
+                }
             }
 
             Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
@@ -175,6 +203,33 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
                 if (flags.isNotEmpty()) {
                     TileLabel("While logging", Modifier.padding(top = 8.dp))
                     flags.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                }
+            }
+
+            alternatives?.takeIf { it.isNotEmpty() }?.let { list ->
+                LaunchedEffect(exerciseId) {
+                    c.sessionRepository.event(
+                        EventDraft(
+                            type = "exercise_alternatives_opened", screen = "exercises.detail", entityType = "exercise", entityId = exerciseId,
+                            payload = mapOf("exercise_id" to JsonPrimitive(exerciseId), "count" to JsonPrimitive(list.size)),
+                        ),
+                    )
+                }
+                Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp)) {
+                    TileLabel("Alternatives", Modifier.padding(bottom = 4.dp))
+                    list.forEachIndexed { i, o ->
+                        if (i > 0) TileDivider()
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onOpen(c.catalog.idOf(o.ex)) }.padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(o.ex.nameEn, style = MaterialTheme.typography.titleSmall)
+                                Text(o.tags.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                            }
+                            Text(">", color = Fit.Muted)
+                        }
+                    }
                 }
             }
         }

@@ -366,6 +366,9 @@ interface UserExercisePrefDao : SyncDao<UserExercisePrefEntity> {
     @Query("SELECT * FROM user_exercise_prefs WHERE deleted_at IS NULL ORDER BY exercise_id, id")
     fun observeAll(): Flow<List<UserExercisePrefEntity>>
 
+    @Query("SELECT * FROM user_exercise_prefs WHERE deleted_at IS NULL ORDER BY exercise_id, id")
+    suspend fun live(): List<UserExercisePrefEntity>
+
     @Query("SELECT * FROM user_exercise_prefs WHERE id = :id")
     suspend fun get(id: String): UserExercisePrefEntity?
 }
