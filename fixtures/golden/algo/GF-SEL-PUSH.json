@@ -1,0 +1,2243 @@
+{
+    "id": "GF-SEL-PUSH",
+    "module": "select",
+    "description": "pushPrototypeCase (22.2 inputs on catalog 1.0.2, D56): chest 6, side delts 4, triceps 4 improve; front delts 2 maintain; 60 min of exercise; incline dumbbell press, machine chest press, pec deck, dumbbell lateral raise and rope pushdown liked; regions upper chest and long head wanted",
+    "input": {
+        "module": "select@1.0.0",
+        "scope_key": "golden:GF-SEL-PUSH",
+        "payload": {
+            "regions": {
+                "chest_clavicular": "chest",
+                "chest_sternal": "chest",
+                "delt_anterior": "front_delts",
+                "delt_lateral": "side_delts",
+                "delt_posterior": "rear_delts",
+                "lats": "lats",
+                "traps_mid": "upper_back",
+                "traps_lower": "upper_back",
+                "rhomboids": "upper_back",
+                "traps_upper": "upper_traps",
+                "biceps_brachii": "biceps",
+                "brachialis": "biceps",
+                "brachioradialis": "biceps",
+                "triceps_long": "triceps",
+                "triceps_lat_med": "triceps",
+                "wrist_flexors_grip": "forearms",
+                "wrist_extensors": "forearms",
+                "pronators_supinators": "forearms",
+                "rectus_abdominis": "abs",
+                "obliques": "abs",
+                "anti_rotation": "abs",
+                "erectors": "lower_back",
+                "glute_max": "glutes",
+                "glute_med_min": "abductors",
+                "adductors": "adductors",
+                "vasti": "quads",
+                "rectus_femoris": "quads",
+                "hams_biarticular": "hamstrings",
+                "bf_short_head": "hamstrings",
+                "gastrocnemius": "calves",
+                "soleus": "calves"
+            },
+            "stations": [
+                "ab_crunch_machine",
+                "adjustable_bench",
+                "assisted_pullup_machine",
+                "back_extension",
+                "cable_station",
+                "calf_machine",
+                "chest_press_machine",
+                "chest_supported_row",
+                "dip_machine",
+                "dip_station",
+                "fixed_neutral_handle",
+                "hack_squat",
+                "hip_abduction",
+                "hip_adduction",
+                "hip_thrust_machine",
+                "lat_pulldown",
+                "lateral_raise_machine",
+                "leg_curl_lying",
+                "leg_curl_seated",
+                "leg_extension",
+                "leg_press",
+                "pec_deck",
+                "preacher_curl_machine",
+                "pullup_bar",
+                "seated_cable_row",
+                "shoulder_press_machine",
+                "smith_machine",
+                "triceps_extension_machine"
+            ],
+            "exercises": [
+                {
+                    "slug": "bench_press_barbell",
+                    "name_en": "Bench press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5,
+                        "triceps_long": 0.25
+                    }
+                },
+                {
+                    "slug": "cable_fly_high_low",
+                    "name_en": "Cable fly, high to low",
+                    "pattern": "chest_fly",
+                    "family": "fly",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.5,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25
+                    }
+                },
+                {
+                    "slug": "cable_fly_low_high",
+                    "name_en": "Cable fly, low to high",
+                    "pattern": "chest_fly",
+                    "family": "fly",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.5,
+                        "delt_anterior": 0.25
+                    }
+                },
+                {
+                    "slug": "cable_lateral_raise",
+                    "name_en": "One-arm cable lateral raise",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1
+                    }
+                },
+                {
+                    "slug": "cable_lateral_raise_two_arm",
+                    "name_en": "Cross-cable lateral raise",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1
+                    }
+                },
+                {
+                    "slug": "cable_upright_row_wide",
+                    "name_en": "Wide cable upright row",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 2,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1,
+                        "traps_upper": 0.5
+                    }
+                },
+                {
+                    "slug": "close_grip_bench",
+                    "name_en": "Close-grip bench press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.5
+                    }
+                },
+                {
+                    "slug": "db_bench_press",
+                    "name_en": "Dumbbell bench press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5,
+                        "triceps_long": 0.25
+                    }
+                },
+                {
+                    "slug": "db_fly",
+                    "name_en": "Dumbbell fly",
+                    "pattern": "chest_fly",
+                    "family": "fly",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25
+                    }
+                },
+                {
+                    "slug": "db_lateral_raise",
+                    "name_en": "Dumbbell lateral raise",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1
+                    }
+                },
+                {
+                    "slug": "db_shoulder_press",
+                    "name_en": "Seated dumbbell shoulder press",
+                    "pattern": "vert_push",
+                    "family": "vpush",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 2,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_anterior": 1,
+                        "delt_lateral": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "decline_bench_barbell",
+                    "name_en": "Decline bench press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.5,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "decline_db_press",
+                    "name_en": "Decline dumbbell press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.5,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "decline_smith_press",
+                    "name_en": "Decline Smith press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.5,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "dip_chest",
+                    "name_en": "Dip, chest version",
+                    "pattern": "dip",
+                    "family": "press",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "dip_station"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 3,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.75
+                    }
+                },
+                {
+                    "slug": "dip_machine",
+                    "name_en": "Dip machine",
+                    "pattern": "dip",
+                    "family": "press",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "dip_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_sternal": 0.75,
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                },
+                {
+                    "slug": "dip_neutral",
+                    "name_en": "Dip, neutral handles",
+                    "pattern": "dip",
+                    "family": "press",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "dip_station"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "neutral",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                },
+                {
+                    "slug": "incline_bench_barbell",
+                    "name_en": "Incline bench press",
+                    "pattern": "incline_push",
+                    "family": "press",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "incline_db_press",
+                    "name_en": "Incline dumbbell press",
+                    "pattern": "incline_push",
+                    "family": "press",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "incline_machine_press",
+                    "name_en": "Incline chest press machine",
+                    "pattern": "incline_push",
+                    "family": "press",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "chest_press_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "landmine_press",
+                    "name_en": "Landmine press",
+                    "pattern": "vert_push",
+                    "family": "vpush",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 90,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 1,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.5,
+                        "delt_anterior": 1,
+                        "serratus_anterior": 0.25,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "lean_away_lateral_raise",
+                    "name_en": "Lean-away lateral raise",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1
+                    }
+                },
+                {
+                    "slug": "machine_chest_press",
+                    "name_en": "Chest press machine",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "chest_press_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5,
+                        "triceps_long": 0.25
+                    }
+                },
+                {
+                    "slug": "machine_lateral_raise",
+                    "name_en": "Lateral raise machine",
+                    "pattern": "lateral_raise",
+                    "family": "raise",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "lateral_raise_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_lateral": 1
+                    }
+                },
+                {
+                    "slug": "machine_shoulder_press",
+                    "name_en": "Shoulder press machine",
+                    "pattern": "vert_push",
+                    "family": "vpush",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "shoulder_press_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 2,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_anterior": 1,
+                        "delt_lateral": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "ohp_barbell",
+                    "name_en": "Standing overhead press",
+                    "pattern": "vert_push",
+                    "family": "vpush",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 2,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_anterior": 1,
+                        "delt_lateral": 0.5,
+                        "erectors": 0.25,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "overhead_cable_triceps_ext",
+                    "name_en": "Overhead cable triceps extension",
+                    "pattern": "elbow_ext_overhead",
+                    "family": "ext",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 1,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 0.75,
+                        "triceps_long": 1
+                    }
+                },
+                {
+                    "slug": "overhead_db_triceps_ext",
+                    "name_en": "Overhead dumbbell triceps extension",
+                    "pattern": "elbow_ext_overhead",
+                    "family": "ext",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 1,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 0.75,
+                        "triceps_long": 1
+                    }
+                },
+                {
+                    "slug": "pec_deck",
+                    "name_en": "Pec deck",
+                    "pattern": "chest_fly",
+                    "family": "fly",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "pec_deck"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.25
+                    }
+                },
+                {
+                    "slug": "push_up",
+                    "name_en": "Push-up",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 0.64,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "home"
+                    ],
+                    "stimulus": {
+                        "anti_rotation": 0.25,
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "push_up_feet_raised",
+                    "name_en": "Feet-elevated push-up",
+                    "pattern": "incline_push",
+                    "family": "press",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 0.7,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 1,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "single_arm_cable_pushdown",
+                    "name_en": "Single-arm cable pushdown",
+                    "pattern": "elbow_ext",
+                    "family": "ext",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                },
+                {
+                    "slug": "skull_crusher_ez",
+                    "name_en": "EZ-bar skull crusher",
+                    "pattern": "elbow_ext",
+                    "family": "ext",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 60,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 1,
+                        "triceps_long": 1
+                    }
+                },
+                {
+                    "slug": "smith_bench_press",
+                    "name_en": "Smith bench press",
+                    "pattern": "horiz_push",
+                    "family": "press",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 0.75,
+                        "chest_sternal": 1,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5,
+                        "triceps_long": 0.25
+                    }
+                },
+                {
+                    "slug": "smith_incline_press",
+                    "name_en": "Smith incline press",
+                    "pattern": "incline_push",
+                    "family": "press",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 2,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "chest_clavicular": 1,
+                        "chest_sternal": 0.75,
+                        "delt_anterior": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "smith_shoulder_press",
+                    "name_en": "Smith shoulder press",
+                    "pattern": "vert_push",
+                    "family": "vpush",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 2,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "delt_anterior": 1,
+                        "delt_lateral": 0.5,
+                        "triceps_lat_med": 0.5
+                    }
+                },
+                {
+                    "slug": "triceps_extension_machine",
+                    "name_en": "Triceps extension machine",
+                    "pattern": "elbow_ext",
+                    "family": "ext",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "triceps_extension_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                },
+                {
+                    "slug": "triceps_pushdown_bar",
+                    "name_en": "Triceps pushdown, bar",
+                    "pattern": "elbow_ext",
+                    "family": "ext",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                },
+                {
+                    "slug": "triceps_pushdown_rope",
+                    "name_en": "Triceps pushdown, rope",
+                    "pattern": "elbow_ext",
+                    "family": "ext",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "triceps_lat_med": 1,
+                        "triceps_long": 0.75
+                    }
+                }
+            ],
+            "prefs": {
+                "db_lateral_raise": "like",
+                "incline_db_press": "like",
+                "machine_chest_press": "like",
+                "pec_deck": "like",
+                "triceps_pushdown_rope": "like"
+            },
+            "elig": {},
+            "target": {
+                "chest": 6,
+                "front_delts": 2,
+                "side_delts": 4,
+                "triceps": 4
+            },
+            "goals": {
+                "chest": "improve",
+                "front_delts": "maintain",
+                "side_delts": "improve",
+                "rear_delts": "maintain",
+                "lats": "maintain",
+                "upper_back": "maintain",
+                "upper_traps": "maintain",
+                "biceps": "maintain",
+                "triceps": "improve",
+                "forearms": "maintain",
+                "abs": "maintain",
+                "lower_back": "maintain",
+                "glutes": "maintain",
+                "abductors": "maintain",
+                "adductors": "maintain",
+                "quads": "maintain",
+                "hamstrings": "maintain",
+                "calves": "maintain"
+            },
+            "budget_min": 60,
+            "region_needs": [
+                "chest_clavicular",
+                "triceps_long"
+            ]
+        }
+    },
+    "params": "default-1.0.3",
+    "expected": {
+        "outputs": {
+            "budget_min": 60,
+            "pool_size": 39,
+            "filtered": {},
+            "unlocked": [],
+            "coverage_gaps": [],
+            "exercises": [
+                {
+                    "exercise": "incline_db_press",
+                    "sets": 3,
+                    "est_s": 450,
+                    "b": 6.0732
+                },
+                {
+                    "exercise": "machine_chest_press",
+                    "sets": 3,
+                    "est_s": 445,
+                    "b": 5.7946
+                },
+                {
+                    "exercise": "db_lateral_raise",
+                    "sets": 4,
+                    "est_s": 490,
+                    "b": 4.784
+                },
+                {
+                    "exercise": "triceps_pushdown_rope",
+                    "sets": 2,
+                    "est_s": 265,
+                    "b": 2.0369
+                }
+            ],
+            "sets": 12,
+            "est_min": 27.5,
+            "coverage": {
+                "chest": 6,
+                "front_delts": 3,
+                "side_delts": 4,
+                "triceps": 5
+            },
+            "shortfall": {},
+            "pref_limits_volume": false,
+            "terms": {
+                "v": 18.6887,
+                "o": 0,
+                "rb": 0.6,
+                "k": 0,
+                "x": 0,
+                "t": 27.5,
+                "j": 17.9137
+            },
+            "top_candidates": [
+                {
+                    "exercise": "incline_db_press",
+                    "j": 6.6939
+                },
+                {
+                    "exercise": "machine_chest_press",
+                    "j": 6.3876
+                },
+                {
+                    "exercise": "dip_chest",
+                    "j": 6.3493
+                },
+                {
+                    "exercise": "dip_neutral",
+                    "j": 6.3418
+                },
+                {
+                    "exercise": "close_grip_bench",
+                    "j": 5.9875
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "fd7561486e9179b7da043925fb586c9f758526bce9d92e32d1e99029c7917523"
+    }
+}

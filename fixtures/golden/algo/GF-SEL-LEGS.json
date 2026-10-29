@@ -1,0 +1,2294 @@
+{
+    "id": "GF-SEL-LEGS",
+    "module": "select",
+    "description": "legsPrototypeCase (22.1 inputs on catalog 1.0.2, D56): quads 6, glutes 5, hamstrings 6 improve; adductors 2, abductors 2, calves 3 maintain; 65 min of exercise; leg press favourite, leg extension and seated leg curl liked, walking lunge disliked; regions rectus femoris, biarticular hamstrings, gastrocnemius wanted",
+    "input": {
+        "module": "select@1.0.0",
+        "scope_key": "golden:GF-SEL-LEGS",
+        "payload": {
+            "regions": {
+                "chest_clavicular": "chest",
+                "chest_sternal": "chest",
+                "delt_anterior": "front_delts",
+                "delt_lateral": "side_delts",
+                "delt_posterior": "rear_delts",
+                "lats": "lats",
+                "traps_mid": "upper_back",
+                "traps_lower": "upper_back",
+                "rhomboids": "upper_back",
+                "traps_upper": "upper_traps",
+                "biceps_brachii": "biceps",
+                "brachialis": "biceps",
+                "brachioradialis": "biceps",
+                "triceps_long": "triceps",
+                "triceps_lat_med": "triceps",
+                "wrist_flexors_grip": "forearms",
+                "wrist_extensors": "forearms",
+                "pronators_supinators": "forearms",
+                "rectus_abdominis": "abs",
+                "obliques": "abs",
+                "anti_rotation": "abs",
+                "erectors": "lower_back",
+                "glute_max": "glutes",
+                "glute_med_min": "abductors",
+                "adductors": "adductors",
+                "vasti": "quads",
+                "rectus_femoris": "quads",
+                "hams_biarticular": "hamstrings",
+                "bf_short_head": "hamstrings",
+                "gastrocnemius": "calves",
+                "soleus": "calves"
+            },
+            "stations": [
+                "ab_crunch_machine",
+                "adjustable_bench",
+                "assisted_pullup_machine",
+                "back_extension",
+                "cable_station",
+                "calf_machine",
+                "chest_press_machine",
+                "chest_supported_row",
+                "dip_machine",
+                "dip_station",
+                "fixed_neutral_handle",
+                "hack_squat",
+                "hip_abduction",
+                "hip_adduction",
+                "hip_thrust_machine",
+                "lat_pulldown",
+                "lateral_raise_machine",
+                "leg_curl_lying",
+                "leg_curl_seated",
+                "leg_extension",
+                "leg_press",
+                "pec_deck",
+                "preacher_curl_machine",
+                "pullup_bar",
+                "seated_cable_row",
+                "shoulder_press_machine",
+                "smith_machine",
+                "triceps_extension_machine"
+            ],
+            "exercises": [
+                {
+                    "slug": "back_extension_45",
+                    "name_en": "45° back extension",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "back_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 15,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "erectors": 1,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 0.5
+                    }
+                },
+                {
+                    "slug": "back_squat_barbell",
+                    "name_en": "Back squat",
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 2,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.75,
+                        "erectors": 0.25,
+                        "glute_max": 0.75,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "bulgarian_split_squat_db",
+                    "name_en": "Bulgarian split squat",
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "cable_hip_abduction",
+                    "name_en": "Cable hip abduction",
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "cable_hip_adduction",
+                    "name_en": "Cable hip adduction",
+                    "pattern": "hip_add",
+                    "family": "hip",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 1
+                    }
+                },
+                {
+                    "slug": "cable_kickback",
+                    "name_en": "Cable glute kickback",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 1
+                    }
+                },
+                {
+                    "slug": "cable_pull_through",
+                    "name_en": "Cable pull-through",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 1,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "erectors": 0.25,
+                        "glute_max": 1,
+                        "hams_biarticular": 0.5
+                    }
+                },
+                {
+                    "slug": "deadlift_barbell",
+                    "name_en": "Deadlift",
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 2,
+                    "setup_s": 150,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 3,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [
+                        "unstrapped_deadlift"
+                    ],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.75,
+                        "glute_max": 0.75,
+                        "hams_biarticular": 0.5,
+                        "traps_upper": 0.25,
+                        "vasti": 0.5,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "front_squat_barbell",
+                    "name_en": "Front squat",
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 2,
+                        "lumbar": 1,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.25,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "glute_bridge_barbell",
+                    "name_en": "Glute bridge",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 120,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25
+                    }
+                },
+                {
+                    "slug": "glute_ham_raise",
+                    "name_en": "Glute-ham raise",
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "back_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": true,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 15,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "glute_max": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "goblet_squat_db",
+                    "name_en": "Goblet squat",
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 30,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "good_morning_smith",
+                    "name_en": "Good morning (Smith)",
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 1,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "erectors": 0.75,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "hack_squat_machine",
+                    "name_en": "Hack squat",
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hack_squat"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "hip_abduction_machine",
+                    "name_en": "Hip abduction machine",
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_abduction"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 0.25,
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "hip_adduction_machine",
+                    "name_en": "Hip adduction machine",
+                    "pattern": "hip_add",
+                    "family": "hip",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_adduction"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 1
+                    }
+                },
+                {
+                    "slug": "hip_thrust_barbell",
+                    "name_en": "Hip thrust (barbell)",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "hip_thrust_machine",
+                    "name_en": "Hip thrust machine",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_thrust_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "hip_thrust_smith",
+                    "name_en": "Hip thrust (Smith)",
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "leg_extension",
+                    "name_en": "Leg extension",
+                    "pattern": "knee_ext",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "rectus_femoris": 1,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_45",
+                    "name_en": "45° leg press",
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_calf_raise",
+                    "name_en": "Calf press on the leg press",
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_high_wide",
+                    "name_en": "Leg press, feet high and wide",
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.75,
+                        "glute_max": 0.75,
+                        "hams_biarticular": 0.25,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_seated",
+                    "name_en": "Seated leg press",
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "lying_leg_curl",
+                    "name_en": "Lying leg curl",
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_curl_lying"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "rdl_barbell",
+                    "name_en": "Romanian deadlift",
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 3,
+                    "sfr": 2,
+                    "setup_s": 150,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.5,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "rdl_db",
+                    "name_en": "Dumbbell Romanian deadlift",
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.5,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "reverse_lunge_db",
+                    "name_en": "Reverse lunge",
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "alternating",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "seated_calf_raise",
+                    "name_en": "Seated calf raise",
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "calf_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "gastrocnemius": 0.25,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "seated_leg_curl",
+                    "name_en": "Seated leg curl",
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_curl_seated"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "side_lying_hip_abduction",
+                    "name_en": "Side-lying hip abduction",
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "home"
+                    ],
+                    "stimulus": {
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_calf_raise_db",
+                    "name_en": "Single-leg calf raise",
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_extension",
+                    "name_en": "Single-leg extension",
+                    "pattern": "knee_ext",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "rectus_femoris": 1,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_rdl_db",
+                    "name_en": "Single-leg RDL",
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 1,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "anti_rotation": 0.25,
+                        "glute_max": 0.75,
+                        "glute_med_min": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "smith_calf_raise",
+                    "name_en": "Smith calf raise",
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "smith_split_squat",
+                    "name_en": "Smith split squat",
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "smith_squat",
+                    "name_en": "Smith machine squat",
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.25,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "standing_calf_raise_machine",
+                    "name_en": "Standing calf raise",
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "calf_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "step_up_db",
+                    "name_en": "Dumbbell step-up",
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "walking_lunge_db",
+                    "name_en": "Walking lunge",
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "alternating",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                }
+            ],
+            "prefs": {
+                "leg_extension": "like",
+                "leg_press_45": "favorite",
+                "seated_leg_curl": "like",
+                "walking_lunge_db": "dislike"
+            },
+            "elig": {},
+            "target": {
+                "glutes": 5,
+                "abductors": 2,
+                "adductors": 2,
+                "quads": 6,
+                "hamstrings": 6,
+                "calves": 3
+            },
+            "goals": {
+                "chest": "maintain",
+                "front_delts": "maintain",
+                "side_delts": "maintain",
+                "rear_delts": "maintain",
+                "lats": "maintain",
+                "upper_back": "maintain",
+                "upper_traps": "maintain",
+                "biceps": "maintain",
+                "triceps": "maintain",
+                "forearms": "maintain",
+                "abs": "maintain",
+                "lower_back": "maintain",
+                "glutes": "improve",
+                "abductors": "maintain",
+                "adductors": "maintain",
+                "quads": "improve",
+                "hamstrings": "improve",
+                "calves": "maintain"
+            },
+            "budget_min": 65,
+            "region_needs": [
+                "rectus_femoris",
+                "hams_biarticular",
+                "gastrocnemius"
+            ]
+        }
+    },
+    "params": "default-1.0.3",
+    "expected": {
+        "outputs": {
+            "budget_min": 65,
+            "pool_size": 39,
+            "filtered": {},
+            "unlocked": [],
+            "coverage_gaps": [],
+            "exercises": [
+                {
+                    "exercise": "leg_press_45",
+                    "sets": 4,
+                    "est_s": 690,
+                    "b": 11.1135
+                },
+                {
+                    "exercise": "leg_press_calf_raise",
+                    "sets": 3,
+                    "est_s": 360,
+                    "b": 2.034,
+                    "chained_after": "leg_press_45"
+                },
+                {
+                    "exercise": "single_leg_rdl_db",
+                    "sets": 2,
+                    "est_s": 415,
+                    "b": 3.85
+                },
+                {
+                    "exercise": "bulgarian_split_squat_db",
+                    "sets": 2,
+                    "est_s": 415,
+                    "b": 4.301
+                },
+                {
+                    "exercise": "seated_leg_curl",
+                    "sets": 4,
+                    "est_s": 510,
+                    "b": 5.428
+                },
+                {
+                    "exercise": "hip_abduction_machine",
+                    "sets": 2,
+                    "est_s": 260,
+                    "b": 1.296
+                }
+            ],
+            "sets": 17,
+            "est_min": 44.2,
+            "coverage": {
+                "glutes": 5,
+                "abductors": 2,
+                "adductors": 3,
+                "quads": 6,
+                "hamstrings": 6,
+                "calves": 3
+            },
+            "shortfall": {},
+            "pref_limits_volume": false,
+            "terms": {
+                "v": 28.0225,
+                "o": 0,
+                "rb": 0.6,
+                "k": 0,
+                "x": 0,
+                "t": 44.5833,
+                "j": 26.3934
+            },
+            "top_candidates": [
+                {
+                    "exercise": "leg_press_45",
+                    "j": 8.3787
+                },
+                {
+                    "exercise": "leg_press_high_wide",
+                    "j": 6.626
+                },
+                {
+                    "exercise": "back_squat_barbell",
+                    "j": 6.2758
+                },
+                {
+                    "exercise": "bulgarian_split_squat_db",
+                    "j": 6.2275
+                },
+                {
+                    "exercise": "smith_split_squat",
+                    "j": 6.116
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "d863825380a09717a6dc980074173b00a36bdfeed4cd43e2f61d3cbf837b501c"
+    }
+}

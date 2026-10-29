@@ -1306,6 +1306,11 @@ from §5.4 and the quality factor `0.5 + 0.5·R` (a set done on a partly recover
 The time fit removes the cheapest utility per minute first, so maintain riders and low-weight groups go before improve
 groups.
 
+Implementation note (M4.3): on a gap day the rule groups of `pull_heavy` (lats, upper back) have no direct sets, so the
+tag cap of step 2 removes half sets from the rule groups and from the groups that credit them through the indirect table
+(rear delts → upper back), by the same order. With that reading the code reproduces §21.8 exactly (`alloc`, `normal`
+74.8 min, `direct` 49.6 min, and the Thursday add-on's 32.5 → 13.8 min).
+
 **Indirect credit table** (`allocator.indirect`, expert-opinion; `ratio` 0.5 is the fractional rule of Pelland 2026,
 `share` is the expected fraction of the source group's sets done with a compound that trains the target):
 
@@ -2333,7 +2338,9 @@ alloc(e, R):  need = max over g with c_eg ≥ 0.75 and R_g > 0 of R_g / c_eg   (
               s0 = mult < 1 ? hi : clamp(sPref, lo, hi)
               return clamp(min(s0, ceil(need − 0.25)), lo, hi)
 S0 = pinned ∪ {a ∈ anchors : a ∈ pool and ∃ g with c_ag ≥ 0.75 and target_g > 0}     // with alloc(a, target)
-topK = the TOP_K best e ∈ pool \ S0 by J(S0 + (e, alloc(e, target))), ties by slug
+single(e) = J(S0 + (e, alloc(e, target − cov(S0)))), ties by slug
+topK = for g with target_g ≥ 1 (canonical): the PER_GROUP_K best e ∈ pool \ S0 with c_eg ≥ 0.75 by single(e)   // D56
+       then the best remaining e by single(e) until |topK| = TOP_K; kept in single(e) order
 beam = [S0]; best = S0
 repeat up to MAX_EX − |S0| times:
   next = {}
@@ -2353,8 +2360,9 @@ TIME_FIT: while t(best) > budgetMin: remove one set (not below lo, never from pi
 return ORD-1(best)
 ```
 
-A beam search over at most 25 candidates and 8 exercises costs about 2,400 objective evaluations (milliseconds on a
-phone); unit tests compare it with exhaustive search on small fixtures (exercise-selection lens; set cover is NP-hard,
+The per-group quota (D56) exists because the seed's 160 rows put about 30 leg compounds ahead of every calf, abduction
+and lateral-raise row, so a plain top-25 cut left maintain and isolation groups without a candidate. A beam search over
+about 25 candidates and 8 exercises costs about 2,400 objective evaluations (milliseconds on a phone); unit tests compare it with exhaustive search on small fixtures (exercise-selection lens; set cover is NP-hard,
 Chvatal 1979). Every tie is broken by slug; no randomness.
 
 **Add-on blocks (C34).** The same search with `budgetMin = capacity` (§17.6), the slot-filtered pool, no general warm-up
@@ -2377,7 +2385,7 @@ used versus predicted, and weekly group progress (tuner rules T-ALLOC, T-PREF, T
 
 Constants (§23.13): `OVER_CREDIT 0.10`, `OVER_TOL 1.25`, `LAM_OVER 0.5`, `LAM_CAP 1.0`, `LAM_SKIP 3.0`,
 `B_STRETCH 0.05`, `B_SFR 0.04`, `REGION_BONUS 0.3`, `CONSISTENCY 0.5`, `STALL_PEN 0.5`, `AXIAL_CAP 4`, `LAM_AXIAL 0.3`,
-`LAM_TIME 0.05`, `LAM_TIME_OVER 0.5`, `OVERRUN_CAP 1.10`, `BEAM_WIDTH 12`, `TOP_K 25`, `MAX_EX 8`,
+`LAM_TIME 0.05`, `LAM_TIME_OVER 0.5`, `OVERRUN_CAP 1.10`, `BEAM_WIDTH 12`, `TOP_K 25`, `PER_GROUP_K 2` (D56), `MAX_EX 8`,
 `SMAX {compound 5, isolation 4}`, `DEDUP_COS 0.95`, `MAX_PER_PATTERN 2`, `TUNE_PASSES 20`, `TUNE_EPS 0.05`. All are
 expert-opinion values tuned on the prototype fixtures (§22). `OVER_CREDIT` is 0.10 rather than the lens's 0.25: with the
 canonical rule that 0.25 coefficients give no FS, 0.25 made a pec deck attractive after chest had reached its target in
@@ -2406,6 +2414,10 @@ fix-ups, at most 3 passes:
      with the exercises in between → place e_j right after e_i and set its setup to CHAIN_SETUP_S
 blocks: challenge block first (its own order), then the general or add-on block
 ```
+
+Stations (M4.3): chaining (c) and the superset rule "different stations" compare only the `requires_station` keys whose
+`equipment_types.category` is `station`; implements such as dumbbells and the barbell are shared freely, so a lateral raise
+is not chained to a dumbbell press.
 
 Rationale: strength gains are largest for exercises done first; hypertrophy is similar whatever the order (Nunes 2021,
 strong; Simão 2012). Skill and challenge work goes first, the main lift of an improve group next.
@@ -3660,6 +3672,7 @@ whose source is [this doc], is an assumption and carries `tunable: true` in the 
 | `select.overrun_cap` | 1.10 | 1.0-1.3 | expert-opinion | exercise-selection lens | T-TIME |
 | `select.beam_width` | 12 | 4-50 | engineering-fact | exercise-selection lens | beam-versus-exhaustive tests |
 | `select.top_k` | 25 | 10-60 | engineering-fact | exercise-selection lens | same |
+| `select.per_group_k` | 2 | 0-5 | expert-opinion | D56 (params 1.0.3) | beam-versus-exhaustive tests, review |
 | `select.max_ex` | 8 | 4-12 | expert-opinion | exercise-selection lens | review |
 | `select.smax` | {"compound": 5, "isolation": 4} | 2-8 | expert-opinion | exercise-selection lens | review |
 | `select.dedup_cos` | 0.95 | 0.8-1.0 | expert-opinion | exercise-selection lens | review |
@@ -3889,7 +3902,7 @@ resolutions of DECISIONS §3.1 are kept, marked, so the history stays traceable.
 | OI-13 | One gym visit per day. | **Resolved by C50** (H8). | — |
 | OI-14 | Slot matching interface for `calendar.classify`. | **Resolved**: CHALLENGE_ENGINE §9.3 defines `challenge.calendar.matchSlots(enrollment, candidates) → List<SlotMatch>` as used in §1.4. | — |
 | OI-15 | **Run systemic load.** The planning lens's 1.0 per 40 min would make an easy 40-min run as taxing as a full 15-set lower-body session. | Open: 0.5 per 40 min | review after runs are logged (T-RUN) |
-| OI-16 | **Prototype catalog versus seed.** The §21/§22 selection outputs come from a prototype catalog (§22.4) with a few coefficients that differ from the seed (§10.8). | Open: prototype values documented | regenerate the golden values on catalog 1.0.2 before freezing them (D55, per M4 step); M4.1 froze the §21.3-21.4 goldens (GF-W41-ACCOUNTING, -READINESS, -TARGETS), selection follows in M4.3 |
+| OI-16 | **Prototype catalog versus seed.** The §21/§22 selection outputs come from a prototype catalog (§22.4) with a few coefficients that differ from the seed (§10.8). | Open: prototype values documented | regenerate the golden values on catalog 1.0.2 before freezing them (D55, per M4 step); M4.1 froze the §21.3-21.4 goldens (GF-W41-ACCOUNTING, -READINESS, -TARGETS); M4.3 froze the allocator and selection goldens (GF-W41-ADDON-THU, GF-W41-ALLOC-FRI, GF-W41-SELECT-FRI, GF-SEL-*), with the D56 candidate list; the planner and Today goldens follow in M4.5 |
 | OI-17 | Region count ("~32" in C9). | **Resolved by C44**: 34 regions + optional `neck` (§10.2). | — |
 | OI-18 | **Soreness scale.** UI chips give three answers; the RP-style ramp table uses four levels. | Open: never_sore 1, healed 2, still_sore 4 (ramp) and 0 / 1 / 3 points (`readiness.soreness_points`, which DATA_MODEL E19 points to) | review after 8 weeks of answers |
 | OI-19 | C52 put the lexicographic key before `J` (novice case of §21.11). | **Resolved by C52 amendment** (2026-10-07): higher `J` before the lexicographic key; the novice case now picks Wed FULL. | — |

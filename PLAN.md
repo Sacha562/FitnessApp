@@ -697,10 +697,11 @@ catalog 1.0.2 (OI-16).
    a session and the pre-session readiness sheet with You → Prompts, so soreness answers start to accumulate. Runs are
    read from the classified calendar. The Week tab arrives with only its muscle volume bars: done and committed volume
    against this week's targets.
-3. **M4.3 Session-building engine.** The pure `:algo` modules `time` (duration model, calibration, the dose estimator,
+3. **M4.3 Session-building engine** (built 2026-10-29). The pure `:algo` modules `time` (duration model, calibration, the dose estimator,
    the add-on capacity of C49, the time-chip trimming), `allocator`, the `elig` necessity gate and group availability,
-   `select` (beam search with set tuning, checked against an exhaustive search) and `order` with the optional supersets.
-   Goldens: W41_addon_thu, W41_allocation_fri, W41_select_fri and the F-SEL cases.
+   `select` (beam search with set tuning, checked against an exhaustive search; candidates per D56) and `order` with the
+   optional supersets. Goldens: W41_addon_thu, W41_allocation_fri, W41_select_fri, the Wednesday train-anyway block and
+   the F-SEL cases. Params 1.0.3 adds `select.per_group_k` (D56); the app moves to it with the M4.4 migration.
 4. **M4.4 Building a session in the app.** A general session can start for a session type (Legs, Push, Legs + push,
    Full and the others of ALGORITHMS_PLANNING 0.3) with time chips; the exercises, order and loads come from `select`,
    `order` and `rx`. The add-on blocks after C and A are offered at the end of the challenge session, with Skip on the

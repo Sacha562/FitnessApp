@@ -20,6 +20,7 @@ import dev.fitnessapp.algo.selection.catalog.Taxonomy
 import dev.fitnessapp.algo.targets.GroupGoal
 import dev.fitnessapp.algo.targets.Targets
 import dev.fitnessapp.algo.targets.TargetsInput
+import dev.fitnessapp.algo.targets.WeeklyTargets
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -107,8 +108,8 @@ internal object PlanningGolden {
         }
     }
 
-    /** WeeklyTargets (5) for a preset or explicit goals. */
-    fun targets(p: JsonObject, params: ParamView): JsonObject {
+    /** The WeeklyTargets of a `targets` payload (goals, training age, owned groups, deload week, done and committed). */
+    internal fun weeklyTargets(p: JsonObject, params: ParamView): WeeklyTargets {
         val goals = p.getValue("goals").jsonObject.mapValues { (_, v) ->
             val o = v.jsonObject
             GroupGoal(str(o, "goal"), o["focus"]?.jsonPrimitive?.content == "true")
@@ -119,7 +120,12 @@ internal object PlanningGolden {
             challengeDeloadWeek = p["deload_week"]?.jsonPrimitive?.content == "true", committed = numbers(p["committed"]), done = numbers(p["done"]),
             trainedDates = emptyMap(), today = LocalDate.parse(str(p, "today")),
         )
-        val t = Targets.compute(input, params)
+        return Targets.compute(input, params)
+    }
+
+    /** WeeklyTargets (5) for a preset or explicit goals. */
+    fun targets(p: JsonObject, params: ParamView): JsonObject {
+        val t = weeklyTargets(p, params)
         return buildJsonObject {
             put("status", t.status)
             put("base", ratio(t.base))
@@ -162,7 +168,7 @@ internal object PlanningGolden {
         }
     }
 
-    private fun catalog(p: JsonObject): Catalog {
+    internal fun catalog(p: JsonObject): Catalog {
         val regions = p.getValue("regions").jsonObject.entries.sortedBy { it.key }
         val taxonomy = Taxonomy(
             Groups.CANONICAL.mapIndexed { i, g -> MuscleGroup(g, Groups.familyOf(g).lowercase(), g, sort = i) },
@@ -172,13 +178,13 @@ internal object PlanningGolden {
         return Catalog(CatalogDoc("fixture", rows, emptyList()), taxonomy)
     }
 
-    private fun groups(m: Map<String, Double>) = buildJsonObject {
+    internal fun groups(m: Map<String, Double>) = buildJsonObject {
         Groups.CANONICAL.forEach { g -> m[g]?.let { put(g, ratio(it)) } }
         m.keys.filter { it !in Groups.CANONICAL }.sorted().forEach { put(it, ratio(m.getValue(it))) }
     }
 
-    private fun numbers(e: JsonElement?): Map<String, Double> = e?.jsonObject?.mapValues { d(it.value) }.orEmpty()
-    private fun d(e: JsonElement): Double = e.jsonPrimitive.content.toDouble()
-    private fun str(o: JsonObject, k: String): String = o.getValue(k).jsonPrimitive.content
-    private fun ratio(x: Double) = JsonNumbers.grid(Grid.ratio(x), GridKind.RATIO)
+    internal fun numbers(e: JsonElement?): Map<String, Double> = e?.jsonObject?.mapValues { d(it.value) }.orEmpty()
+    internal fun d(e: JsonElement): Double = e.jsonPrimitive.content.toDouble()
+    internal fun str(o: JsonObject, k: String): String = o.getValue(k).jsonPrimitive.content
+    internal fun ratio(x: Double) = JsonNumbers.grid(Grid.ratio(x), GridKind.RATIO)
 }

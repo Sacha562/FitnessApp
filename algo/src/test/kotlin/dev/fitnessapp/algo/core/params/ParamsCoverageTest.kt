@@ -45,7 +45,9 @@ class ParamsCoverageTest {
         "elig" to dev.fitnessapp.algo.selection.elig.Elig, "substitute" to dev.fitnessapp.algo.selection.substitute.Substitute,
         "safety" to dev.fitnessapp.algo.core.safety.Safety, "setcredit" to dev.fitnessapp.algo.accounting.setcredit.SetCredit,
         "readiness" to dev.fitnessapp.algo.accounting.readiness.Readiness, "targets" to dev.fitnessapp.algo.targets.Targets,
-        "runs" to dev.fitnessapp.algo.targets.runs.Runs,
+        "runs" to dev.fitnessapp.algo.targets.runs.Runs, "time" to dev.fitnessapp.algo.selection.time.TimeModel,
+        "allocator" to dev.fitnessapp.algo.planning.allocator.Allocator, "select" to dev.fitnessapp.algo.selection.select.Select,
+        "order" to dev.fitnessapp.algo.selection.order.Order,
     )
     private val all: List<DeclaresParams> = complete.values.toList()
 

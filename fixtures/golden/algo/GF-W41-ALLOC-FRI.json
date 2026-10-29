@@ -1,0 +1,355 @@
+{
+    "id": "GF-W41-ALLOC-FRI",
+    "module": "allocator",
+    "description": "W41_allocation_fri (21.8, regenerated on catalog 1.0.2, OI-16): Fri 19:45 FULL after the Thursday legs add-on (chained as an earlier allocation: its projected Vhyp adds to Vbefore and its dose to readiness), 75-min default budget, gap day after A; upper back and upper traps have no eligible direct exercise (C50); Vbefore and the challenge-only readiness are the frozen GF-W41-ACCOUNTING and GF-W41-READINESS values",
+    "input": {
+        "module": "allocator@1.0.0",
+        "scope_key": "golden:GF-W41-ALLOC-FRI",
+        "payload": {
+            "targets": {
+                "iso_week": "2026-W41",
+                "today": "2026-10-07",
+                "training_age": "intermediate",
+                "owned": [
+                    "lats",
+                    "biceps",
+                    "forearms"
+                ],
+                "contract_active": true,
+                "deload_week": true,
+                "done": {
+                    "abs": 1.45,
+                    "rear_delts": 0.9,
+                    "upper_back": 1.4
+                },
+                "committed": {
+                    "abs": 2.98,
+                    "rear_delts": 0.9,
+                    "upper_back": 0.45
+                },
+                "goals": {
+                    "chest": {
+                        "goal": "improve"
+                    },
+                    "side_delts": {
+                        "goal": "improve"
+                    },
+                    "rear_delts": {
+                        "goal": "improve"
+                    },
+                    "lats": {
+                        "goal": "improve"
+                    },
+                    "upper_back": {
+                        "goal": "improve"
+                    },
+                    "biceps": {
+                        "goal": "improve"
+                    },
+                    "triceps": {
+                        "goal": "improve"
+                    },
+                    "quads": {
+                        "goal": "improve"
+                    },
+                    "hamstrings": {
+                        "goal": "improve"
+                    },
+                    "glutes": {
+                        "goal": "improve"
+                    },
+                    "front_delts": {
+                        "goal": "maintain"
+                    },
+                    "upper_traps": {
+                        "goal": "maintain"
+                    },
+                    "forearms": {
+                        "goal": "maintain"
+                    },
+                    "abs": {
+                        "goal": "maintain"
+                    },
+                    "lower_back": {
+                        "goal": "maintain"
+                    },
+                    "abductors": {
+                        "goal": "maintain"
+                    },
+                    "adductors": {
+                        "goal": "maintain"
+                    },
+                    "calves": {
+                        "goal": "maintain"
+                    }
+                }
+            },
+            "type": "FULL",
+            "start": "2026-10-09T17:45:00Z",
+            "dose_id": "fri",
+            "budget_min": 75,
+            "v_before": {
+                "rear_delts": 2.85,
+                "lats": 11.3,
+                "upper_back": 2.375,
+                "biceps": 6.425,
+                "forearms": 11.225,
+                "abs": 4.425
+            },
+            "readiness": {
+                "rear_delts": 0.7882,
+                "lats": 0.5348,
+                "upper_back": 0.8559,
+                "biceps": 0.6712,
+                "forearms": 0.5067,
+                "abs": 0.7026
+            },
+            "earlier": [
+                {
+                    "type": "LEGS",
+                    "start": "2026-10-08T18:36:00Z",
+                    "dose_id": "thu-addon",
+                    "capacity": {
+                        "booked_min": 90,
+                        "challenge_block_min": 50.7,
+                        "buffer_min": 5
+                    },
+                    "readiness": {
+                        "rear_delts": 0.9602,
+                        "lats": 0.8945,
+                        "upper_back": 0.9484,
+                        "biceps": 0.9483,
+                        "forearms": 0.8964,
+                        "abs": 0.9495
+                    },
+                    "add_on": {
+                        "family": "LEGS",
+                        "allowed_groups": [
+                            "quads",
+                            "hamstrings",
+                            "glutes",
+                            "abductors",
+                            "adductors",
+                            "calves"
+                        ],
+                        "forbid_groups": [
+                            "lats",
+                            "biceps",
+                            "forearms"
+                        ],
+                        "max_sets": 4,
+                        "min_rir": 2
+                    },
+                    "forbidden_session_tags": [
+                        "elbow_flexor_heavy",
+                        "grip_heavy"
+                    ],
+                    "tag_rules": {
+                        "pull_heavy": {
+                            "groups": [
+                                "lats",
+                                "upper_back"
+                            ],
+                            "minHardSets": 4
+                        },
+                        "elbow_flexor_heavy": {
+                            "groups": [
+                                "biceps"
+                            ],
+                            "minHardSets": 3,
+                            "orJointStress": {
+                                "elbow_medial": 2
+                            }
+                        },
+                        "grip_heavy": {
+                            "minGripDemand": 2,
+                            "minHardSets": 2
+                        }
+                    }
+                }
+            ],
+            "unavailable": [
+                "upper_back",
+                "upper_traps"
+            ],
+            "forbidden_session_tags": [
+                "elbow_flexor_heavy",
+                "grip_heavy",
+                "pull_heavy"
+            ],
+            "tag_rules": {
+                "pull_heavy": {
+                    "groups": [
+                        "lats",
+                        "upper_back"
+                    ],
+                    "minHardSets": 4
+                },
+                "elbow_flexor_heavy": {
+                    "groups": [
+                        "biceps"
+                    ],
+                    "minHardSets": 3,
+                    "orJointStress": {
+                        "elbow_medial": 2
+                    }
+                },
+                "grip_heavy": {
+                    "minGripDemand": 2,
+                    "minHardSets": 2
+                }
+            }
+        }
+    },
+    "params": "default-1.0.3",
+    "expected": {
+        "outputs": {
+            "allocation": {
+                "label": "Legs + push + rear delts",
+                "feasible": true,
+                "alloc": {
+                    "chest": 10,
+                    "front_delts": 4,
+                    "side_delts": 10,
+                    "rear_delts": 8,
+                    "triceps": 10,
+                    "lower_back": 4,
+                    "glutes": 10,
+                    "abductors": 4,
+                    "adductors": 4,
+                    "quads": 10,
+                    "hamstrings": 10,
+                    "calves": 4
+                },
+                "normal": {
+                    "chest": 8.5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3.5,
+                    "lower_back": 1,
+                    "abductors": 1,
+                    "quads": 2.5,
+                    "hamstrings": 4,
+                    "calves": 1
+                },
+                "direct": {
+                    "chest": 4.5,
+                    "side_delts": 2,
+                    "rear_delts": 2,
+                    "lower_back": 1,
+                    "abductors": 1,
+                    "quads": 1.5,
+                    "hamstrings": 2,
+                    "calves": 1
+                },
+                "credit": {
+                    "chest": 4.5,
+                    "front_delts": 2.25,
+                    "side_delts": 2,
+                    "rear_delts": 2,
+                    "upper_back": 1,
+                    "triceps": 2.25,
+                    "lower_back": 1,
+                    "glutes": 0.705,
+                    "abductors": 1,
+                    "adductors": 0.375,
+                    "quads": 1.5,
+                    "hamstrings": 2,
+                    "calves": 1
+                },
+                "rir_target": {
+                    "chest": 4,
+                    "side_delts": 4,
+                    "rear_delts": 4,
+                    "lower_back": 4,
+                    "abductors": 4,
+                    "quads": 4,
+                    "hamstrings": 4,
+                    "calves": 4
+                },
+                "est_min": 49.5,
+                "normal_min": 73.9,
+                "predicted_tags": [],
+                "dropped": [
+                    {
+                        "group": "lats",
+                        "reason": "COVERED_BY_CHALLENGE"
+                    },
+                    {
+                        "group": "upper_back",
+                        "reason": "NO_ELIGIBLE_EXERCISE"
+                    },
+                    {
+                        "group": "upper_traps",
+                        "reason": "NO_ELIGIBLE_EXERCISE"
+                    },
+                    {
+                        "group": "biceps",
+                        "reason": "COVERED_BY_CHALLENGE"
+                    },
+                    {
+                        "group": "forearms",
+                        "reason": "COVERED_BY_CHALLENGE"
+                    },
+                    {
+                        "group": "abs",
+                        "reason": "TARGETS_MET"
+                    },
+                    {
+                        "group": "adductors",
+                        "reason": "TIME_SHORT"
+                    },
+                    {
+                        "group": "glutes",
+                        "reason": "TIME_SHORT"
+                    },
+                    {
+                        "group": "triceps",
+                        "reason": "TIME_SHORT"
+                    }
+                ],
+                "vhyp": {
+                    "chest": 3.6,
+                    "front_delts": 1.8,
+                    "side_delts": 1.6,
+                    "rear_delts": 1.4306,
+                    "upper_back": 0.7424,
+                    "triceps": 1.8,
+                    "lower_back": 0.8,
+                    "glutes": 0.5476,
+                    "abductors": 0.8,
+                    "adductors": 0.293,
+                    "quads": 1.1162,
+                    "hamstrings": 1.4777,
+                    "calves": 0.8
+                },
+                "dose": {
+                    "t": "2026-10-09T18:34:28Z",
+                    "fat": {
+                        "chest": 5.4,
+                        "front_delts": 2.7,
+                        "side_delts": 2.4,
+                        "rear_delts": 2.4,
+                        "upper_back": 1.2,
+                        "triceps": 2.7,
+                        "lower_back": 1.2,
+                        "glutes": 0.846,
+                        "abductors": 1.2,
+                        "adductors": 0.45,
+                        "quads": 1.8,
+                        "hamstrings": 2.4,
+                        "calves": 1.2
+                    },
+                    "tissue": {
+                        "hip": 0.08,
+                        "knee": 0.76,
+                        "lumbar": 0.4,
+                        "shoulder_ant": 0.36,
+                        "shoulder_overhead": 0.16
+                    },
+                    "sys": 0.5533
+                }
+            }
+        },
+        "outputs_jcs_sha256": "ecc679495869b8bd3f04c550aa4cf19b6ad374a7000872e0c5b1b6a7347c7f46"
+    }
+}

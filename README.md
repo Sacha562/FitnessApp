@@ -354,3 +354,25 @@ No params change and no engine bump: the modules run at their 1.0.0 registry ver
 and sessions, You > Prompts locks, and both readiness sheets (general optional; OAP with Start waiting for the elbow
 answer, soreness for forearms and lats) checked without saving. Open: the volume bars and row sheet (need saved
 goals) and the Summary prompts (need a finished session).
+
+**M4.3 (2026-10-29)**: the session-building engine in `:algo`. `time` (TIME-1: work per set for reps, eccentric reps,
+holds, attempts and unilateral pairs, the warm-up per block kind, the session budget from a chip, the calendar or the
+default, the allocator's dose estimator, the C49 add-on capacity, UI-02 trimming with the short version, the EWMA
+calibration), `allocator` (the per-group FS of one candidate session or add-on: remaining targets over the
+opportunities, readiness, caps, indirect credit, the gap-day tag caps, the time fit by utility per minute, the deload and
+re-entry transforms, the add-on's set cap, the label and the projected dose), the `elig` necessity gate (C26 unlocks
+with `ONLY_OPTION`, coverage gaps), group availability and C50's `onlyIfGoalsAsk` from the goals, `select` (SEL-1's
+objective, beam search, set tuning, time fit) and `order` (ORD-1's key, the pre-fatigue, grip and same-station fix-ups,
+supersets with REST-1's rests). The allocator reproduces 21.8 exactly on the prototype inputs: Friday's `alloc`,
+`normal` (74.8 min) and `direct` (49.6 min), the Thursday add-on (32.5 -> 13.8 min, leg press 2 and seated leg curl 2)
+and the Wednesday train-anyway block (74.6 -> 48.6 min); SEL-1 reproduces the 22.2 push day and its chest-press-occupied
+variant exactly. The seed's 160 rows squeezed calves, abductors and lateral raises out of SEL-1's top-25 candidate cut,
+so D56 (user) takes each target group's two best direct trainers first (`select.per_group_k`, params 1.0.3); with it the
+22.1 legs day covers every target (leg press 4 with the calf press chained, single-leg RDL 2, Bulgarian split squat 2,
+seated leg curl 4, hip abduction 2). Ten new golden fixtures, regenerated on catalog 1.0.2 and chained from the frozen M4.1
+accounting and readiness (OI-16): GF-W41-ALLOC-FRI, GF-W41-ADDON-THU, GF-W41-SELECT-FRI, GF-W41-SELECT-WED and GF-SEL-*
+(legs, push and their four variants). Choices where the spec is open: the gap-day tag cap also takes half sets from the
+groups that credit the rule groups indirectly (rear delts for upper back); ORD-1 chains and pairs only on equipment of
+category `station`, so dumbbells do not chain; pre-fatigue wins over chaining; SEL-1 times an exercise with the caller's
+reps (default 10, the middle of RX-1's default range) and REST-1's class base. No app change and no engine bump: the
+modules start at 1.0.0 and the app calls them from M4.4. Tests: `:algo` 495, `:app` 119, `:sim` 60, all green.

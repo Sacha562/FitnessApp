@@ -50,6 +50,8 @@ object GoldenRunner {
             "setcredit" -> PlanningGolden.setcredit(payload(), params.fork())
             "readiness" -> PlanningGolden.readiness(payload(), params.fork())
             "targets" -> PlanningGolden.targets(payload(), params.fork())
+            "allocator" -> SessionGolden.allocator(payload(), params.fork())
+            "select" -> SessionGolden.select(payload(), params.fork())
             else -> throw IllegalArgumentException("no golden adapter for module $module")
         }
         return Result(outputs, Jcs.canonicalize(outputs), Jcs.sha256Hex(outputs))
