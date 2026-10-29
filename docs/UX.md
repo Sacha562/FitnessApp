@@ -3092,7 +3092,9 @@ Fed by `recommendations` (trace), `warnings`, `challenge_rule_events` (bindings)
   signals). Answers go to the challenge as `readiness.checked` (challenge_events) and to `safety`.
 * Soreness answers feed `readiness` (C5 check-in; the soreness-driven adaptation goes to the offline
   tuner, not the live model).
-* Start is always enabled; unanswered items are logged as skipped.
+* Start is always enabled, except before a session whose template requires the elbow check
+  (`requiresReadiness: ["elbow"]`, CHALLENGE_ENGINE 11.1, C33) and none was logged today: then Start waits for
+  that one answer, and "Skip questions" is hidden. Unanswered items are logged as skipped.
 
 ### 16.4 Skip sheet (`sheet.skip`)
 
@@ -3640,8 +3642,9 @@ training response well (Saw, Main and Gastin 2016, strong) and session RPE is a 
 **Display details.**
 
 * Pre-session items appear in one optional Readiness sheet (16.3) in this order: readiness, elbow check,
-  soreness rows (in the order the module returns). Start is always enabled; unanswered items are logged
-  as skipped. Post-session items are the Summary's quick check (12.2).
+  soreness rows (in the order the module returns). Start is always enabled, except that a template
+  requiring the elbow check waits for that answer (16.3); unanswered items are logged as skipped.
+  Post-session items are the Summary's quick check (12.2).
 * Labels and stored codes:
 
 | Item | Labels | Stored as |

@@ -68,7 +68,7 @@ fun PromptsRoute(c: AppContainer, onBack: () -> Unit) {
         ) {
             Tile(spacing = 10.dp) {
                 TileLabel("Before a gym session")
-                Text("One optional sheet before the first exercise. Start is always available; questions you leave empty are skipped.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                Text("One optional sheet before the first exercise; questions you leave empty are skipped. Only a challenge session that needs the elbow check waits for that answer.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 Row1("Readiness", "Worse, normal or better than usual.", t.readiness, null) { on -> scope.launch { c.profiles.set(Setting.PROMPT_READINESS, on, "you.prompts") } }
                 TileDivider()
                 Row1("Elbow check", "0 none to 3 pain, with the kind of pain at 2 or more.", t.elbowCheck || painRule,

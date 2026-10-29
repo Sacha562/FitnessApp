@@ -347,7 +347,10 @@ volume bars: done Vhyp from the logged sets (`setcredit`), committed Vhyp of the
 (the challenge coverage with the definition's credit RIR), targets with the OAP's owned groups and deload week, WE-V1
 for the DEFICIT state, and a row sheet with the per-exercise contributions and the target's Why. Choices where the spec
 leaves room: when a template requires the elbow check, the sheet's Start waits for that one answer (the dialog it
-replaces did the same; UX 16.3 says Start is always enabled); the target ramp starts at the base target until the week
+replaces did the same, as CHALLENGE_ENGINE requires; UX 16.3 now says so); the target ramp starts at the base target until the week
 close is stored (M4.5); the "Worse" readiness suggestion card (REASON-1) and the WE-V7 all-skip note are not built yet.
 No params change and no engine bump: the modules run at their 1.0.0 registry versions. Tests: `:algo` 444, `:data` 92,
-`:app` 119, `:sim` 60, all green; the APK assembles. Not checked on the phone yet (wireless adb unreachable).
+`:app` 119, `:sim` 60, all green; the APK assembles. Phone, 2026-10-29: Today card, Week header, Preferences goals
+and sessions, You > Prompts locks, and both readiness sheets (general optional; OAP with Start waiting for the elbow
+answer, soreness for forearms and lats) checked without saving. Open: the volume bars and row sheet (need saved
+goals) and the Summary prompts (need a finished session).
