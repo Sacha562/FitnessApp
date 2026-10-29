@@ -63,7 +63,10 @@ import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import dev.fitnessapp.app.planning.PromptPlans
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
@@ -82,7 +85,7 @@ import java.util.Locale
 fun TodayRoute(
     c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {},
     onHistory: () -> Unit = {}, onOpenTest: (enrollmentId: String) -> Unit = {},
-    onOpenReliability: () -> Unit = {}, onOpenEquipment: () -> Unit = {},
+    onOpenReliability: () -> Unit = {}, onOpenEquipment: () -> Unit = {}, onSetGoals: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -95,6 +98,45 @@ fun TodayRoute(
     var weighIn by remember { mutableStateOf(false) }
     var starting by remember { mutableStateOf(false) }
     var repeat by remember { mutableStateOf(false) }
+    // The readiness sheet of a general session (UX 16.3) and the source session of a Repeat.
+    var sheet by remember { mutableStateOf<PreSheet?>(null) }
+    var sheetRepeat by remember { mutableStateOf<String?>(null) }
+    var notice by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val goals by remember { c.goals.observe() }.collectAsState(initial = null)
+
+    /** Starts a general session (fresh or a Repeat of [repeatOf]) and records the sheet. */
+    fun startGeneral(repeatOf: String?, s: PreSheet?, a: PreAnswers) {
+        starting = true
+        scope.launch {
+            a.elbow?.let { score -> notice = PreSession.elbow(c, score, a.symptoms) }
+            val id = c.sessionRepository.start(c.params, repeatOf = repeatOf)
+            SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
+            starting = false
+            onOpenSession(id, false)
+            s?.let { PreSession.record(c, id, it.takeIf { x -> x.plan.pre.isNotEmpty() }, it.plan, a, System.currentTimeMillis()) }
+        }
+    }
+
+    /** Start or Repeat (UX 9.8): the prompt plan first; with nothing to ask the session starts at once. */
+    fun begin(repeatOf: String?) {
+        if (starting) return
+        starting = true
+        scope.launch {
+            val s = runCatching {
+                withContext(Dispatchers.Default) {
+                    val fs = repeatOf?.let { PreSession.plannedFsOfSession(c, it) }.orEmpty()
+                    PreSheet(PromptPlans.plan(c, home = false, plannedFs = fs, elbowRequired = false), false, System.currentTimeMillis())
+                }
+            }.getOrNull()
+            starting = false
+            if (s != null && s.plan.pre.isNotEmpty()) {
+                sheet = s
+                sheetRepeat = repeatOf
+            } else {
+                startGeneral(repeatOf, s, PreAnswers())
+            }
+        }
+    }
     val zone = ZoneId.of("Europe/Amsterdam")
     val today = LocalDate.now(zone)
 
@@ -115,6 +157,20 @@ fun TodayRoute(
             }
 
             WeekStrip(today, recent)
+
+            notice?.let { (kind, text) -> Banner(text, if (kind == "stop" || kind == "warn") BannerKind.SAFETY else BannerKind.ADVISORY, action = "OK", onAction = { notice = null }) }
+
+            // D55: until the goals are saved, a card opens You > Preferences at Muscle goals and Sessions.
+            if (goals?.isEmpty() == true) {
+                Tile(spacing = 6.dp, onClick = onSetGoals) {
+                    Text("Set your goals", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Pick what to improve, maintain or skip, and your training experience. The week's targets and session building use them.",
+                        style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                    )
+                    LinkButton("Set goals", onSetGoals)
+                }
+            }
 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)
 
@@ -156,16 +212,7 @@ fun TodayRoute(
                 }, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrimaryButton("Start session", onClick = {
-                        if (starting) return@PrimaryButton
-                        starting = true
-                        scope.launch {
-                            val id = c.sessionRepository.start(c.params)
-                            SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
-                            starting = false
-                            onOpenSession(id, false)
-                        }
-                    }, enabled = !starting, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow)
+                    PrimaryButton("Start session", onClick = { begin(null) }, enabled = !starting, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow)
                     // D49: start as a copy of a past general session; RX-1 sets the loads.
                     TonalButton("Repeat", { repeat = true }, enabled = !starting, height = 58.dp)
                 }
@@ -175,14 +222,13 @@ fun TodayRoute(
 
     if (repeat) RepeatSheet(c, onDismiss = { repeat = false }) { sourceId ->
         repeat = false
-        if (!starting) {
-            starting = true
-            scope.launch {
-                val id = c.sessionRepository.start(c.params, repeatOf = sourceId)
-                SessionService.start(context)
-                starting = false
-                onOpenSession(id, false)
-            }
+        begin(sourceId)
+    }
+
+    sheet?.let { s ->
+        ReadinessSheet(c, s, onDismiss = { sheet = null }) { a ->
+            sheet = null
+            startGeneral(sheetRepeat, s, a)
         }
     }
 

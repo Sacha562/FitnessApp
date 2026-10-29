@@ -10,6 +10,7 @@ import androidx.room.Upsert
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
+import dev.fitnessapp.data.db.entity.MuscleGoalEntity
 import dev.fitnessapp.data.db.entity.ProfileEntity
 import dev.fitnessapp.data.db.entity.SessionBlockEntity
 import dev.fitnessapp.data.db.entity.SessionEventEntity
@@ -214,6 +215,13 @@ interface SetLogDao : SyncDao<SetLogEntity> {
     @Query("SELECT * FROM set_logs WHERE session_id = :sessionId AND deleted_at IS NULL ORDER BY completed_at, id")
     suspend fun bySession(sessionId: String): List<SetLogEntity>
 
+    /** The live sets of live sessions completed at or after [sinceMs] (the volume accounting's history, M4.2). */
+    @Query(
+        "SELECT s.* FROM set_logs s JOIN workout_sessions w ON w.id = s.session_id " +
+            "WHERE s.deleted_at IS NULL AND w.deleted_at IS NULL AND s.completed_at >= :sinceMs ORDER BY s.completed_at, s.id",
+    )
+    suspend fun liveSince(sinceMs: Long): List<SetLogEntity>
+
     @Query(
         """SELECT s.started_at AS session_started_at, s.local_date AS session_local_date, l.*
            FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
@@ -373,6 +381,27 @@ interface UserExercisePrefDao : SyncDao<UserExercisePrefEntity> {
 
     @Query("SELECT * FROM user_exercise_prefs WHERE id = :id")
     suspend fun get(id: String): UserExercisePrefEntity?
+}
+
+@Dao
+interface MuscleGoalDao : SyncDao<MuscleGoalEntity> {
+    @Query("SELECT * FROM muscle_goals WHERE id IN (:ids)")
+    override suspend fun byIds(ids: List<String>): List<MuscleGoalEntity>
+
+    @Query("SELECT id FROM muscle_goals")
+    override suspend fun allIds(): List<String>
+
+    @Query("SELECT * FROM muscle_goals ORDER BY id")
+    override suspend fun exportAll(): List<MuscleGoalEntity>
+
+    @Query("SELECT * FROM muscle_goals WHERE deleted_at IS NULL ORDER BY muscle_group_id, id")
+    fun observeLive(): Flow<List<MuscleGoalEntity>>
+
+    @Query("SELECT * FROM muscle_goals WHERE deleted_at IS NULL ORDER BY muscle_group_id, id")
+    suspend fun live(): List<MuscleGoalEntity>
+
+    @Query("SELECT * FROM muscle_goals WHERE id = :id")
+    suspend fun get(id: String): MuscleGoalEntity?
 }
 
 @Dao

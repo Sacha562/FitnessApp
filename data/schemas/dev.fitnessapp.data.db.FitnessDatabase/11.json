@@ -1,0 +1,4951 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 11,
+    "identityHash": "48cc380beda19e63c2983017238b8371",
+    "entities": [
+      {
+        "tableName": "profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `display_name` TEXT, `timezone` TEXT NOT NULL, `week_start_dow` INTEGER NOT NULL, `mass_unit` TEXT NOT NULL, `ui_language` TEXT NOT NULL, `decimal_separator` TEXT NOT NULL, `sex` TEXT, `birth_year` INTEGER, `training_age` TEXT, `bodyweight_fallback_kg` INTEGER, `max_gym_visits_per_week` INTEGER NOT NULL, `default_session_min` INTEGER NOT NULL, `changeover_min` INTEGER NOT NULL, `availability` TEXT NOT NULL, `default_gym_id` TEXT, `calendar_read_enabled` INTEGER NOT NULL, `calendar_scope` TEXT NOT NULL, `calendar_selected_keys` TEXT NOT NULL, `calendar_ignore_all_day` INTEGER NOT NULL, `calendar_ignore_name_patterns` TEXT NOT NULL, `calendar_write_enabled` INTEGER NOT NULL, `calendar_write_weeks` INTEGER NOT NULL, `evidence_mode` TEXT NOT NULL, `running_priority` TEXT NOT NULL, `deload_sync_with_challenge` INTEGER NOT NULL, `allow_supersets` INTEGER NOT NULL, `rir_calibration_opt_in` INTEGER NOT NULL, `prompt_readiness` INTEGER NOT NULL, `prompt_elbow_check` INTEGER NOT NULL, `prompt_srpe` INTEGER NOT NULL, `prompt_soreness` INTEGER NOT NULL, `prompt_pain_after` INTEGER NOT NULL, `rest_alarm_mode` TEXT NOT NULL, `rest_tone_enabled` INTEGER NOT NULL, `keep_screen_on` INTEGER NOT NULL, `theme` TEXT NOT NULL, `dynamic_color` INTEGER NOT NULL, `reminders_enabled` INTEGER NOT NULL, `muscle_goal_preset` TEXT, `disclaimer_accepted_at` INTEGER, `onboarding_completed_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "display_name",
+            "columnName": "display_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "timezone",
+            "columnName": "timezone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "week_start_dow",
+            "columnName": "week_start_dow",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mass_unit",
+            "columnName": "mass_unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ui_language",
+            "columnName": "ui_language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decimal_separator",
+            "columnName": "decimal_separator",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sex",
+            "columnName": "sex",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "birth_year",
+            "columnName": "birth_year",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "training_age",
+            "columnName": "training_age",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bodyweight_fallback_kg",
+            "columnName": "bodyweight_fallback_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "max_gym_visits_per_week",
+            "columnName": "max_gym_visits_per_week",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "default_session_min",
+            "columnName": "default_session_min",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "changeover_min",
+            "columnName": "changeover_min",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availability",
+            "columnName": "availability",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "default_gym_id",
+            "columnName": "default_gym_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "calendar_read_enabled",
+            "columnName": "calendar_read_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_scope",
+            "columnName": "calendar_scope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_selected_keys",
+            "columnName": "calendar_selected_keys",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_ignore_all_day",
+            "columnName": "calendar_ignore_all_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_ignore_name_patterns",
+            "columnName": "calendar_ignore_name_patterns",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_write_enabled",
+            "columnName": "calendar_write_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_write_weeks",
+            "columnName": "calendar_write_weeks",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidence_mode",
+            "columnName": "evidence_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "running_priority",
+            "columnName": "running_priority",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deload_sync_with_challenge",
+            "columnName": "deload_sync_with_challenge",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allow_supersets",
+            "columnName": "allow_supersets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rir_calibration_opt_in",
+            "columnName": "rir_calibration_opt_in",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt_readiness",
+            "columnName": "prompt_readiness",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt_elbow_check",
+            "columnName": "prompt_elbow_check",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt_srpe",
+            "columnName": "prompt_srpe",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt_soreness",
+            "columnName": "prompt_soreness",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt_pain_after",
+            "columnName": "prompt_pain_after",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rest_alarm_mode",
+            "columnName": "rest_alarm_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rest_tone_enabled",
+            "columnName": "rest_tone_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keep_screen_on",
+            "columnName": "keep_screen_on",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "theme",
+            "columnName": "theme",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dynamic_color",
+            "columnName": "dynamic_color",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminders_enabled",
+            "columnName": "reminders_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "muscle_goal_preset",
+            "columnName": "muscle_goal_preset",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "disclaimer_accepted_at",
+            "columnName": "disclaimer_accepted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "onboarding_completed_at",
+            "columnName": "onboarding_completed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "gyms",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `name` TEXT NOT NULL, `location_keywords` TEXT NOT NULL, `address_note` TEXT, `opening_hours` TEXT NOT NULL, `is_default` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location_keywords",
+            "columnName": "location_keywords",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address_note",
+            "columnName": "address_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "opening_hours",
+            "columnName": "opening_hours",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "is_default",
+            "columnName": "is_default",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "gym_equipment",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `gym_id` TEXT, `equipment_type` TEXT NOT NULL, `label` TEXT NOT NULL, `available` INTEGER NOT NULL, `scheme_type` TEXT NOT NULL, `load_scheme` TEXT NOT NULL, `calibration_rev` INTEGER NOT NULL, `calibration_source` TEXT NOT NULL, `confirmed_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gym_id",
+            "columnName": "gym_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equipment_type",
+            "columnName": "equipment_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "available",
+            "columnName": "available",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheme_type",
+            "columnName": "scheme_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "load_scheme",
+            "columnName": "load_scheme",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calibration_rev",
+            "columnName": "calibration_rev",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calibration_source",
+            "columnName": "calibration_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confirmed_at",
+            "columnName": "confirmed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_gym_equipment_gym_id",
+            "unique": false,
+            "columnNames": [
+              "gym_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_gym_equipment_gym_id` ON `${TABLE_NAME}` (`gym_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "workout_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `kind` TEXT NOT NULL, `status` TEXT NOT NULL, `template_source` TEXT NOT NULL, `families` TEXT NOT NULL, `enrollment_id` TEXT, `challenge_slot` TEXT, `challenge_template_id` TEXT, `habit_id` TEXT, `phase` INTEGER, `block_index` INTEGER, `block_week` INTEGER, `enrollment_mode` TEXT, `mesocycle_week` INTEGER, `is_deload` INTEGER NOT NULL, `local_date` TEXT NOT NULL, `timezone` TEXT NOT NULL, `iso_week` TEXT NOT NULL, `gym_id` TEXT, `planned_start_at` INTEGER, `started_at` INTEGER, `finished_at` INTEGER, `bodyweight_kg` INTEGER, `bodyweight_source` TEXT, `bodyweight_stale` INTEGER NOT NULL, `time_budget_min` INTEGER, `time_budget_source` TEXT, `engine_version` TEXT NOT NULL, `params_hash` TEXT NOT NULL, `catalog_version` TEXT NOT NULL, `plan_recommendation_id` TEXT, `completion_ratio` INTEGER, `end_reason_code` TEXT, `notes` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "template_source",
+            "columnName": "template_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "families",
+            "columnName": "families",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "challenge_slot",
+            "columnName": "challenge_slot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "challenge_template_id",
+            "columnName": "challenge_template_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "habit_id",
+            "columnName": "habit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "block_index",
+            "columnName": "block_index",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "block_week",
+            "columnName": "block_week",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "enrollment_mode",
+            "columnName": "enrollment_mode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mesocycle_week",
+            "columnName": "mesocycle_week",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "is_deload",
+            "columnName": "is_deload",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "local_date",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timezone",
+            "columnName": "timezone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iso_week",
+            "columnName": "iso_week",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gym_id",
+            "columnName": "gym_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "planned_start_at",
+            "columnName": "planned_start_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "started_at",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "finished_at",
+            "columnName": "finished_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bodyweight_kg",
+            "columnName": "bodyweight_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bodyweight_source",
+            "columnName": "bodyweight_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bodyweight_stale",
+            "columnName": "bodyweight_stale",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "time_budget_min",
+            "columnName": "time_budget_min",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "time_budget_source",
+            "columnName": "time_budget_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params_hash",
+            "columnName": "params_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalog_version",
+            "columnName": "catalog_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plan_recommendation_id",
+            "columnName": "plan_recommendation_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "completion_ratio",
+            "columnName": "completion_ratio",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "end_reason_code",
+            "columnName": "end_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_workout_sessions_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_workout_sessions_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_workout_sessions_local_date",
+            "unique": false,
+            "columnNames": [
+              "local_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_workout_sessions_local_date` ON `${TABLE_NAME}` (`local_date`)"
+          }
+        ]
+      },
+      {
+        "tableName": "session_blocks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `session_id` TEXT NOT NULL, `position` INTEGER NOT NULL, `block_kind` TEXT NOT NULL, `origin` TEXT NOT NULL, `enrollment_id` TEXT, `challenge_template_id` TEXT, `budget_min` INTEGER, `status` TEXT NOT NULL, `recommendation_id` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "block_kind",
+            "columnName": "block_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "challenge_template_id",
+            "columnName": "challenge_template_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "budget_min",
+            "columnName": "budget_min",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendation_id",
+            "columnName": "recommendation_id",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_session_blocks_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_blocks_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "session_exercises",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `session_id` TEXT NOT NULL, `block_id` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, `challenge_item_key` TEXT, `position` INTEGER NOT NULL, `origin` TEXT NOT NULL, `substitutes_id` TEXT, `substitution_reason_code` TEXT, `status` TEXT NOT NULL, `status_reason_code` TEXT, `defer_count` INTEGER NOT NULL, `load_mode` TEXT NOT NULL, `side_mode` TEXT NOT NULL, `side_order` TEXT, `equipment_id` TEXT, `progression_mode` TEXT NOT NULL, `rep_scheme` TEXT NOT NULL, `planned_sets` INTEGER, `planned_rep_min` INTEGER, `planned_rep_max` INTEGER, `planned_rir` INTEGER, `planned_load_input` INTEGER, `planned_load_unit` TEXT, `planned_effective_load_kg` INTEGER, `planned_duration_s` INTEGER, `planned_ecc_s` INTEGER, `planned_rest_s` INTEGER, `superset_group` INTEGER, `recommendation_id` TEXT, `user_override` INTEGER NOT NULL, `override_reason_code` TEXT, `override_fields` TEXT NOT NULL, `progression_valid` INTEGER, `progression_invalid_reason` TEXT, `started_at` INTEGER, `completed_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "block_id",
+            "columnName": "block_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "challenge_item_key",
+            "columnName": "challenge_item_key",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "substitutes_id",
+            "columnName": "substitutes_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "substitution_reason_code",
+            "columnName": "substitution_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status_reason_code",
+            "columnName": "status_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "defer_count",
+            "columnName": "defer_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "load_mode",
+            "columnName": "load_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side_mode",
+            "columnName": "side_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side_order",
+            "columnName": "side_order",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equipment_id",
+            "columnName": "equipment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "progression_mode",
+            "columnName": "progression_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rep_scheme",
+            "columnName": "rep_scheme",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planned_sets",
+            "columnName": "planned_sets",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rep_min",
+            "columnName": "planned_rep_min",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rep_max",
+            "columnName": "planned_rep_max",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rir",
+            "columnName": "planned_rir",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_load_input",
+            "columnName": "planned_load_input",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_load_unit",
+            "columnName": "planned_load_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "planned_effective_load_kg",
+            "columnName": "planned_effective_load_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_duration_s",
+            "columnName": "planned_duration_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_ecc_s",
+            "columnName": "planned_ecc_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rest_s",
+            "columnName": "planned_rest_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "superset_group",
+            "columnName": "superset_group",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recommendation_id",
+            "columnName": "recommendation_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "user_override",
+            "columnName": "user_override",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "override_reason_code",
+            "columnName": "override_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "override_fields",
+            "columnName": "override_fields",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "progression_valid",
+            "columnName": "progression_valid",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "progression_invalid_reason",
+            "columnName": "progression_invalid_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "started_at",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completed_at",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_session_exercises_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_exercises_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          },
+          {
+            "name": "index_session_exercises_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_exercises_exercise_id` ON `${TABLE_NAME}` (`exercise_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "set_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `session_id` TEXT NOT NULL, `session_exercise_id` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, `set_index` INTEGER NOT NULL, `side` TEXT NOT NULL, `set_kind` TEXT NOT NULL, `round_index` INTEGER, `attempt_index` INTEGER, `planned_reps` INTEGER, `planned_rep_min` INTEGER, `planned_rep_max` INTEGER, `planned_rir` INTEGER, `planned_input_value` INTEGER, `planned_input_unit` TEXT, `planned_added_kg` INTEGER, `planned_assist_native` INTEGER, `planned_assist_ordinal` INTEGER, `planned_effective_load_kg` INTEGER, `planned_duration_s` INTEGER, `planned_ecc_s` INTEGER, `planned_source` TEXT, `load_mode` TEXT NOT NULL, `equipment_id` TEXT, `equipment_calibration_rev` INTEGER, `input_value` INTEGER, `input_unit` TEXT, `implement_count` INTEGER, `load_per_implement_kg` INTEGER, `implement_base_kg` INTEGER NOT NULL, `added_kg` INTEGER NOT NULL, `assist_pin_native` INTEGER, `assist_unit` TEXT, `assist_kg` INTEGER, `assist_ordinal` INTEGER, `bodyweight_kg` INTEGER, `f_bw` INTEGER, `effective_load_kg` INTEGER, `reps` INTEGER, `duration_s` INTEGER, `hold_reserve_s` INTEGER, `hold_reserve_is_lower_bound` INTEGER NOT NULL, `ecc_s_target` INTEGER, `ecc_s_actual` INTEGER, `rir_reported` INTEGER, `rir_is_lower_bound` INTEGER NOT NULL, `rir_source` TEXT NOT NULL, `calib_extra_reps` INTEGER, `flags` TEXT NOT NULL, `deviation_reason_code` TEXT, `deviation_note` TEXT, `pain_flag` INTEGER NOT NULL, `rest_timer_planned_s` INTEGER, `rest_adjust_s` INTEGER, `rest_timer_overridden` INTEGER NOT NULL, `rest_before_s` INTEGER, `rest_source` TEXT, `rest_end_reason` TEXT, `started_at` INTEGER, `completed_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_exercise_id",
+            "columnName": "session_exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "set_index",
+            "columnName": "set_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "set_kind",
+            "columnName": "set_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round_index",
+            "columnName": "round_index",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "attempt_index",
+            "columnName": "attempt_index",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_reps",
+            "columnName": "planned_reps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rep_min",
+            "columnName": "planned_rep_min",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rep_max",
+            "columnName": "planned_rep_max",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_rir",
+            "columnName": "planned_rir",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_input_value",
+            "columnName": "planned_input_value",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_input_unit",
+            "columnName": "planned_input_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "planned_added_kg",
+            "columnName": "planned_added_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_assist_native",
+            "columnName": "planned_assist_native",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_assist_ordinal",
+            "columnName": "planned_assist_ordinal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_effective_load_kg",
+            "columnName": "planned_effective_load_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_duration_s",
+            "columnName": "planned_duration_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_ecc_s",
+            "columnName": "planned_ecc_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "planned_source",
+            "columnName": "planned_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "load_mode",
+            "columnName": "load_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "equipment_id",
+            "columnName": "equipment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equipment_calibration_rev",
+            "columnName": "equipment_calibration_rev",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "input_value",
+            "columnName": "input_value",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "input_unit",
+            "columnName": "input_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "implement_count",
+            "columnName": "implement_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "load_per_implement_kg",
+            "columnName": "load_per_implement_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "implement_base_kg",
+            "columnName": "implement_base_kg",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "added_kg",
+            "columnName": "added_kg",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assist_pin_native",
+            "columnName": "assist_pin_native",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "assist_unit",
+            "columnName": "assist_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "assist_kg",
+            "columnName": "assist_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "assist_ordinal",
+            "columnName": "assist_ordinal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bodyweight_kg",
+            "columnName": "bodyweight_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "f_bw",
+            "columnName": "f_bw",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "effective_load_kg",
+            "columnName": "effective_load_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reps",
+            "columnName": "reps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "duration_s",
+            "columnName": "duration_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "hold_reserve_s",
+            "columnName": "hold_reserve_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "hold_reserve_is_lower_bound",
+            "columnName": "hold_reserve_is_lower_bound",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ecc_s_target",
+            "columnName": "ecc_s_target",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "ecc_s_actual",
+            "columnName": "ecc_s_actual",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rir_reported",
+            "columnName": "rir_reported",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rir_is_lower_bound",
+            "columnName": "rir_is_lower_bound",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rir_source",
+            "columnName": "rir_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calib_extra_reps",
+            "columnName": "calib_extra_reps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "flags",
+            "columnName": "flags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviation_reason_code",
+            "columnName": "deviation_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviation_note",
+            "columnName": "deviation_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pain_flag",
+            "columnName": "pain_flag",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rest_timer_planned_s",
+            "columnName": "rest_timer_planned_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rest_adjust_s",
+            "columnName": "rest_adjust_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rest_timer_overridden",
+            "columnName": "rest_timer_overridden",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rest_before_s",
+            "columnName": "rest_before_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rest_source",
+            "columnName": "rest_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rest_end_reason",
+            "columnName": "rest_end_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "started_at",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completed_at",
+            "columnName": "completed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_set_logs_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_set_logs_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          },
+          {
+            "name": "index_set_logs_session_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "session_exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_set_logs_session_exercise_id` ON `${TABLE_NAME}` (`session_exercise_id`)"
+          },
+          {
+            "name": "index_set_logs_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_set_logs_exercise_id` ON `${TABLE_NAME}` (`exercise_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "wellness_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `kind` TEXT NOT NULL, `phase` TEXT NOT NULL, `observed_at` INTEGER NOT NULL, `local_date` TEXT NOT NULL, `session_id` TEXT, `session_exercise_id` TEXT, `set_log_id` TEXT, `readiness_level` TEXT, `elbow_score` INTEGER, `pain_body_region` TEXT, `pain_side` TEXT, `pain_severity` TEXT, `pain_score` INTEGER, `symptom_codes` TEXT NOT NULL, `soreness_muscle_group_id` TEXT, `soreness_code` TEXT, `srpe` INTEGER, `sleep_hours` INTEGER, `note` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observed_at",
+            "columnName": "observed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "local_date",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "session_exercise_id",
+            "columnName": "session_exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "set_log_id",
+            "columnName": "set_log_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "readiness_level",
+            "columnName": "readiness_level",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "elbow_score",
+            "columnName": "elbow_score",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "pain_body_region",
+            "columnName": "pain_body_region",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pain_side",
+            "columnName": "pain_side",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pain_severity",
+            "columnName": "pain_severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pain_score",
+            "columnName": "pain_score",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "symptom_codes",
+            "columnName": "symptom_codes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "soreness_muscle_group_id",
+            "columnName": "soreness_muscle_group_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "soreness_code",
+            "columnName": "soreness_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "srpe",
+            "columnName": "srpe",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sleep_hours",
+            "columnName": "sleep_hours",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_wellness_logs_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wellness_logs_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          },
+          {
+            "name": "index_wellness_logs_kind",
+            "unique": false,
+            "columnNames": [
+              "kind"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wellness_logs_kind` ON `${TABLE_NAME}` (`kind`)"
+          }
+        ]
+      },
+      {
+        "tableName": "metric_observations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `metric_code` TEXT NOT NULL, `value_num` INTEGER, `value_bool` INTEGER, `unit` TEXT NOT NULL, `side` TEXT NOT NULL, `observed_at` INTEGER NOT NULL, `local_date` TEXT NOT NULL, `source` TEXT NOT NULL, `session_id` TEXT, `test_session_id` TEXT, `set_log_id` TEXT, `enrollment_id` TEXT, `equipment_id` TEXT, `equipment_calibration_rev` INTEGER, `valid_for_gate` INTEGER NOT NULL, `validity_note` TEXT, `protocol_code` TEXT, `derivation` TEXT NOT NULL, `derived_from_ids` TEXT NOT NULL, `calc_params` TEXT NOT NULL, `attempt_count` INTEGER, `bodyweight_kg` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "metric_code",
+            "columnName": "metric_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value_num",
+            "columnName": "value_num",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "value_bool",
+            "columnName": "value_bool",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observed_at",
+            "columnName": "observed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "local_date",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "test_session_id",
+            "columnName": "test_session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "set_log_id",
+            "columnName": "set_log_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equipment_id",
+            "columnName": "equipment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "equipment_calibration_rev",
+            "columnName": "equipment_calibration_rev",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "valid_for_gate",
+            "columnName": "valid_for_gate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "validity_note",
+            "columnName": "validity_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "protocol_code",
+            "columnName": "protocol_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "derivation",
+            "columnName": "derivation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "derived_from_ids",
+            "columnName": "derived_from_ids",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calc_params",
+            "columnName": "calc_params",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempt_count",
+            "columnName": "attempt_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bodyweight_kg",
+            "columnName": "bodyweight_kg",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_metric_observations_metric_code_observed_at",
+            "unique": false,
+            "columnNames": [
+              "metric_code",
+              "observed_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_metric_observations_metric_code_observed_at` ON `${TABLE_NAME}` (`metric_code`, `observed_at`)"
+          }
+        ]
+      },
+      {
+        "tableName": "session_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `event_type` TEXT NOT NULL, `category` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, `tz_offset_min` INTEGER NOT NULL, `screen` TEXT, `session_id` TEXT, `entity_type` TEXT, `entity_id` TEXT, `recommendation_id` TEXT, `module_id` TEXT, `module_version` TEXT, `ui_version` TEXT, `payload` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event_type",
+            "columnName": "event_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurred_at",
+            "columnName": "occurred_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tz_offset_min",
+            "columnName": "tz_offset_min",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "screen",
+            "columnName": "screen",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entity_type",
+            "columnName": "entity_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entity_id",
+            "columnName": "entity_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recommendation_id",
+            "columnName": "recommendation_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "module_id",
+            "columnName": "module_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "module_version",
+            "columnName": "module_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ui_version",
+            "columnName": "ui_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_session_events_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_events_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          },
+          {
+            "name": "index_session_events_event_type",
+            "unique": false,
+            "columnNames": [
+              "event_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_events_event_type` ON `${TABLE_NAME}` (`event_type`)"
+          }
+        ]
+      },
+      {
+        "tableName": "outbox",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `table_name` TEXT NOT NULL, `row_id` TEXT NOT NULL, `op` TEXT NOT NULL, `gen` INTEGER NOT NULL, `enqueued_at_ms` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `next_attempt_at_ms` INTEGER NOT NULL, `last_error` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "seq",
+            "columnName": "seq",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "table_name",
+            "columnName": "table_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "row_id",
+            "columnName": "row_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "op",
+            "columnName": "op",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gen",
+            "columnName": "gen",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enqueued_at_ms",
+            "columnName": "enqueued_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempts",
+            "columnName": "attempts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "next_attempt_at_ms",
+            "columnName": "next_attempt_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_error",
+            "columnName": "last_error",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "seq"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_outbox_table_name_row_id",
+            "unique": true,
+            "columnNames": [
+              "table_name",
+              "row_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_outbox_table_name_row_id` ON `${TABLE_NAME}` (`table_name`, `row_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_cursor",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`table_name` TEXT NOT NULL, `server_updated_at` TEXT, `last_id` TEXT, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY(`table_name`))",
+        "fields": [
+          {
+            "fieldPath": "table_name",
+            "columnName": "table_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "last_id",
+            "columnName": "last_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at_ms",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "table_name"
+          ]
+        }
+      },
+      {
+        "tableName": "dead_letter",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `table_name` TEXT NOT NULL, `row_id` TEXT NOT NULL, `http_status` INTEGER, `error_code` TEXT, `message` TEXT, `payload_json` TEXT, `first_failed_at_ms` INTEGER NOT NULL, `attempts` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "table_name",
+            "columnName": "table_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "row_id",
+            "columnName": "row_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "http_status",
+            "columnName": "http_status",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "error_code",
+            "columnName": "error_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "message",
+            "columnName": "message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "payload_json",
+            "columnName": "payload_json",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "first_failed_at_ms",
+            "columnName": "first_failed_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempts",
+            "columnName": "attempts",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "rest_timer",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `session_id` TEXT NOT NULL, `set_log_id` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, `side` TEXT NOT NULL, `purpose` TEXT NOT NULL, `duration_source` TEXT NOT NULL, `prescribed_s` INTEGER NOT NULL, `hard_max_s` INTEGER NOT NULL, `start_wall_ms` INTEGER NOT NULL, `start_elapsed_ms` INTEGER NOT NULL, `boot_count` INTEGER NOT NULL, `end_wall_ms` INTEGER NOT NULL, `adjustments_json` TEXT NOT NULL, `state` TEXT NOT NULL, `ended_by` TEXT, `alarm_mode` TEXT NOT NULL, `fired_wall_ms` INTEGER, `latency_ms` INTEGER, `overtime_reminder_sent` INTEGER NOT NULL, `skip_at_ms` INTEGER, `session_exercise_id` TEXT, `set_index` INTEGER, `label` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "set_log_id",
+            "columnName": "set_log_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purpose",
+            "columnName": "purpose",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration_source",
+            "columnName": "duration_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prescribed_s",
+            "columnName": "prescribed_s",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hard_max_s",
+            "columnName": "hard_max_s",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "start_wall_ms",
+            "columnName": "start_wall_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "start_elapsed_ms",
+            "columnName": "start_elapsed_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "boot_count",
+            "columnName": "boot_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "end_wall_ms",
+            "columnName": "end_wall_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adjustments_json",
+            "columnName": "adjustments_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ended_by",
+            "columnName": "ended_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "alarm_mode",
+            "columnName": "alarm_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fired_wall_ms",
+            "columnName": "fired_wall_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "latency_ms",
+            "columnName": "latency_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "overtime_reminder_sent",
+            "columnName": "overtime_reminder_sent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skip_at_ms",
+            "columnName": "skip_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "session_exercise_id",
+            "columnName": "session_exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "set_index",
+            "columnName": "set_index",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_rest_timer_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rest_timer_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          },
+          {
+            "name": "index_rest_timer_state",
+            "unique": false,
+            "columnNames": [
+              "state"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rest_timer_state` ON `${TABLE_NAME}` (`state`)"
+          }
+        ]
+      },
+      {
+        "tableName": "scheduled_alarm",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`request_code` INTEGER NOT NULL, `kind` TEXT NOT NULL, `ref_id` TEXT NOT NULL, `trigger_at_wall_ms` INTEGER NOT NULL, `mode` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, PRIMARY KEY(`request_code`))",
+        "fields": [
+          {
+            "fieldPath": "request_code",
+            "columnName": "request_code",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ref_id",
+            "columnName": "ref_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trigger_at_wall_ms",
+            "columnName": "trigger_at_wall_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at_ms",
+            "columnName": "created_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "request_code"
+          ]
+        }
+      },
+      {
+        "tableName": "crash_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `at_ms` INTEGER NOT NULL, `exception_class` TEXT NOT NULL, `stack_sha256` TEXT NOT NULL, `top_frame` TEXT NOT NULL, `app_version` TEXT NOT NULL, `reported` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "at_ms",
+            "columnName": "at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exception_class",
+            "columnName": "exception_class",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stack_sha256",
+            "columnName": "stack_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "top_frame",
+            "columnName": "top_frame",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reported",
+            "columnName": "reported",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "user_exercise_prefs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, `preference` TEXT NOT NULL, `unavailable_until` TEXT, `note` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preference",
+            "columnName": "preference",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unavailable_until",
+            "columnName": "unavailable_until",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_user_exercise_prefs_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_user_exercise_prefs_exercise_id` ON `${TABLE_NAME}` (`exercise_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "exports",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `export_kind` TEXT NOT NULL, `format` TEXT NOT NULL, `schema_version` TEXT NOT NULL, `table_row_counts` TEXT NOT NULL, `bytes` INTEGER NOT NULL, `sha256` TEXT NOT NULL, `destination` TEXT NOT NULL, `period_start` INTEGER, `period_end` INTEGER, `includes_local_only` INTEGER NOT NULL, `engine_version` TEXT NOT NULL, `catalog_version` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "export_kind",
+            "columnName": "export_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "format",
+            "columnName": "format",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schema_version",
+            "columnName": "schema_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "table_row_counts",
+            "columnName": "table_row_counts",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bytes",
+            "columnName": "bytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256",
+            "columnName": "sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destination",
+            "columnName": "destination",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "period_start",
+            "columnName": "period_start",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "period_end",
+            "columnName": "period_end",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "includes_local_only",
+            "columnName": "includes_local_only",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalog_version",
+            "columnName": "catalog_version",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "challenge_definitions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT, `slug` TEXT NOT NULL, `version` TEXT NOT NULL, `status` TEXT NOT NULL, `schema_version` TEXT NOT NULL, `engine_range` TEXT NOT NULL, `title_en` TEXT NOT NULL, `title_nl` TEXT, `definition` TEXT NOT NULL, `jcs_sha256` TEXT NOT NULL, `server_checksum` TEXT, `supersedes_id` TEXT, `published_at` INTEGER, `retired_at` INTEGER, `server_updated_at` TEXT, `source` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schema_version",
+            "columnName": "schema_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_range",
+            "columnName": "engine_range",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title_en",
+            "columnName": "title_en",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title_nl",
+            "columnName": "title_nl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "definition",
+            "columnName": "definition",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jcs_sha256",
+            "columnName": "jcs_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_checksum",
+            "columnName": "server_checksum",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "supersedes_id",
+            "columnName": "supersedes_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "published_at",
+            "columnName": "published_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "retired_at",
+            "columnName": "retired_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_challenge_definitions_slug_version",
+            "unique": false,
+            "columnNames": [
+              "slug",
+              "version"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_definitions_slug_version` ON `${TABLE_NAME}` (`slug`, `version`)"
+          }
+        ]
+      },
+      {
+        "tableName": "challenge_enrollments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `definition_id` TEXT NOT NULL, `definition_slug` TEXT NOT NULL, `definition_version` TEXT NOT NULL, `definition_jcs_sha256` TEXT NOT NULL, `status` TEXT NOT NULL, `mode` TEXT, `phase` INTEGER, `block_index` INTEGER, `block_week` INTEGER, `week_ordinal` INTEGER, `params` TEXT NOT NULL, `rule_decisions` TEXT NOT NULL, `state` TEXT NOT NULL, `state_rev` INTEGER NOT NULL, `state_hash` TEXT, `fold_generation` INTEGER NOT NULL, `last_folded_event_id` TEXT, `engine_version` TEXT NOT NULL, `started_on` TEXT, `paused_at` INTEGER, `completed_at` INTEGER, `abandoned_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_id",
+            "columnName": "definition_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_slug",
+            "columnName": "definition_slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_version",
+            "columnName": "definition_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_jcs_sha256",
+            "columnName": "definition_jcs_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "mode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "block_index",
+            "columnName": "block_index",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "block_week",
+            "columnName": "block_week",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "week_ordinal",
+            "columnName": "week_ordinal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "params",
+            "columnName": "params",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rule_decisions",
+            "columnName": "rule_decisions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_rev",
+            "columnName": "state_rev",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_hash",
+            "columnName": "state_hash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fold_generation",
+            "columnName": "fold_generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_folded_event_id",
+            "columnName": "last_folded_event_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "started_on",
+            "columnName": "started_on",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "paused_at",
+            "columnName": "paused_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completed_at",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "abandoned_at",
+            "columnName": "abandoned_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_challenge_enrollments_definition_slug",
+            "unique": false,
+            "columnNames": [
+              "definition_slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_enrollments_definition_slug` ON `${TABLE_NAME}` (`definition_slug`)"
+          },
+          {
+            "name": "index_challenge_enrollments_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_enrollments_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ]
+      },
+      {
+        "tableName": "challenge_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `enrollment_id` TEXT NOT NULL, `event_type` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, `local_date` TEXT NOT NULL, `dedupe_key` TEXT, `payload` TEXT NOT NULL, `source_session_id` TEXT, `source_wellness_log_id` TEXT, `supersedes_event_id` TEXT, `definition_version` TEXT NOT NULL, `definition_jcs_sha256` TEXT NOT NULL, `engine_version` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event_type",
+            "columnName": "event_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurred_at",
+            "columnName": "occurred_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "local_date",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dedupe_key",
+            "columnName": "dedupe_key",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source_session_id",
+            "columnName": "source_session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source_wellness_log_id",
+            "columnName": "source_wellness_log_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "supersedes_event_id",
+            "columnName": "supersedes_event_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "definition_version",
+            "columnName": "definition_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_jcs_sha256",
+            "columnName": "definition_jcs_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_challenge_events_enrollment_id_occurred_at_id",
+            "unique": false,
+            "columnNames": [
+              "enrollment_id",
+              "occurred_at",
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_events_enrollment_id_occurred_at_id` ON `${TABLE_NAME}` (`enrollment_id`, `occurred_at`, `id`)"
+          },
+          {
+            "name": "index_challenge_events_enrollment_id_dedupe_key",
+            "unique": true,
+            "columnNames": [
+              "enrollment_id",
+              "dedupe_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_challenge_events_enrollment_id_dedupe_key` ON `${TABLE_NAME}` (`enrollment_id`, `dedupe_key`)"
+          },
+          {
+            "name": "index_challenge_events_source_session_id",
+            "unique": false,
+            "columnNames": [
+              "source_session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_events_source_session_id` ON `${TABLE_NAME}` (`source_session_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "challenge_rule_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `enrollment_id` TEXT NOT NULL, `challenge_event_id` TEXT NOT NULL, `evaluation_id` TEXT NOT NULL, `fold_generation` INTEGER NOT NULL, `rule_id` TEXT NOT NULL, `rule_tag` TEXT NOT NULL, `proposal_id` TEXT, `rule_decision` TEXT, `stage` TEXT NOT NULL, `prio` INTEGER NOT NULL, `outcome` TEXT NOT NULL, `cond_value` INTEGER, `eval_error` TEXT, `bindings` TEXT NOT NULL, `proposals` TEXT NOT NULL, `applied` TEXT NOT NULL, `suppressed_by` TEXT, `state_rev_before` INTEGER NOT NULL, `state_rev_after` INTEGER NOT NULL, `state_hash_before` TEXT, `state_hash_after` TEXT, `cascade_depth` INTEGER NOT NULL, `derived_event_type` TEXT, `definition_slug` TEXT NOT NULL, `definition_version` TEXT NOT NULL, `definition_jcs_sha256` TEXT NOT NULL, `module_version` TEXT NOT NULL, `engine_version` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "challenge_event_id",
+            "columnName": "challenge_event_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evaluation_id",
+            "columnName": "evaluation_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fold_generation",
+            "columnName": "fold_generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rule_id",
+            "columnName": "rule_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rule_tag",
+            "columnName": "rule_tag",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proposal_id",
+            "columnName": "proposal_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rule_decision",
+            "columnName": "rule_decision",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stage",
+            "columnName": "stage",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prio",
+            "columnName": "prio",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cond_value",
+            "columnName": "cond_value",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "eval_error",
+            "columnName": "eval_error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bindings",
+            "columnName": "bindings",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proposals",
+            "columnName": "proposals",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "applied",
+            "columnName": "applied",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "suppressed_by",
+            "columnName": "suppressed_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state_rev_before",
+            "columnName": "state_rev_before",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_rev_after",
+            "columnName": "state_rev_after",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_hash_before",
+            "columnName": "state_hash_before",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state_hash_after",
+            "columnName": "state_hash_after",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cascade_depth",
+            "columnName": "cascade_depth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "derived_event_type",
+            "columnName": "derived_event_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "definition_slug",
+            "columnName": "definition_slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_version",
+            "columnName": "definition_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "definition_jcs_sha256",
+            "columnName": "definition_jcs_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "module_version",
+            "columnName": "module_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_challenge_rule_events_enrollment_id_fold_generation",
+            "unique": false,
+            "columnNames": [
+              "enrollment_id",
+              "fold_generation"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_rule_events_enrollment_id_fold_generation` ON `${TABLE_NAME}` (`enrollment_id`, `fold_generation`)"
+          },
+          {
+            "name": "index_challenge_rule_events_challenge_event_id",
+            "unique": false,
+            "columnNames": [
+              "challenge_event_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_challenge_rule_events_challenge_event_id` ON `${TABLE_NAME}` (`challenge_event_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "challenge_live_session",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`session_id` TEXT NOT NULL, `enrollment_id` TEXT NOT NULL, `plan_json` TEXT NOT NULL, `live_json` TEXT NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY(`session_id`))",
+        "fields": [
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plan_json",
+            "columnName": "plan_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "live_json",
+            "columnName": "live_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updated_at_ms",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "session_id"
+          ]
+        }
+      },
+      {
+        "tableName": "calendar_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `provider` TEXT NOT NULL, `instance_key` TEXT NOT NULL, `series_key` TEXT, `source_device_id` TEXT NOT NULL, `classified_kind` TEXT NOT NULL, `title` TEXT, `location` TEXT, `starts_at` INTEGER NOT NULL, `ends_at` INTEGER NOT NULL, `all_day` INTEGER NOT NULL, `local_date` TEXT NOT NULL, `timezone` TEXT NOT NULL, `iso_week` TEXT NOT NULL, `provider_status` TEXT NOT NULL, `challenge_slot` TEXT, `enrollment_id` TEXT, `planned_families` TEXT NOT NULL, `run_intensity` TEXT, `run_minutes` INTEGER, `classifier_version` TEXT NOT NULL, `match_method` TEXT NOT NULL, `score` INTEGER, `features` TEXT NOT NULL, `override_kind` TEXT, `override_slot` TEXT, `override_at` INTEGER, `app_written` INTEGER NOT NULL, `marker` TEXT, `adopted_at` INTEGER, `write_state` TEXT NOT NULL, `attention` TEXT, `linked_session_id` TEXT, `link_method` TEXT, `recommendation_id` TEXT, `last_seen_at` INTEGER NOT NULL, `missing_since` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "instance_key",
+            "columnName": "instance_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "series_key",
+            "columnName": "series_key",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source_device_id",
+            "columnName": "source_device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "classified_kind",
+            "columnName": "classified_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "starts_at",
+            "columnName": "starts_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ends_at",
+            "columnName": "ends_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "all_day",
+            "columnName": "all_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "local_date",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timezone",
+            "columnName": "timezone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iso_week",
+            "columnName": "iso_week",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provider_status",
+            "columnName": "provider_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "challenge_slot",
+            "columnName": "challenge_slot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "planned_families",
+            "columnName": "planned_families",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "run_intensity",
+            "columnName": "run_intensity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "run_minutes",
+            "columnName": "run_minutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "classifier_version",
+            "columnName": "classifier_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "match_method",
+            "columnName": "match_method",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "score",
+            "columnName": "score",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "features",
+            "columnName": "features",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "override_kind",
+            "columnName": "override_kind",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "override_slot",
+            "columnName": "override_slot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "override_at",
+            "columnName": "override_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "app_written",
+            "columnName": "app_written",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "marker",
+            "columnName": "marker",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "adopted_at",
+            "columnName": "adopted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "write_state",
+            "columnName": "write_state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attention",
+            "columnName": "attention",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "linked_session_id",
+            "columnName": "linked_session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "link_method",
+            "columnName": "link_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recommendation_id",
+            "columnName": "recommendation_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "last_seen_at",
+            "columnName": "last_seen_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "missing_since",
+            "columnName": "missing_since",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_calendar_events_instance_key",
+            "unique": true,
+            "columnNames": [
+              "instance_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_calendar_events_instance_key` ON `${TABLE_NAME}` (`instance_key`)"
+          },
+          {
+            "name": "index_calendar_events_local_date",
+            "unique": false,
+            "columnNames": [
+              "local_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_calendar_events_local_date` ON `${TABLE_NAME}` (`local_date`)"
+          },
+          {
+            "name": "index_calendar_events_enrollment_id",
+            "unique": false,
+            "columnNames": [
+              "enrollment_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_calendar_events_enrollment_id` ON `${TABLE_NAME}` (`enrollment_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "calendar_instance",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instance_key` TEXT NOT NULL, `series_key` TEXT NOT NULL, `calendar_identity_sha256` TEXT NOT NULL, `calendar_id` INTEGER NOT NULL, `event_id` INTEGER NOT NULL, `begin_ms` INTEGER NOT NULL, `end_ms` INTEGER NOT NULL, `title` TEXT, `description` TEXT, `location` TEXT, `all_day` INTEGER NOT NULL, `status` TEXT NOT NULL, `declined` INTEGER NOT NULL, `classified_kind` TEXT NOT NULL, `slot` TEXT, `method` TEXT, `score` INTEGER NOT NULL, `match_milli` INTEGER, `gym_type` TEXT, `attention` TEXT, `needs_confirm` INTEGER NOT NULL, `features_json` TEXT NOT NULL, `last_seen_ms` INTEGER NOT NULL, PRIMARY KEY(`instance_key`))",
+        "fields": [
+          {
+            "fieldPath": "instance_key",
+            "columnName": "instance_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "series_key",
+            "columnName": "series_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_identity_sha256",
+            "columnName": "calendar_identity_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_id",
+            "columnName": "calendar_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event_id",
+            "columnName": "event_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "begin_ms",
+            "columnName": "begin_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "end_ms",
+            "columnName": "end_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "all_day",
+            "columnName": "all_day",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "declined",
+            "columnName": "declined",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "classified_kind",
+            "columnName": "classified_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slot",
+            "columnName": "slot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "method",
+            "columnName": "method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "score",
+            "columnName": "score",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "match_milli",
+            "columnName": "match_milli",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "gym_type",
+            "columnName": "gym_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attention",
+            "columnName": "attention",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "needs_confirm",
+            "columnName": "needs_confirm",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "features_json",
+            "columnName": "features_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_seen_ms",
+            "columnName": "last_seen_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instance_key"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_calendar_instance_begin_ms",
+            "unique": false,
+            "columnNames": [
+              "begin_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_calendar_instance_begin_ms` ON `${TABLE_NAME}` (`begin_ms`)"
+          },
+          {
+            "name": "index_calendar_instance_series_key",
+            "unique": false,
+            "columnNames": [
+              "series_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_calendar_instance_series_key` ON `${TABLE_NAME}` (`series_key`)"
+          }
+        ]
+      },
+      {
+        "tableName": "calendar_link",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `marker_uuid` TEXT NOT NULL, `slot_key` TEXT NOT NULL, `kind` TEXT NOT NULL, `calendar_identity_sha256` TEXT NOT NULL, `event_id` INTEGER, `last_written_title` TEXT NOT NULL, `last_written_desc_sha256` TEXT NOT NULL, `last_written_dtstart_ms` INTEGER NOT NULL, `last_written_dtend_ms` INTEGER NOT NULL, `state` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, `updated_at_ms` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "marker_uuid",
+            "columnName": "marker_uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slot_key",
+            "columnName": "slot_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calendar_identity_sha256",
+            "columnName": "calendar_identity_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event_id",
+            "columnName": "event_id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "last_written_title",
+            "columnName": "last_written_title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_written_desc_sha256",
+            "columnName": "last_written_desc_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_written_dtstart_ms",
+            "columnName": "last_written_dtstart_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "last_written_dtend_ms",
+            "columnName": "last_written_dtend_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at_ms",
+            "columnName": "created_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updated_at_ms",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_calendar_link_marker_uuid_slot_key",
+            "unique": true,
+            "columnNames": [
+              "marker_uuid",
+              "slot_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_calendar_link_marker_uuid_slot_key` ON `${TABLE_NAME}` (`marker_uuid`, `slot_key`)"
+          }
+        ]
+      },
+      {
+        "tableName": "params_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `params_hash` TEXT NOT NULL, `params_version` TEXT NOT NULL, `params` TEXT NOT NULL, `user_param_ids` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params_hash",
+            "columnName": "params_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params_version",
+            "columnName": "params_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params",
+            "columnName": "params",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_param_ids",
+            "columnName": "user_param_ids",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_params_snapshots_params_hash",
+            "unique": true,
+            "columnNames": [
+              "params_hash"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_params_snapshots_params_hash` ON `${TABLE_NAME}` (`params_hash`)"
+          }
+        ]
+      },
+      {
+        "tableName": "recommendations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `server_updated_at` TEXT, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `kind` TEXT NOT NULL, `module_id` TEXT NOT NULL, `module_version` TEXT NOT NULL, `engine_version` TEXT NOT NULL, `params_hash` TEXT NOT NULL, `catalog_version` TEXT NOT NULL, `challenge_def_sha256` TEXT NOT NULL, `inputs_hash` TEXT NOT NULL, `inputs` TEXT, `inputs_bytes` INTEGER NOT NULL, `outputs` TEXT NOT NULL, `trace` TEXT NOT NULL, `warnings` TEXT NOT NULL, `scope_key` TEXT NOT NULL, `scope_date` TEXT, `iso_week` TEXT, `session_id` TEXT, `session_exercise_id` TEXT, `set_log_id` TEXT, `enrollment_id` TEXT, `supersedes_id` TEXT, `inputs_pruned_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "module_id",
+            "columnName": "module_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "module_version",
+            "columnName": "module_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params_hash",
+            "columnName": "params_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalog_version",
+            "columnName": "catalog_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "challenge_def_sha256",
+            "columnName": "challenge_def_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inputs_hash",
+            "columnName": "inputs_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inputs",
+            "columnName": "inputs",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inputs_bytes",
+            "columnName": "inputs_bytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outputs",
+            "columnName": "outputs",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trace",
+            "columnName": "trace",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "warnings",
+            "columnName": "warnings",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope_key",
+            "columnName": "scope_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope_date",
+            "columnName": "scope_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "iso_week",
+            "columnName": "iso_week",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "session_id",
+            "columnName": "session_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "session_exercise_id",
+            "columnName": "session_exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "set_log_id",
+            "columnName": "set_log_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enrollment_id",
+            "columnName": "enrollment_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "supersedes_id",
+            "columnName": "supersedes_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inputs_pruned_at",
+            "columnName": "inputs_pruned_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recommendations_kind_scope_key",
+            "unique": false,
+            "columnNames": [
+              "kind",
+              "scope_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recommendations_kind_scope_key` ON `${TABLE_NAME}` (`kind`, `scope_key`)"
+          },
+          {
+            "name": "index_recommendations_session_id",
+            "unique": false,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recommendations_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "exercise_model_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `model` TEXT NOT NULL, `exercise_id` TEXT, `side` TEXT NOT NULL, `class_key` TEXT, `module_version` TEXT NOT NULL, `engine_version` TEXT NOT NULL, `params_hash` TEXT NOT NULL, `state` TEXT NOT NULL, `state_hash` TEXT NOT NULL, `n_observations` INTEGER NOT NULL, `as_of` INTEGER NOT NULL, `as_of_session_id` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "class_key",
+            "columnName": "class_key",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "module_version",
+            "columnName": "module_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine_version",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params_hash",
+            "columnName": "params_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_hash",
+            "columnName": "state_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "n_observations",
+            "columnName": "n_observations",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "as_of",
+            "columnName": "as_of",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "as_of_session_id",
+            "columnName": "as_of_session_id",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_exercise_model_state_model_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "model",
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exercise_model_state_model_exercise_id` ON `${TABLE_NAME}` (`model`, `exercise_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "rep_preferences",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `scope_kind` TEXT NOT NULL, `scope_key` TEXT NOT NULL, `goal_kind` TEXT, `mechanics` TEXT, `muscle_group_id` TEXT, `exercise_id` TEXT, `sets_pref` INTEGER, `rep_min` INTEGER, `rep_max` INTEGER, `rir_target` INTEGER, `rep_scheme` TEXT, `rest_pref_s` INTEGER, `rest_pref_mult` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope_kind",
+            "columnName": "scope_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope_key",
+            "columnName": "scope_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goal_kind",
+            "columnName": "goal_kind",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mechanics",
+            "columnName": "mechanics",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "muscle_group_id",
+            "columnName": "muscle_group_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sets_pref",
+            "columnName": "sets_pref",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rep_min",
+            "columnName": "rep_min",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rep_max",
+            "columnName": "rep_max",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rir_target",
+            "columnName": "rir_target",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rep_scheme",
+            "columnName": "rep_scheme",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rest_pref_s",
+            "columnName": "rest_pref_s",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rest_pref_mult",
+            "columnName": "rest_pref_mult",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_rep_preferences_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rep_preferences_exercise_id` ON `${TABLE_NAME}` (`exercise_id`)"
+          },
+          {
+            "name": "index_rep_preferences_scope_key",
+            "unique": false,
+            "columnNames": [
+              "scope_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rep_preferences_scope_key` ON `${TABLE_NAME}` (`scope_key`)"
+          }
+        ]
+      },
+      {
+        "tableName": "exercises",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `slug` TEXT NOT NULL, `name_en` TEXT NOT NULL, `name_nl` TEXT, `aliases` TEXT NOT NULL, `pattern` TEXT NOT NULL, `family` TEXT NOT NULL, `equipment` TEXT NOT NULL, `requires_station` TEXT NOT NULL, `load_mode` TEXT NOT NULL, `allowed_load_modes` TEXT NOT NULL, `bw_fraction` INTEGER NOT NULL, `implement_base_kg` INTEGER, `laterality` TEXT NOT NULL, `measure` TEXT NOT NULL, `contraction` TEXT NOT NULL, `hold_class` TEXT, `ecc_emphasis` INTEGER NOT NULL, `mechanics` TEXT NOT NULL, `curve_class` TEXT, `rest_class` TEXT NOT NULL, `safety_class` TEXT NOT NULL, `grip` TEXT NOT NULL, `stretch_emphasis` INTEGER NOT NULL, `stability` INTEGER NOT NULL, `skill` INTEGER NOT NULL, `axial` INTEGER NOT NULL, `systemic` INTEGER NOT NULL, `sfr` INTEGER NOT NULL, `setup_s` INTEGER NOT NULL, `grip_demand` INTEGER NOT NULL, `js_elbow_medial` INTEGER NOT NULL, `js_elbow_lateral` INTEGER NOT NULL, `js_shoulder_ant` INTEGER NOT NULL, `js_shoulder_overhead` INTEGER NOT NULL, `js_wrist` INTEGER NOT NULL, `js_lumbar` INTEGER NOT NULL, `js_knee` INTEGER NOT NULL, `js_hip` INTEGER NOT NULL, `tags` TEXT NOT NULL, `flags_offered` TEXT NOT NULL, `external_refs` TEXT NOT NULL, `evidence_note` TEXT, `prototype_exercise_id` TEXT, `catalog_version` TEXT NOT NULL, `retired_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name_en",
+            "columnName": "name_en",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name_nl",
+            "columnName": "name_nl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "aliases",
+            "columnName": "aliases",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pattern",
+            "columnName": "pattern",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "family",
+            "columnName": "family",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "equipment",
+            "columnName": "equipment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requires_station",
+            "columnName": "requires_station",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "load_mode",
+            "columnName": "load_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allowed_load_modes",
+            "columnName": "allowed_load_modes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bw_fraction",
+            "columnName": "bw_fraction",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "implement_base_kg",
+            "columnName": "implement_base_kg",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "laterality",
+            "columnName": "laterality",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "measure",
+            "columnName": "measure",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contraction",
+            "columnName": "contraction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hold_class",
+            "columnName": "hold_class",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ecc_emphasis",
+            "columnName": "ecc_emphasis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mechanics",
+            "columnName": "mechanics",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "curve_class",
+            "columnName": "curve_class",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rest_class",
+            "columnName": "rest_class",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "safety_class",
+            "columnName": "safety_class",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grip",
+            "columnName": "grip",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stretch_emphasis",
+            "columnName": "stretch_emphasis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stability",
+            "columnName": "stability",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skill",
+            "columnName": "skill",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "axial",
+            "columnName": "axial",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "systemic",
+            "columnName": "systemic",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sfr",
+            "columnName": "sfr",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "setup_s",
+            "columnName": "setup_s",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grip_demand",
+            "columnName": "grip_demand",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_elbow_medial",
+            "columnName": "js_elbow_medial",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_elbow_lateral",
+            "columnName": "js_elbow_lateral",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_shoulder_ant",
+            "columnName": "js_shoulder_ant",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_shoulder_overhead",
+            "columnName": "js_shoulder_overhead",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_wrist",
+            "columnName": "js_wrist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_lumbar",
+            "columnName": "js_lumbar",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_knee",
+            "columnName": "js_knee",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "js_hip",
+            "columnName": "js_hip",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flags_offered",
+            "columnName": "flags_offered",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "external_refs",
+            "columnName": "external_refs",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidence_note",
+            "columnName": "evidence_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "prototype_exercise_id",
+            "columnName": "prototype_exercise_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "catalog_version",
+            "columnName": "catalog_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retired_at",
+            "columnName": "retired_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_exercises_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_exercises_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "exercise_stimulus",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `exercise_id` TEXT NOT NULL, `region_id` TEXT NOT NULL, `coeff` INTEGER NOT NULL, `evidence` TEXT, `note` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exercise_id",
+            "columnName": "exercise_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "region_id",
+            "columnName": "region_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coeff",
+            "columnName": "coeff",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidence",
+            "columnName": "evidence",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_exercise_stimulus_exercise_id",
+            "unique": false,
+            "columnNames": [
+              "exercise_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exercise_stimulus_exercise_id` ON `${TABLE_NAME}` (`exercise_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "muscle_goals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `client_updated_at` INTEGER NOT NULL, `server_updated_at` TEXT, `deleted_at` INTEGER, `device_id` TEXT NOT NULL, `app_version` TEXT NOT NULL, `muscle_group_id` TEXT NOT NULL, `goal` TEXT NOT NULL, `focus` INTEGER NOT NULL, `region_emphasis` TEXT NOT NULL, `source` TEXT NOT NULL, `preset_code` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "user_id",
+            "columnName": "user_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "client_updated_at",
+            "columnName": "client_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "server_updated_at",
+            "columnName": "server_updated_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deleted_at",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "device_id",
+            "columnName": "device_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "app_version",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "muscle_group_id",
+            "columnName": "muscle_group_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goal",
+            "columnName": "goal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "focus",
+            "columnName": "focus",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "region_emphasis",
+            "columnName": "region_emphasis",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preset_code",
+            "columnName": "preset_code",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_muscle_goals_muscle_group_id",
+            "unique": false,
+            "columnNames": [
+              "muscle_group_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_muscle_goals_muscle_group_id` ON `${TABLE_NAME}` (`muscle_group_id`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '48cc380beda19e63c2983017238b8371')"
+    ]
+  }
+}

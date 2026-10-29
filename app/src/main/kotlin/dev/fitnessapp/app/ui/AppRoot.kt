@@ -3,6 +3,7 @@ package dev.fitnessapp.app.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Person
@@ -175,13 +176,15 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenTest = { push(AppKey.TestDay(it, null)) },
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                             onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
+                            onSetGoals = { push(AppKey.Preferences) },
                         )
+                        Tab.WEEK -> dev.fitnessapp.app.ui.week.WeekRoute(c, m, onSetGoals = { push(AppKey.Preferences) })
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) }, onCreate = { push(AppKey.CustomExercise(it)) })
                         Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
                             onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) }, onCalendars = { push(AppKey.Calendars) },
-                            onPreferences = { push(AppKey.Preferences) },
+                            onPreferences = { push(AppKey.Preferences) }, onPrompts = { push(AppKey.Prompts) },
                         )
                     }
                 }
@@ -207,6 +210,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             entry<AppKey.Reliability> { ReliabilityRoute(c, onBack = { pop() }) }
             entry<AppKey.Calendars> { dev.fitnessapp.app.ui.calendar.CalendarsRoute(c, onBack = { pop() }) }
             entry<AppKey.Preferences> { dev.fitnessapp.app.ui.you.PreferencesRoute(c, onBack = { pop() }) }
+            entry<AppKey.Prompts> { dev.fitnessapp.app.ui.you.PromptsRoute(c, onBack = { pop() }) }
             entry<AppKey.History> { HistoryRoute(c, onBack = { pop() }, onOpen = { push(AppKey.SessionDetail(it)) }) }
             entry<AppKey.SessionDetail> { k ->
                 SessionDetailRoute(
@@ -255,6 +259,7 @@ private suspend fun restored(c: AppContainer, sessionId: String) {
 private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Main, null -> when (tab) {
         Tab.TODAY -> "today"
+        Tab.WEEK -> "week"
         Tab.EXERCISES -> "exercises"
         Tab.CHALLENGES -> "challenges"
         Tab.YOU -> "you"
@@ -266,6 +271,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Reliability -> "you.rest"
     AppKey.Calendars -> "you.calendars"
     AppKey.Preferences -> "you.preferences"
+    AppKey.Prompts -> "you.prompts"
     AppKey.History -> "you.history"
     is AppKey.SessionDetail -> "you.session_detail"
     is AppKey.ExerciseDetail -> "exercises.detail"
@@ -286,6 +292,7 @@ private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
 /** The floating navigation tile's destinations, in [Tab] order (UX 3.1, 4.3). */
 private val NAV_ITEMS = listOf(
     NavItem("Today", Icons.Rounded.FitnessCenter),
+    NavItem("Week", Icons.Rounded.CalendarMonth),
     NavItem("Exercises", Icons.AutoMirrored.Rounded.FormatListBulleted),
     NavItem("Challenges", Icons.Rounded.EmojiEvents),
     NavItem("You", Icons.Rounded.Person),

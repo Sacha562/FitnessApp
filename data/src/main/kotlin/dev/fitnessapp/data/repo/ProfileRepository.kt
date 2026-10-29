@@ -11,6 +11,8 @@ import dev.fitnessapp.data.telemetry.TelemetryWriter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
@@ -79,6 +81,35 @@ class ProfileRepository(
         scheduler.request()
     }
 
+    /**
+     * A setting of You > Preferences or You > Prompts (UX 15.4, 15.8): writes the profile and `settings_changed {key, from,
+     * to}`; nothing happens when the value is unchanged.
+     */
+    suspend fun <T> set(setting: Setting<T>, value: T, screen: String = "you.preferences") {
+        val before = setting.read(get() ?: ensure())
+        if (before == value) return
+        update { setting.write(it, value) }
+        db.withTransaction {
+            telemetry.write(
+                EventDraft(
+                    type = "settings_changed", entityType = "none", screen = screen,
+                    payload = mapOf("key" to JsonPrimitive(setting.key), "from" to json(before), "to" to json(value)),
+                ),
+            )
+        }
+        scheduler.request()
+    }
+
+    /** The goal preset in use (`profiles.muscle_goal_preset`, D6); [GoalRepository] logs the change as `goal_changed`. */
+    suspend fun setGoalPreset(code: String) = update { it.copy(muscle_goal_preset = code) }
+
+    private fun json(v: Any?): JsonElement = when (v) {
+        null -> JsonNull
+        is Boolean -> JsonPrimitive(v)
+        is Number -> JsonPrimitive(v)
+        else -> JsonPrimitive(v.toString())
+    }
+
     suspend fun completeOnboarding() {
         update { it.copy(onboarding_completed_at = it.onboarding_completed_at ?: ctx.nowMs()) }
         stepCompleted("done", emptyList())
@@ -110,5 +141,24 @@ class ProfileRepository(
         }
         scheduler.request()
         return row
+    }
+}
+
+/** A profile setting the Preferences and Prompts screens change: its `settings_changed` key and the column it maps to. */
+class Setting<T>(val key: String, val read: (ProfileEntity) -> T, val write: (ProfileEntity, T) -> ProfileEntity) {
+    companion object {
+        val TRAINING_AGE = Setting<String?>("training_age", { it.training_age }, { p, v -> p.copy(training_age = v) })
+        val BIRTH_YEAR = Setting<Int?>("birth_year", { it.birth_year }, { p, v -> p.copy(birth_year = v) })
+        val MAX_VISITS = Setting("max_gym_visits_per_week", { it.max_gym_visits_per_week }, { p, v -> p.copy(max_gym_visits_per_week = v) })
+        val DEFAULT_SESSION_MIN = Setting("default_session_min", { it.default_session_min }, { p, v -> p.copy(default_session_min = v) })
+        val CHANGEOVER_MIN = Setting("changeover_min", { it.changeover_min }, { p, v -> p.copy(changeover_min = v) })
+        val AVAILABILITY = Setting("availability", { it.availability }, { p, v -> p.copy(availability = v) })
+        val RUNNING_PRIORITY = Setting("running_priority", { it.running_priority }, { p, v -> p.copy(running_priority = v) })
+        val SUPERSETS = Setting("allow_supersets", { it.allow_supersets }, { p, v -> p.copy(allow_supersets = v) })
+        val PROMPT_READINESS = Setting("prompt_readiness", { it.prompt_readiness }, { p, v -> p.copy(prompt_readiness = v) })
+        val PROMPT_ELBOW = Setting("prompt_elbow_check", { it.prompt_elbow_check }, { p, v -> p.copy(prompt_elbow_check = v) })
+        val PROMPT_SORENESS = Setting("prompt_soreness", { it.prompt_soreness }, { p, v -> p.copy(prompt_soreness = v) })
+        val PROMPT_SRPE = Setting("prompt_srpe", { it.prompt_srpe }, { p, v -> p.copy(prompt_srpe = v) })
+        val PROMPT_PAIN = Setting("prompt_pain_after", { it.prompt_pain_after }, { p, v -> p.copy(prompt_pain_after = v) })
     }
 }

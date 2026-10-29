@@ -116,6 +116,11 @@ class AppContainer(private val context: Context) {
         dev.fitnessapp.data.repo.CustomExerciseRepository(db, outbox, telemetry, writeContext, syncScheduler, catalog)
     }
     val profiles: ProfileRepository by lazy { ProfileRepository(db, outbox, telemetry, writeContext, syncScheduler) }
+    /** The per-group muscle goals and the bundled goal presets (D6, M4.2). */
+    val goals: dev.fitnessapp.data.repo.GoalRepository by lazy { dev.fitnessapp.data.repo.GoalRepository(db, outbox, telemetry, writeContext, syncScheduler, profiles) }
+    val goalPresets: dev.fitnessapp.algo.targets.GoalPresets by lazy { dev.fitnessapp.algo.targets.GoalPresets.parse(resource("/fitness/presets/goal-presets-1.0.0.json")) }
+    /** The F15 feedback prompts' answers and events (M4.2). */
+    val prompts: dev.fitnessapp.data.repo.PromptRepository by lazy { dev.fitnessapp.data.repo.PromptRepository(db, outbox, telemetry, writeContext, syncScheduler) }
     val equipment: EquipmentRepository by lazy { EquipmentRepository(db, outbox, telemetry, writeContext, syncScheduler) }
     val bodyweight: BodyweightRepository by lazy { BodyweightRepository(db, outbox, writeContext, syncScheduler) }
     val sessionRepository: SessionRepository by lazy {

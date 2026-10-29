@@ -71,7 +71,20 @@ class LocalSettings(context: Context) {
         get() = prefs.getString(KEY_CAL_UNAVAILABLE, null)
         set(v) = prefs.edit().putString(KEY_CAL_UNAVAILABLE, v).apply()
 
+    /**
+     * True the first time [key] is asked, false afterwards: once-per-day telemetry such as `weekplan_shown` (UX 19.5).
+     * Only the newest key per prefix (the part before the first ':') is kept.
+     */
+    fun once(key: String): Boolean {
+        val prefix = key.substringBefore(':')
+        val last = prefs.getString(KEY_ONCE + prefix, null)
+        if (last == key) return false
+        prefs.edit().putString(KEY_ONCE + prefix, key).apply()
+        return true
+    }
+
     private companion object {
+        const val KEY_ONCE = "once."
         const val KEY_CAL_PRIMARY = "calendar_primary_identity"
         const val KEY_CAL_EXTRA = "calendar_extra_identities"
         const val KEY_CAL_REAL_WRITES = "calendar_real_writes"

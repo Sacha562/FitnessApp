@@ -690,7 +690,7 @@ catalog 1.0.2 (OI-16).
    synced to the challenge block, re-entry, the goal presets file) and `runs`. Tests: the module tests of
    ALGORITHMS_PLANNING 2-6 and the goldens W41_targets, W41_accounting, W41_readiness and DST_W43_readiness and
    DST_W43_week. No screen changes, so the engine version stays.
-2. **M4.2 Goals, settings, prompts and this week's volume.** Storage and sync for the profile fields and per-group goals
+2. **M4.2 Goals, settings, prompts and this week's volume** (built 2026-10-29, phone checks open). Storage and sync for the profile fields and per-group goals
    (the migration is shown first). Two new Preferences sections: Muscle goals (the presets, per-group improve, maintain or
    skip, groups owned by the OAP shown as covered) and Sessions (training age, maximum visits, availability windows,
    default session length, running priority), opened once from a Today card "Set your goals". The feedback prompts after

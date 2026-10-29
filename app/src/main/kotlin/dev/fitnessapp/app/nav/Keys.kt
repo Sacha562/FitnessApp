@@ -14,6 +14,9 @@ sealed interface AppKey {
 
     /** You → Preferences (UX 15.4, M3.5). */
     data object Preferences : AppKey
+
+    /** You → Prompts (UX 15.8, M4.2). */
+    data object Prompts : AppKey
     data object History : AppKey
     data class SessionDetail(val sessionId: String) : AppKey
     data class ExerciseDetail(val exerciseId: String, val from: String) : AppKey
@@ -44,6 +47,7 @@ sealed interface AppKey {
             Reliability -> "reliability"
             Calendars -> "calendars"
             Preferences -> "preferences"
+            Prompts -> "prompts"
             History -> "history"
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
@@ -63,6 +67,7 @@ sealed interface AppKey {
             s == "reliability" -> Reliability
             s == "calendars" -> Calendars
             s == "preferences" -> Preferences
+            s == "prompts" -> Prompts
             s == "history" -> History
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
             s.startsWith("custom_exercise:") -> CustomExercise(s.removePrefix("custom_exercise:"))
@@ -76,8 +81,8 @@ sealed interface AppKey {
     }
 }
 
-/** Top-level tabs (UX 3.1); Week arrives with M4. */
-enum class Tab { TODAY, EXERCISES, CHALLENGES, YOU }
+/** Top-level tabs (UX 3.1); Week since M4.2. */
+enum class Tab { TODAY, WEEK, EXERCISES, CHALLENGES, YOU }
 
 /** Internal route names of notification taps (ANDROID.md 7.4, C54): never deep links. */
 object Routes {

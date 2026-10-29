@@ -54,6 +54,7 @@ import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.Tile
+import dev.fitnessapp.app.planning.PromptPlans
 import dev.fitnessapp.app.ui.live.PAIN_KINDS
 import dev.fitnessapp.app.ui.theme.Fit
 import kotlinx.coroutines.Dispatchers
@@ -107,10 +108,13 @@ data class HabitRowUi(
 class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
     private val _ui = MutableStateFlow<TodayChallengeUi?>(null)
     val ui: StateFlow<TodayChallengeUi?> = _ui
-    private val _elbowFor = MutableStateFlow<String?>(null)
+    private val _sheet = MutableStateFlow<PreSheet?>(null)
 
-    /** The slot waiting for the elbow check (templates with `requiresReadiness: ["elbow"]`, CHALLENGE_ENGINE 11). */
-    val elbowFor: StateFlow<String?> = _elbowFor
+    /**
+     * The readiness sheet waiting before a slot's session (UX 16.3): the prompts of `ui.prompts`, with the elbow check
+     * required by templates with `requiresReadiness: ["elbow"]` (CHALLENGE_ENGINE 11).
+     */
+    val sheet: StateFlow<PreSheet?> = _sheet
     private val _notice = MutableStateFlow<Pair<String, String>?>(null)
     val notice: StateFlow<Pair<String, String>?> = _notice
     private val _busy = MutableStateFlow(false)
@@ -255,44 +259,52 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         }
     }
 
+    /** Start: the prompt plan first (UX 9.8); with nothing to ask the session starts at once. */
     fun start(slot: String, onOpen: (String) -> Unit) {
         val u = _ui.value ?: return
+        if (_busy.value) return
         viewModelScope.launch {
-            val needsElbow = withContext(Dispatchers.Default) {
-                val f = c.challenges.folded(u.enrollmentId)
-                "elbow" in Materializer.templateFor(f.def, f.state, slot)?.requiresReadiness.orEmpty() && !checkedToday()
+            _busy.value = true
+            val sheet = runCatching {
+                withContext(Dispatchers.Default) {
+                    val f = c.challenges.folded(u.enrollmentId)
+                    val elbowRequired = "elbow" in Materializer.templateFor(f.def, f.state, slot)?.requiresReadiness.orEmpty()
+                    val plan = c.challengeSessions.materialize(u.enrollmentId, slot, LocalDate.now(ChallengeWeek.ZONE))
+                    val prompts = PromptPlans.plan(c, home = false, plannedFs = PreSession.plannedFs(c, f.def, plan), elbowRequired = elbowRequired)
+                    PreSheet(prompts, elbowRequired, System.currentTimeMillis(), slot)
+                }
+            }.getOrNull()
+            _busy.value = false
+            if (sheet == null || sheet.plan.pre.isEmpty()) {
+                launchSession(slot, onOpen)?.let { id -> sheet?.let { PreSession.record(c, id, null, it.plan, PreAnswers(), System.currentTimeMillis()) } }
+            } else {
+                _sheet.value = sheet
             }
-            if (needsElbow) _elbowFor.value = slot else launchSession(slot, onOpen)
         }
     }
 
-    private suspend fun checkedToday(): Boolean {
-        val today = LocalDate.now(ChallengeWeek.ZONE).toString()
-        return c.db.wellness().countKindOn("elbow_check", today) > 0
-    }
-
-    /** Readiness sheet answer (UX 16.3): the safety rules run on it before the session is materialized. */
-    fun submitElbow(score: Int, symptoms: List<String>, onOpen: (String) -> Unit) {
-        val u = _ui.value ?: return
-        val slot = _elbowFor.value ?: return
-        _elbowFor.value = null
+    /** The sheet's Start (UX 16.3): the elbow answer runs through the safety rules before the session is materialized. */
+    fun submitSheet(a: PreAnswers, onOpen: (String) -> Unit) {
+        val sheet = _sheet.value ?: return
+        val slot = sheet.slot ?: return
+        _sheet.value = null
         viewModelScope.launch {
-            val out = runCatching { c.challengeSessions.elbowCheck(u.enrollmentId, score, symptoms) }.getOrNull()
-            out?.notifications?.firstOrNull { it.kind == "stop" || it.kind == "warn" }?.let { n -> _notice.value = n.kind to ChallengeTexts.message(out.folded.def, n) }
-            launchSession(slot, onOpen)
+            a.elbow?.let { score -> PreSession.elbow(c, score, a.symptoms)?.let { _notice.value = it } }
+            val id = launchSession(slot, onOpen) ?: return@launch
+            PreSession.record(c, id, sheet, sheet.plan, a, System.currentTimeMillis())
         }
     }
 
-    fun cancelElbow() {
-        _elbowFor.value = null
+    fun cancelSheet() {
+        _sheet.value = null
     }
 
     fun dismissNotice() {
         _notice.value = null
     }
 
-    private suspend fun launchSession(slot: String, onOpen: (String) -> Unit) {
-        val u = _ui.value ?: return
+    private suspend fun launchSession(slot: String, onOpen: (String) -> Unit): String? {
+        val u = _ui.value ?: return null
         _busy.value = true
         val eventMin = eventMinutes(u.enrollmentId, slot, java.time.LocalDate.now(ChallengeWeek.ZONE))
         val id = runCatching { withContext(Dispatchers.Default) { c.challengeSessions.start(u.enrollmentId, slot, eventMin) } }
@@ -303,6 +315,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
             onOpen(id)
         }
         refresh()
+        return id
     }
 }
 
@@ -311,7 +324,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
 fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (String) -> Unit, onOpenTest: (String) -> Unit = {}) {
     val vm: TodayChallengeViewModel = viewModel(key = "today_challenge", factory = viewModelFactory { initializer { TodayChallengeViewModel(c) } })
     val ui by vm.ui.collectAsState()
-    val elbowFor by vm.elbowFor.collectAsState()
+    val sheet by vm.sheet.collectAsState()
     val notice by vm.notice.collectAsState()
     val busy by vm.busy.collectAsState()
     LaunchedEffect(sessionActive) { vm.refresh() }
@@ -345,7 +358,7 @@ fun TodayChallengeTile(c: AppContainer, sessionActive: Boolean, onOpenSession: (
         }
     }
     if (u.habits.isNotEmpty()) HabitsTile(u.habits, vm, sessionActive, onOpenSession)
-    if (elbowFor != null) ElbowCheckDialog(onDismiss = vm::cancelElbow) { score, symptoms -> vm.submitElbow(score, symptoms, onOpenSession) }
+    sheet?.let { s -> ReadinessSheet(c, s, onDismiss = vm::cancelSheet) { a -> vm.submitSheet(a, onOpenSession) } }
 }
 
 /** UX 9.6 HOME: one row per habit; the checkbox quick-dones, Start (or the row) opens the mini-session. */

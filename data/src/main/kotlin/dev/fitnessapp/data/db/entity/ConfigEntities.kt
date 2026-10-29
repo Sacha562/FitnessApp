@@ -126,6 +126,28 @@ data class UserExercisePrefEntity(
 ) : MutableRow
 
 /**
+ * `fitness.muscle_goals` (9.3.5, D6, C14); id = UUIDv5 `muscle_goals:<uid>:<group>` (6.4). One row per muscle group once
+ * the goals are saved; "covered by challenge" comes from the contract and is never stored here.
+ */
+@Serializable
+@Entity(tableName = "muscle_goals", indices = [Index("muscle_group_id")])
+data class MuscleGoalEntity(
+    @PrimaryKey override val id: String,
+    override val user_id: String,
+    @Serializable(with = EpochMsIso::class) override val client_updated_at: Long,
+    override val server_updated_at: String? = null,
+    @Serializable(with = EpochMsIso::class) override val deleted_at: Long? = null,
+    override val device_id: String,
+    override val app_version: String,
+    val muscle_group_id: String,
+    val goal: String,
+    val focus: Boolean = false,
+    val region_emphasis: List<String> = emptyList(),
+    val source: String = "user",
+    val preset_code: String? = null,
+) : MutableRow
+
+/**
  * `fitness.rep_preferences` (9.3.4, D10); id = UUIDv5 `rep_preferences:<uid>:<scope_key>` (6.4). The engine resolves the
  * most specific scope (exercise > muscle_group > mechanics > goal > global, B9.3); a deviation from evidence produces a
  * warning, never a silent change. A cleared preference is a soft delete.

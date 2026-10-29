@@ -327,3 +327,27 @@ group (the start of the history counts as a gap); the long-run threshold is the 
 `calendar.classify.run_long_minutes` (the one 75-minute key); a challenge mode's joint flag has no end and wins a tie of
 severity. No app change, no params change and no engine bump: the modules start at 1.0.0 and the app does not call them
 until M4.2.
+
+**M4.2 (2026-10-29, phone checks open)**: goals, session settings, prompts and this week's volume. Room v11 adds
+`muscle_goals` (synced LWW, UUIDv5 per group, pushed after `rep_preferences`); the server table, the profile columns and
+`wellness_logs` already existed (migrations 010, 013), so there is no server migration. You → Preferences gains Muscle
+goals (the four presets, Improve / Maintain / Skip and Focus per group, the resulting weekly target from `targets`,
+groups the OAP owns shown as covered) and Sessions (training experience, age, maximum visits, default length,
+changeover, usual training times, running priority, supersets, and the RIR check sets moved there); every change logs
+`goal_changed` or `settings_changed`. Today shows "Set your goals" until the goals are saved. `ui.prompts` and
+`ui.volumebars` are pure `uidet` functions with their spec tests (GF-UX-11, GF-UX-13, friPrompts, thuPromptsBudget,
+elbowNeverReducedWithOap, painGuard, elbowFollowUpOutsideBudget, coveredRowNoBar, deloadUsesEffectiveTarget, sortOrder).
+The readiness sheet replaces the elbow-only dialog before challenge sessions and also opens before general sessions
+(Start and Repeat): readiness, elbow check and up to three soreness rows, written as `wellness_logs` with the
+`prompt_*` events. The Summary's quick check shows only the post prompts the plan keeps. You → Prompts has the
+switches (the elbow check and the pain prompt locked while the OAP pain rule is active or within 14 days of a pain
+report) and the adaptive state with Reset. The adaptive state is folded from the `prompt_*` events each time, so no
+`prompt_state` table exists. The Week tab arrives with the week's header, the runs from the classified calendar and the
+volume bars: done Vhyp from the logged sets (`setcredit`), committed Vhyp of the OAP sessions and habits still ahead
+(the challenge coverage with the definition's credit RIR), targets with the OAP's owned groups and deload week, WE-V1
+for the DEFICIT state, and a row sheet with the per-exercise contributions and the target's Why. Choices where the spec
+leaves room: when a template requires the elbow check, the sheet's Start waits for that one answer (the dialog it
+replaces did the same; UX 16.3 says Start is always enabled); the target ramp starts at the base target until the week
+close is stored (M4.5); the "Worse" readiness suggestion card (REASON-1) and the WE-V7 all-skip note are not built yet.
+No params change and no engine bump: the modules run at their 1.0.0 registry versions. Tests: `:algo` 444, `:data` 92,
+`:app` 119, `:sim` 60, all green; the APK assembles. Not checked on the phone yet (wireless adb unreachable).

@@ -75,9 +75,9 @@ private data class PrefScope(val key: String, val label: String, val compound: B
 private enum class Preset(val id: String, val label: String) { HYPERTROPHY("hypertrophy", "Muscle growth"), STRENGTH("strength", "Strength") }
 
 /**
- * You > Preferences (UX 15.4, D49): the Sets and reps section (the global default, compound and isolation overrides,
- * per-exercise overrides) with the evidence note of `warnings` for each (D10: the preference is kept; "use suggested"
- * writes the suggestion), and the opt-in RIR check sets of the Sessions settings (F14).
+ * You > Preferences (UX 15.4, D49, D55): Muscle goals ([MuscleGoalsTile]), the Sets and reps section (the global default,
+ * compound and isolation overrides, per-exercise overrides) with the evidence note of `warnings` for each (D10: the
+ * preference is kept; "use suggested" writes the suggestion), and the Sessions settings ([SessionsTile]).
  */
 @Composable
 fun PreferencesRoute(c: AppContainer, onBack: () -> Unit) {
@@ -102,6 +102,8 @@ fun PreferencesRoute(c: AppContainer, onBack: () -> Unit) {
             Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            MuscleGoalsTile(c, profile)
+            SessionsTile(c, profile)
             Tile(spacing = 0.dp, padding = PaddingValues(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp)) {
                 TileLabel("Sets and reps", Modifier.padding(start = 10.dp, bottom = 4.dp))
                 Text(
@@ -114,19 +116,6 @@ fun PreferencesRoute(c: AppContainer, onBack: () -> Unit) {
                     PrefRow(s, values, notes(s, values, params)) { editing = s }
                 }
                 LinkButton("+ Exercise override", { picking = true }, Modifier.padding(start = 4.dp))
-            }
-            Tile(spacing = 8.dp) {
-                TileLabel("Sessions")
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("RIR check sets", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "At most once a week, the last set of one machine, cable or isolation exercise: tap how many reps you think are left, then keep going to failure. It calibrates your reps-in-reserve.",
-                            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-                        )
-                    }
-                    Switch(checked = profile?.rir_calibration_opt_in == true, onCheckedChange = { on -> scope.launch { c.profiles.setRirCalibrationOptIn(on) } })
-                }
             }
         }
     }

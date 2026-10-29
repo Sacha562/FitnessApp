@@ -997,7 +997,7 @@ this section applies.
 | `scheduled_alarm` | `request_code PK`, `kind`, `ref_id`, `trigger_at_wall_ms`, `mode`, `created_at_ms` | Every alarm the app has scheduled (rest, overtime, reminders, idle prompt), for rescheduling after boot, force-stop or update. |
 | `params_cache` | `params_version PK`, `params_json`, `params_hash`, `source` (`bundled`, `server`), `fetched_at_ms` | Effective-params fallback before the first pull and cache of pulled params (7.6). |
 | `warning_dismissal` | `rule_id`, `entity_key`, `dismissed_at_ms`, `magnitude_at_dismiss`, `use_mine_anyway`; PK `(rule_id, entity_key)` | UI-10 dismissal store; rebuildable from `session_events`. |
-| `prompt_state` | `prompt PK`, `skip_streak`, `reduced_every`, `last_shown_session_id` | UI-07 adaptive prompt state; rebuildable from `session_events`. |
+| `prompt_state` | `prompt PK`, `skip_streak`, `reduced_every`, `last_shown_session_id` | UI-07 adaptive prompt state; rebuildable from `session_events`. Not created in M4.2: the app folds the `prompt_*` events each time (they are few). |
 | `exercise_fts` | FTS4 over `name_en`, `name_nl`, `aliases` | Catalog search (D12: English and Dutch names). |
 | `device` | `id = 1`, `device_id TEXT`, `created_at_ms`, `last_client_updated_at_ms` | Random UUIDv4 created at first launch; LWW tie-break (C23). `last_client_updated_at_ms` makes `client_updated_at` strictly increasing on this device (`max(now, last + 1)`). |
 | `crash_log` | `id`, `at_ms`, `exception_class`, `stack_sha256`, `top_frame`, `app_version` | Local crash record; summarised into a `session_events` row (`app_crash`, with `at_ms` as `crashed_at` and `app_version` as `crash_app_version`, 7.10) on next start. |

@@ -13,6 +13,7 @@ import dev.fitnessapp.data.db.entity.ExportEntity
 import dev.fitnessapp.data.db.entity.GymEntity
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.db.entity.MetricObservationEntity
+import dev.fitnessapp.data.db.entity.MuscleGoalEntity
 import dev.fitnessapp.data.db.entity.MutableRow
 import dev.fitnessapp.data.db.entity.ParamsSnapshotEntity
 import dev.fitnessapp.data.db.entity.ProfileEntity
@@ -88,6 +89,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
     SyncTable("exercise_stimulus", false, true, db.exerciseStimulus(), ExerciseStimulusEntity.serializer()),
     SyncTable("user_exercise_prefs", false, true, db.exercisePrefs(), UserExercisePrefEntity.serializer()),
     SyncTable("rep_preferences", false, true, db.repPreferences(), RepPreferenceEntity.serializer()),
+    SyncTable("muscle_goals", false, true, db.muscleGoals(), MuscleGoalEntity.serializer()),
     SyncTable("challenge_enrollments", false, true, db.enrollments(), ChallengeEnrollmentEntity.serializer()),
     SyncTable("workout_sessions", false, true, db.sessions(), WorkoutSessionEntity.serializer()),
     SyncTable("session_blocks", false, true, db.blocks(), SessionBlockEntity.serializer()),
@@ -105,7 +107,7 @@ fun syncTables(db: FitnessDatabase): List<SyncTable<out SyncedRow>> = listOf(
 
 /** Table names in push order, for the outbox and tests. */
 val SYNC_TABLE_ORDER: List<String> = listOf(
-    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "exercises", "exercise_stimulus", "user_exercise_prefs", "rep_preferences", "challenge_enrollments", "workout_sessions",
+    "params_snapshots", "recommendations", "gyms", "gym_equipment", "profiles", "exercises", "exercise_stimulus", "user_exercise_prefs", "rep_preferences", "muscle_goals", "challenge_enrollments", "workout_sessions",
     "session_blocks", "session_exercises", "set_logs", "wellness_logs", "metric_observations", "calendar_events", "challenge_events",
     "challenge_rule_events", "session_events", "exports", "exercise_model_state",
 )

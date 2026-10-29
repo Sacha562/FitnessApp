@@ -45,6 +45,11 @@ import dev.fitnessapp.data.db.entity.SetLogEntity
 import dev.fitnessapp.data.telemetry.EventDraft
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import dev.fitnessapp.app.planning.PromptPlans
+import dev.fitnessapp.app.uidet.Prompt
+import dev.fitnessapp.app.uidet.PromptPlan
+import dev.fitnessapp.data.repo.PromptNotAnswered
+import dev.fitnessapp.data.repo.PromptShown
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
@@ -58,7 +63,7 @@ private val PAIN_PRESELECT = mapOf("shoulder" to "shoulder", "wrist" to "wrist",
 
 /**
  * Session summary (UX 12), as Bento tiles (D31): header, duration and set tiles, the challenge's and RX-1's "Next time" (M3.4), what
- * was logged, and the optional quick check (sRPE 0-10, joint pain, note). "New best" needs `ui.progress`, which arrives later.
+ * was logged, and the optional quick check (sRPE 0-10 and joint pain as `ui.prompts` plans them, M4.2; note). "New best" needs `ui.progress`, which arrives later.
  */
 @Composable
 fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
@@ -74,6 +79,8 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     var saving by remember { mutableStateOf(false) }
     // "Next time" (UX 12.3): null while the post-session pipeline runs (12.4).
     var next by remember(sessionId) { mutableStateOf<List<NextLine>?>(null) }
+    // The post-session prompts of `ui.prompts` (UX 19.4): session effort and joint pain, unless switched off or reduced.
+    var post by remember(sessionId) { mutableStateOf<PromptPlan?>(null) }
 
     LaunchedEffect(sessionId) {
         val t0 = System.currentTimeMillis()
@@ -87,17 +94,10 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                 ),
             ),
         )
-        // UX 20.5: the session-effort prompt of the quick check (the only post-session prompt shown in M1).
-        c.sessionRepository.event(
-            EventDraft(
-                type = "prompt_shown", sessionId = sessionId, screen = "session.summary",
-                payload = mapOf(
-                    "prompt" to JsonPrimitive("srpe"), "phase" to JsonPrimitive("post"), "position" to JsonPrimitive(1),
-                    "budget_used" to JsonPrimitive(1), "reduced" to JsonPrimitive(false),
-                ),
-            ),
-        )
+        val home = c.sessionRepository.session(sessionId)?.kind == "home"
+        post = runCatching { withContext(Dispatchers.Default) { PromptPlans.plan(c, home = home, plannedFs = emptyMap(), elbowRequired = false) } }.getOrNull()
     }
+    val asks = post?.post.orEmpty().map { it.prompt }.toSet()
 
     fun done() {
         if (saving) return
@@ -105,9 +105,12 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
         scope.launch {
             val s = session
             c.sessionRepository.saveFeedback(sessionId, srpe, note.trim().takeIf { it.isNotEmpty() && it != s?.notes })
-            if (srpe == null) {
-                c.sessionRepository.event(
-                    EventDraft(type = "prompt_skipped", sessionId = sessionId, screen = "session.summary", payload = mapOf("prompt" to JsonPrimitive("srpe"), "group" to JsonPrimitive("post"), "cause" to JsonPrimitive("not_answered"))),
+            if (pain == "none") c.prompts.painNone(sessionId)
+            post?.let { plan ->
+                c.prompts.recordPost(
+                    sessionId, plan.post.map { PromptShown(it.prompt.code, it.group, it.reduced) },
+                    setOfNotNull(srpe?.let { "srpe" }, pain?.let { "joint_pain" }),
+                    plan.dropped.filter { it.prompt.phase == "post" }.map { PromptNotAnswered(it.prompt.code, it.group, it.cause) },
                 )
             }
             onDone()
@@ -170,13 +173,19 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
 
                 // The quick check is optional (D35): collapsed until the user opens it.
                 Tile(spacing = 10.dp) {
-                    MoreSection("Add effort, pain or a note") {
-                        Text("Session effort, 0-10", style = MaterialTheme.typography.titleMedium)
-                        ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
-                        Text("Any joint pain?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp))
-                        ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
-                            pain = code
-                            if (code != "none") painSheetFor = code
+                    MoreSection(listOfNotNull("effort".takeIf { Prompt.SRPE in asks }, "pain".takeIf { Prompt.JOINT_PAIN in asks }, "a note").let { l ->
+                        "Add " + if (l.size == 1) l[0] else l.dropLast(1).joinToString(", ") + " or " + l.last()
+                    }) {
+                        if (Prompt.SRPE in asks) {
+                            Text("Session effort, 0-10", style = MaterialTheme.typography.titleMedium)
+                            ChoiceChips((0..10).toList(), srpe, { it.toString() }) { srpe = if (srpe == it) null else it }
+                        }
+                        if (Prompt.JOINT_PAIN in asks) {
+                            Text("Any joint pain?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 6.dp))
+                            ChoiceChips(PAIN_CHIPS.map { it.first }, pain, { code -> PAIN_CHIPS.first { it.first == code }.second }) { code ->
+                                pain = code
+                                if (code != "none") painSheetFor = code
+                            }
                         }
                         FitTextField(
                             value = note, onValueChange = { note = it.take(2000) }, label = "Note",
