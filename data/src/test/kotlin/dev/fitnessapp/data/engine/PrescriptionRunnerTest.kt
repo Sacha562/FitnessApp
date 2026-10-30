@@ -30,6 +30,7 @@ import dev.fitnessapp.data.telemetry.EventRegistry
 import dev.fitnessapp.data.telemetry.TelemetryWriter
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -159,6 +160,31 @@ class PrescriptionRunnerTest {
         // The set row keeps the planned RIR for RIRCAL-1 and the review: the probe's q* + rx.probe_rir_add (B9.8).
         db.setLogs().bySession(sid).single().planned_rir shouldBe Math.round(rx.sets.first().rir!! * 10)
         rx.sets.first().rir shouldBe rx.qStar + params.double("rx.probe_rir_add")
+    }
+
+    @Test
+    fun `a probe undone and logged again plans the remaining sets from the new probe`() = blocking {
+        gym()
+        now += 60_000
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        val id = runner.ensure(RxSlot(seId)).shouldNotBeNull()
+        val first = log(sid, seId, 1, 5.0, 10, 2.0)
+        val light = runner.followUp(RxSlot(seId)).shouldNotBeNull()
+        val lightLoad = runner.get(light)!!.sets.first { it.setIndex == 2 }.wSys.shouldNotBeNull()
+
+        sessions.undoSet(first)
+        log(sid, seId, 1, 20.0, 10, 2.0)
+        val heavy = runner.followUp(RxSlot(seId)).shouldNotBeNull()
+        heavy shouldNotBe light
+        db.sessionExercises().get(seId)!!.recommendation_id shouldBe heavy
+        db.recommendations().byIds(listOf(heavy)).single().supersedes_id shouldBe light
+        val rx = runner.get(heavy)!!
+        rx.sets.first { it.setIndex == 2 }.wSys.shouldNotBeNull() shouldBeGreaterThan lightLoad
+        // One follow-up step on top of the original probe, not one per undo; set 1 stays the probe's.
+        rx.steps.count { it == "rx.probe.followup" } shouldBe 1
+        rx.sets.first { it.setIndex == 1 } shouldBe runner.get(id)!!.sets.first { it.setIndex == 1 }
+        runner.followUp(RxSlot(seId)).shouldBeNull()
     }
 
     @Test

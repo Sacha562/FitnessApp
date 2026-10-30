@@ -180,18 +180,24 @@ class PrescriptionRunner(
     /**
      * After the probe of [slot] is logged on every side (B9.8): RX-1 for the remaining sets from SSE-1's update with the
      * probe; the new prescription keeps set 1 and supersedes the old one. Returns the new id, or null when there is
-     * nothing to follow up (no probe, already followed up, or a side still to log).
+     * nothing to follow up (no probe, already followed up from these probe sets, or a side still to log). A probe that
+     * was undone and logged again plans the remaining sets anew from the original probe prescription.
      */
     suspend fun followUp(slot: RxSlot): String? = mutex.withLock {
         val user = ctx.userId() ?: return@withLock null
         val se = db.sessionExercises().get(slot.sessionExerciseId) ?: return@withLock null
         val oldId = se.recommendation_id ?: return@withLock null
         val oldRow = db.recommendations().byIds(listOf(oldId)).firstOrNull() ?: return@withLock null
-        val old = decode(oldRow) ?: return@withLock null
-        if (!old.probe || "rx.probe.followup" in old.steps) return@withLock null
+        val current = decode(oldRow) ?: return@withLock null
+        if (!current.probe) return@withLock null
+        val probes = db.setLogs().bySession(se.session_id).filter { it.session_exercise_id == se.id && it.set_kind != "warmup" && it.set_index == 1 }
+        val probeIds = probes.map { it.id }.sorted()
+        val old = if (FOLLOWUP in current.steps) {
+            if (current.trace["probe_set_ids"]?.jsonArray?.map { it.jsonPrimitive.content } == probeIds) return@withLock null
+            original(oldRow) ?: return@withLock null
+        } else current
         val session = db.sessions().get(se.session_id) ?: return@withLock null
         val ex = catalog.byId(se.exercise_id) ?: return@withLock null
-        val probes = db.setLogs().bySession(se.session_id).filter { it.session_exercise_id == se.id && it.set_kind != "warmup" && it.set_index == 1 }
         val requests = requests(session, se, ex, slot) ?: return@withLock null
         val follows = requests.map { r ->
             val row = probes.firstOrNull { it.side == r.side } ?: return@withLock null
@@ -204,8 +210,22 @@ class PrescriptionRunner(
         val keep = oldSets.indices.filter { oldSets[it].jsonObject["set_index"]?.jsonPrimitive?.intOrNull == 1 }
         fun merged(key: String) = JsonArray(keep.map { old.outputs[key]?.jsonArray?.getOrNull(it) ?: JsonNull } + fresh.getValue(key).jsonArray)
         val outputs = JsonObject(old.outputs + mapOf("sets" to merged("sets"), "rir_pred" to merged("rir_pred"), "rest_s" to merged("rest_s"), "double" to fresh.getValue("double")))
-        val trace = JsonObject(Prescribing.trace(follow).jsonObject + ("steps" to JsonArray((old.steps + follow.trace).map { JsonPrimitive(it) })))
+        val trace = JsonObject(
+            Prescribing.trace(follow).jsonObject + ("steps" to JsonArray((old.steps + follow.trace).map { JsonPrimitive(it) })) +
+                ("probe_set_ids" to JsonArray(probeIds.map { JsonPrimitive(it) })),
+        )
         storeRaw(user, session, se, requests, follow, outputs, trace, oldId, "followup:" + probes.joinToString(",") { it.id })
+    }
+
+    /** The probe prescription a chain of follow-ups started from (the first one without [FOLLOWUP]). */
+    private suspend fun original(row: RecommendationEntity): Prescription? {
+        var r = row
+        repeat(MAX_CHAIN) {
+            val p = decode(r) ?: return null
+            if (FOLLOWUP !in p.steps) return p
+            r = r.supersedes_id?.let { db.recommendations().byIds(listOf(it)).firstOrNull() } ?: return null
+        }
+        return null
     }
 
     /** The stored prescription [id], decoded. */
@@ -578,6 +598,10 @@ class PrescriptionRunner(
     companion object {
         const val KIND = "rx.prescription"
         const val AUTOREG_KIND = "autoreg.suggestion"
+        private const val FOLLOWUP = "rx.probe.followup"
+
+        /** Longest follow-up chain [original] walks; each undo and re-log of the probe adds one link. */
+        private const val MAX_CHAIN = 64
 
         private val WORKING = setOf("working", "top", "backoff", "amrap")
         private val TECHNIQUE = setOf("technique_breakdown", "torso_rotation")

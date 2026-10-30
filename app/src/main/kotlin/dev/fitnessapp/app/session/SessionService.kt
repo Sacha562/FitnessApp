@@ -55,6 +55,12 @@ class SessionService : Service() {
 
     override fun onDestroy() {
         chipTick?.cancel()
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        // The cancel right after stopService() is refused while the service is still in the foreground; this one is not.
+        val c = (application as FitnessApplication).container
+        c.appScope.launch {
+            if (c.sessionRepository.observeActiveOnce() == null && !c.restTimer.selfTestRunning()) c.notifications.cancelSession()
+        }
         super.onDestroy()
     }
 

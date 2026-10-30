@@ -156,7 +156,7 @@ class RestTimerController(
         if (t.start_wall_ms != setLoggedAt || t.state == RestTimerReducer.ENDED) return@withLock
         db.restTimers().upsert(t.copy(state = RestTimerReducer.ENDED, ended_by = null))
         alarms.cancel(t.id)
-        notifications.postSession(notifications.session())
+        if (db.sessions().active()?.id == sessionId) notifications.postSession(notifications.session())
     }
 
     suspend fun sessionFinished(sessionId: String) = mutex.withLock {
@@ -198,9 +198,12 @@ class RestTimerController(
 
     /**
      * Reposts the session notification for [sessionId] in its current state (countdown, overtime or count-up).
-     * Under the mutex, so it cannot overwrite a countdown that a concurrent [startAfter] just posted.
+     * Under the mutex, so it cannot overwrite a countdown that a concurrent [startAfter] just posted. Posts nothing
+     * once the session is no longer in progress: a late refresh after Finish would leave an ongoing notification that
+     * no service owns and nothing cancels.
      */
     suspend fun refreshSessionNotification(sessionId: String) = mutex.withLock {
+        if (db.sessions().active()?.id != sessionId) return@withLock
         val t = db.restTimers().latest(sessionId)
         val n = when (t?.state) {
             RestTimerReducer.RUNNING -> resting(t)

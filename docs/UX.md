@@ -3236,7 +3236,7 @@ Severity styling:
 
 | Severity | Colour | Banner eligible | Dismissable | Example (C14 thresholds) |
 |---|---|---|---|---|
-| SAFETY | safety red | always, persistent until acknowledged | acknowledge only | "0 in reserve logged on a weighted pull-up: the plan keeps at least 1 in reserve on this lift" |
+| SAFETY | safety red | always, persistent until acknowledged | acknowledge only | "Weighted pull-up: 0 reps in reserve logged. Safety rule: stop at least 1 rep before failure on this exercise." |
 | STRONG | advisory amber | yes (magnitude rule) | yes, snoozed | "Lats (improve): about 2 hard sets per week planned. Below 3 per week gives little growth." |
 | WARN | advisory amber | yes (magnitude rule) | yes, snoozed | "Quads (improve): 5 sets per week planned; fewer than 6 is well below the growth range." |
 | INFO | muted | no (dot and list only) | yes | "Chest: 12 sets in one session; above about 11 per session adds little (preliminary evidence)." |
