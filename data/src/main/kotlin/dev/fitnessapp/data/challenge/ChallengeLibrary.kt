@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ChallengeLibrary(private val params: ParamView, private val changeoverMin: Int, private val resource: (String) -> String) {
     val context: ValidationContext by lazy {
         ValidationContext.fromTexts(
-            catalog = resource("catalog/catalog-1.0.2.json"),
+            catalog = resource("catalog/catalog-1.0.3.json"),
             muscleGroups = resource("reference/muscle_groups.json"),
             muscleRegions = resource("reference/muscle_regions.json"),
             metricDefs = resource("reference/metric_defs.json"),

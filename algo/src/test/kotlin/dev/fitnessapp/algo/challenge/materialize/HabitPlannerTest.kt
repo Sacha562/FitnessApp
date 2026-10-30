@@ -13,7 +13,7 @@ import java.time.LocalDate
 class HabitPlannerTest {
     private val def = OapFixture.def
     private val params = OapFixture.params()
-    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.2.json")) }
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.3.json")) }
 
     /** W42: C Wednesday, A Friday, B Sunday. */
     private val facts = OapFixture.facts.copy(

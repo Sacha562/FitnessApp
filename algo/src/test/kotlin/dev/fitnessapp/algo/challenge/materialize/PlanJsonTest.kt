@@ -12,7 +12,7 @@ import java.time.LocalDate
 
 /** The live plan survives storage: every slot of every mode round-trips through its stored JSON. */
 class PlanJsonTest {
-    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.2.json")) }
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.3.json")) }
 
     @Test
     fun `plans round-trip through their stored JSON`() {

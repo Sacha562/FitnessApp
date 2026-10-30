@@ -2075,7 +2075,7 @@ matches closely). Attributes not shown follow §10.3 defaults.
 | band_external_rotation | Band external rotation / Exorotatie met elastiek | External_Rotation_with_Band | ext_rotation | rotator_cuff_er 1 (prehab, home) |
 | scap_push_up | Scapular push-up / Scapulaire push-up | — | horiz_push | serratus_anterior 1 (prehab) |
 | tibialis_raise | Tibialis raise / Tibialis raise | — | calf | tibialis_anterior 1 (prehab) |
-| two_arm_dead_hang_bar | Two-arm dead hang / Dead hang aan twee armen | — | hang | wrist_flexors_grip .5 (hang, C8; the OAP home habit uses the challenge-local `two_arm_dead_hang`) |
+| ~~two_arm_dead_hang_bar~~ | Two-arm dead hang / Dead hang aan twee armen | — | hang | retired in catalog 1.0.3 (D57): the challenge-local `two_arm_dead_hang` is the one two-arm hang |
 
 **Core (11)**
 
@@ -2120,6 +2120,9 @@ only the bodyweight `dip_station`), so LOAD-1 found no stack values. Four `stack
 (`ab_crunch_machine`, `preacher_curl_machine`, `triceps_extension_machine`, `dip_machine`) and the four rows now
 require them. `catalog-1.0.1.json` is the bundled file; a CAT-1 test requires a loadable station for every externally
 loaded machine exercise. The app adds rows for new equipment types from the saved checklist at start-up (unconfirmed).
+Catalog 1.0.2 added the `core_rotation` rows (D54). Catalog 1.0.3 (`catalog-1.0.3.json`, the bundled file now, 159
+rows) drops `two_arm_dead_hang_bar`, so the challenge-local `two_arm_dead_hang` is the only two-arm hang (D57), and
+moves the 11 barbell compounds from `high_risk` to `free_compound` (D58).
 
 ### 10.9 Custom exercises
 

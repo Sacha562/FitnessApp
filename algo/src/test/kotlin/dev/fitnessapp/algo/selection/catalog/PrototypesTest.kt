@@ -15,7 +15,7 @@ class PrototypesTest {
         requireNotNull(javaClass.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     private val taxonomy = Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"))
-    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.2.json"))
+    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.3.json"))
     private val catalog = Catalog(doc, taxonomy)
     private val stations: Set<String> = Json.parseToJsonElement(resource("reference/equipment_types.json"))
         .jsonObject.getValue("rows").jsonArray.map { it.jsonObject.getValue("key").jsonPrimitive.content }.toSet()
