@@ -352,8 +352,13 @@ close is stored (M4.5); the "Worse" readiness suggestion card (REASON-1) and the
 No params change and no engine bump: the modules run at their 1.0.0 registry versions. Tests: `:algo` 444, `:data` 92,
 `:app` 119, `:sim` 60, all green; the APK assembles. Phone, 2026-10-29: Today card, Week header, Preferences goals
 and sessions, You > Prompts locks, and both readiness sheets (general optional; OAP with Start waiting for the elbow
-answer, soreness for forearms and lats) checked without saving. Open: the volume bars and row sheet (need saved
-goals) and the Summary prompts (need a finished session).
+answer, soreness for forearms and lats) checked without saving. Closed on 2026-10-30 (`0.0.116+b8a3c81`, real data,
+nothing saved): the volume bars of week 44 with the saved custom goals (deload halving, planned in brackets, the `!`
+on rear delts, side delts and upper back, lats, biceps and forearms "covered by challenge" without a bar) and the rear
+delts row sheet (the target's Why, the WE-V1 text, done and planned contributions); the Summary prompts by the 29
+October session, which wrote its readiness and elbow check before and its sRPE after (session-linked, except the
+elbow check, which is the enrollment's day check). The row sheet's two citations of the same Pelland study now both
+read 2026.
 
 **M4.3 (2026-10-29)**: the session-building engine in `:algo`. `time` (TIME-1: work per set for reps, eccentric reps,
 holds, attempts and unilateral pairs, the warm-up per block kind, the session budget from a chip, the calendar or the

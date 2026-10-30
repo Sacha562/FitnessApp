@@ -264,7 +264,7 @@ private fun GroupSheet(c: AppContainer, w: WeekVolume, group: String, onDismiss:
                 val x = v.numbers["x"] ?: 0.0
                 Text(
                     "Planned this week: ${UiVolumeBars.text(x, 0.0, 0.0).substringBefore(" / ")} hard sets. Research finds more growth from at least 10 a week " +
-                        "for a muscle you want to improve (Pelland 2024; moderate evidence).",
+                        "for a muscle you want to improve (Pelland 2026; moderate evidence).",
                     style = MaterialTheme.typography.bodySmall, color = Fit.Advisory,
                 )
             }
