@@ -3134,7 +3134,9 @@ sets_done}`.
 ### 16.6 Add exercise sheet (`sheet.add_exercise`)
 
 Search field; "Suggested for what's left this week" (exercises that cover the week's remaining
-deficits, from `select`); "Recent"; then the catalog. Each result shows availability and, if a hard
+deficits, from `select`); "Recent"; then the catalog. Search results and the catalog list favorites
+first, then liked exercises, then the rest, each by the match rank of 13.2, then name (D60); the same
+list is the Swap sheet's "Search catalog". Each result shows availability and, if a hard
 rule forbids it today, a red "Not today" label with the reason (adding needs "Add anyway", logged as
 `rule_override`). Added exercises join the end of the general block, or "after the current exercise"
 by a toggle. Emits `exercise_added {exercise_id, source, position, block_kind, rule_override}`.

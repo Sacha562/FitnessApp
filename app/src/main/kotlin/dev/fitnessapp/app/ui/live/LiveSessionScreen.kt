@@ -119,6 +119,7 @@ import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.dutchNames
 import dev.fitnessapp.app.ui.common.undoTimeoutMs
 import dev.fitnessapp.app.ui.equipment.Checklist
+import dev.fitnessapp.app.ui.exercises.CatalogQuery
 import dev.fitnessapp.app.ui.theme.Fit
 import dev.fitnessapp.app.ui.theme.FitType
 import dev.fitnessapp.app.uidet.ChipContext
@@ -974,7 +975,8 @@ private val SheetPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24
 fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, title: String = "Add exercise", onPick: (dev.fitnessapp.algo.selection.catalog.CatalogExercise) -> Unit) {
     var query by remember { mutableStateOf("") }
     val dutch = dutchNames()
-    val results = remember(query, dutch) { c.catalog.search(query, dutch) }
+    val prefs by c.preferences.observe().collectAsState(initial = emptyMap())
+    val results = remember(query, dutch, prefs) { CatalogQuery.pick(c.catalog.exercises, query, prefs, c.catalog::idOf, dutch) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge)
@@ -986,7 +988,8 @@ fun AddExerciseSheet(c: AppContainer, onDismiss: () -> Unit, title: String = "Ad
                 items(results, key = { it.slug }) { ex ->
                     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onPick(ex) }.padding(horizontal = 8.dp, vertical = 12.dp)) {
                         Text(ex.nameEn, style = MaterialTheme.typography.titleMedium)
-                        Text(listOfNotNull(ex.nameNl?.takeIf { dutch }, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                        val pref = when (prefs[c.catalog.idOf(ex)]) { "favorite" -> "favorite"; "like" -> "liked"; else -> null }
+                        Text(listOfNotNull(pref, ex.nameNl?.takeIf { dutch }, ex.equipment.joinToString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                     }
                     TileDivider()
                 }

@@ -102,6 +102,20 @@ object CatalogQuery {
     /** Favorite first, never last (UX 13.2 "preference" sort). */
     val PREF_ORDER = listOf("favorite", "like", "neutral", "dislike", "never")
 
+    /** Preferences the Add exercise sheet lists first, in this order (D60). */
+    private val PICK_FIRST = listOf("favorite", "like")
+
+    /**
+     * The Add exercise sheet's results, also used to search a replacement (UX 16.6, D60): favorites, then liked
+     * exercises, then the rest; within each, by match rank, then English name and slug.
+     */
+    fun pick(all: List<CatalogExercise>, query: String, prefs: Map<String, String>, idOf: (CatalogExercise) -> String, dutch: Boolean): List<CatalogExercise> {
+        fun tier(e: CatalogExercise) = PICK_FIRST.indexOf(prefs[idOf(e)]).let { if (it < 0) PICK_FIRST.size else it }
+        return all.mapNotNull { e -> rank(e, query, dutch)?.let { e to it } }
+            .sortedWith(compareBy<Pair<CatalogExercise, Int>>({ tier(it.first) }, { it.second }).thenBy(byName) { it.first })
+            .map { it.first }
+    }
+
     /** Up to two primary groups (group coefficient 1.0), in taxonomy order. */
     fun primaryGroups(e: CatalogExercise, catalog: Catalog): List<String> =
         catalog.taxonomy.activeGroups.filter { catalog.groupCoeff(e, it.id) >= 1.0 }.take(2).map { it.labelEn.substringBefore(" (") }

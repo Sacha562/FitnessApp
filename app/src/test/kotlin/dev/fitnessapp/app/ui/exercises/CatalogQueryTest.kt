@@ -94,6 +94,14 @@ class CatalogQueryTest {
     }
 
     @Test
+    fun `add exercise search lists favorites, then liked, then the rest by match rank`() {
+        val list = listOf(ex("a", "Leg press"), ex("b", "Seated leg press"), ex("c", "Leg press calf raise"), ex("d", "Leg curl"), ex("e", "Bench press"))
+        val prefs = mapOf("b" to "like", "c" to "favorite", "a" to "dislike", "e" to "favorite")
+        CatalogQuery.pick(list, "leg press", prefs, { it.slug }, dutch = false).map { it.slug } shouldBe listOf("c", "b", "a")
+        CatalogQuery.pick(list, "", prefs, { it.slug }, dutch = false).map { it.slug } shouldBe listOf("e", "c", "b", "d", "a")
+    }
+
+    @Test
     fun `most used sort and the available filter`() {
         val list = listOf(ex("a", "A"), ex("b", "B"), ex("c", "C"))
         CatalogQuery.apply(list, "", CatalogFilter(availableOnly = false), CatalogSort.MOST_USED, catalog, emptyMap(), mapOf("c" to 3, "a" to 1), { true }, { it.slug }, dutch = false).map { it.slug } shouldBe
