@@ -139,11 +139,11 @@ data class WeekVolume(
                 params,
             )
 
-            // WE-V1 for each improve group on the projected week (done + committed); its WARN and STRONG are the bars' DEFICIT.
+            // WE-V1 for each improve group on the projected week (done + committed), none in a deload week (D61); its WARN and STRONG are the bars' DEFICIT.
             val warnings = Warnings.rank(
                 targets.groups.filterValues { it.status == "improve" }.mapNotNull { (g, _) ->
                     val x = Grid.ratio((done[g] ?: 0.0) + (account.committed[g] ?: 0.0))
-                    Warnings.improveWeeklyLow(g, x, account.sessionsTraining[g] ?: 0, params)
+                    Warnings.improveWeeklyLow(g, x, account.sessionsTraining[g] ?: 0, targets.deload.active, params)
                 },
             )
             val deficit = warnings.filter { it.severity == Severity.WARN || it.severity == Severity.STRONG }.map { it.entity.removePrefix("group:") }.toSet()

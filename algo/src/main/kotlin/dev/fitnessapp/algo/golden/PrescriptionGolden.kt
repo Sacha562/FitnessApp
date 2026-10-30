@@ -211,7 +211,7 @@ internal object PrescriptionGolden {
             val c = e.jsonObject
             val entity = str(c, "entity")
             when (str(c, "op")) {
-                "improve_weekly_low" -> Warnings.improveWeeklyLow(entity, dbl(c, "x"), dbl(c, "exposures").toInt(), params)?.let { out += it }
+                "improve_weekly_low" -> Warnings.improveWeeklyLow(entity, dbl(c, "x"), dbl(c, "exposures").toInt(), bool(c, "deload"), params)?.let { out += it }
                 "session_volume_high" -> Warnings.sessionVolumeHigh(entity, dbl(c, "x"), params)?.let { out += it }
                 "scheme" -> out += Warnings.scheme(entity, SchemeFacts(
                     rLo = dbl(c, "r_lo").toInt(), rHi = dbl(c, "r_hi").toInt(), qStar = dbl(c, "q_star"),

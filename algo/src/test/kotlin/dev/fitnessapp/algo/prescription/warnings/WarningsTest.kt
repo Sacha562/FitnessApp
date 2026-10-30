@@ -13,13 +13,20 @@ class WarningsTest {
 
     @Test
     fun `GF-WE-01 two sets of 12 twice a week on an improve group is WE-V1 WARN`() {
-        val w = Warnings.improveWeeklyLow("lats", 4.0, 2, params).shouldNotBeNull()
+        val w = Warnings.improveWeeklyLow("lats", 4.0, 2, false, params).shouldNotBeNull()
         w.severity shouldBe Severity.WARN
         w.magnitude shouldBe 0.6
         w.numbers["gain"] shouldBe 0.2247
-        Warnings.improveWeeklyLow("lats", 2.0, 2, params)!!.severity shouldBe Severity.STRONG
-        Warnings.improveWeeklyLow("lats", 8.0, 2, params)!!.severity shouldBe Severity.INFO
-        Warnings.improveWeeklyLow("lats", 10.0, 2, params).shouldBeNull()
+        Warnings.improveWeeklyLow("lats", 2.0, 2, false, params)!!.severity shouldBe Severity.STRONG
+        Warnings.improveWeeklyLow("lats", 8.0, 2, false, params)!!.severity shouldBe Severity.INFO
+        Warnings.improveWeeklyLow("lats", 10.0, 2, false, params).shouldBeNull()
+    }
+
+    @Test
+    fun `GF-WE-08 WE-V1 is not raised in a deload week (D61)`() {
+        Warnings.improveWeeklyLow("rear_delts", 4.2, 2, true, params).shouldBeNull()
+        Warnings.improveWeeklyLow("rear_delts", 0.0, 0, true, params).shouldBeNull()
+        Warnings.improveWeeklyLow("rear_delts", 4.2, 2, false, params)!!.severity shouldBe Severity.WARN
     }
 
     @Test

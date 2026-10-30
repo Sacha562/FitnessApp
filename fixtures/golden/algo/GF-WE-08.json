@@ -1,0 +1,27 @@
+{
+    "id": "GF-WE-08",
+    "module": "warnings",
+    "description": "Deload week (D61): an improve group projected at 4.2 hard sets raises no WE-V1, the halved target is the plan",
+    "input": {
+        "module": "warnings@1.1.0",
+        "scope_key": "golden:GF-WE-08",
+        "payload": {
+            "cases": [
+                {
+                    "op": "improve_weekly_low",
+                    "entity": "rear_delts",
+                    "x": 4.2,
+                    "exposures": 2,
+                    "deload": true
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.2",
+    "expected": {
+        "outputs": {
+            "warnings": []
+        },
+        "outputs_jcs_sha256": "2a93afd7b867f477e70b1ae1fce599603b3f3efb9cb5d16119edee0dfb388b76"
+    }
+}

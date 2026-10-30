@@ -2079,7 +2079,7 @@ and REASON-1 events, `evidence_mode`.
 | WE-S3 | pain_protocol | C33, REASON-1 | PainEvent -> stop exercise or joint (enforced by `safety`); 2 events in 14 days in one region -> advice | 1 | expert-opinion; not medical advice | stop / substitute |
 | WE-S4 | challenge_hard_constraint | C11, C12, D10 | the user adds an exercise with a tag forbidden in a hard protected window, or a gym session on a rest-day-before-B/TEST day -> SAFETY notice `rule_override` (the engine never recommends it) | 1 | per challenge definition | remove / move |
 | WE-S5 | predicted_failure_next_set | D10 | in session, `high_risk` exercise, `rir_next(w_cur) < rx.min_q_high_risk` (1) -> SAFETY | `(1 - rir_next) / 1` clamped | expert-opinion | easier load |
-| WE-V1 | improve_weekly_low | W1 + R4, C14 | goal improve: `x` = projected weekly fractional sets; `x < 10` INFO, `x < 6` WARN, `x < 3` STRONG | `(10 - x) / 10` | moderate (Pelland 2024/2026; ACSM 2026; Schoenfeld 2017 from memory, C29) | +1 set per exposure or one more exposure; shows `sqrt(x_new / x)` expected stimulus |
+| WE-V1 | improve_weekly_low | W1 + R4, C14, D61 | goal improve: `x` = projected weekly fractional sets; `x < 10` INFO, `x < 6` WARN, `x < 3` STRONG; not raised while the week's DeloadPolicy is active (D61) | `(10 - x) / 10` | moderate (Pelland 2024/2026; ACSM 2026; Schoenfeld 2017 from memory, C29) | +1 set per exposure or one more exposure; shows `sqrt(x_new / x)` expected stimulus |
 | WE-V2 | maintain_insufficient | R4 + W5 | goal maintain: 0 hard sets in 10 days -> WARN; no set at RIR <= 3 and >= 85 % of the usual working load in 14 days -> WARN | 1 / `(0.85 - p) / 0.85` | moderate (Spiering 2021) | one hard set at usual load |
 | WE-V3 | session_volume_high | R5 + W2, C14 | per session and group `x > 11` INFO, `x > 15` WARN; labelled "preliminary evidence" | `(x - 11) / 11` clamped | weak (Remmert preprint, C29) | split across sessions |
 | WE-V4 | weekly_above_mrv | W3 | projected weekly `x > MRV` (targets' table) and the group is not challenge-exempt -> WARN | `(x - MRV) / MRV` | expert-opinion (RP illustrative; Pelland diminishing returns) | reduce sets |
@@ -2719,6 +2719,7 @@ self-test compares hashes on the phone (ANDROID.md 6.3 item 4). Numbers below ar
 | GF-WE-05 | RULE item: session C assisted one-arm pin 50 -> 45 lb (`w_sys` 41.52 -> 43.79, compound cap 5 %) | plan keeps pin 45 (no clamp); `w_cap` = 41.52 x 1.05 = 43.60; WE-S2 **WARN**, `enforced = false`, magnitude 0.0044 (`(43.79 - 43.60) / 43.60`); `caps_applied[]` type `rule_excess` with `limit_w` 43.60, `unclamped_w` 43.79 (D13, C45) |
 | GF-WE-06 | test day: weighted pull-up 3RM recorded with RIR 0 (`set_kind = test`) | no WE-S1 notice (C63, OI-A22); the same RIR 0 on a working set -> WE-S1 SAFETY notice |
 | GF-WE-07 | HOLD-1 item: plank plate raised from 10 to 20 kg between exposures (+100 %) | no WE-S2 evaluation (no warning, no `caps_applied[]` entry); hold progression rules only (C70) |
+| GF-WE-08 | improve group projected at 4.2 hard sets in a deload week (D61) | no WE-V1 (the same week without the deload: WARN) |
 
 ## D3. End-to-end scenario 2026-W41 (`GoldenWeekW41Test`)
 

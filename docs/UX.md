@@ -3702,7 +3702,7 @@ Deficit and overshoot warnings come from the single WarningEngine (C14), not fro
   "covered by challenge" instead of a bar (D6); their credited sets appear in the row's detail sheet,
   and challenge volume is exempt from MRV warnings.
 * Row states are the owner's: `DEFICIT` (the WarningEngine reports a WARN or STRONG volume deficit for
-  the group), `OVER` (done + planned above the MRV), `OK`; both `DEFICIT` and `OVER` carry the `!` flag.
+  the group; none in a deload week, where WE-V1 is not raised, D61), `OVER` (done + planned above the MRV), `OK`; both `DEFICIT` and `OVER` carry the `!` flag.
   Display detail: the `!` of a `DEFICIT` row is in the advisory colour, the `!` of an `OVER` row is
   muted (it is not an evidence warning); never colour alone (text tag and accessible text of 23.2).
 * Row order: the owner's sort (improve rows, then maintain rows, each by (done + planned) / target

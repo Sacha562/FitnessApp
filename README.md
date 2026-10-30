@@ -358,7 +358,8 @@ on rear delts, side delts and upper back, lats, biceps and forearms "covered by 
 delts row sheet (the target's Why, the WE-V1 text, done and planned contributions); the Summary prompts by the 29
 October session, which wrote its readiness and elbow check before and its sRPE after (session-linked, except the
 elbow check, which is the enrollment's day check). The row sheet's two citations of the same Pelland study now both
-read 2026.
+read 2026. The check led to D61: WE-V1 is not raised while the week's DeloadPolicy is active (`warnings@1.1.0`,
+ENGINE_VERSION 1.10.0, migration 042, GF-WE-08), so a deload week shows no `!` on its halved targets.
 
 **M4.3 (2026-10-29)**: the session-building engine in `:algo`. `time` (TIME-1: work per set for reps, eccentric reps,
 holds, attempts and unilateral pairs, the warm-up per block kind, the session budget from a chip, the calendar or the

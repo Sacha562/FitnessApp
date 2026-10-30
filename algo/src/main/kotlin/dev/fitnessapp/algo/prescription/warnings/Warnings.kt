@@ -268,8 +268,12 @@ object Warnings : DeclaresParams {
 
     // ------------------------------------------------------------------------------------------------ volume
 
-    /** WE-V1 for an `improve` group: [x] projected weekly fractional sets over [exposures] exposures. */
-    fun improveWeeklyLow(group: String, x: Double, exposures: Int, params: ParamView): Warning? {
+    /**
+     * WE-V1 for an `improve` group: [x] projected weekly fractional sets over [exposures] exposures. Not raised while the
+     * week's DeloadPolicy is active ([deload], D61): the halved targets are the plan, not a deficit.
+     */
+    fun improveWeeklyLow(group: String, x: Double, exposures: Int, deload: Boolean, params: ParamView): Warning? {
+        if (deload) return null
         val severity = when {
             x < params.int("warnings.v1_strong_lt") -> Severity.STRONG
             x < params.int("warnings.v1_warn_lt") -> Severity.WARN
