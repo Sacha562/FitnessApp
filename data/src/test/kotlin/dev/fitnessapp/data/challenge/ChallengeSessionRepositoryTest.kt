@@ -274,4 +274,41 @@ class ChallengeSessionRepositoryTest {
         live.habitDay(enrollmentId, today, sortedMapOf(), emptySet()).rows.associate { it.habitId to it.state } shouldBe
             mapOf("daily_hang" to "DONE", "home_plank" to "DONE")
     }
+
+    @Test
+    fun `the habit's hang logged in a free gym session completes the daily hang once (D59)`() = blocking {
+        val enrollmentId = enroll()
+        val today = LocalDate.parse("2026-10-22")
+        val catalog = CatalogRepository.bundled()
+        val hang = catalog.bySlug("two_arm_dead_hang")!!
+        val bench = catalog.bySlug("db_bench_press")!!
+        val sid = sessions.start(params)
+        val hangSe = sessions.addExercise(sid, hang, dev.fitnessapp.algo.core.load.LoadMode.BODYWEIGHT)
+        val benchSe = sessions.addExercise(sid, bench, dev.fitnessapp.algo.core.load.LoadMode.EXTERNAL)
+        log(sid, benchSe, catalog.idOf(bench), 1, "both", 10)
+        for ((i, s) in listOf(60.0, 45.0, 43.0).withIndex()) {
+            now += 30_000
+            sessions.logSet(LogSetCommand(sid, hangSe, catalog.idOf(hang), i + 1, "both", "working", null, null, s, null, false, null, false, emptyList(), null, null, null, null, now, emptyMap()))
+        }
+        val due = live.habitDay(enrollmentId, today, sortedMapOf(), emptySet())
+        // Both habits are due on this Thursday; only the hang's exercise is in the session.
+        live.habitExercises(due).associate { it.habitId to it.exerciseId }["daily_hang"] shouldBe catalog.idOf(hang)
+        live.habitExercises(due).single { it.habitId == "daily_hang" }.maxRows shouldBe 5
+        // Not before the session is finished.
+        live.creditHabits(sid, due) shouldBe emptyList()
+
+        now += 60_000
+        sessions.finish(sid, null)
+        live.creditHabits(sid, due).size shouldBe 1
+        val e = db.challengeEvents().forEnrollment(enrollmentId).last()
+        e.event_type shouldBe EventTypes.HABIT_COMPLETED
+        e.source_session_id shouldBe sid
+        val items = (kotlinx.serialization.json.Json.parseToJsonElement(e.payload) as kotlinx.serialization.json.JsonObject).getValue("items") as kotlinx.serialization.json.JsonObject
+        val dhang = items.getValue("dhang").toString()
+        dhang.contains("\"status\":\"partial\"") shouldBe true
+        Regex("\"duration_s\"").findAll(dhang).count() shouldBe 3
+        live.habitDay(enrollmentId, today, sortedMapOf(), emptySet()).rows.associate { it.habitId to it.state }["daily_hang"] shouldBe "DONE"
+        // A second call (the same stale day) reports nothing new.
+        live.creditHabits(sid, due) shouldBe emptyList()
+    }
 }

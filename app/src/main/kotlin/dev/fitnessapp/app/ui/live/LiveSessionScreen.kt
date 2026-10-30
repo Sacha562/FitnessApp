@@ -101,7 +101,6 @@ import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.ChoiceChips
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
-import dev.fitnessapp.app.format.WarnTexts
 import dev.fitnessapp.app.uidet.WarnMarker
 import dev.fitnessapp.algo.prescription.autoreg.SuggestionKind
 import dev.fitnessapp.algo.prescription.warnings.Warning
@@ -177,11 +176,11 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             // UX 17: SAFETY notices stay until acknowledged; at most one advisory banner; the rest behind "N more notes".
             ui.warn?.let { w ->
                 w.safety.forEach { n ->
-                    Banner(WarnTexts.text(n, vm.warningName(n)), BannerKind.SAFETY, action = "OK", onAction = { vm.dismissWarning(n) },
+                    Banner(vm.warningText(n), BannerKind.SAFETY, action = "OK", onAction = { vm.dismissWarning(n) },
                         onClick = { sheet = Sheet.Why(vm.warningWhy(n)) })
                 }
                 w.banner?.let { b ->
-                    Banner(WarnTexts.text(b, vm.warningName(b)), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(b) },
+                    Banner(vm.warningText(b), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(b) },
                         onClick = { sheet = Sheet.Why(vm.warningWhy(b)) })
                 }
                 if (w.moreNotes > 0) LinkButton("${w.moreNotes} more note" + if (w.moreNotes == 1) "" else "s", { sheet = Sheet.Notes })
@@ -779,7 +778,7 @@ private fun NotesSheet(notes: List<Warning>, vm: LiveSessionViewModel, onDismiss
             if (notes.isEmpty()) Text("No notes.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             notes.forEach { w ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(WarnTexts.text(w, vm.warningName(w)), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).clickable { onWhy(w) })
+                    Text(vm.warningText(w), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).clickable { onWhy(w) })
                     if (!w.enforced) LinkButton("Dismiss", { vm.dismissWarning(w) })
                 }
             }

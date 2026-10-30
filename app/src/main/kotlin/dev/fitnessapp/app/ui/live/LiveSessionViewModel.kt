@@ -259,6 +259,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val acknowledged: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
     private val warningsShown: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
     @Volatile private var warnings: List<Warning> = emptyList()
+    @Volatile private var constraintTexts: Map<String, String> = emptyMap()
 
     init {
         viewModelScope.launch {
@@ -1007,9 +1008,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private fun refreshWarnings() = viewModelScope.launch {
         val session = _ui.value.session ?: c.db.sessions().get(sessionId)
-        val constraints = session?.let { s -> runCatching { ChallengeConstraints.warnings(c, s, _ui.value.items) }.getOrDefault(emptyList()) }.orEmpty()
+        val checked = session?.let { s -> runCatching { ChallengeConstraints.warnings(c, s, _ui.value.items) }.getOrNull() }
+        constraintTexts = checked?.texts.orEmpty()
         val ws = dev.fitnessapp.algo.prescription.warnings.Warnings.rank(
-            runCatching { c.warnings.session(sessionId, verdicts.toMap()) }.getOrDefault(emptyList()) + constraints,
+            runCatching { c.warnings.session(sessionId, verdicts.toMap()) }.getOrDefault(emptyList()) + checked?.warnings.orEmpty(),
         )
         warnings = ws
         val shown = UiWarnDisplay.display(ws, dismissals, useMine, acknowledged.toSet(), java.time.Instant.now(), params)
@@ -1028,6 +1030,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     private fun seIdOf(entity: String): String? = entity.removePrefix("session_exercise:").takeIf { entity.startsWith("session_exercise:") }
+
+    /** The copy of [w]: a challenge constraint's own text (its window and what it keeps out), else WarnTexts'. */
+    fun warningText(w: Warning): String = constraintTexts[ChallengeConstraints.textKey(w)] ?: dev.fitnessapp.app.format.WarnTexts.text(w, warningName(w))
 
     /** The name the copy uses for a warning's entity. */
     fun warningName(w: Warning): String = seIdOf(w.entity)?.let { id -> _ui.value.items.firstOrNull { it.se.id == id }?.ex?.nameEn }
@@ -1343,8 +1348,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         c.sessionRepository.finish(sessionId, endReason)
         // CHALLENGE_ENGINE 6.12: the slot's `session.completed`; the Summary reads its rule audit.
         if (challenge != null) runCatching { c.challengeSessions.complete(sessionId) }
+        // D59: a due habit's exercise logged here is that habit, so Today shows it done.
+        else runCatching { creditHabits() }
         stopService("finished")
         done(sessionId)
+    }
+
+    private suspend fun creditHabits() {
+        val s = c.db.sessions().get(sessionId) ?: return
+        val at = java.time.Instant.ofEpochMilli(s.started_at ?: System.currentTimeMillis())
+        val day = dev.fitnessapp.app.ui.challenges.HabitDays.of(c, java.time.LocalDate.parse(s.local_date), at) ?: return
+        c.challengeSessions.creditHabits(sessionId, day)
     }
 
     fun abandon(done: () -> Unit) = viewModelScope.launch {

@@ -61,6 +61,12 @@ import java.util.UUID
 /** Today's home habits of one enrollment (UX 9.6) and the planner input they came from (for the mini-session plan). */
 class HabitDay(val enrollmentId: String, val def: dev.fitnessapp.algo.challenge.cds.CompiledDefinition, val input: HabitInput, val rows: List<HabitToday>)
 
+/**
+ * A due habit's prescription exercise (D59) with today's dose as rows: [plannedRows] the mini-session would plan
+ * (the lower end of a range), [maxRows] the upper end. Logged in a general gym session on that day, it is the habit.
+ */
+class HabitExercise(val habitId: String, val key: String, val exerciseId: String, val plannedRows: Int, val maxRows: Int, val targetHoldS: BigDecimal?)
+
 /** The live state of one challenge session: the plan at start and the current rows per item key. */
 class ChallengeLive(val enrollmentId: String, val plan: SessionPlan, val items: Map<String, LiveItem>) {
     fun item(key: String?): LiveItem? = key?.let(items::get)
@@ -140,6 +146,47 @@ class ChallengeSessionRepository(
             )
         }
         return challenges.record(enrollmentId, ChallengeEventDraft(EventTypes.HABIT_COMPLETED, EventPayload.HabitCompleted(habitId, TreeMap()), Instant.ofEpochMilli(now), date))
+    }
+
+    /** The habits of [day] that are due (or scaled) and prescribe an exercise, with its catalog id and dose (D59). */
+    fun habitExercises(day: HabitDay): List<HabitExercise> = day.rows.filter { it.state == "DUE" || it.state == "SCALED" }.mapNotNull { row ->
+        val plan = HabitPlanner.plan(day.def, params, day.input, row, catalog.doc) ?: return@mapNotNull null
+        val item = plan.items.singleOrNull() ?: return@mapNotNull null
+        val ex = (item.catalogSlug ?: item.exerciseKey)?.let(catalog::bySlug) ?: return@mapNotNull null
+        val sets = row.dose.sets.firstOrNull() ?: 1
+        val perSet = maxOf(1, item.rows.size / sets)
+        HabitExercise(row.habitId, item.key, catalog.idOf(ex), item.rows.size, perSet * (row.dose.sets.maxOrNull() ?: sets), item.rows.firstOrNull()?.targetHoldS)
+    }
+
+    /**
+     * D59: a finished general gym session that logged a due habit's exercise reports that habit as its home
+     * mini-session would (`habit.completed` with the exercise's working rows under the prescription key, the gym
+     * session as source), so Today shows it done. Not for challenge or habit sessions, nor for another day's habits.
+     */
+    suspend fun creditHabits(sessionId: String, day: HabitDay): List<ChallengeOutcome> {
+        val session = db.sessions().get(sessionId) ?: return emptyList()
+        if (session.status != "finished" || session.habit_id != null || session.challenge_slot != null) return emptyList()
+        if (session.local_date != day.input.date.toString()) return emptyList()
+        val exercises = db.sessionExercises().bySession(sessionId).filter { it.challenge_item_key == null && it.status != "removed" }
+        val sets = db.setLogs().bySession(sessionId)
+        val reported = db.challengeEvents().forEnrollment(day.enrollmentId)
+            .filter { it.event_type == EventTypes.HABIT_COMPLETED && it.source_session_id == sessionId }
+            .mapNotNull { e -> Json.parseToJsonElement(e.payload).jsonObject["habit_id"]?.jsonPrimitive?.content }.toSet()
+        val out = ArrayList<ChallengeOutcome>()
+        for (h in habitExercises(day).filter { it.habitId !in reported }) {
+            val ids = exercises.filter { it.exercise_id == h.exerciseId }.map { it.id }.toSet()
+            val rows = sets.filter { it.session_exercise_id in ids && it.set_kind != "warmup" }.sortedBy { it.completed_at }.map(::rowLog)
+            if (rows.isEmpty()) continue
+            val item = ItemLog(status = if (rows.size < h.plannedRows) "partial" else "done", plannedRows = h.plannedRows, targetHoldS = h.targetHoldS, rows = rows)
+            out += challenges.record(
+                day.enrollmentId,
+                ChallengeEventDraft(
+                    EventTypes.HABIT_COMPLETED, EventPayload.HabitCompleted(h.habitId, TreeMap(mapOf(h.key to item))),
+                    Instant.ofEpochMilli(session.finished_at ?: ctx.nowMs()), LocalDate.parse(session.local_date), sourceSessionId = sessionId,
+                ),
+            )
+        }
+        return out
     }
 
     /** Writes the session, its challenge block, one session exercise per planned item and the local live plan. */

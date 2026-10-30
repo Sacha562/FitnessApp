@@ -1295,6 +1295,12 @@ Home habits are tiny sessions (`workout_sessions.kind = home`, C34) defined by t
   D4) shows a "Measure today" badge on the day the definition schedules it.
 * Fed by: `challenge.materialize` (habits for today, skip and scale rules), `safety` (disabled in
   injury mode). Writes a home session; the challenge receives `habit.completed` (challenge_events).
+* The habit's own exercise added to a free gym session on a day the habit is due (the daily hang
+  done at the gym) completes the habit when that session is finished: the row shows done, with the
+  gym session's sets (D59). Within the habit's dose it raises no protected-window or gap-day notice.
+* A challenge notice in the live session names its window and what it keeps out ("Two-arm dead
+  hang: forearms, grip-heavy work within 24 h before session A; the challenge keeps this out."),
+  and a session tag (grip-heavy, pull-heavy) is charged only to the exercises that make it.
 * The habit reminder notification (N-HABIT, section 18) never logs completion itself: its actions are
   Start (opens the home mini-session, route `fitapp://habit/<habit_id>`), Snooze 30 min and Skip today
   (ANDROID section 17, C54).

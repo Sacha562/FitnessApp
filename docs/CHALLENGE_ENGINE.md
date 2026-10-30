@@ -411,7 +411,10 @@ time}, skipIf, enabledIf, disabledInModes, prescription (an item or a checklist)
 frequency, weekday, protocol), tag, source}`. A habit occurrence is a tiny session with
 `workout_sessions.kind = 'home'` (C34); completing it emits `habit.completed`. Habit reminders are
 local notifications owned by `:app`. Mode `habitScale` multiplies sets and time; `disabledInModes`
-mutes the habit.
+mutes the habit. A due habit's prescription exercise logged in a general gym session on the habit's
+day is that habit (D59): finishing the session emits `habit.completed` with the exercise's working rows
+(the gym session as source), and up to the dose's upper end those sets are exempt from the protected
+windows and the gap rule, which the habit itself never meets.
 
 #### 2.4.9 `schedule`
 
