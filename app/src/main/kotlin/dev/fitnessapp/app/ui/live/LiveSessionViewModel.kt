@@ -1205,8 +1205,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     }
 
     fun addExercise(ex: CatalogExercise) = viewModelScope.launch {
-        val id = c.sessionRepository.addExercise(sessionId, ex)
-        focusOverride = id
+        // The focus stays on the current exercise; the new one takes it only once nothing before it is open.
+        c.sessionRepository.addExercise(sessionId, ex)
         // WE-S4 reads the new exercise once Room has it in the items.
         kotlinx.coroutines.delay(WARN_AFTER_ADD_MS)
         refreshWarnings()
