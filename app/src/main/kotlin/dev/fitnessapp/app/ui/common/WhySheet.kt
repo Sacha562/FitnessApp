@@ -10,6 +10,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -39,7 +40,7 @@ data class WhyContent(
 fun WhySheet(w: WhyContent, onDismiss: () -> Unit, onShown: () -> Unit, onCopied: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     LaunchedEffect(w.recommendationId) { onShown() }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.padding(PaddingValues(start = 20.dp, end = 20.dp, bottom = 28.dp)).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
