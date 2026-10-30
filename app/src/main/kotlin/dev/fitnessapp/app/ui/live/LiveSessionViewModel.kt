@@ -1424,8 +1424,11 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val q = Numbers.num(rx.qStar, 1)
         val summary = dev.fitnessapp.app.format.RxTexts.reason(steps, rx.mode, rx.qStar, card.probePickReps != null || (rx.probe && card.workIndex == 1))
         val numbers = buildList {
-            add("Plan  " + rx.sets.filter { it.side == card.side || it.side == "both" }.joinToString(", ") { s ->
-                (s.wSys?.let { Numbers.num(it, 2) + " kg" } ?: "?") + " × " + (s.targetReps?.toString() ?: "?")
+            // A probe set plans no load; once logged, its logged system load fills the gap.
+            val logged = card.item.working.filter { it.side == card.side }.sortedBy { it.set_index }
+            add("Plan  " + rx.sets.filter { it.side == card.side || it.side == "both" }.withIndex().joinToString(", ") { (i, s) ->
+                val w = s.wSys ?: logged.getOrNull(i)?.effective_load_kg?.let { Scaled.toDouble(it, 2) }
+                (w?.let { Numbers.num(it, 2) + " kg" } ?: "?") + " × " + (s.targetReps?.toString() ?: "?")
             } + " (system load)")
             add("Range ${rx.rLo}-${rx.rHi} reps, aim $q in reserve")
             t.rirPred?.let { add("Predicted reserve on this set ${Numbers.num(it, 1)}") }

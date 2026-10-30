@@ -623,8 +623,8 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
    artifact frozen, and the first real week in the app. Built for it: `oap@1.4.0` (Pallof press, P28, P29 lighter week after
    the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol,
    week ordinal, block counts, earlier tests), the debug `setup_draft` and `calendar_delete_test` actions, the test-data wipe.
-   Still open: Todoist closed after the first app week (from 2026-10-29), T17 and real calendar writes, and freezing the
-   artifact. The earlier tests' missing per-arm values (D40 changelog) were restored on 2026-10-26 (D48, engine 1.7.0).
+   Todoist closed on 2026-10-30 after the first app week: the recurrence removed and the six tasks completed (D40).
+   Still open: T17 and real calendar writes, and freezing the artifact. The earlier tests' missing per-arm values (D40 changelog) were restored on 2026-10-26 (D48, engine 1.7.0).
 
 ### M3 — General load prescription (3–4 sessions)
 
@@ -810,7 +810,6 @@ the OnePlus battery guidance applies; the application id `dev.fitnessapp` is con
 - Running frequency and priority (setting; default low).
 - Muscle goals (set in onboarding, D6).
 - Approve/decline each OAP `P` rule (M2 setup).
-- Whether the Todoist tasks are completed or deleted at cutover, and when.
 - Real calendar writes (D39): switched on by you in You → Calendars after the primary-calendar week of T17; until
   then the app writes only to the test calendar on the phone.
 - Editing the challenge schedule (preferred days and times) and the habit times: moved out of setup by D35 and not
