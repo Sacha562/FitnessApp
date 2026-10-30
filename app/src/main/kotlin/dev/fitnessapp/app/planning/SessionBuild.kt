@@ -10,6 +10,7 @@ import dev.fitnessapp.algo.pipeline.Building
 import dev.fitnessapp.algo.planning.SessionTagRule
 import dev.fitnessapp.algo.planning.allocator.AddOnSlot
 import dev.fitnessapp.algo.planning.allocator.Allocation
+import dev.fitnessapp.algo.planning.allocator.Allocator
 import dev.fitnessapp.algo.planning.allocator.SessionType
 import dev.fitnessapp.algo.selection.elig.AddOnFilter
 import dev.fitnessapp.algo.selection.elig.Elig
@@ -48,22 +49,28 @@ object SessionBuild {
         SessionType.CORE -> "Core"
     }
 
-    /** The block's own words for the families that received sets (9.5): "Legs + push", never "Full body" without pull. */
-    fun families(r: BuildResult, c: AppContainer): List<String> {
-        val groups = r.exercises.flatMap { x ->
+    /**
+     * The allocation's direct groups that a kept exercise trains (coefficient at least 0.5). The label of 7.5 reads the
+     * allocation, not every group an exercise touches (a back extension for the lower back does not make a push session
+     * "Legs + push"), and a family whose exercises UI-02 cut is not named.
+     */
+    private fun keptDirect(r: BuildResult, c: AppContainer): Map<String, Double> {
+        val trained = r.exercises.flatMap { x ->
             val e = c.catalogModel.exercise(x.slug) ?: return@flatMap emptyList()
             Groups.CANONICAL.filter { c.catalogModel.groupCoeff(e, it) >= 0.5 }
         }.toSet()
-        return listOf("LEGS", "PUSH", "PULL", "CORE").filter { f -> Groups.FAMILIES.getValue(f).any { it in groups } }
-            .let { fs -> if (fs.size > 1) fs - "CORE" else fs }
+        return r.allocation.direct.filter { (g, v) -> v > 0.0 && g in trained }
     }
 
-    fun title(families: List<String>): String = when {
-        families.isEmpty() -> "Free session"
-        families.toSet() == setOf("PUSH", "PULL", "LEGS") -> "Full body"
-        else -> families.sortedBy { listOf("LEGS", "PUSH", "PULL", "CORE").indexOf(it) }
-            .joinToString(" + ") { it.lowercase() }.replaceFirstChar { it.uppercase() }
+    /** The families the block trains (7.5): Legs, Push, Pull in that order; CORE only for a core-only block. */
+    fun families(r: BuildResult, c: AppContainer): List<String> {
+        val groups = keptDirect(r, c).keys
+        val fs = listOf("LEGS", "PUSH", "PULL").filter { f -> Groups.FAMILIES.getValue(f).any { it in groups } }
+        return if (fs.isEmpty() && groups.isNotEmpty()) listOf("CORE") else fs
     }
+
+    /** The block's label (7.5, 9.5): "Legs + push", "Push + rear delts", "Core"; "Free session" when nothing is left. */
+    fun title(r: BuildResult, c: AppContainer): String = Allocator.label(keptDirect(r, c), addon = false).ifEmpty { "Free session" }
 
     /**
      * What one sheet's builds share: this week's targets and accounting, readiness at [at], PREF-1, the stations and

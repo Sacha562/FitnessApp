@@ -133,19 +133,19 @@ fun NewSessionSheet(
                         building && b == null -> Text("Building…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                         b == null || b.exercises.isEmpty() -> Text(UiTrim.emptyText(b), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                         else -> {
-                            val families = SessionBuild.families(b, c)
-                            Text(SessionBuild.title(families) + " · ~" + UiTrim.minutes(b.estMin) + " min", style = MaterialTheme.typography.titleMedium)
+                            val title = SessionBuild.title(b, c)
+                            Text(title + " · ~" + UiTrim.minutes(b.estMin) + " min", style = MaterialTheme.typography.titleMedium)
                             b.exercises.forEach { x ->
                                 Row(Modifier.fillMaxWidth()) {
                                     Text(c.catalog.bySlug(x.slug)?.nameEn ?: x.slug, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                    Text("${x.sets} sets", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                                    Text(if (x.sets == 1) "1 set" else "${x.sets} sets", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                                 }
                             }
                             UiTrim.trimLine(b, chip!!.minutes, max = c.params.fork().int("today.max_budget_min")) { c.catalog.bySlug(it)?.nameEn ?: it }
                                 ?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
                             if (b.coreDoesNotFit) Text("This doesn't fit the time; pick a longer chip.", style = MaterialTheme.typography.bodySmall, color = Fit.Advisory)
                             PrimaryButton(
-                                "Start " + SessionBuild.title(families).lowercase(),
+                                "Start " + title.replaceFirstChar { it.lowercase() },
                                 onClick = { onStart(BuiltStart(type!!, b, chip!!.minutes, chip!!.source)) },
                                 modifier = Modifier.fillMaxWidth(), enabled = !building,
                             )
