@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.planning.SessionBuild
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.common.Banner
@@ -101,15 +102,24 @@ fun TodayRoute(
     // The readiness sheet of a general session (UX 16.3) and the source session of a Repeat.
     var sheet by remember { mutableStateOf<PreSheet?>(null) }
     var sheetRepeat by remember { mutableStateOf<String?>(null) }
+    // The New session sheet (D62) and the built session waiting for the readiness sheet.
+    var newSession by remember { mutableStateOf(false) }
+    var sheetBuilt by remember { mutableStateOf<BuiltStart?>(null) }
     var notice by remember { mutableStateOf<Pair<String, String>?>(null) }
     val goals by remember { c.goals.observe() }.collectAsState(initial = null)
 
-    /** Starts a general session (fresh or a Repeat of [repeatOf]) and records the sheet. */
-    fun startGeneral(repeatOf: String?, s: PreSheet?, a: PreAnswers) {
+    /** Starts a general session (fresh, a Repeat of [repeatOf] or [built] for a type, D62) and records the sheet. */
+    fun startGeneral(repeatOf: String?, s: PreSheet?, a: PreAnswers, built: BuiltStart? = null) {
         starting = true
         scope.launch {
             a.elbow?.let { score -> notice = PreSession.elbow(c, score, a.symptoms) }
-            val id = c.sessionRepository.start(c.params, repeatOf = repeatOf)
+            val id = if (built != null) {
+                c.sessionRepository.startBuilt(
+                    c.params, SessionBuild.items(c, built.result), SessionBuild.families(built.result, c), built.budgetMin, built.budgetSource,
+                ).also { (sid, blockId) -> c.sessionPlans.record(sid, blockId, built.result, built.budgetMin) }.first
+            } else {
+                c.sessionRepository.start(c.params, repeatOf = repeatOf)
+            }
             SessionService.start(context) // user action while the activity is resumed (ANDROID.md 11.3)
             starting = false
             onOpenSession(id, false)
@@ -117,14 +127,14 @@ fun TodayRoute(
         }
     }
 
-    /** Start or Repeat (UX 9.8): the prompt plan first; with nothing to ask the session starts at once. */
-    fun begin(repeatOf: String?) {
+    /** Start, Repeat or a built session (UX 9.8): the prompt plan first; with nothing to ask the session starts at once. */
+    fun begin(repeatOf: String?, built: BuiltStart? = null) {
         if (starting) return
         starting = true
         scope.launch {
             val s = runCatching {
                 withContext(Dispatchers.Default) {
-                    val fs = repeatOf?.let { PreSession.plannedFsOfSession(c, it) }.orEmpty()
+                    val fs = built?.let { PreSession.plannedFsOfBuilt(c, it.result) } ?: repeatOf?.let { PreSession.plannedFsOfSession(c, it) }.orEmpty()
                     PreSheet(PromptPlans.plan(c, home = false, plannedFs = fs, elbowRequired = false), false, System.currentTimeMillis())
                 }
             }.getOrNull()
@@ -132,8 +142,9 @@ fun TodayRoute(
             if (s != null && s.plan.pre.isNotEmpty()) {
                 sheet = s
                 sheetRepeat = repeatOf
+                sheetBuilt = built
             } else {
-                startGeneral(repeatOf, s, PreAnswers())
+                startGeneral(repeatOf, s, PreAnswers(), built)
             }
         }
     }
@@ -211,14 +222,18 @@ fun TodayRoute(
                     onOpenSession(a.id, true)
                 }, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrimaryButton("Start session", onClick = { begin(null) }, enabled = !starting, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow)
-                    // D49: start as a copy of a past general session; RX-1 sets the loads.
-                    TonalButton("Repeat", { repeat = true }, enabled = !starting, height = 58.dp)
-                }
+                // D62: the New session sheet builds a session for a type; Empty and Repeat (D49) sit at its bottom.
+                PrimaryButton("Start session", onClick = { newSession = true }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             }
         }
     }
+
+    if (newSession) NewSessionSheet(
+        c, onDismiss = { newSession = false },
+        onStart = { b -> newSession = false; begin(null, b) },
+        onEmpty = { newSession = false; begin(null) },
+        onRepeat = { newSession = false; repeat = true },
+    )
 
     if (repeat) RepeatSheet(c, onDismiss = { repeat = false }) { sourceId ->
         repeat = false
@@ -228,7 +243,7 @@ fun TodayRoute(
     sheet?.let { s ->
         ReadinessSheet(c, s, onDismiss = { sheet = null }) { a ->
             sheet = null
-            startGeneral(sheetRepeat, s, a)
+            startGeneral(sheetRepeat, s, a, sheetBuilt)
         }
     }
 

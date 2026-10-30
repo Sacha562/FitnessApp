@@ -212,8 +212,33 @@ class SelectionTest {
             SubSessionItem("d", "pallof", notDone = true, pinned = true, stations = listOf("cable_station")),
             SubSessionItem("e", "seated_leg_curl", notDone = true, pinned = false, stations = listOf("leg_curl_seated")),
         )
-        Substitute.doNow(order, "a")?.id shouldBe "e"
-        Substitute.doNow(order, "e") shouldBe null
+        Substitute.doNow(order, "a", emptySet(), null, catalog, params)?.id shouldBe "e"
+        // Every remaining item counts, not only the later ones (D62): from e, a is still open on another station.
+        Substitute.doNow(order, "e", emptySet(), null, catalog, params)?.id shouldBe "a"
+        Substitute.doNow(order.map { if (it.id in setOf("a", "b")) it.copy(notDone = false) else it }, "e", emptySet(), null, catalog, params) shouldBe null
+    }
+
+    @Test
+    fun `do k now follows ORD-1 order, not the session's (D62)`() {
+        fun item(id: String, slug: String) = SubSessionItem(id, slug, notDone = true, pinned = false, stations = ex(slug).requiresStation, exercise = ex(slug))
+        val order = listOf(item("a", "leg_press_45"), item("b", "leg_extension"), item("c", "hack_squat_machine"))
+        Substitute.doNow(order, "a", setOf("quads"), null, catalog, params)?.id shouldBe "c"
+    }
+
+    @Test
+    fun `candidates on a busy station rank after the others (D62)`() {
+        val free = rank("leg_press_45", emptySet())
+        val top = ex(free.first().slug)
+        val busy = Substitute.rank(
+            SubInput(
+                ex("leg_press_45"), Elig.pool(catalog, EligContext(), params).pool, setOf("leg_press_45"),
+                occupiedStations = ex("leg_press_45").requiresStation.toSet(), busyStations = top.requiresStation.toSet(),
+            ),
+            catalog, params,
+        )
+        busy.first().slug shouldNotBe top.slug
+        val onBusy = busy.map { b -> ex(b.slug).requiresStation.any { it in top.requiresStation } }
+        onBusy shouldBe onBusy.sorted()
     }
 
     @Test

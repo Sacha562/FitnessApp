@@ -143,6 +143,8 @@ private sealed interface Sheet {
     data object RuleUndo : Sheet
     data class Why(val content: dev.fitnessapp.app.ui.common.WhyContent) : Sheet
     data object Notes : Sheet
+    data object TimeBudget : Sheet
+    data object AddOnSkip : Sheet
 }
 
 @Composable
@@ -151,6 +153,9 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
     val ui by vm.ui.collectAsState()
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     val profile by remember { c.profiles.observe() }.collectAsState(initial = null)
+    // What the in-session time budget trimmed (UX 11.3, D62), shown until OK.
+    var trimNotice by remember { mutableStateOf<String?>(null) }
+    val routeScope = rememberCoroutineScope()
     BackHandler(onBack = { onMinimise("back") })
 
     // Keep screen on during the session (F20, ANDROID.md 14.3); holds force it on.
@@ -165,7 +170,9 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
         Column(Modifier.safeDrawingPadding().fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Header(ui, { onMinimise("chevron") }, onFinish = {
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
-            }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon })
+            }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon },
+                onTimeBudget = { sheet = Sheet.TimeBudget })
+            trimNotice?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = { trimNotice = null }) }
             if (ui.banner == "pain") Banner(
                 "Pain noted, exercise ended. If it hurts, stop and get it checked.",
                 BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
@@ -193,6 +200,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                     if (ui.items.isNotEmpty()) ExerciseList(
                         ui, Modifier.heightIn(max = listMax), onFocus = vm::focus, onAdd = { sheet = Sheet.Add },
                         onReorder = { ids, moved -> vm.reorder(ids, moved, via = "drag") },
+                        onAddOnSkip = { sheet = Sheet.AddOnSkip }, onAddOnFamily = { vm.setAddOnFamily(it) },
                     )
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         ui.rest?.let { RestCard(c, it, ui, vm) }
@@ -304,6 +312,14 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
         )
         is Sheet.Why -> dev.fitnessapp.app.ui.common.WhySheet(s.content, onDismiss = { sheet = null }, onShown = { vm.whyOpened(s.content) }, onCopied = vm::traceExported)
         Sheet.Notes -> NotesSheet(ui.warn?.notes.orEmpty(), vm, onDismiss = { sheet = null }) { w -> sheet = Sheet.Why(vm.warningWhy(w)) }
+        Sheet.TimeBudget -> TimeBudgetSheet(c, ui.session?.time_budget_min, onDismiss = { sheet = null }) { minutes ->
+            sheet = null
+            routeScope.launch { trimNotice = vm.setTimeBudget(minutes) ?: "Time budget: $minutes min. Everything still fits." }
+        }
+        Sheet.AddOnSkip -> ReasonSheet(c, ChipContext.SKIP, "Skip the add-on?", onDismiss = { sheet = null }) { code, _ ->
+            vm.skipAddOn(code)
+            sheet = null
+        }
         null -> {}
     }
 }
@@ -311,7 +327,10 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
 private fun nameOf(ui: LiveUi, seId: String) = ui.items.firstOrNull { it.se.id == seId }?.ex?.nameEn ?: "exercise"
 
 @Composable
-private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onAdd: () -> Unit, onPain: () -> Unit, onAbandon: () -> Unit) {
+private fun Header(
+    ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onAdd: () -> Unit, onPain: () -> Unit, onAbandon: () -> Unit,
+    onTimeBudget: () -> Unit,
+) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     var menu by remember { mutableStateOf(false) }
@@ -331,11 +350,20 @@ private fun Header(ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onA
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Add exercise") }, onClick = { menu = false; onAdd() })
                 DropdownMenuItem(text = { Text("Report pain") }, onClick = { menu = false; onPain() })
+                DropdownMenuItem(text = { Text("Time budget") }, onClick = { menu = false; onTimeBudget() })
                 DropdownMenuItem(text = { Text("Abandon session") }, onClick = { menu = false; onAbandon() })
             }
         }
     }
     ProgressBar(if (total == 0) 0f else done.toFloat() / total, Modifier.padding(horizontal = 4.dp))
+    // C63: the overrun line, once the session runs more than the margin over its budget; it opens the time chips.
+    ui.overrun?.let { o ->
+        Text(
+            "About ${o.overMin} min over your ${o.budgetMin} min. Options: Time budget",
+            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onTimeBudget).padding(horizontal = 4.dp, vertical = 6.dp),
+        )
+    }
 }
 
 /**
@@ -407,7 +435,10 @@ private class ListDrag(val list: LazyListState) {
 }
 
 @Composable
-private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit, onReorder: (List<String>, String) -> Unit) {
+private fun ExerciseList(
+    ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit, onReorder: (List<String>, String) -> Unit,
+    onAddOnSkip: () -> Unit = {}, onAddOnFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit = {},
+) {
     val list = rememberLazyListState()
     val drag = remember(list) { ListDrag(list) }
     val scope = rememberCoroutineScope()
@@ -444,7 +475,9 @@ private fun ExerciseList(ui: LiveUi, modifier: Modifier, onFocus: (String) -> Un
         },
         state = list, contentPadding = PaddingValues(6.dp),
     ) {
+        val addOn = ui.addOn
         items(shown, key = { it.se.id }) { item ->
+            if (addOn != null && item.se.id == addOn.firstItemId) AddOnHeader(addOn, onAddOnSkip, onAddOnFamily)
             val current = item.se.id == ui.focusedId
             val skipped = item.se.status == "skipped"
             val done = item.se.status == "done"
@@ -1245,3 +1278,48 @@ internal val PAIN_KINDS = listOf(
     Triple("stiffness", emptyList(), "Stiffness"),
     Triple("swelling", emptyList(), "Swelling"),
 )
+
+/**
+ * The add-on block's header (UX 11.4, D62): "ADD-ON · LEGS · ~15 min" with Skip, and the family chips while the block
+ * has no logged set (changing one rebuilds the block). A skipped add-on shows its state only.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddOnHeader(a: AddOnUi, onSkip: () -> Unit, onFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val family = a.family?.let { dev.fitnessapp.app.planning.SessionBuild.label(it).uppercase() }
+            val text = when {
+                a.status == "skipped" -> "ADD-ON · skipped"
+                a.working -> "ADD-ON · building…"
+                else -> listOfNotNull("ADD-ON", family, "~${a.estMin} min").joinToString(" · ")
+            }
+            Text(text, style = MaterialTheme.typography.labelLarge, color = Fit.Muted, modifier = Modifier.weight(1f))
+            if (a.status != "skipped") LinkButton("Skip", onSkip)
+        }
+        if (a.status != "skipped" && a.choices.size > 1) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                a.choices.forEach { t ->
+                    ChipButton(dev.fitnessapp.app.planning.SessionBuild.label(t), selected = t == a.family, onClick = { if (t != a.family) onFamily(t) }, enabled = !a.working)
+                }
+            }
+        }
+    }
+}
+
+/** The time chips again (UX 11.3): 45 / 60 / 75 / 90+, the current budget selected; a pick trims the rest of the session. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeBudgetSheet(c: AppContainer, current: Int?, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    val max = c.params.fork().int("today.max_budget_min")
+    val chips = dev.fitnessapp.app.uidet.UiTrim.chips(current?.takeIf { it !in listOf(45, 60, 75, max) }, listOf(45, 60, 75), max)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Time budget", style = MaterialTheme.typography.titleLarge)
+            Text("The rest of the session is trimmed to fit; challenge exercises stay.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chips.forEach { ch -> ChipButton(ch.label.replace(" cal", " now"), selected = ch.minutes == current, onClick = { onPick(ch.minutes) }) }
+            }
+        }
+    }
+}

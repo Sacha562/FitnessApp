@@ -35,9 +35,10 @@ enum class SessionType(val code: String, val families: List<String>) {
 }
 
 /**
- * An add-on block after a challenge session (C34, the contract's `addOnSlot`): its family (LEGS, PUSH or CORE), the
- * groups its allowed patterns can train directly ([allowedGroups], from `Elig.groupAvailability` with the slot filter),
- * the forbidden groups, the set cap and the RIR floor.
+ * An add-on block after a challenge session (C34, the contract's `addOnSlot`): its family (LEGS, PUSH or CORE, or two
+ * joined by `+` such as `PUSH+LEGS` when the user picks a combined add-on, D62), the groups its allowed patterns can
+ * train directly ([allowedGroups], from `Elig.groupAvailability` with the slot filter), the forbidden groups, the set
+ * cap and the RIR floor.
  */
 data class AddOnSlot(
     val family: String,
@@ -45,7 +46,9 @@ data class AddOnSlot(
     val forbidGroups: Set<String> = emptySet(),
     val maxSets: Double? = null,
     val minRir: Int? = null,
-)
+) {
+    val families: List<String> get() = family.split('+')
+}
 
 /**
  * The inputs of one allocation (7.2). [vBefore] is the Vhyp accounted before this session (done, committed challenge
@@ -161,7 +164,7 @@ object Allocator : DeclaresParams {
         val minTotal = params.table("allocator.min_total").getValue(if (addon) "addon" else "standalone")
         val dropped = ArrayList<Dropped>()
 
-        val families = if (addon) listOf(input.addOn!!.family) else input.type.families
+        val families = if (addon) input.addOn!!.families else input.type.families
         val members = LinkedHashSet<String>()
         families.forEach { members += Groups.FAMILIES.getValue(it) }
         if (!addon && input.type != SessionType.CORE) members += Groups.FAMILIES.getValue("CORE")

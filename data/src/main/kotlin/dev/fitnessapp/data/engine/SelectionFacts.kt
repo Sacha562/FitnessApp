@@ -45,6 +45,37 @@ class SelectionFacts(private val db: FitnessDatabase, private val catalog: () ->
         return if (rows.isEmpty()) null else rows.filter { it.available }.map { it.equipment_type }.toSortedSet()
     }
 
+    /**
+     * Stations busy at [at]'s weekday and hour (REASON-1's `occupied` rule, D53, D62): the finished gym visits on the
+     * same weekday whose start lies within `reason.busy_slot_hours` of [at]'s hour, newest first, each marking the
+     * stations of the exercises that were occupied in it (Occupied sheet, deferral or skip with `occupied`); a station
+     * is busy when [Reason.busy] says so over those visits. [zone] is the user's zone.
+     */
+    suspend fun busyStations(at: Instant, zone: java.time.ZoneId): Set<String> {
+        val p = params.fork()
+        val local = at.atZone(zone)
+        val slot = p.int("reason.busy_slot_hours")
+        val visits = db.sessions().finishedChronological().filter { s ->
+            val t = s.started_at?.let { Instant.ofEpochMilli(it).atZone(zone) } ?: return@filter false
+            s.kind == "gym" && t.dayOfWeek == local.dayOfWeek && kotlin.math.abs(t.hour - local.hour) <= slot && t.toInstant().isBefore(at)
+        }.sortedByDescending { it.started_at }
+        if (visits.isEmpty()) return emptySet()
+        val cat = catalog()
+        val occupied = visits.map { v ->
+            db.events().bySession(v.id).filter { ev ->
+                val pl = runCatching { Json.parseToJsonElement(ev.payload).jsonObject }.getOrNull()
+                when (ev.event_type) {
+                    "swap_sheet_shown" -> pl?.get("trigger_reason")?.jsonPrimitive?.contentOrNull == "occupied"
+                    "exercise_skipped" -> pl?.get("reason_code")?.jsonPrimitive?.contentOrNull == "occupied"
+                    "exercise_deferred" -> true
+                    else -> false
+                }
+            }.mapNotNull { ev -> ev.entity_id?.let { db.sessionExercises().get(it)?.exercise_id }?.let { cat.byId(it)?.requiresStation } }
+                .flatten().toSet()
+        }
+        return occupied.flatten().toSortedSet().filter { st -> dev.fitnessapp.algo.prescription.reason.Reason.busy(occupied.map { st in it }, p) }.toSortedSet()
+    }
+
     private suspend fun events(cat: CatalogRepository): Map<String, List<PrefEvent>> {
         val out = HashMap<String, MutableList<PrefEvent>>()
         val exById = HashMap<String, String?>()

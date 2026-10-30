@@ -142,7 +142,12 @@ class AppContainer(private val context: Context) {
     val challengeSessions: ChallengeSessionRepository by lazy {
         ChallengeSessionRepository(
             db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, params, CHANGEOVER_MIN,
+            { catalogModel },
         )
+    }
+    /** The `session.plan` snapshots of built general blocks (D62). */
+    val sessionPlans: dev.fitnessapp.data.engine.SessionPlanRecorder by lazy {
+        dev.fitnessapp.data.engine.SessionPlanRecorder(db, outbox, writeContext, syncScheduler, catalog, params, PARAMS_VERSION)
     }
     /** The test-day wizard's storage (UX 14.9). */
     val testDays: dev.fitnessapp.data.challenge.TestDayRepository by lazy {
@@ -269,7 +274,7 @@ class AppContainer(private val context: Context) {
 
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
-        const val PARAMS_VERSION = "1.0.2"
+        const val PARAMS_VERSION = "1.0.3"
 
         /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
         const val CHANGEOVER_MIN = 5

@@ -50,15 +50,19 @@ object ChallengeConstraints {
         val habits: List<HabitExercise> = emptyList(),
     )
 
-    suspend fun day(c: AppContainer, session: WorkoutSessionEntity): Day? {
+    suspend fun day(c: AppContainer, session: WorkoutSessionEntity): Day? = day(
+        c, Instant.ofEpochMilli(session.started_at ?: System.currentTimeMillis()), LocalDate.parse(session.local_date),
+        session.challenge_slot, session.habit_id,
+    )
+
+    /** [day] for a session that does not exist yet (the New session sheet, D62): its start [at], [date] and [slot]. */
+    suspend fun day(c: AppContainer, at: Instant, date: LocalDate, slot: String?, habitId: String? = null): Day? {
         val enrollment = c.challenges.open().firstOrNull() ?: return null
         val f = c.challenges.folded(enrollment.id)
         if (f.state.status != EnrollmentState.ACTIVE) return null
-        val at = Instant.ofEpochMilli(session.started_at ?: System.currentTimeMillis())
-        val date = LocalDate.parse(session.local_date)
         val (input, plan) = ChallengeWeek.plan(c, f, c.challengeFacts.facts(f.def, f.state), at)
         val contract = ContractBuilder.build(f.def, c.params, f.state, plan, AppContainer.CHANGEOVER_MIN)
-        val habits = if (session.challenge_slot == null && session.habit_id == null) {
+        val habits = if (slot == null && habitId == null) {
             runCatching { c.challengeSessions.habitExercises(HabitDays.of(c, f, date, input, plan)) }.getOrDefault(emptyList())
         } else {
             emptyList()
@@ -66,12 +70,12 @@ object ChallengeConstraints {
         return Day(
             contract,
             restDay = plan.blockedDays.any { it.date == date && it.scope == "all_gym" },
-            challengeDay = session.challenge_slot != null || plan.sessions.any { it.date == date },
+            challengeDay = slot != null || plan.sessions.any { it.date == date },
             gapTags = plan.blockedDays.filter { it.date == date && it.scope == "tags" }.flatMap { it.tags }.distinct(),
             windows = contract.protectedWindows.filter { it.mode == "hard" && !at.isBefore(it.from) && at.isBefore(it.to) }
                 .map { WindowHit(it.id, it.groups, it.regions, it.sessionTags, it.scope == "all_gym") },
-            addOnSlot = session.challenge_slot?.let { slot -> contract.reservedSessions.firstOrNull { it.slot == slot && it.date == date }?.addOnSlot },
-            slot = session.challenge_slot,
+            addOnSlot = slot?.let { sl -> contract.reservedSessions.firstOrNull { it.slot == sl && it.date == date }?.addOnSlot },
+            slot = slot,
             windowSpecs = f.def.doc.integration.protectedWindows.associateBy { it.id },
             habits = habits,
         )
@@ -86,9 +90,13 @@ object ChallengeConstraints {
      * ELIG-1's constraints for a general exercise of [session] (12.2, D53): stations, preferences, the contract's joint
      * flags and forbidden tags, the gap day's session tags and light pull (C50), the hard windows and the add-on slot.
      */
-    suspend fun eligContext(c: AppContainer, session: WorkoutSessionEntity, prefs: Map<String, dev.fitnessapp.algo.selection.pref.PrefValue>): EligContext {
+    suspend fun eligContext(c: AppContainer, session: WorkoutSessionEntity, prefs: Map<String, dev.fitnessapp.algo.selection.pref.PrefValue>): EligContext =
+        eligContext(c, day(c, session), prefs)
+
+    /** [eligContext] from a [Day] already read (null without an active challenge). */
+    suspend fun eligContext(c: AppContainer, d: Day?, prefs: Map<String, dev.fitnessapp.algo.selection.pref.PrefValue>): EligContext {
         val stations = c.selection.stations()
-        val d = day(c, session) ?: return EligContext(availableStations = stations, prefs = prefs)
+        if (d == null) return EligContext(availableStations = stations, prefs = prefs)
         val p = c.params.fork()
         return EligContext(
             availableStations = stations, prefs = prefs, jointFlags = d.contract.jointFlags,

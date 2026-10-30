@@ -58,6 +58,11 @@ data class SelectInput(
     val restS: Map<String, Double> = emptyMap(),
     /** The equipment keys of category `station` (ORD-1 chaining); null counts every key. */
     val stations: Set<String>? = null,
+    /**
+     * Stations busy at this weekday and hour (REASON-1's `occupied` rule, D62): an exercise on one is a group's direct
+     * trainer pick and a single only after the exercises on free stations.
+     */
+    val busyStations: Set<String> = emptySet(),
 )
 
 /** The terms of `J(S)` (13.3), on the 1e-6 grid. */
@@ -347,14 +352,17 @@ object Select : DeclaresParams {
             Candidate(e.slug, search.j(s0 + Pick(e, s)))
         }.sortedWith(compareByDescending<Candidate> { it.j }.thenBy { it.slug })
         // Candidates (D56): the best `select.per_group_k` direct trainers of every group with a target of at least one FS,
-        // then the best singles until `select.top_k`; kept in single-J order.
+        // then the best singles until `select.top_k`; kept in single-J order. Exercises on a busy station come after
+        // those on free stations in both picks (D62; the sort is stable, so J order holds within each part).
+        fun busy(c: Candidate) = bySlug.getValue(c.slug).requiresStation.any { it in input.busyStations }
+        val byFree = singles.sortedBy { busy(it) }
         val picked = java.util.TreeSet<String>()
         for (g in catalog.taxonomy.activeGroups.map { it.id }) {
             if ((input.target[g] ?: 0.0) < 1.0) continue
-            singles.filter { catalog.groupCoeff(bySlug.getValue(it.slug), g) >= DIRECT_COEFF }
+            byFree.filter { catalog.groupCoeff(bySlug.getValue(it.slug), g) >= DIRECT_COEFF }
                 .take(params.int("select.per_group_k")).forEach { picked += it.slug }
         }
-        for (c in singles) {
+        for (c in byFree) {
             if (picked.size >= params.int("select.top_k")) break
             picked += c.slug
         }

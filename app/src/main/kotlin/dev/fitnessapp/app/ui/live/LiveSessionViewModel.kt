@@ -13,7 +13,9 @@ import dev.fitnessapp.algo.prescription.warmup.WarmupRest
 import dev.fitnessapp.algo.selection.substitute.SubSessionItem
 import dev.fitnessapp.algo.selection.substitute.Substitute
 import dev.fitnessapp.algo.selection.catalog.CatalogExercise
+import dev.fitnessapp.algo.planning.allocator.SessionType
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.planning.SessionBuild
 import dev.fitnessapp.app.format.Numbers
 import dev.fitnessapp.app.notify.SessionNotificationText
 import dev.fitnessapp.app.session.SessionService
@@ -205,7 +207,27 @@ data class LiveUi(
     val title: String? = null,
     /** The last swap, for its Undo bar (P6). */
     val swapUndo: SwapUndo? = null,
+    /** The add-on block of a challenge session (D62): its header, family and Skip. */
+    val addOn: AddOnUi? = null,
+    /** C63's overrun line: the session runs more than `session.overrunLineMin` over its budget. */
+    val overrun: OverrunUi? = null,
 )
+
+/**
+ * The add-on header (UX 11.4, D62): [family] the type its exercises train (null when none are left), [choices] the
+ * families the slot can serve today, [estMin] TIME-1's minutes of its open sets, [firstItemId] the row the header sits on.
+ */
+data class AddOnUi(
+    val blockId: String,
+    val status: String,
+    val family: SessionType?,
+    val choices: List<SessionType>,
+    val estMin: Int,
+    val firstItemId: String?,
+    val working: Boolean,
+)
+
+data class OverrunUi(val overMin: Int, val budgetMin: Int)
 
 data class SwapUndo(val newId: String, val eventId: String, val label: String, val at: Long)
 
@@ -265,6 +287,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         viewModelScope.launch {
             loadWarningStore()
             refreshWarnings()
+        }
+        viewModelScope.launch {
+            improveGroups = runCatching { c.goals.current().filterValues { it.goal == "improve" }.keys }.getOrDefault(emptySet())
         }
         viewModelScope.launch {
             combine(
@@ -366,10 +391,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val card = if (pendingLog != null) null else item?.let { buildCard(it, snap.sets, old) }
         val activeRest = snap.rest?.takeIf { it.state != "ended" }
         card?.let(::reportDeviation)
+        val addOn = runCatching { addOnState(snap, items) }.getOrNull()
+        val overrun = overrunState(snap.s, items)
         _ui.update {
             it.copy(
                 session = snap.s, items = items, focusedId = focus, card = card, rest = activeRest,
                 restNext = card?.let(::nextLine), restNextTitle = card?.let(::nextTitle), pendingCount = snap.pending,
+                addOn = addOn, overrun = overrun,
             )
         }
         updateNotification(snap.s, card)
@@ -1260,11 +1288,205 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         return item.se.defer_count >= params.int("substitute.max_defers") || !canDoLater(seId)
     }
 
-    /** SUB-1's reorder first: the next not-done exercise on another station, when it is not simply the next one. */
+    // ------------------------------------------------------------------------------------------ add-on and time (D62)
+
+    /** The add-on block's header state; the first time the challenge block is done it is rebuilt from the live capacity. */
+    private suspend fun addOnState(snap: Snapshot, items: List<ExerciseItem>): AddOnUi? {
+        val s = snap.s ?: return null
+        val b = c.db.blocks().bySession(sessionId).firstOrNull { it.origin == "addon" } ?: return null
+        if (addOnChoices == null && !addOnChoicesLoading && s.status == "in_progress") {
+            addOnChoicesLoading = true
+            viewModelScope.launch {
+                addOnChoices = runCatching {
+                    val f = SessionBuild.facts(c, c.clock.now(), s.challenge_slot)
+                    SessionBuild.addOnChoices(c, f, (b.budget_min ?: 0).toDouble()).map { it.first }
+                }.getOrDefault(emptyList())
+                last?.let { rebuild(it) }
+            }
+        }
+        val rows = items.filter { it.se.block_id == b.id }
+        val family = addOnFamily(rows)
+        val challengeOpen = items.any { it.se.block_id != b.id && it.se.challenge_item_key != null && it.open }
+        if (!challengeOpen && b.status == "planned" && rows.none { it.sets.isNotEmpty() } && !addOnLiveDone && s.status == "in_progress" && family != null) {
+            addOnLiveDone = true
+            val cap = liveCapacity(s)
+            if (cap != null && cap >= params.int("time.min_addon_min")) viewModelScope.launch { rebuildAddOn(family, cap, "no_time", live = true) }
+        }
+        return AddOnUi(
+            b.id, b.status, family, addOnChoices.orEmpty(), kotlin.math.round(LiveTime.remainingMin(rows, c.catalogModel, params)).toInt(),
+            rows.firstOrNull()?.se?.id, addOnWorking,
+        )
+    }
+
+    /** The add-on type its exercises train: legs, push, both, or core (D62). */
+    private fun addOnFamily(rows: List<ExerciseItem>): SessionType? {
+        val fams = rows.filter { it.se.status != "skipped" }.flatMap { r ->
+            val e = c.catalogModel.exercise(r.ex.slug) ?: return@flatMap emptyList()
+            listOf("LEGS", "PUSH", "CORE").filter { f -> dev.fitnessapp.algo.common.Groups.FAMILIES.getValue(f).any { c.catalogModel.groupCoeff(e, it) >= 0.5 } }
+        }.toSet()
+        return when {
+            "LEGS" in fams && "PUSH" in fams -> SessionType.PUSH_LEGS
+            "LEGS" in fams -> SessionType.LEGS
+            "PUSH" in fams -> SessionType.PUSH
+            "CORE" in fams -> SessionType.CORE
+            else -> null
+        }
+    }
+
+    /** The live capacity (CHALLENGE_ENGINE 8.6): the session budget minus the elapsed minutes, floored; null without a budget. */
+    private fun liveCapacity(s: WorkoutSessionEntity): Int? {
+        val budget = s.time_budget_min ?: return null
+        val started = s.started_at ?: return null
+        return maxOf(0, kotlin.math.floor(budget - (System.currentTimeMillis() - started) / 60_000.0).toInt())
+    }
+
+    /** Rebuilds the add-on for [type] within [capacityMin]; [live] marks the one rebuild after the challenge block. */
+    private suspend fun rebuildAddOn(type: SessionType, capacityMin: Int, reason: String, live: Boolean) {
+        val s = _ui.value.session ?: last?.s ?: return
+        val b = c.db.blocks().bySession(sessionId).firstOrNull { it.origin == "addon" } ?: return
+        addOnWorking = true
+        last?.let { rebuild(it) }
+        runCatching {
+            val f = SessionBuild.facts(c, c.clock.now(), s.challenge_slot)
+            val req = SessionBuild.addOnRequest(c, f, type, capacityMin.toDouble()) ?: return@runCatching
+            val r = SessionBuild.build(c, req)
+            if (r.exercises.isEmpty()) return@runCatching
+            if (c.sessionRepository.rebuildBlock(b.id, sessionId, SessionBuild.items(c, r), capacityMin, reason, if (live) "active" else "planned")) {
+                c.sessionPlans.record(sessionId, b.id, r, capacityMin)
+            }
+        }
+        addOnWorking = false
+        last?.let { rebuild(it) }
+    }
+
+    /** A family chip on the add-on header (D62): the block is rebuilt for [type] within the capacity it has now. */
+    fun setAddOnFamily(type: SessionType) = viewModelScope.launch {
+        val s = _ui.value.session ?: return@launch
+        val b = c.db.blocks().bySession(sessionId).firstOrNull { it.origin == "addon" } ?: return@launch
+        val challengeOpen = _ui.value.items.any { it.se.block_id != b.id && it.se.challenge_item_key != null && it.open }
+        val cap = if (challengeOpen) b.budget_min ?: return@launch else liveCapacity(s) ?: return@launch
+        emit(
+            "template_picked", null,
+            mapOf("kind" to JsonPrimitive("addon"), "slot_or_type" to JsonPrimitive(type.code), "rank" to JsonPrimitive(addOnChoices.orEmpty().indexOf(type) + 1)),
+        )
+        rebuildAddOn(type, cap, "other", live = !challengeOpen)
+    }
+
+    /** Skip on the add-on header (UX 11.4): the block and its open exercises, with [reason]. */
+    fun skipAddOn(reason: String) = viewModelScope.launch {
+        val b = _ui.value.addOn ?: return@launch
+        c.sessionRepository.skipBlock(b.blockId, sessionId, reason)
+    }
+
+    /** C63's overrun line: elapsed plus TIME-1's remaining estimate over the budget by more than the margin; logged once. */
+    private fun overrunState(s: WorkoutSessionEntity?, items: List<ExerciseItem>): OverrunUi? {
+        if (s == null || s.status != "in_progress") return null
+        val budget = s.time_budget_min ?: return null
+        val started = s.started_at ?: return null
+        val elapsed = (System.currentTimeMillis() - started) / 60_000.0
+        val remaining = LiveTime.remainingMin(items, c.catalogModel, params)
+        val over = elapsed + remaining - budget
+        if (over <= c.platformConfig.sessionOverrunLineMin) return null
+        if (!overrunLogged) {
+            overrunLogged = true
+            viewModelScope.launch {
+                if (c.db.events().bySession(sessionId).none { it.event_type == "session_overrun_shown" }) {
+                    emit(
+                        "session_overrun_shown", null,
+                        mapOf(
+                            "elapsed_min" to JsonPrimitive(kotlin.math.round(elapsed).toInt()),
+                            "remaining_est_min" to JsonPrimitive(kotlin.math.round(remaining).toInt()), "budget_min" to JsonPrimitive(budget),
+                        ),
+                    )
+                }
+            }
+        }
+        return OverrunUi(kotlin.math.ceil(over).toInt(), budget)
+    }
+
+    /**
+     * "Time budget" in the session menu (UX 11.3, D62): stores [minutes] and trims the remaining general work with UI-02
+     * (challenge items are tier 0 and stay); returns the trim line, or null when nothing had to go.
+     */
+    suspend fun setTimeBudget(minutes: Int): String? {
+        val s = _ui.value.session ?: return null
+        c.sessionRepository.setTimeBudget(sessionId, minutes, "chip")
+        val started = s.started_at ?: System.currentTimeMillis()
+        val left = minutes - (System.currentTimeMillis() - started) / 60_000.0
+        val goals = runCatching { c.goals.current() }.getOrDefault(emptyMap())
+        val items = _ui.value.items.filter { it.open }
+        val trim = items.mapNotNull { it ->
+            val t = LiveTime.item(it, c.catalogModel) ?: return@mapNotNull null
+            val e = c.catalogModel.exercise(it.ex.slug)
+            val primary = e?.let { x -> dev.fitnessapp.algo.selection.elig.Elig.primaryGroup(x, c.catalogModel) }
+            val tier = when {
+                it.se.challenge_item_key != null || e == null || "prehab" in e.tags -> 0
+                primary != null && goals[primary]?.goal == "maintain" -> 2
+                e.mechanics == "compound" -> 1
+                else -> 3
+            }
+            // Later exercises go first among equals: the engine's priority is the session order.
+            dev.fitnessapp.algo.selection.time.TrimItem(t, tier, 1.0, -it.se.position.toDouble())
+        }
+        val r = dev.fitnessapp.algo.selection.time.TimeModel.trim(trim, dev.fitnessapp.algo.selection.time.WarmupKind.CHALLENGE, maxOf(0.0, left), 1.0, params)
+        val kept = r.items.associateBy { it.time.key }
+        val changes = LinkedHashMap<String, Int?>()
+        val lines = ArrayList<String>()
+        for (t in trim) {
+            val item = items.first { it.se.id == t.time.key }
+            val k = kept[t.time.key]
+            when {
+                k == null -> {
+                    changes[item.se.id] = null
+                    lines += "${item.ex.nameEn.lowercase()} left out"
+                }
+                k.time.sets < t.time.sets -> {
+                    changes[item.se.id] = item.workingDone + k.time.sets
+                    val n = t.time.sets - k.time.sets
+                    lines += "$n set${if (n == 1) "" else "s"} fewer on ${item.ex.nameEn.lowercase()}"
+                }
+            }
+        }
+        if (changes.isNotEmpty()) c.sessionRepository.trimPlanned(sessionId, changes, minutes, r.coreDoesNotFit)
+        emit(
+            "time_budget_selected", null,
+            mapOf(
+                "minutes" to JsonPrimitive(minutes), "source" to JsonPrimitive("chip"), "trimmed_count" to JsonPrimitive(changes.size),
+                "core_does_not_fit" to JsonPrimitive(r.coreDoesNotFit),
+            ),
+        )
+        return when {
+            r.coreDoesNotFit -> "The challenge work alone runs past $minutes min."
+            lines.isEmpty() -> null
+            else -> "To fit $minutes min: " + lines.joinToString("; ") + "."
+        }
+    }
+
+    /** The improve groups, for ORD-1's order of the remaining exercises in SUB-1's "Do {k} now" (D62). */
+    @Volatile private var improveGroups: Set<String> = emptySet()
+
+    /** The add-on families the slot can serve (D62), loaded once; the live rebuild runs once; the overrun is logged once. */
+    @Volatile private var addOnChoices: List<SessionType>? = null
+    @Volatile private var addOnChoicesLoading = false
+    @Volatile private var addOnLiveDone = false
+    @Volatile private var addOnWorking = false
+    @Volatile private var overrunLogged = false
+
+    /**
+     * SUB-1's reorder first (D62): the first remaining exercise in ORD-1 order that is not pinned and on another station,
+     * when it is not simply the next one. Challenge items keep their program position as ORD-1's pinned rank.
+     */
     fun doNowTarget(seId: String): ExerciseItem? {
         val items = _ui.value.items
-        val order = items.map { SubSessionItem(it.se.id, it.ex.slug, it.open, it.se.challenge_item_key != null && challenge != null, it.ex.requiresStation) }
-        val k = Substitute.doNow(order, seId) ?: return null
+        val stations = c.equipment.types.filter { it.category == "station" }.map { it.key }.toSet()
+        val order = items.mapIndexed { i, it ->
+            val pinned = it.se.challenge_item_key != null && challenge != null
+            SubSessionItem(
+                it.se.id, it.ex.slug, it.open, pinned, it.ex.requiresStation, c.catalogModel.exercise(it.ex.slug),
+                it.se.planned_sets ?: 3, if (pinned) i else 99,
+            )
+        }
+        val k = Substitute.doNow(order, seId, improveGroups, stations, c.catalogModel, params) ?: return null
         val i = items.indexOfFirst { it.se.id == seId }
         val next = items.drop(i + 1).firstOrNull { it.open }
         return if (next?.se?.id == k.id) null else items.firstOrNull { it.se.id == k.id }

@@ -313,6 +313,8 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         if (id != null) {
             SessionService.start(c.appContext)
             onOpen(id)
+            // The add-on block after C and A (D62) is built in the background; the live list shows it when stored.
+            c.appScope.launch { runCatching { dev.fitnessapp.app.planning.SessionBuild.planAddOn(c, id) } }
         }
         refresh()
         return id

@@ -702,7 +702,7 @@ catalog 1.0.2 (OI-16).
    `select` (beam search with set tuning, checked against an exhaustive search; candidates per D56) and `order` with the
    optional supersets. Goldens: W41_addon_thu, W41_allocation_fri, W41_select_fri, the Wednesday train-anyway block and
    the F-SEL cases. Params 1.0.3 adds `select.per_group_k` (D56); the app moves to it with the M4.4 migration.
-4. **M4.4 Building a session in the app.** A general session can start for a session type (Legs, Push, Legs + push,
+4. **M4.4 Building a session in the app** (built 2026-10-30, D62, phone checks open). A general session can start for a session type (Legs, Push, Legs + push,
    Full and the others of ALGORITHMS_PLANNING 0.3) with time chips; the exercises, order and loads come from `select`,
    `order` and `rx`. The add-on blocks after C and A are offered at the end of the challenge session, with Skip on the
    block header. SUB-1's "Do {k} now" follows ORD-1, and busy stations count in the ranking (deferred by D53).

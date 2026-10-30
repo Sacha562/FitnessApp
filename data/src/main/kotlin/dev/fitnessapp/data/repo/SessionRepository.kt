@@ -31,6 +31,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import java.time.Instant
 
+/** One exercise of a block built by the L6 pipeline (D62), in ORD-1 order, with its set count. */
+data class BuiltItem(val exercise: CatalogExercise, val sets: Int)
+
 /** The rest columns of the set that follows a rest (DATA_MODEL 9.6.4, C55), filled by the rest timer. */
 data class RestColumns(
     val plannedS: Int?,
@@ -201,6 +204,191 @@ class SessionRepository(
         }
         scheduler.request()
         return id
+    }
+
+    /**
+     * Starts a general session built for a session type (D62): `template_source = family_combo`, one `standalone` general
+     * block with [items] in ORD-1 order and their set counts, the session budget from the time chip ([budgetSource]
+     * `chip`, `calendar` or `default`) and the [families] that receive sets. Loads and reps come from RX-1 in the live
+     * session, as for any general exercise. Returns the session id and the block id.
+     */
+    suspend fun startBuilt(params: ParamView, items: List<BuiltItem>, families: List<String>, budgetMin: Int, budgetSource: String): Pair<String, String> {
+        val uid = ctx.requireUser()
+        val now = ctx.nowMs()
+        val zone = ctx.zone()
+        val date = Week.localDate(Instant.ofEpochMilli(now), zone)
+        val id = ctx.ids.next()
+        val blockId = ctx.ids.next()
+        val profile = profiles.get()
+        val snap = bodyweight.snapshot(
+            BwSession(id, "gym", Instant.ofEpochMilli(now), date),
+            profile?.bodyweight_fallback_kg?.let { Scaled.toDouble(it, 2) }, params,
+        )
+        val gym = equipment.defaultGym()
+        db.withTransaction {
+            val s = WorkoutSessionEntity(
+                id = id, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
+                app_version = ctx.appVersion, kind = "gym", status = "in_progress", template_source = "family_combo",
+                local_date = date.toString(), timezone = zone.id, iso_week = Week.isoWeek(date), gym_id = gym?.id,
+                started_at = now, bodyweight_kg = snap.valueKg?.let { Scaled.fromDouble(it, 2) },
+                bodyweight_source = snap.source.code, bodyweight_stale = snap.stale,
+                time_budget_min = budgetMin, time_budget_source = budgetSource,
+                engine_version = EngineVersion.ENGINE_VERSION, params_hash = params.hash, catalog_version = catalog.version,
+            )
+            db.sessions().upsert(s)
+            outbox.enqueue("workout_sessions", id, now)
+            val block = SessionBlockEntity(
+                id = blockId, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
+                app_version = ctx.appVersion, session_id = id, position = 0, block_kind = "general", origin = "standalone",
+                budget_min = budgetMin, status = "active",
+            )
+            db.blocks().upsert(block)
+            outbox.enqueue("session_blocks", block.id, now)
+            items.forEachIndexed { i, it -> insertPlanned(uid, id, block.id, it, (i + 1L) * POSITION_STEP, now) }
+            telemetry.write(
+                EventDraft(
+                    type = "session_started", sessionId = id, entityType = "session", entityId = id,
+                    payload = mapOf(
+                        "kind" to JsonPrimitive("gym"), "template_source" to JsonPrimitive("family_combo"),
+                        "source_session_id" to JsonNull, "families" to JsonArray(families.map { JsonPrimitive(it) }),
+                        "started_from" to JsonPrimitive("today"), "budget_min" to JsonPrimitive(budgetMin),
+                        "budget_source" to JsonPrimitive(budgetSource),
+                        "params_hash" to JsonPrimitive(params.hash), "engine_version" to JsonPrimitive(EngineVersion.ENGINE_VERSION),
+                        "catalog_version" to JsonPrimitive(catalog.version),
+                    ),
+                ),
+            )
+        }
+        scheduler.request()
+        return id to blockId
+    }
+
+    /**
+     * Adds the add-on block after a challenge session's challenge block (C34, D62): `block_kind = general`, `origin =
+     * addon`, `status = planned`, its [items] after every existing row. Returns the block id.
+     */
+    suspend fun addAddOnBlock(sessionId: String, items: List<BuiltItem>, budgetMin: Int): String {
+        val uid = ctx.requireUser()
+        val now = ctx.nowMs()
+        val id = ctx.ids.next()
+        db.withTransaction {
+            val position = (db.blocks().bySession(sessionId).maxOfOrNull { it.position } ?: 0) + 1
+            writeBlock(
+                SessionBlockEntity(
+                    id = id, user_id = uid, client_updated_at = 0, device_id = "", app_version = "", session_id = sessionId,
+                    position = position, block_kind = "general", origin = "addon", budget_min = budgetMin, status = "planned",
+                ),
+            )
+            val start = (db.sessionExercises().bySession(sessionId).maxOfOrNull { it.position } ?: 0L) / POSITION_STEP + 1
+            items.forEachIndexed { i, it -> insertPlanned(uid, sessionId, id, it, (start + i) * POSITION_STEP, now) }
+        }
+        scheduler.request()
+        return id
+    }
+
+    /**
+     * Rebuilds an add-on block (D62: a family change, or the live capacity once the challenge block is done): its rows
+     * without logged sets are removed with [reason] (a `reason_codes` key: `other` for a family change, `no_time` for the
+     * capacity) and [items] follow the rows that stay; the block takes [status] (`active` after the live rebuild, so it
+     * runs once). Returns false when the block has started.
+     */
+    suspend fun rebuildBlock(blockId: String, sessionId: String, items: List<BuiltItem>, budgetMin: Int, reason: String, status: String = "planned"): Boolean {
+        val uid = ctx.requireUser()
+        val now = ctx.nowMs()
+        var ok = false
+        db.withTransaction {
+            val block = db.blocks().bySession(sessionId).firstOrNull { it.id == blockId } ?: return@withTransaction
+            val sets = db.setLogs().bySession(sessionId)
+            val rows = db.sessionExercises().bySession(sessionId).filter { it.block_id == blockId && it.status != "removed" }
+            if (rows.any { r -> sets.any { it.session_exercise_id == r.id } }) return@withTransaction
+            rows.forEach { writeExercise(it.copy(status = "removed", status_reason_code = reason)) }
+            writeBlock(block.copy(budget_min = budgetMin, status = status))
+            val start = (db.sessionExercises().bySession(sessionId).filter { it.status != "removed" }.maxOfOrNull { it.position } ?: 0L) / POSITION_STEP + 1
+            items.forEachIndexed { i, it -> insertPlanned(uid, sessionId, blockId, it, (start + i) * POSITION_STEP, now) }
+            ok = true
+        }
+        scheduler.request()
+        return ok
+    }
+
+    /** Skip on the add-on header (UX 11.4, D62): the block and its open rows are skipped with [reason]. */
+    suspend fun skipBlock(blockId: String, sessionId: String, reason: String) {
+        db.withTransaction {
+            val block = db.blocks().bySession(sessionId).firstOrNull { it.id == blockId } ?: return@withTransaction
+            val open = db.sessionExercises().bySession(sessionId).filter { it.block_id == blockId && it.status in setOf("pending", "deferred", "active") }
+            open.forEach { writeExercise(it.copy(status = "skipped", status_reason_code = reason, completed_at = ctx.nowMs())) }
+            writeBlock(block.copy(status = "skipped"))
+            telemetry.write(
+                EventDraft(
+                    type = "block_addon_skipped", sessionId = sessionId, entityType = "block", entityId = blockId,
+                    payload = mapOf(
+                        "block_id" to JsonPrimitive(blockId), "reason_code" to JsonPrimitive(reason), "exercises_skipped" to JsonPrimitive(open.size),
+                    ),
+                ),
+            )
+        }
+        scheduler.request()
+    }
+
+    /**
+     * UI-02 trimming of the remaining work (UX 11.3, D62): [changes] maps a session exercise to its new planned sets, or
+     * null when it is left out (skipped, or ended when it has sets, reason `no_time`); logs `session_trimmed`.
+     */
+    suspend fun trimPlanned(sessionId: String, changes: Map<String, Int?>, budgetMin: Int, coreDoesNotFit: Boolean) {
+        db.withTransaction {
+            val sets = db.setLogs().bySession(sessionId)
+            for ((id, n) in changes) {
+                val e = db.sessionExercises().get(id) ?: continue
+                val done = sets.count { it.session_exercise_id == id && it.set_kind != "warmup" }
+                when {
+                    n != null -> writeExercise(e.copy(planned_sets = n))
+                    done > 0 -> writeExercise(e.copy(status = "done", status_reason_code = "no_time", completed_at = ctx.nowMs()))
+                    else -> writeExercise(e.copy(status = "skipped", status_reason_code = "no_time", completed_at = ctx.nowMs()))
+                }
+            }
+            telemetry.write(
+                EventDraft(
+                    type = "session_trimmed", sessionId = sessionId, entityType = "session", entityId = sessionId,
+                    payload = mapOf(
+                        "block_id" to JsonNull, "budget_min" to JsonPrimitive(budgetMin),
+                        "trimmed" to JsonArray(changes.map { (id, n) -> kotlinx.serialization.json.buildJsonObject { put("session_exercise_id", JsonPrimitive(id)); put("planned_sets", n?.let { JsonPrimitive(it) } ?: JsonNull) } }),
+                        "core_does_not_fit" to JsonPrimitive(coreDoesNotFit),
+                    ),
+                ),
+            )
+        }
+        scheduler.request()
+    }
+
+    /** The session's time budget from the chips (UX 9.4, 11.3): stored with its source for TIME-1's calibration. */
+    suspend fun setTimeBudget(sessionId: String, minutes: Int, source: String) {
+        db.withTransaction {
+            val s = db.sessions().get(sessionId) ?: return@withTransaction
+            writeSession(s.copy(time_budget_min = minutes, time_budget_source = source))
+        }
+        scheduler.request()
+    }
+
+    /** A planned row of a built block (D62), shaped like an added exercise (side mode, scheme, equipment). */
+    private suspend fun insertPlanned(uid: String, sessionId: String, blockId: String, item: BuiltItem, position: Long, now: Long) {
+        val e = item.exercise
+        val mode = LoadMode.of(e.loadMode)
+        val row = SessionExerciseEntity(
+            id = ctx.ids.next(), user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
+            app_version = ctx.appVersion, session_id = sessionId, block_id = blockId, exercise_id = catalog.idOf(e),
+            position = position, origin = "plan", load_mode = mode.code,
+            side_mode = when (e.laterality) {
+                "unilateral" -> "unilateral_sequential"
+                "alternating" -> "unilateral_alternating"
+                else -> "bilateral"
+            },
+            side_order = if (e.laterality == "bilateral") null else "LR",
+            equipment_id = equipment.resolve(e, mode).row?.id, progression_mode = "none",
+            rep_scheme = when (e.measure) { "duration" -> "hold"; "attempt" -> "attempt"; else -> "range" },
+            planned_sets = item.sets,
+        )
+        db.sessionExercises().upsert(row)
+        outbox.enqueue("session_exercises", row.id, now)
     }
 
     /** "Repeat" (D49): the finished general sessions with at least one exercise, newest first. */

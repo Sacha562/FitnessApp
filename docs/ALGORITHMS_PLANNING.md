@@ -2456,8 +2456,8 @@ between the members, the after-pair rest from REST-1's formula, and `t_pair` use
 ```
 substitute(e, reason, session):
   if reason == occupied and ∃ k not done, not pinned, station(k) ≠ station(e):
-      offer "Do {k} now, then come back to {e}" (k = first by ORD-1 order; until ORD-1 exists in M4, the next
-      exercise not done in the session's own order, D49); defer_count(e) += 1
+      offer "Do {k} now, then come back to {e}" (k = first of the remaining exercises in ORD-1 order, D62);
+      defer_count(e) += 1
       after MAX_DEFERS deferrals (UI-05) go straight to the candidates below
   v(x) = [groupCoeff(x, g) for the 18 groups] ⊕ [REGION_WEIGHT · coeff(x, r) for the 34 regions]
   C = {c ∈ ELIG pool with the session's constraints : c ∉ session, station(c) not marked occupied this session}
@@ -2469,7 +2469,8 @@ substitute(e, reason, session):
      inj = max over flagged joints j of (js_j(c) / 3) · (severity_j / 3)
      score = W_SIM·sim + W_PATTERN·pm + W_PREF·pn + W_SETUP·sp − W_INJ·inj
   disliked candidates only if no non-disliked candidate has sim ≥ SIM_MIN; `never` never
-  return top 3 by (score desc, slug asc) + "skip (choose a reason)" + "search catalog"
+  return top 3 by (busy station last, score desc, slug asc) + "skip (choose a reason)" + "search catalog"
+     (busy: REASON-1's `occupied` rule at this weekday and hour, D62)
 start prescription of the chosen substitute: the user's own history (RX-1), else load(to) = ratio · load(from) from
   `exercise_transfer_ratios`, else a calibration first set aimed at target RIR + 2 (C27)
 the remaining plan keeps its exercises and sets (no reshuffle); coverage and minutes are recomputed and logged

@@ -383,3 +383,35 @@ groups that credit the rule groups indirectly (rear delts for upper back); ORD-1
 category `station`, so dumbbells do not chain; pre-fatigue wins over chaining; SEL-1 times an exercise with the caller's
 reps (default 10, the middle of RX-1's default range) and REST-1's class base. No app change and no engine bump: the
 modules start at 1.0.0 and the app calls them from M4.4. Tests: `:algo` 495, `:app` 119, `:sim` 60, all green.
+
+**M4.4 (2026-10-30, D62, phone checks open)**: building a session in the app. Today's "Start session" opens the New
+session sheet: the eight types of ALGORITHMS_PLANNING 0.3 as chips (a type the allocator can give nothing today is
+disabled with its reason), the time chips of UX 9.4 (a calendar chip from today's classified general gym event, then
+45, 60, 75 and 90+ = `today.max_budget_min`, the default length preselected), and a live preview of the build: the
+exercises in ORD-1 order with their sets, the estimated minutes and the trim line ("To fit 60 min: 1 set fewer on
+lateral raise; calf raise left out."), with "Empty session" and "Repeat a session" at the bottom. The build is the pure
+`Building` pipeline in `:algo` (`allocator`, the `elig` pool and necessity gate, `select` with `order` inside, then
+UI-02 trimming of the whole block, since SEL-1 may run over by `select.overrun_cap`), fed by `SessionBuild` in the app
+(this week's targets and accounting from the Week tab's `WeekVolume`, readiness from the credited sets, PREF-1, the
+day's challenge constraints, the stations and the busy ones). The session is `template_source = family_combo` with one
+`standalone` block and a `session.plan` snapshot (`select@1.0.0`, scope `block:<id>`); loads come from RX-1 in the live
+session as before. Sessions C and A get their add-on at the start: the materializer now runs twice so the plan carries
+TIME-1's estimate of the challenge block (`ChallengeTime`; C1 normal 59.2 min, A1 normal 76.4 min against the spec's
+hand figures of 60.8 and 79.7) and its add-on capacity; when the capacity reaches `time.min_addon_min` the engine's
+family is built as a second block (`origin = addon`) after the challenge block. The live list shows its header "ADD-ON ·
+LEGS · ~15 min" with Skip (the skip reasons, `block_addon_skipped`) and the family chips Legs, Push, Legs + push and
+Core that the slot can serve; a chip rebuilds the block (`template_picked` with kind `addon`). When the last challenge
+item is done the add-on is rebuilt once from the live capacity (budget minus elapsed), keeping its family. The session
+menu has "Time budget": the chips again, and the remaining general work is trimmed with UI-02 (challenge items are tier
+0), lowering planned sets or skipping with `no_time` (`time_budget_selected`, `session_trimmed`). The overrun line of
+C63 shows under the progress bar when elapsed plus TIME-1's remaining estimate exceeds the budget by more than
+`session.overrunLineMin` (10), logged once as `session_overrun_shown`, and opens the time chips. SUB-1's "Do {k} now"
+now takes the first remaining exercise in ORD-1 order (not the next in the list), and the Swap sheet from Occupied
+ranks candidates on a station busy at this weekday and hour after the others (REASON-1: busy in at least half of the
+last four visits within an hour); SEL-1 likewise picks busy-station exercises after the free ones in its candidate
+list. Choices where the spec is open: until the week planner (M4.5) every group gets one opportunity, so a session is
+asked for what this week still needs within the allocator's per-session caps; the add-on family the engine preselects
+is the one whose allocation adds the most of this week's remaining Vhyp; a combined Legs + push add-on is one slot with
+both families (`AddOnSlot.family` "PUSH+LEGS"); when the live capacity after the challenge block is below the minimum,
+the planned add-on stays as it is for the user to do or skip; the in-session trim prefers to cut later exercises
+among equals. `substitute@1.1.0`, ENGINE_VERSION 1.11.0, params 1.0.3 (D56's `select.per_group_k`), migration 043.

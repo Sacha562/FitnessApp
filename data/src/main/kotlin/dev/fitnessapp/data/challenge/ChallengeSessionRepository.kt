@@ -92,13 +92,21 @@ class ChallengeSessionRepository(
     private val facts: ChallengeFactsProvider,
     private val params: ParamView,
     private val changeoverMin: Int,
+    /** The catalog model, for TIME-1's setup times in the block estimate (D62); null leaves the add-on capacity unknown. */
+    private val catalogModel: (() -> dev.fitnessapp.algo.selection.catalog.Catalog)? = null,
 ) {
-    /** The plan of [slot] on [date] for the enrollment's current state (Today preview and Start). */
+    /**
+     * The plan of [slot] on [date] for the enrollment's current state (Today preview and Start). The block is
+     * materialized twice: the second pass carries TIME-1's estimate of the first, so the plan knows its add-on capacity
+     * (CHALLENGE_ENGINE 6.9, D62).
+     */
     suspend fun materialize(enrollmentId: String, slot: String, date: LocalDate, eventMin: Int? = null): SessionPlan {
         val f = challenges.folded(enrollmentId)
-        return Materializer.materialize(
-            f.def, params, MaterializeInput(slot, date, f.state, facts.facts(f.def, f.state), catalog.doc, changeoverMin = changeoverMin, bookedMin = eventMin),
-        )
+        val input = MaterializeInput(slot, date, f.state, facts.facts(f.def, f.state), catalog.doc, changeoverMin = changeoverMin, bookedMin = eventMin)
+        val first = Materializer.materialize(f.def, params, input)
+        val model = catalogModel?.invoke() ?: return first
+        val est = dev.fitnessapp.algo.challenge.materialize.ChallengeTime.estMin(first, model, params.fork())
+        return Materializer.materialize(f.def, params, input.copy(estMin = est))
     }
 
     /**

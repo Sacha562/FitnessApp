@@ -22,7 +22,10 @@ data class SwapOption(val ex: CatalogExercise, val candidate: SubCandidate, val 
  * exercise detail), PREF-1 values, the contract's joint flags, and the display tags and start line of [UiSwap].
  */
 object SwapCandidates {
-    /** The Swap sheet's top 3 for [from] in [session]; [occupied] adds its stations to the ones to avoid. */
+    /**
+     * The Swap sheet's top 3 for [from] in [session]; [occupied] adds its stations to the ones to avoid and ranks the
+     * candidates on stations busy at this weekday and hour after the others (D62).
+     */
     suspend fun forSession(
         c: AppContainer, session: WorkoutSessionEntity, from: CatalogExercise, inSession: Set<String>, occupied: Boolean,
     ): List<SwapOption> {
@@ -31,7 +34,8 @@ object SwapCandidates {
         val ctx = ChallengeConstraints.eligContext(c, session, prefs)
         val p = c.params.fork()
         val pool = Elig.pool(c.catalogModel, ctx, p).pool
-        val input = SubInput(from, pool, inSession, if (occupied) from.requiresStation.toSet() else emptySet(), prefs, ctx.jointFlags)
+        val busy = if (occupied) c.selection.busyStations(c.clock.now(), dev.fitnessapp.app.planning.PlanningFacts.ZONE) else emptySet()
+        val input = SubInput(from, pool, inSession, if (occupied) from.requiresStation.toSet() else emptySet(), prefs, ctx.jointFlags, busy)
         return options(c, from, Substitute.rank(input, c.catalogModel, p), session.id)
     }
 

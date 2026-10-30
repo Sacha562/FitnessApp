@@ -150,6 +150,23 @@ class MaterializerTest {
     }
 
     @Test
+    fun `D62 TIME-1 estimates the challenge block and the add-on capacity follows`() {
+        val model = dev.fitnessapp.algo.selection.catalog.Catalog(
+            catalog,
+            dev.fitnessapp.algo.selection.catalog.Taxonomy.parse(
+                ChallengeTestSupport.resource("reference/muscle_groups.json"), ChallengeTestSupport.resource("reference/muscle_regions.json"),
+            ),
+        )
+        val c = ChallengeTime.estMin(plan(normal(), "C"), model, params)
+        val a = ChallengeTime.estMin(plan(normal(), "A"), model, params)
+        println("TIME-1 C1 normal $c min, A1 normal $a min")
+        (c > BigDecimal(30) && c < BigDecimal(90)) shouldBe true
+        (a > c) shouldBe true
+        val withEst = plan(normal(), "C", booked = 90, est = c.toPlainString())
+        withEst.addOnCapacityMin shouldBe BigDecimal(85).subtract(c).setScale(0, java.math.RoundingMode.FLOOR).toInt()
+    }
+
+    @Test
     fun `GF-CE-38 test-day order`() {
         val declined = plan(OapFixture.start(except = mapOf("P08" to false, "P20" to false)), "TEST")
         declined.items.map { it.key } shouldBe listOf("bw", "wu_face", "wu_scap", "wu_pull", "str", "max", "hang", "top", "assist", "neg")

@@ -78,6 +78,14 @@ object PreSession {
         })
     }
 
+    /** Planned direct FS of a built session (D62): each exercise's sets times its group coefficients of 0.5 or more (C10). */
+    fun plannedFsOfBuilt(c: AppContainer, r: dev.fitnessapp.algo.pipeline.BuildResult): Map<String, Double> = sum(
+        r.exercises.mapNotNull { x ->
+            val e = c.catalogModel.exercise(x.slug) ?: return@mapNotNull null
+            Groups.CANONICAL.associateWith { g -> c.catalogModel.groupCoeff(e, g).let { if (it >= 0.5) it * x.sets else 0.0 } }
+        },
+    )
+
     private fun sum(ms: List<Map<String, Double>>): Map<String, Double> {
         val out = TreeMap<String, Double>()
         for (g in Groups.CANONICAL) ms.sumOf { it[g] ?: 0.0 }.takeIf { it > 0.0 }?.let { out[g] = Grid.ratio(it) }
