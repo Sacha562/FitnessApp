@@ -71,7 +71,8 @@ object Loadables {
             val added = LoadModel.fromCents(total)
             point(
                 ctx, LoadMode.EXTERNAL, added = added, native = added, unit = "kg", breakdown = perSide,
-                baseNeeded = s.barKg == null, baseOverride = if (s.barKg != null) 0.0 else null,
+                // A bar is inside the shown load (base 0); a machine's own mass (D68) is outside it; else the exercise's.
+                baseNeeded = s.barKg == null, baseOverride = if (s.barKg != null) 0.0 else s.baseKg,
             )
         }
     }

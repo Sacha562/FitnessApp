@@ -32,6 +32,21 @@ class LoadablesTest {
     }
 
     @Test
+    fun `a plate-loaded sled shows the plates and counts its own mass (D68)`() {
+        val sled = LoadScheme.parse(kotlinx.serialization.json.Json.parseToJsonElement(
+            """{"type":"plates","unit":"kg","bar_kg":null,"base_kg":75.7,"plates":[{"kg":20,"count":20},{"kg":10,"count":20}]}""",
+        ).let { it as kotlinx.serialization.json.JsonObject })
+        val w = Loadables.enumerate(sled, Loadables.Context(squat, null), params)
+        w.first { it.nativeValue == 140.0 }.let {
+            it.addedKg shouldBe 140.0
+            it.implementBaseKg shouldBe 75.7
+            it.wSys shouldBe 215.7
+            it.plateBreakdown shouldBe listOf(20.0, 20.0, 20.0, 10.0)
+        }
+        w.first().let { it.nativeValue shouldBe 0.0; it.wSys shouldBe 75.7 } // the empty sled
+    }
+
+    @Test
     fun `belt multisets within max items and max kg, empty belt excluded`() {
         val belt = LoadScheme.Belt(
             listOf(PlateCount(20.0, 2), PlateCount(10.0, 1), PlateCount(5.0, 1), PlateCount(2.5, 1), PlateCount(1.25, 2)),

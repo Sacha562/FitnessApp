@@ -92,7 +92,7 @@ fun EquipmentContent(state: Checklist, vm: EquipmentViewModel) {
                     Hint("Add 1.25 if your gym has it.")
                     NumberField("Barbell (kg)", state.barKg) { v -> vm.edit { it.copy(barKg = v) } }
                     NumberField("45° leg press sled (kg), optional", state.sledKg, allowEmpty = true) { v -> vm.edit { it.copy(sledKg = v.takeIf { x -> x > 0 }) } }
-                    Hint("The sled's own weight: the leg press shows plates plus sled, like a barbell.")
+                    Hint("The sled's own weight. The leg press shows only the plates; the sled is added in the background.")
                 }
             }
 

@@ -27,7 +27,7 @@ data class Checklist(
     /** Gym plate sizes; 1.25 kg is in the list only when the gym has it. Plates are unlimited (F7). */
     val plates: List<Double> = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5),
     val barKg: Double = 20.0,
-    /** The plate-loaded 45° leg press's sled mass (D64), stored as its `bar_kg`; null = unknown, asked like the Smith bar (F7). */
+    /** The plate-loaded 45° leg press's sled mass (D64, D68), stored as its `base_kg`: counted, not shown; null = unknown (F7). */
     val sledKg: Double? = null,
     val dumbbells: List<Double> = defaultDumbbells(),
     /** `kg` or `lb`: most stacks are marked in lb (F7). */
@@ -81,7 +81,8 @@ data class Checklist(
                 )
             }
             byType["leg_press"]?.takeIf { it.scheme_type == "plates" }?.let { r ->
-                c = c.copy(sledKg = Json.parseToJsonElement(r.load_scheme).jsonObject["bar_kg"]?.jsonPrimitive?.doubleOrNull)
+                val o = Json.parseToJsonElement(r.load_scheme).jsonObject
+                c = c.copy(sledKg = (o["base_kg"] ?: o["bar_kg"])?.jsonPrimitive?.doubleOrNull)
             }
             byType["dumbbells"]?.let { r ->
                 val v = Json.parseToJsonElement(r.load_scheme).jsonObject["values"]?.jsonArray?.mapNotNull { it.jsonPrimitive.doubleOrNull }
@@ -145,7 +146,7 @@ data class Checklist(
             val scheme: JsonObject = when (t.key) {
                 "barbell" -> platesScheme(barKg)
                 "smith_machine" -> platesScheme(null)
-                "leg_press" -> platesScheme(sledKg)
+                "leg_press" -> platesScheme(null, base = sledKg)
                 "landmine" -> ownStacks[t.key] ?: landmineScheme()
                 "dumbbells" -> buildJsonObject {
                     put("type", "dumbbells"); put("unit", "kg"); put("per", "hand")
@@ -192,9 +193,11 @@ data class Checklist(
         put("add_on_steps", JsonArray(emptyList())); put("ratio", 1.0)
     }
 
-    private fun platesScheme(bar: Double?): JsonObject = buildJsonObject {
+    private fun platesScheme(bar: Double?, base: Double? = null): JsonObject = buildJsonObject {
         put("type", "plates"); put("unit", "kg")
         put("bar_kg", bar?.let(::JsonPrimitive) ?: JsonNull)
+        // D68: a machine's own mass is counted but not part of the shown load.
+        if (base != null) put("base_kg", base)
         put("plates", JsonArray(plateList().map { kg -> buildJsonObject { put("kg", kg); put("count", GYM_PLATE_COUNT) } }))
     }
 }

@@ -119,7 +119,7 @@ class ChecklistSchemeTest {
     }
 
     @Test
-    fun `the 45 degree leg press is plate-loaded and keeps its sled mass (D64)`() {
+    fun `the 45 degree leg press is plate-loaded, shows the plates and counts its sled (D64, D68)`() {
         val c = Checklist.defaults(types)
         LoadScheme.parse(c.drafts(types).first { it.equipmentType == "leg_press" }.loadScheme) shouldBe
             LoadScheme.Plates(null, listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5).map { PlateCount(it, Checklist.GYM_PLATE_COUNT) })
@@ -134,10 +134,10 @@ class ChecklistSchemeTest {
         val back = Checklist.fromRows(types, c.gymName, rows)
         back.sledKg shouldBe 75.7
         val sled = back.drafts(types).first { it.equipmentType == "leg_press" }
-        (LoadScheme.parse(sled.loadScheme) as LoadScheme.Plates).barKg shouldBe 75.7
+        (LoadScheme.parse(sled.loadScheme) as LoadScheme.Plates).let { it.barKg shouldBe null; it.baseKg shouldBe 75.7 }
         sled.calibrationSource shouldBe "measured"
         val w = Loadables.enumerate(LoadScheme.parse(sled.loadScheme), Loadables.Context(external, null), params)
-        w.first().nativeValue shouldBe 75.7 // the empty sled
-        w.first { it.addedKg == 215.7 }.let { it.nativeUnit shouldBe "kg"; it.plateBreakdown.sum() shouldBe 70.0 }
+        w.first().let { it.nativeValue shouldBe 0.0; it.wSys shouldBe 75.7 } // the empty sled
+        w.first { it.nativeValue == 140.0 }.let { it.nativeUnit shouldBe "kg"; it.wSys shouldBe 215.7; it.plateBreakdown.sum() shouldBe 70.0 }
     }
 }

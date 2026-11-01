@@ -18,8 +18,12 @@ data class PlateCount(val kg: Double, val count: Int)
  * the server may additionally check them with pg_jsonschema.
  */
 sealed class LoadScheme(val type: String) {
-    /** Barbell (with [barKg]) or Smith / plate-loaded machine ([barKg] null: plates only). */
-    data class Plates(val barKg: Double?, val plates: List<PlateCount>) : LoadScheme("plates")
+    /**
+     * Barbell (with [barKg]: the shown load includes the bar) or Smith / plate-loaded machine ([barKg] null: the shown
+     * load is the plates only). [baseKg] is such a machine's own moving mass (the 45° leg press sled, D68): counted in
+     * the load, never shown in it; null falls back to the exercise's `implement_base_kg`.
+     */
+    data class Plates(val barKg: Double?, val plates: List<PlateCount>, val baseKg: Double? = null) : LoadScheme("plates")
 
     data class Belt(
         val plates: List<PlateCount>,
@@ -63,7 +67,10 @@ sealed class LoadScheme(val type: String) {
             return when (type) {
                 "plates" -> {
                     unit(json, "kg")
-                    Plates(json.numOrNull("bar_kg")?.also { nonNegative("bar_kg", it) }, plates(json))
+                    val bar = json.numOrNull("bar_kg")?.also { nonNegative("bar_kg", it) }
+                    val base = json.numOrNull("base_kg")?.also { nonNegative("base_kg", it) }
+                    require(bar == null || base == null) { "plates take bar_kg (shown) or base_kg (not shown), not both" }
+                    Plates(bar, plates(json), base)
                 }
                 "belt" -> Belt(
                     plates(json), json.num("max_kg").also { positive("max_kg", it) },
