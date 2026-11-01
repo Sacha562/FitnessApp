@@ -706,10 +706,13 @@ catalog 1.0.2 (OI-16).
    Full and the others of ALGORITHMS_PLANNING 0.3) with time chips; the exercises, order and loads come from `select`,
    `order` and `rx`. The add-on blocks after C and A are offered at the end of the challenge session, with Skip on the
    block header. SUB-1's "Do {k} now" follows ORD-1, and busy stations count in the ranking (deferred by D53).
-5. **M4.5 Planner and Today.** `weekplan` (the day model, hard constraints, enumeration, the tie band, rest-day reasons,
-   replanning, next week) and `today`, with `ui.todaycard`: the verdict (train, rest soft, rest hard), the primary option
-   and alternatives with reason chips, "Train anyway" and the week strip. Goldens: W41_weekplan, the W41_today days,
-   W41_trainAnywayWed, the capacity and novice variants, W41_elbowCheck2, W41_testPostponed and DST_W43_windows.
+5. **M4.5 Planner and Today** (scope fixed by D70). `weekplan` (the day model, hard constraints, enumeration, the tie
+   band, rest-day reasons, replanning, next week) and `today`, with `ui.todaycard`: the verdict (train, rest soft, rest
+   hard), the primary option and alternatives with reason chips, "Train anyway" and the week strip. Goldens:
+   W41_weekplan, the W41_today days, W41_trainAnywayWed, the capacity and novice variants, W41_elbowCheck2,
+   W41_testPostponed and DST_W43_windows. The Today card sits on top of the current Today screen, "Other options" and
+   "Train anyway" open the New session sheet, the week plan picks the add-on family and the per-group opportunities for
+   session building, and the week strip can show next week's provisional plan.
 6. **M4.6 Week tab and Plan it.** Before this step, T17 and the switch to real calendar writes (the open M2b.6 items) are
    done with your agreement. The Week tab shows recommended versus planned per day with the reasons, the day sheet, Plan
    it (a marked calendar event that is then read back as a planned gym session and sets the session's time budget) and

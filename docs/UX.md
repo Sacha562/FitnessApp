@@ -1078,6 +1078,10 @@ default destination.
    "Resume session" / "Log test day". It is docked so that it is always in the thumb zone (P3). It is
    absent in the REST and DONE states.
 
+For this user (D70) the Today card sits under the date header and the week strip, and the home habits, the status
+row, the bodyweight and This week tiles and Recent sessions stay below it; the strict order above is kept for a new
+account's design.
+
 ### 9.3 Card states
 
 The state is computed by `ui.todaycard` (specified in ALGORITHMS_PLANNING section 19.1, C53; display
@@ -1260,7 +1264,10 @@ push (D15, C50): "Train anyway" lists those options.
 
 ### 9.5 Other options and the template picker (C35)
 
-"Other options" opens the Template picker sheet (16.9), which lists:
+In the built app (D70) "Other options" and "Train anyway" open the New session sheet (D62) instead: today's ranked
+options with their reason chips on top, then the "Not today" lines, the type and time chips, Empty and Repeat; the
+day's challenge session stays on the Today card. As specified for a new account, "Other options" opens the Template
+picker sheet (16.9), which lists:
 
 1. The ranked options from `today`, in score order, with their reason chips.
 2. Challenge slots (A / B / C / Test) with a status per slot ("due this week", "done Tue", "not
@@ -1314,7 +1321,8 @@ Seven 48 dp cells, Monday to Sunday (ISO week, F18), today outlined. Symbols, ea
 for accessibility: `v` done, `*` planned in the calendar, `o` recommended but not in the calendar, `x`
 blocked (hard rest), `-` rest or nothing, `T` test day, `!` conflict (for example the calendar says
 test day but the test is postponed, C36). Tapping the strip opens the Week tab scrolled to that day.
-Fed by `weekplan` and the session store.
+A swipe shows next ISO week's provisional plan (D70): challenge sessions placed by the calendar or
+`challenge.plan`, recommended general sessions as `o`. Fed by `weekplan` and the session store.
 
 ### 9.8 Starting a session
 
