@@ -9,6 +9,7 @@ import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.PauseTools
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.registry.SemVer
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.data.challenge.ChallengeEventDraft
 import dev.fitnessapp.data.db.entity.ChallengeEnrollmentEntity
@@ -73,7 +74,7 @@ class ChallengesViewModel(private val c: AppContainer) : ViewModel() {
                 runCatching { ChallengeCard(e.id, e.definition_id, ChallengeTexts.title(c.challenges.definition(e.definition_id)), ChallengeTexts.status(e.status), listOfNotNull(e.started_on?.let { "Started ${ChallengeTexts.date(LocalDate.parse(it))}" })) }.getOrNull()
             }
             // One version per slug: the newest published one that is not already open.
-            val available = defs.groupBy { it.second.slug }.mapNotNull { (_, list) -> list.maxByOrNull { it.second.version } }
+            val available = defs.groupBy { it.second.slug }.mapNotNull { (_, list) -> list.maxByOrNull { SemVer.parse(it.second.version) } }
                 .filter { (_, d) -> open.none { it.definition_slug == d.slug } }
                 .map { (id, d) -> availableCard(id, d) }
             val absence = prompt?.let { id ->

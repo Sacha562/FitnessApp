@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.9.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.10.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52); the frozen
-1.0.0 to 1.8.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.8.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63); the frozen
+1.0.0 to 1.9.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.9.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -239,11 +239,11 @@ is a protective rule that only makes things easier (marked "allowed in frozen we
 | `prog.B.neg.reset` | A, allowed in frozen weeks | Session completed | Session B, any negative < 5 s or jerky | Negatives back to the reset level (45 kg now) | Artifact 05, Todoist B ("terug naar 45 kg") | Without P09 the reset level never moves up, so after a few increases a reset can drop more than 2.5 kg. |
 | `prog.B.negReset.follow` | P (P09) | Session completed | Same condition as `prog.B.neg.up` | Reset level + 5 kg as well | P09 | |
 | `prog.A.pin.weekly` | A, replaced if P01 approved | Session completed | Session A, normal week, assisted one-arm sets logged | Next A pin = the pin you finished on - 5 lb (- 10 lb if the calibration negative was controlled), not below 0 | Artifact 05, Todoist A | -5 lb per week is about +4.9 % one-arm load per week (+19.7 % per block): likely faster than you adapt; elbow risk. The -10 lb step (+9.8 %) is above the generic cap: applied with a warning (D13, section 4.9). |
-| `prog.A.pin.gated` | P (P01), allowed in frozen weeks (only its +5 lb branch can act there) | Session completed | Session A, assisted sets logged | All 5 x 3 per arm done (normal week): -5 lb (-10 lb after a controlled negative), fail streak 0. Reps missed: same pin; second failed week in a row: +5 lb and streak 0 | P01 | |
+| `prog.A.pin.gated` | P (P01), allowed in frozen weeks (only its +5 lb branch can act there) | Session completed | Session A, assisted sets logged | All 5 x 3 per arm done (normal week): -5 lb (-10 lb after a controlled negative), fail streak 0. Reps missed: same pin; second failed week in a row: +5 lb and streak 0 | P01 | In a re-entry week the base is the logged pin minus `reentryPinOffsetLb` (D63). |
 | `prog.A.hold90` | A | Session completed | Session A, normal week, 90-degree holds logged | Next pin = the pin you finished on - 5 lb (not below 0) | Artifact 06, Todoist A ("elke week 5 lbs eraf") | The in-session +5 lb on a failed hold is `ins.h90.fail`. From a pin of 45 lb or more the -5 lb step is above the generic cap: applied with a warning (D13, section 4.9). |
 | `prog.A.sth` | A | Session completed | Session A, straight-arm hold target below 8 s, all six holds (3 per arm) at least at target, no torso rotation | Target 6 s -> 8 s | Todoist A | |
 | `prog.C.pin.easy` | A, uses P03 | Session completed | Session C, normal week, every set >= 4 reps | Easy session: second easy one in a row -> pin - 5 lb and streak 0; otherwise streak + 1. Not easy: streak 0 | Artifact 05, Todoist C | Without P03 only an explicit "too easy" tap counts as easy. At pin 50 the -5 lb step is +5.5 % one-arm load, above the generic cap: applied with a warning (D13, section 4.9). |
-| `prog.C.pin.hard` | A, allowed in frozen weeks | Session completed | Session C, any set below 4 reps | Pin + 5 lb (more help), streak 0 | Todoist C ("kom je onder de vier reps, 5 lbs erbij") | |
+| `prog.C.pin.hard` | A, allowed in frozen weeks | Session completed | Session C, any set below 4 reps | Pin + 5 lb (more help), streak 0 | Todoist C ("kom je onder de vier reps, 5 lbs erbij") | In a re-entry week the step starts from the logged pin minus `reentryPinOffsetLb` (D63). |
 | `prog.plank` | A, uses P22 | Week closed | Plank done on at least 3 days that week, 6 sets per day (18 in total), every set at the target time, hip never tilted | 20 s -> 30 s; at 30 s: a plate on the upper back (P22: 5 kg; declined: the app asks which plate) | Todoist Core and B | In deload and test weeks this cannot fire (fewer sets, B replaced). |
 | `prog.wpu.A` | P (P05) | Session completed | Session A, normal week, all 4 x 4 done, every set RIR >= 2 | A load + 2.5 kg next week | P05 | |
 | `prog.wpu.C` | P (P05) | Session completed | Session C, normal week, all 4 x 5 done, every set RIR >= 2 | Anchor + 2.5 kg next week | P05 | Moves the anchor in-block; the test recalculation (P10) is clamped against it. |

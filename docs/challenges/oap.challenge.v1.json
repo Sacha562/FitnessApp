@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -735,7 +735,7 @@
       "explain": { "en": "Session A: -5 lb on the pin every week (-10 lb after a controlled negative)." }, "source": "artifact section 05 / Todoist A" },
     { "id": "prog.A.pin.gated", "tag": "P", "proposal": "P01", "stage": "progression", "prio": 50, "on": ["session.completed"], "allowInFrozen": true, "allowInFrozenNote": "E: the harder branch is guarded by mode == 'normal'; only the protective +5 lb branch can act in frozen modes.",
       "if": "p.approved_P01 && sess.slot == 'A' && valid('oaa')",
-      "let": [ { "name": "ok", "expr": "count(ex.oaa.reps) >= ex.oaa.plannedRows && all(ex.oaa.reps >= ex.oaa.targetReps)" }, { "name": "base", "expr": "last(ex.oaa.pin)" } ],
+      "let": [ { "name": "ok", "expr": "count(ex.oaa.reps) >= ex.oaa.plannedRows && all(ex.oaa.reps >= ex.oaa.targetReps)" }, { "name": "base", "expr": "max(0lb, last(ex.oaa.pin) - (s.reentry ? p.reentryPinOffsetLb : 0lb))" } ],
       "then": [
         { "if": "ok && mode == 'normal'",
           "do": [ { "set": "s.pinA", "to": "max(0lb, base - (d.calNegControlled ? p.pinDropNegLb : p.pinDropLb))" }, { "set": "s.aFailStreak", "to": "0" } ],
@@ -770,7 +770,7 @@
       "explain": { "en": "Two easy C sessions in a row: -5 lb." }, "source": "artifact section 05 / Todoist C" },
     { "id": "prog.C.pin.hard", "tag": "A", "stage": "progression", "prio": 50, "on": ["session.completed"], "allowInFrozen": true, "allowInFrozenNote": "E: protective step back (more assistance) is allowed in frozen modes.",
       "if": "sess.slot == 'C' && valid('oaa') && min(ex.oaa.reps) < p.cHardBelowReps",
-      "then": [ { "set": "s.pinC", "to": "roundPin(last(ex.oaa.pin) + p.pinDropLb, 'up')" }, { "set": "s.cEasyStreak", "to": "0" } ],
+      "then": [ { "set": "s.pinC", "to": "roundPin(max(0lb, last(ex.oaa.pin) - (s.reentry ? p.reentryPinOffsetLb : 0lb)) + p.pinDropLb, 'up')" }, { "set": "s.cEasyStreak", "to": "0" } ],
       "explain": { "en": "Fewer than 4 reps in a set: +5 lb assistance next time." }, "source": "Todoist C ('kom je onder de vier reps, 5 lbs erbij')" },
     { "id": "prog.plank", "tag": "A", "uses": ["P22"], "stage": "progression", "prio": 50, "on": ["week.closed"],
       "if": "week.ex.plank.days >= 2 && count(week.ex.plank.hold_s) >= 12 && all(week.ex.plank.hold_s >= s.plankS) && !any(week.ex.plank.hip_rotation)",
@@ -923,6 +923,7 @@
     "1.5.0": {"varMap": {}, "defaults": {}, "notes": "D45: the elbow trace also fires on pain at the back of the elbow and in the forearm (new body regions); the Pallof press is per side. No state var changes."},
     "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."},
     "1.7.0": {"varMap": {}, "defaults": {}, "notes": "D51: the daily two-arm hang is skipped on every gym day (A, B, C and the test day), not only on A. No state var changes."},
-    "1.8.0": {"varMap": {}, "defaults": {}, "notes": "D52: the torso-rotation notice says what it means for each exercise (one in-session rule per item instead of one for every item). No state var changes."}
+    "1.8.0": {"varMap": {}, "defaults": {}, "notes": "D52: the torso-rotation notice says what it means for each exercise (one in-session rule per item instead of one for every item). No state var changes."},
+    "1.9.0": {"varMap": {}, "defaults": {}, "notes": "D63: in a re-entry week the protective pin rules (prog.A.pin.gated, prog.C.pin.hard) take the logged pin minus the re-entry offset as their base, so the offset never reaches s.pinA or s.pinC. No state var changes."}
   }
 }

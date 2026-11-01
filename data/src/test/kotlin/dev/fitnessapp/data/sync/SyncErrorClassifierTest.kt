@@ -17,6 +17,7 @@ class SyncErrorClassifierTest {
         c(500, "57014") shouldBe SyncErrorClass.TRANSIENT
         c(401, "PGRST301") shouldBe SyncErrorClass.AUTH
         c(401) shouldBe SyncErrorClass.AUTH
+        c(401, "42501") shouldBe SyncErrorClass.AUTH // sent as anon, without the user's token
         c(406, "PGRST106") shouldBe SyncErrorClass.SCHEMA_NOT_EXPOSED
         c(400, "PGRST204") shouldBe SyncErrorClass.SCHEMA_DRIFT
         c(400, "42703") shouldBe SyncErrorClass.SCHEMA_DRIFT

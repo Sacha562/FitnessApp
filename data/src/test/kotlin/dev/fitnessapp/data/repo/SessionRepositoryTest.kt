@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -152,6 +153,33 @@ class SessionRepositoryTest {
         s.completion_ratio shouldBe Scaled.fromDouble(1.0 / 6.0, 4)
         sessions.exercises(sid).associate { it.id to it.status } shouldBe mapOf(seId to "done", other to "not_done")
         sessions.sets(sid).forEach { serverChecks(it) shouldBe emptyList() }
+    }
+
+    @Test
+    fun `finish counts a top-hold round once per arm, not once per attempt`() = blocking {
+        setUpGym()
+        val sid = sessions.start(params)
+        val ex = catalog.bySlug("oa_top_hold")!!
+        val top = sessions.addExercise(sid, ex)
+        db.sessionExercises().upsert(db.sessionExercises().get(top)!!.copy(planned_sets = 2))
+        val p = equipment.loadables(ex, LoadMode.BODYWEIGHT, null, params).second.single()
+        for (side in listOf("L", "R")) {
+            now += 60_000
+            sessions.logSets(
+                listOf(1.0, 0.5, 2.0, 0.0).mapIndexed { i, s ->
+                    LogSetCommand(
+                        sid, top, catalog.idOf(ex), 1, side, "working", p, reps = null, durationS = s, rir = null,
+                        rirLowerBound = false, holdReserveS = 2.0, holdReserveLowerBound = false, flags = emptyList(),
+                        deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now,
+                        telemetry = emptyMap(), roundIndex = 1, attemptIndex = i + 1,
+                    )
+                },
+            )
+        }
+        sessions.finish(sid, "no_time")
+        sessions.session(sid)!!.completion_ratio shouldBe Scaled.fromDouble(0.5, 4)
+        val payload = db.events().exportAll().single { it.event_type == "session_finished" }.payload
+        Json.parseToJsonElement(payload).jsonObject["working_sets_done"]!!.jsonPrimitive.content.toDouble() shouldBe 1.0
     }
 
     @Test

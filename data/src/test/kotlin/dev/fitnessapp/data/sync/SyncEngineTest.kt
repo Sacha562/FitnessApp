@@ -15,6 +15,7 @@ import dev.fitnessapp.data.repo.WriteContext
 import dev.fitnessapp.data.telemetry.EventRegistry
 import dev.fitnessapp.data.telemetry.TelemetryWriter
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -194,6 +195,44 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a push sent without the token refreshes and retries instead of dead-lettering`() = blocking {
+        writeSession(session("s1"))
+        remote.failTable["workout_sessions"] = SyncFailure(401, "42501")
+        engine.run("test") shouldBe RunOutcome.RETRY
+        engine.state.value shouldBe SyncState.Offline
+        remote.refreshes shouldBe 1
+        db.outbox().pendingCount("workout_sessions", "s1") shouldBe 1
+        db.deadLetters().all() shouldBe emptyList()
+        db.events().exportAll().count { it.event_type == "sync_error" } shouldBe 1
+        remote.failTable.clear()
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        remote.rows("workout_sessions").keys shouldBe sortedSetOf("s1")
+    }
+
+    @Test
+    fun `a 401 whose refresh fails asks to sign in and keeps the outbox`() = blocking {
+        writeSession(session("s1"))
+        remote.failTable["workout_sessions"] = SyncFailure(401, "PGRST303")
+        remote.refreshOk = false
+        engine.run("test") shouldBe RunOutcome.STOPPED
+        engine.state.value shouldBe SyncState.NeedsSignIn
+        db.outbox().pendingCount("workout_sessions", "s1") shouldBe 1
+    }
+
+    @Test
+    fun `an access error on one pulled table is logged and the other tables are still pulled`() = blocking {
+        val other = "22222222-2222-4222-8222-222222222222"
+        remote.seed("workout_sessions", SyncJson.encodeToJsonElement(WorkoutSessionEntity.serializer(), session("s7", device = other)) as JsonObject)
+        remote.failTable["gyms"] = SyncFailure(403, "42501")
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        db.sessions().get("s7") shouldNotBe null
+        db.events().exportAll().filter { it.event_type == "sync_error" }.map { it.payload }.single().let {
+            it.contains("\"table\":\"gyms\"") shouldBe true
+            it.contains("\"error_class\":\"access\"") shouldBe true
+        }
+    }
+
+    @Test
     fun `pull inserts rows of other devices and keeps newer local rows`() = blocking {
         val other = "22222222-2222-4222-8222-222222222222"
         val g = GymEntity(id = "g1", user_id = uid, client_updated_at = now, device_id = other, app_version = "x", name = "Basic-Fit")
@@ -225,6 +264,15 @@ class SyncEngineTest {
         }
 
         override fun authRefreshPending() = refreshPending
+
+        /** Whether a refresh after a 401 succeeds; [refreshes] counts the attempts. */
+        var refreshOk = true
+        var refreshes = 0
+
+        override suspend fun refreshSession(): Boolean {
+            refreshes++
+            return refreshOk
+        }
 
         private val tables = sortedMapOf<String, java.util.TreeMap<String, JsonObject>>()
         private var tick = 0

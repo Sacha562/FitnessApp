@@ -168,6 +168,30 @@ class EcaSnapshotSemanticsTest {
     }
 
     @Test
+    fun `in a re-entry week the protective pin steps start from the pin without the offset (D63)`() {
+        fun reentry(vararg extra: Pair<String, dev.fitnessapp.algo.challenge.fitexpr.Value>) = OapFixture.start(
+            OapFixture.import(
+                mode = "extra_deload", blockWeek = 1, plannedTest = null, needsCleanSession = false,
+                extraVars = mapOf("reentry" to dev.fitnessapp.algo.challenge.fitexpr.BoolV.TRUE, *extra),
+            ),
+        )
+        fun pin(step: EnrollmentFold.Step, name: String) = (step.state.vars.getValue(name) as QV).v
+        // A: pinA 40, the re-entry plan shows 50; a missed rep keeps pinA at 40, not 50.
+        val a = session("A", "2026-10-08", mapOf("oaa" to oaa("50", List(3) { 3 to 2 }, targetReps = 3)), time = "21:15")
+        val first = apply(OapFixture.def, reentry(), a)
+        rows(first, "prog.A.pin.gated").single().outcome shouldBe Outcome.APPLIED
+        pin(first, "pinA").compareTo(BigDecimal(40)) shouldBe 0
+        // The second failed week raises it 5 lb from 40, not from 50.
+        val second = apply(OapFixture.def, reentry("aFailStreak" to dev.fitnessapp.algo.challenge.fitexpr.Values.int(1)), a)
+        pin(second, "pinA").compareTo(BigDecimal(45)) shouldBe 0
+        // C: pinC 50, the re-entry plan shows 60; under 4 reps gives 55, not 65.
+        val c = session("C", "2026-10-07", mapOf("oaa" to oaa("60", listOf(5 to 5, 4 to 3), targetReps = 5)), time = "21:15")
+        val hard = apply(OapFixture.def, reentry(), c)
+        rows(hard, "prog.C.pin.hard").single().outcome shouldBe Outcome.APPLIED
+        pin(hard, "pinC").compareTo(BigDecimal(55)) shouldBe 0
+    }
+
+    @Test
     fun `a block rollover during injury keeps the injury mode`() {
         val s = OapFixture.start(OapFixture.import(mode = "normal", blockWeek = 2, plannedTest = null, needsCleanSession = false))
             .let { st -> st.copy(mode = "injury", vars = java.util.TreeMap(st.vars).also { it["blockEndPending"] = dev.fitnessapp.algo.challenge.fitexpr.BoolV.TRUE }) }

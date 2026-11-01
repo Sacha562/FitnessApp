@@ -36,6 +36,9 @@ interface SyncRemote {
      */
     fun authRefreshPending(): Boolean = false
 
+    /** Refreshes the session after a 401 (ANDROID 9.5); false when the refresh token is no longer valid. */
+    suspend fun refreshSession(): Boolean = false
+
     /** Mutable tables: merge-duplicates upsert; returns the representation (`id, client_updated_at, device_id, server_updated_at`). */
     suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject>
 
@@ -74,6 +77,17 @@ class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
 
     override fun authRefreshPending(): Boolean = client.auth.sessionStatus.value.let {
         it is SessionStatus.RefreshFailure || it is SessionStatus.Initializing
+    }
+
+    override suspend fun refreshSession(): Boolean = try {
+        client.auth.refreshCurrentSession()
+        true
+    } catch (e: RestException) {
+        false
+    } catch (e: HttpRequestException) {
+        false
+    } catch (e: java.io.IOException) {
+        false
     }
 
     override suspend fun upsertMerge(table: String, rows: List<JsonObject>): List<JsonObject> = call {

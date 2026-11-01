@@ -214,7 +214,7 @@ class SyncEngine(
             stats.error(cls)
             when (cls) {
                 SyncErrorClass.TRANSIENT -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
-                SyncErrorClass.AUTH -> throw Stop(RunOutcome.STOPPED, SyncState.NeedsSignIn)
+                SyncErrorClass.AUTH -> throw authStop(t.name, ex.failure)
                 SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
                 SyncErrorClass.SCHEMA_DRIFT -> {
                     logError(t.name, null, pairs.size, cls, ex.failure)
@@ -308,7 +308,7 @@ class SyncEngine(
             val cls = ErrorClassifier.classify(ex.failure)
             stats.error(cls)
             when (cls) {
-                SyncErrorClass.AUTH -> throw Stop(RunOutcome.STOPPED, SyncState.NeedsSignIn)
+                SyncErrorClass.AUTH -> throw authStop(table, ex.failure)
                 SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
                 SyncErrorClass.TRANSIENT -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
                 else -> {
@@ -350,13 +350,14 @@ class SyncEngine(
                 val cls = ErrorClassifier.classify(ex.failure)
                 stats.error(cls)
                 when (cls) {
-                    SyncErrorClass.SCHEMA_DRIFT -> {
+                    SyncErrorClass.AUTH -> throw authStop(t.name, ex.failure)
+                    SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
+                    SyncErrorClass.TRANSIENT -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
+                    // Schema drift, access and the rest: log it, skip this table, pull the others.
+                    else -> {
                         logError(t.name, null, 0, cls, ex.failure)
                         return
                     }
-                    SyncErrorClass.AUTH -> throw Stop(RunOutcome.STOPPED, SyncState.NeedsSignIn)
-                    SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
-                    else -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
                 }
             }
             if (page.isEmpty()) break
@@ -458,6 +459,19 @@ class SyncEngine(
             )
         }
         stats.errors["dead_letter"] = (stats.errors["dead_letter"] ?: 0) + 1
+    }
+
+    /**
+     * A 401 (ANDROID 9.5): refresh the session once and retry the run with backoff; only when the refresh token is
+     * no longer valid does sync stop and ask the user to sign in. The outbox is kept either way.
+     */
+    private suspend fun authStop(table: String, f: SyncFailure): Stop {
+        logError(table, null, 0, SyncErrorClass.AUTH, f)
+        return if (remote.refreshSession() || remote.authRefreshPending()) {
+            Stop(RunOutcome.RETRY, SyncState.Offline)
+        } else {
+            Stop(RunOutcome.STOPPED, SyncState.NeedsSignIn)
+        }
     }
 
     private suspend fun logError(table: String, rowId: String?, rows: Int, cls: SyncErrorClass, f: SyncFailure, attempts: Int = 1) {

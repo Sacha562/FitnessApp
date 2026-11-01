@@ -407,7 +407,9 @@ class SessionRepository(
             // A challenge warm-up item (role `warmup`) plans and logs warm-up sets only: neither planned nor done work.
             val warmupItems = warmupItemKeys(sessionId)
             val working = sets.filter { it.set_kind != "warmup" }
-            val doneUnits = working.sumOf { if (it.side == "both") 2 else 1 } / 2.0
+            // The attempts of a top-hold round share their set index: a round counts once per side.
+            val doneUnits = working.distinctBy { Triple(it.session_exercise_id, it.set_index, it.side) }
+                .sumOf { if (it.side == "both") 2 else 1 } / 2.0
             val planned = exs.filter { it.status != "removed" && it.challenge_item_key !in warmupItems }.sumOf { it.planned_sets ?: 0 }
             val notDone = exs.filter { it.status in setOf("pending", "active", "deferred") }
             for (e in notDone) {

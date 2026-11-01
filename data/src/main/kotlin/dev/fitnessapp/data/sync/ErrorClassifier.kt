@@ -25,10 +25,12 @@ object ErrorClassifier {
             code in setOf("PGRST204", "42703", "PGRST205", "42P01") -> SyncErrorClass.SCHEMA_DRIFT
             code == "25006" -> SyncErrorClass.SERVER_READ_ONLY
             code == "57014" -> SyncErrorClass.TRANSIENT
+            // Any 401 is the session (ANDROID 9.5): a 401 with `42501` is a request that went out as `anon`, without
+            // the user's token; a user who is not allowed is authenticated and gets 403.
+            code in setOf("PGRST301", "PGRST303") || f.httpStatus == 401 -> SyncErrorClass.AUTH
             code == "42501" -> SyncErrorClass.ACCESS
             code == "23503" -> SyncErrorClass.FK_ORDER
             code in setOf("23505", "23514", "23502") || code.startsWith("22") -> SyncErrorClass.ROW_PERMANENT
-            code in setOf("PGRST301", "PGRST303") || f.httpStatus == 401 -> SyncErrorClass.AUTH
             f.httpStatus == 413 -> SyncErrorClass.PAYLOAD_TOO_LARGE
             f.httpStatus == 408 || f.httpStatus == 429 || f.httpStatus >= 500 -> SyncErrorClass.TRANSIENT
             f.httpStatus == 403 -> SyncErrorClass.ACCESS
