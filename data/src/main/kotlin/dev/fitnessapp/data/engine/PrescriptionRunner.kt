@@ -34,6 +34,7 @@ import dev.fitnessapp.algo.prescription.rx.RepPref
 import dev.fitnessapp.algo.prescription.rx.Rx
 import dev.fitnessapp.algo.prescription.rx.RxMode
 import dev.fitnessapp.algo.prescription.rx.RxOutput
+import dev.fitnessapp.algo.prescription.rx.RxSet
 import dev.fitnessapp.algo.prescription.rx.Schemes
 import dev.fitnessapp.algo.pipeline.RxRequest
 import dev.fitnessapp.algo.selection.catalog.Catalog
@@ -292,6 +293,21 @@ class PrescriptionRunner(
             AutoregJson.result(r), JsonArray(r.trace.map { JsonPrimitive(it) }), lastSet,
         )
         Suggestion(id, se.id, sideKey, r, highRisk)
+    }
+
+    /**
+     * The next set's target of [slot] on [side] after [restS] seconds of rest since its last logged set (B13.7, D69):
+     * the reps at the planned load from that set's own result, or null when the target stays. Not stored: the logged
+     * set keeps the target it was done against as its `planned_reps`.
+     */
+    suspend fun restTarget(slot: RxSlot, side: String, restS: Double): RxSet? = mutex.withLock {
+        val se = db.sessionExercises().get(slot.sessionExerciseId) ?: return@withLock null
+        val session = db.sessions().get(se.session_id) ?: return@withLock null
+        val ex = catalog.byId(se.exercise_id)?.takeIf(::eligible) ?: return@withLock null
+        val sideKey = if (se.side_mode == "bilateral") "both" else side
+        val sessionSets = sessionLogged(session)
+        val base = autoregInput(session, se, ex, slot, sideKey, sessionSets) ?: return@withLock null
+        Autoreg.restTarget(base.copy(deltaStart = deltaToday(session, se, sessionSets, false)), restS, params.fork())
     }
 
     /** The session's logged sets as the estimators read them (every exercise, for FAT-1's carry-over). */

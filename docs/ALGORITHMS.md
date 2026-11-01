@@ -1937,8 +1937,10 @@ re-run RX-1 (B9.5 or B9.6) for the remaining sets with M_use * exp(delta_ex) and
 rir_next(w) = predicted RIR of set j+1 at load w
 if rir_next(w_cur) < q* - autoreg.safety_drop_margin (1.0):    load change allowed (safety drop, no -8 % floor)
 elif |rir_next(w_cur) - q*| >= autoreg.hysteresis_rir (1.5):   load change allowed
-else:                                                          no load change; RANGE: propose reps +/-1 inside
-                                                               the range if it moves predicted RIR toward q* by >= 0.5
+else:                                                          no load change; RANGE: each remaining set, in order,
+                                                               takes the reps inside the range whose predicted RIR is
+                                                               closest to q* (ties: closer to the current target), if
+                                                               that moves it toward q* by >= 0.5 (D69; was +/-1)
 bounds for a load change (relative to the planned load w_plan of the exercise):
    w_new <= w_plan * (1 + autoreg.delta_max)                          // +6 %
    w_new >= w_plan * (1 + autoreg.delta_min)                          // -8 %, except a safety drop
@@ -1980,7 +1982,26 @@ this item is RULE mode; the challenge rule decides next week's load.)
 current and the proposed load; review keys, D5) and the hysteresis numbers; user response in
 `session_events` (`suggestion_shown`, `suggestion_applied`, `suggestion_kept`, implicit Keep). Review: hit
 rate of post-change predictions, acceptance rate. `AutoregTest` (triggers a-d, limit 1 for general items,
-no card for RULE items, hysteresis, bounds, safety drop, transfer, example).
+no card for RULE items, hysteresis, bounds, safety drop, transfer, example, rest refit).
+
+### B13.7 Rest refit of the next set (D69)
+
+While the next working set of a general (non-challenge) RANGE item in mode MODEL or DOUBLE waits and the user has not
+touched its card, its reps follow the last logged set and the rest taken since. It is not a suggestion (no card, not
+counted toward the limit, C57) and never changes the load:
+
+```
+cap_next = cap(w_next, m_obs, k) * (1 - F_next)
+  m_obs  = w_last * (1 + (n_fresh_last - 1) / k)      // the last set's own fresh-equivalent reps (B6.3) through the rep curve;
+                                                       // without a usable last set: M_use * exp(delta_ex)
+  F_next = FAT-1 step from the last set's F with its reps and n_eff over the actual rest so far (B7.3)
+reps     = the reps inside [r_lo, r_hi] with cap_next - reps closest to q* (ties: closer to the current target, then
+           fewer), kept unless that moves the predicted RIR toward q* by >= 0.5
+```
+
+The phone refits every 15 s; the card shows "for M:SS rest" after the aim while a refitted target is shown. The
+logged set keeps the target it was done against as `planned_reps`. A RULE item, a warm-up, the first working set and
+a touched card are never refitted. `AutoregTest` (stronger set after the planned rest, short rest, third set, RULE).
 
 <a id="stall-1"></a>
 ## B14. `stall` (STALL-1): stall, regression, tiers and the global deload trigger (C13, C15)

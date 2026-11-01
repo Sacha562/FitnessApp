@@ -1666,7 +1666,9 @@ From top to bottom:
    prescription (RX-1 mode MODEL / DOUBLE / RULE, rule id, numbers). An amber dot appears when the
    WarningEngine has a note on this item (for example "3 sets (you prefer 2)", or a challenge rule load
    above the generic load-jump cap, D13 / C45). When a challenge in-session rule changed the remaining
-   sets, a "Rule: ... · Undo" line sits directly under the target line (11.10).
+   sets, a "Rule: ... · Undo" line sits directly under the target line (11.10). While the next working set of a
+   general exercise waits untouched, its reps follow the last set and the rest so far (ALGORITHMS B13.7, D69) and the
+   line ends with "· for 3:30 rest"; the load never changes this way.
 3. **Last line** (muted): the last performance of this exercise, same set index first:
    "Last BW + 22.5 x 4 4 4 3 · Thu 1 Oct".
 4. **Load stepper row** (if the load type has a load) and a secondary line (plate breakdown, assist

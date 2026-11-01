@@ -166,4 +166,38 @@ class AutoregTest {
         Autoreg.deltaToday(listOf(0.02), feelingGood = false, params) shouldBe 0.0
         Autoreg.deltaToday(listOf(0.02), feelingGood = true, params) shouldBe 0.01
     }
+
+    private fun prepared(sets: List<LoggedSet>) = Sse.prepare(sets, FACTS, RirCal.initial(params), params).filter { it.set.setKind != "warmup" }
+
+    private fun restInput(vararg sets: LoggedSet, rule: Boolean = false) = AutoregInput(
+        legInput.copy(estimate = RxEstimate(legInput.estimate!!.lPred, 0.0016)), Rx.modelMode(legInput, params.fork()), prepared(sets.toList()),
+        ruleItem = rule,
+    )
+
+    @Test
+    fun `a stronger set than planned lifts the next target after the planned rest (D69)`() {
+        // Plan 10 / 9 / 8 at 125 kg; set 1 shows 12 reps with 3 in reserve, more than the model's 13.1 capacity.
+        val next = Autoreg.restTarget(restInput(legSet(1, 12, 3.0)), 150.0, params.fork())!!
+        next.setIndex shouldBe 2
+        next.targetReps shouldBe 10 // the top of the 8-10 range
+        next.rirPred shouldBe 3.06
+        Autoreg.restTarget(restInput(legSet(1, 12, 3.0)), 60.0, params.fork()).shouldBeNull() // a short rest keeps 9
+    }
+
+    @Test
+    fun `a short rest lowers the next target and the planned rest keeps it (D69)`() {
+        val logged = legSet(1, 10, 2.0)
+        Autoreg.restTarget(restInput(logged), 60.0, params.fork())!!.let { it.targetReps shouldBe 8; it.rirPred shouldBe 0.86 }
+        Autoreg.restTarget(restInput(logged), 150.0, params.fork()).shouldBeNull()
+    }
+
+    @Test
+    fun `the third set follows the second set and the actual rest, a RULE item never (D69)`() {
+        Autoreg.restTarget(restInput(legSet(1, 10, 2.0), legSet(2, 10, 3.0)), 300.0, params.fork())!!.let {
+            it.setIndex shouldBe 3
+            it.targetReps shouldBe 10
+            it.rirPred shouldBe 2.9
+        }
+        Autoreg.restTarget(restInput(legSet(1, 12, 3.0), rule = true), 150.0, params.fork()).shouldBeNull()
+    }
 }

@@ -235,23 +235,13 @@ object Autoreg : DeclaresParams {
         }
         if (s.kind != SchemeKind.RANGE) return keep.copy(trigger = trigger, rirNextCur = Grid.rep(rirCur.first()), hysteresis = hyst, trace = trace + "autoreg.keep")
 
-        // RANGE without a load change: reps +/-1 inside the range when that moves the predicted RIR toward q* by >= 0.5.
+        // RANGE without a load change (D69): each remaining set takes the reps inside the range whose predicted RIR is
+        // closest to q*, set by set (a set's reps change the fatigue of the next), when that gains at least MIN_GAIN.
         val reps = targets.toMutableList()
         var changed = false
         for (n in reps.indices) {
-            val base = predicted(wCur, mNew, k, reps, fNext, remaining, kc)[n]
-            var best = reps[n]
-            var bestGain = 0.0
-            for (r in listOf(reps[n] + 1, reps[n] - 1)) {
-                if (r < s.rLo || r > s.rHi) continue
-                val trial = reps.toMutableList().also { it[n] = r }
-                val rir = predicted(wCur, mNew, k, trial, fNext, remaining, kc)[n]
-                val gain = kotlin.math.abs(base - s.qStar) - kotlin.math.abs(rir - s.qStar)
-                if (gain >= 0.5 - 1e-9 && gain > bestGain + 1e-9) {
-                    best = r
-                    bestGain = gain
-                }
-            }
+            val rir = { r: Int -> predicted(wCur, mNew, k, reps.toMutableList().also { it[n] = r }, fNext, remaining, kc)[n] }
+            val best = bestReps(reps[n], s.rLo, s.rHi, s.qStar, rir)
             if (best != reps[n]) {
                 reps[n] = best
                 changed = true
@@ -263,6 +253,46 @@ object Autoreg : DeclaresParams {
         val sets = remaining.mapIndexed { n, r -> r.copy(targetReps = reps[n], wSys = Grid.kg(wCur)) }
         return AutoregResult(deltaEx, deltas, trigger, SuggestionKind.REPS, null, sets.withPred(rirNew), wCur, Grid.kg(wCur),
             Grid.rep(rirCur.first()), Grid.rep(rirNew.first()), hyst, !i.ruleItem, trace)
+    }
+
+    /**
+     * The next set's target from the last set and the rest taken so far (B13.7, D69): at the next set's planned load, the
+     * reps inside the range whose predicted RIR is closest to q*. The capacity comes from the last logged set itself
+     * (its fresh-equivalent reps `n_fresh` at its load, B6.3, through the rep curve), carried by FAT-1 over [restS]
+     * seconds of actual rest; without a usable last set, from `M_use * exp(delta_ex)`. Null when the target stays (no
+     * gain of at least MIN_GAIN) or the item is not a general RANGE prescription with a planned load.
+     */
+    fun restTarget(i: AutoregInput, restS: Double, params: ParamView): RxSet? {
+        val s = i.plan.scheme
+        if (i.ruleItem || s.kind != SchemeKind.RANGE || (i.plan.mode != RxMode.MODEL && i.plan.mode != RxMode.DOUBLE)) return null
+        val last = i.logged.lastOrNull() ?: return null
+        if (last.set.setKind !in WORKING || last.set.reasonCode == "pain") return null
+        val q = last.q ?: return null
+        val j = i.logged.size
+        val next = i.plan.sets.firstOrNull { it.setIndex == j + 1 } ?: return null
+        val w = next.wSys ?: return null
+        val mUse = i.plan.mUse ?: return null
+        val k = i.rx.k
+        if (k <= 0.0) return null
+        val wLast = last.set.wSys
+        val nFresh = last.nFresh
+        val m = if (wLast != null && nFresh != null && nFresh > 0.0) wLast * (1.0 + (nFresh - 1.0) / k)
+        else mUse * Det.exp(evaluate(i.copy(cardsShown = Int.MAX_VALUE), params).deltaEx)
+        val f = Fatigue.step(last.fatigueF, last.repsDone, q.nEff, restS, Fatigue.constants(params))
+        val cap = RepCurve.cap(w, m, k) * (1.0 - f)
+        val current = next.targetReps ?: s.rHi
+        val best = bestReps(current, s.rLo, s.rHi, s.qStar) { r -> cap - r }
+        return if (best == current) null else next.copy(targetReps = best, rirPred = Grid.rep(cap - best))
+    }
+
+    /**
+     * The reps in [lo]..[hi] whose predicted RIR ([rir]) is closest to [qStar] (ties: closer to [current], then fewer),
+     * kept at [current] unless that moves the prediction toward [qStar] by at least MIN_GAIN (B13.3).
+     */
+    private fun bestReps(current: Int, lo: Int, hi: Int, qStar: Double, rir: (Int) -> Double): Int {
+        val dist = { r: Int -> kotlin.math.abs(rir(r) - qStar) }
+        val best = (lo..hi).minWithOrNull(compareBy<Int> { Grid.rep(dist(it)) }.thenBy { kotlin.math.abs(it - current) }.thenBy { it }) ?: return current
+        return if (dist(current) - dist(best) >= MIN_GAIN - 1e-9) best else current
     }
 
     /** Predicted RIR per remaining set at load [w] with the prescription recursion from [f1] (B7.2). */
@@ -289,4 +319,7 @@ object Autoreg : DeclaresParams {
         loadables.filter { it > w + EPS }.sorted().getOrNull(steps - 1) ?: loadables.filter { it > w + EPS }.maxOrNull()
 
     private const val EPS = 0.005
+
+    /** B13.3's fixed design constant: a rep change must move the predicted RIR toward q* by at least half a rep. */
+    private const val MIN_GAIN = 0.5
 }

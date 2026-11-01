@@ -145,6 +145,8 @@ data class Card(
     val probePickReps: Int? = null,
     /** Today's explicit RIR check (F14, B4.3): the chip is the predicted reserve, then extra reps to failure. */
     val calibration: Boolean = false,
+    /** The rest the target was refitted for (B13.7, D69), in seconds; null while the target is the plan's. */
+    val restFitS: Int? = null,
     val calibRir: Int? = null,
     val calibExtra: Int = 0,
 ) {
@@ -272,6 +274,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val accepted = java.util.concurrent.ConcurrentHashMap<String, Map<Int, RxTarget>>()
     @Volatile private var lastApplied: String? = null
 
+    /** B13.7 (D69): the next set's target refitted to its last set and the rest so far, by "seId|side|workIndex". */
+    private val restFit = java.util.concurrent.ConcurrentHashMap<String, Pair<RxTarget, Int>>()
+
     /** AUTO-1's last verdict per session exercise; WE-S5 reads its next-set prediction. */
     private val verdicts = java.util.concurrent.ConcurrentHashMap<String, Suggestion>()
 
@@ -300,6 +305,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 // Header cloud-off icon only while offline with changes (UX 7.1, 11.x).
                 c.sync.observePending().combine(c.sync.state) { n, st -> if (st is SyncState.Offline) n else 0 },
             ) { s, exs, sets, rest, pending -> Snapshot(s, exs, sets, rest, pending) }.collect { rebuild(it) }
+        }
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(REST_FIT_TICK_MS)
+                runCatching { refitForRest() }
+            }
         }
         viewModelScope.launch {
             c.challengeSessions.observeLive(sessionId).collect { live ->
@@ -434,7 +445,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         // The working set number on this side: RX-1's set index and "last time"'s renumbered index (warm-ups excluded).
         val workIndex = item.working.count { it.side == side } + 1
         val adjusted = if (warmup) null else accepted["${item.se.id}|$side"]?.get(workIndex)
-        val rxTarget = if (warmup) null else adjusted ?: item.rx?.target(workIndex, side)
+        val planTarget = if (warmup) null else adjusted ?: item.rx?.target(workIndex, side)
+        // B13.7 (D69): the reps refitted to the last set and the rest so far, at the same load.
+        val fit = planTarget?.let { t -> restFit["${item.se.id}|$side|$workIndex"]?.takeIf { it.first.wSys == t.wSys } }
+        val rxTarget = fit?.let { (f, _) -> planTarget.copy(targetReps = f.targetReps, rirPred = f.rirPred) } ?: planTarget
         val warmupTarget = if (warmup && warmupOverride[item.se.id] == null) {
             item.rx?.warmup?.getOrNull(item.sets.count { it.set_kind == "warmup" && it.side == side })
         } else null
@@ -443,7 +457,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val pf = UiPrefill.prefill(
             SetSlot(if (warmup) setIndex else workIndex, side, mode),
             PrefillContext(
-                acceptedAdjustment = adjusted?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) },
+                acceptedAdjustment = (if (fit != null) rxTarget else adjusted)?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) },
                 target = engine,
                 history = if (warmup) emptyList() else history, todayPrevious = todayPrev, default = default,
                 // Right side reps never prefill above the left side's (UX 11.7.2); the program rule arrives with M2.
@@ -489,6 +503,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             stackRowId = resolved.row?.id?.takeIf { (resolved.scheme as? LoadScheme.Stack)?.unit in setOf("kg", "lb") },
             rxTarget = rxTarget, warmupTarget = warmupTarget, workIndex = workIndex,
             calibration = !warmup && side == "both" && item.rx?.calibrationSet == workIndex,
+            restFitS = fit?.second,
             probePickReps = rxTarget?.takeIf { item.rx?.probe == true && workIndex == 1 && it.wSys == null }?.let { t ->
                 (t.targetReps ?: 0) + Math.round(t.rir ?: 0.0).toInt()
             },
@@ -914,6 +929,24 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             sessionId, setId, card.item.se.exercise_id, card.side, loggedAt, planned ?: decision.timerS.toInt(), decision.hardMaxS.toInt(),
             "rest", if (planned != null) "challenge" else "rest_module",
         )
+    }
+
+    /**
+     * B13.7 (D69): while the next working set of a general exercise waits untouched, its reps follow the last set's
+     * result and the rest taken so far (same load, inside the range). The card is rebuilt only when the target moves.
+     */
+    private suspend fun refitForRest() {
+        val card = _ui.value.card ?: return
+        val item = card.item
+        if (card.warmup || card.taps > 0 || card.workIndex < 2 || item.rx == null || item.se.challenge_item_key != null) return
+        val lastSet = item.working.filter { it.side == card.side }.maxByOrNull { it.completed_at } ?: return
+        val restS = ((System.currentTimeMillis() - lastSet.completed_at) / 1000L).toInt()
+        val slot = rxSlot(item) ?: return
+        val key = "${item.se.id}|${card.side}|${card.workIndex}"
+        val t = c.prescriptions.restTarget(slot, card.side, restS.toDouble())
+        val before = restFit[key]?.first?.targetReps
+        if (t == null) restFit.remove(key) else restFit[key] = RxTarget(t.setIndex, t.side, t.targetReps, t.rir, t.wSys, t.rirPred, t.restS) to restS
+        if (t?.targetReps != before) last?.let { rebuild(it) }
     }
 
     /** AUTO-1 after a working set (B13, UI-06): both sides after an L+R pair; the first card that fires is shown. */
@@ -1623,7 +1656,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
         val reps = t.targetReps?.let { "× $it" }
         val aim = t.rir?.let { " · aim: ${Numbers.num(it, 1)} in reserve" } ?: ""
-        return "Target " + listOfNotNull(load, reps).joinToString(" ") + aim
+        val fit = card.restFitS?.let { " · for ${it / 60}:${"%02d".format(it % 60)} rest" } ?: ""
+        return "Target " + listOfNotNull(load, reps).joinToString(" ") + aim + fit
     }
 
     /** A challenge RULE item's line (UX 11.6 item 2): the plan's load and reps for this set with its RIR aim. */
@@ -1715,6 +1749,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     companion object {
         const val DEFAULT_REPS = 8
+
+        /** How often the waiting next set's target is refitted to the rest so far (B13.7, D69). */
+        private const val REST_FIT_TICK_MS = 15_000L
 
         /** Half of the 0.01 kg grid: two system loads closer than this are the same load. */
         private const val LOAD_EPS_KG = 0.005
