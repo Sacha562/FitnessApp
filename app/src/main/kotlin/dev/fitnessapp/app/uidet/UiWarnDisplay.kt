@@ -33,6 +33,15 @@ data class WarnDisplayResult(
 object UiWarnDisplay {
     fun key(ruleId: String, entity: String) = "$ruleId|$entity"
 
+    /**
+     * The SAFETY notices acknowledged today, from the stored `warning_dismissed` events ([dismissed]: key and time), so a
+     * rebuilt session screen (the app reopened after the phone slept) does not ask again for an OK already given.
+     */
+    fun acknowledgedToday(dismissed: List<Pair<String, Instant>>, now: Instant, zone: java.time.ZoneId): Set<String> {
+        val today = now.atZone(zone).toLocalDate()
+        return dismissed.filter { it.second.atZone(zone).toLocalDate() == today }.map { it.first }.toSortedSet()
+    }
+
     fun display(
         warnings: List<Warning>,
         dismissals: Map<String, Dismissal>,

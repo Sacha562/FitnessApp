@@ -16,7 +16,7 @@ class InSessionRuleTest {
     private val def = OapFixture.def
     private val params = OapFixture.params()
     private val date = LocalDate.parse("2026-10-14")
-    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.3.json")) }
+    private val catalog: CatalogDoc by lazy { CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.4.json")) }
 
     private fun live(state: EnrollmentState, slot: String, key: String): LiveItem {
         val plan = Materializer.materialize(def, params, MaterializeInput(slot, date, state, OapFixture.facts, catalog, changeoverMin = 5))

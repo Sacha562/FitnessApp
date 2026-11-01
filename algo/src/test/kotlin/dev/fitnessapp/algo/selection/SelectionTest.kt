@@ -31,7 +31,7 @@ class SelectionTest {
         requireNotNull(javaClass.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     private val taxonomy = Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"))
-    private val catalog = Catalog(CatalogDoc.parse(resource("catalog/catalog-1.0.3.json")), taxonomy)
+    private val catalog = Catalog(CatalogDoc.parse(resource("catalog/catalog-1.0.4.json")), taxonomy)
     private val params = TestParams.defaults()
     private val today = LocalDate.of(2026, 10, 28)
     private fun ex(slug: String) = requireNotNull(catalog.exercise(slug)) { slug }
@@ -176,10 +176,11 @@ class SelectionTest {
     )
 
     @Test
-    fun `leg press occupied offers the hack squat first`() {
+    fun `leg press occupied offers the hack squat and the seated leg press first (D64)`() {
         val r = rank("leg_press_45", setOf("rdl_barbell", "hip_thrust_barbell", "seated_leg_curl", "leg_extension", "hip_abduction_machine", "leg_press_calf_raise"))
         // 22.3 regenerated with the seed's full region vectors (the prototype listed hack squat, BSS, back squat).
-        r.map { it.slug to it.score } shouldBe listOf("hack_squat_machine" to 0.9339, "goblet_squat_db" to 0.8565, "bulgarian_split_squat_db" to 0.8478)
+        // D64: the seated leg press is its own station, so the occupied 45° sled no longer hides it.
+        r.map { it.slug to it.score } shouldBe listOf("hack_squat_machine" to 0.9339, "leg_press_seated" to 0.9339, "goblet_squat_db" to 0.8565)
     }
 
     @Test

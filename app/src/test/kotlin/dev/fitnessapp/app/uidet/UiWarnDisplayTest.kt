@@ -65,4 +65,14 @@ class UiWarnDisplayTest {
         r.moreNotes shouldBe 2
         r.notes.map { it.ruleId } shouldBe listOf("WE-P2", "WE-P6")
     }
+
+    @Test
+    fun `an OK given today survives the reopened session screen, yesterday's does not`() {
+        val zone = java.time.ZoneId.of("Europe/Amsterdam")
+        val now = Instant.parse("2026-11-01T21:24:05Z")
+        val k = UiWarnDisplay.key("WE-S4", "session_exercise:a")
+        val old = UiWarnDisplay.key("WE-S4", "session_exercise:b")
+        val acks = UiWarnDisplay.acknowledgedToday(listOf(k to Instant.parse("2026-11-01T21:05:13Z"), old to Instant.parse("2026-10-31T22:59:00Z")), now, zone)
+        acks shouldBe setOf(k)
+    }
 }

@@ -1019,6 +1019,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private suspend fun loadWarningStore() {
         val rows = runCatching { c.sessionRepository.eventsOfTypes(listOf("warning_dismissed", "warning_use_mine_toggled")) }.getOrDefault(emptyList())
         val d = HashMap<String, Dismissal>()
+        val acks = ArrayList<Pair<String, java.time.Instant>>()
         val mine = HashSet<String>()
         for (r in rows) {
             val o = runCatching { Json.parseToJsonElement(r.payload).jsonObject }.getOrNull() ?: continue
@@ -1026,12 +1027,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val entity = o["entity"]?.jsonPrimitive?.contentOrNull ?: continue
             val key = UiWarnDisplay.key(rule, entity)
             when (r.event_type) {
-                "warning_dismissed" -> d[key] = Dismissal(java.time.Instant.ofEpochMilli(r.occurred_at), o["magnitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0)
+                "warning_dismissed" -> {
+                    d[key] = Dismissal(java.time.Instant.ofEpochMilli(r.occurred_at), o["magnitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0)
+                    acks += key to java.time.Instant.ofEpochMilli(r.occurred_at)
+                }
                 else -> if (o["on"]?.jsonPrimitive?.booleanOrNull == true) mine += key else mine -= key
             }
         }
         dismissals = d
         useMine = mine
+        acknowledged += UiWarnDisplay.acknowledgedToday(acks, c.clock.now(), dev.fitnessapp.app.planning.PlanningFacts.ZONE)
     }
 
     private fun refreshWarnings() = viewModelScope.launch {

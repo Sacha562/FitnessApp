@@ -27,6 +27,8 @@ data class Checklist(
     /** Gym plate sizes; 1.25 kg is in the list only when the gym has it. Plates are unlimited (F7). */
     val plates: List<Double> = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5),
     val barKg: Double = 20.0,
+    /** The plate-loaded 45° leg press's sled mass (D64), stored as its `bar_kg`; null = unknown, asked like the Smith bar (F7). */
+    val sledKg: Double? = null,
     val dumbbells: List<Double> = defaultDumbbells(),
     /** `kg` or `lb`: most stacks are marked in lb (F7). */
     val stackUnit: String = "lb",
@@ -46,7 +48,7 @@ data class Checklist(
     companion object {
         /** Stations that are not common at Basic-Fit start unticked. */
         private val OPTIONAL = setOf("wide_bar", "rings", "home_bar", "chalk", "dip_belt", "barbell", "dumbbells")
-        val HEAVY_STACKS = setOf("leg_press", "hack_squat", "calf_machine", "hip_thrust_machine")
+        val HEAVY_STACKS = setOf("leg_press_seated", "hack_squat", "calf_machine", "hip_thrust_machine")
 
         /** Gym plates are unlimited (F7): 20 per size is the top of the count range and never binds. */
         const val GYM_PLATE_COUNT = 20
@@ -78,6 +80,9 @@ data class Checklist(
                     plates = plates.mapNotNull { it["kg"]?.jsonPrimitive?.doubleOrNull }.ifEmpty { c.plates },
                 )
             }
+            byType["leg_press"]?.takeIf { it.scheme_type == "plates" }?.let { r ->
+                c = c.copy(sledKg = Json.parseToJsonElement(r.load_scheme).jsonObject["bar_kg"]?.jsonPrimitive?.doubleOrNull)
+            }
             byType["dumbbells"]?.let { r ->
                 val v = Json.parseToJsonElement(r.load_scheme).jsonObject["values"]?.jsonArray?.mapNotNull { it.jsonPrimitive.doubleOrNull }
                 if (!v.isNullOrEmpty()) c = c.copy(dumbbells = v)
@@ -98,8 +103,10 @@ data class Checklist(
                 )
             }
             val (own, shared) = rows.filter { it.scheme_type == "stack" }.partition { it.calibration_source == "measured" }
+            // The landmine's kg plate grid (D66) is not a machine stack: it never sets the shared unit or step.
+            val machineStacks = shared.filter { it.equipment_type != "landmine" }
             c = c.copy(ownStacks = own.associate { it.equipment_type to Json.parseToJsonElement(it.load_scheme).jsonObject }.toSortedMap())
-            shared.firstOrNull()?.let { r ->
+            machineStacks.firstOrNull()?.let { r ->
                 val o = Json.parseToJsonElement(r.load_scheme).jsonObject
                 val unit = o["unit"]?.jsonPrimitive?.content?.takeIf { it == "kg" || it == "lb" } ?: c.stackUnit
                 c = c.copy(stackUnit = unit, stackStep = o["step"]?.jsonPrimitive?.doubleOrNull ?: defaultStackStep(unit))
@@ -138,6 +145,8 @@ data class Checklist(
             val scheme: JsonObject = when (t.key) {
                 "barbell" -> platesScheme(barKg)
                 "smith_machine" -> platesScheme(null)
+                "leg_press" -> platesScheme(sledKg)
+                "landmine" -> ownStacks[t.key] ?: landmineScheme()
                 "dumbbells" -> buildJsonObject {
                     put("type", "dumbbells"); put("unit", "kg"); put("per", "hand")
                     put("values", JsonArray(dumbbells.sorted().distinct().map(::JsonPrimitive)))
@@ -165,6 +174,7 @@ data class Checklist(
                 equipmentType = t.key, label = label, available = available, loadScheme = scheme,
                 calibrationSource = when {
                     t.key == "assisted_pullup_machine" -> "user_estimate"
+                    t.key == "leg_press" && sledKg != null -> "measured"
                     t.key in ownStacks -> "measured"
                     else -> "default"
                 },
@@ -172,6 +182,14 @@ data class Checklist(
             out += draft.copy(changedFromDefault = defaultDraft != null && (defaultDraft.available != available || defaultDraft.loadScheme != scheme))
         }
         return out
+    }
+
+    /** D66: plates on one sleeve, entered as their total on a kg grid of the smallest plate (the bar's share is the exercise's base). */
+    private fun landmineScheme(): JsonObject = buildJsonObject {
+        val step = plateList().last()
+        put("type", "stack"); put("unit", "kg"); put("start", 0.0); put("step", step)
+        put("max", java.math.BigDecimal(kotlin.math.floor(100.0 / step + 1e-9) * step).setScale(2, java.math.RoundingMode.HALF_EVEN).toDouble())
+        put("add_on_steps", JsonArray(emptyList())); put("ratio", 1.0)
     }
 
     private fun platesScheme(bar: Double?): JsonObject = buildJsonObject {

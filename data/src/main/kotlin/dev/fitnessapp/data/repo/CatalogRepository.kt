@@ -10,8 +10,8 @@ import java.text.Normalizer
 import java.util.Locale
 
 /**
- * The bundled catalog (`fitness/catalog/catalog-1.0.3.json`; migration 009 seeded 1.0.0, migrations 020,
- * 040 and 041 the 1.0.1 to 1.0.3 deltas) plus the user's custom exercises (M3.6, D27), which [CustomExerciseRepository] keeps current through
+ * The bundled catalog (`fitness/catalog/catalog-1.0.4.json`; migration 009 seeded 1.0.0, migrations 020,
+ * 040, 041 and 045 the 1.0.1 to 1.0.4 deltas) plus the user's custom exercises (M3.6, D27), which [CustomExerciseRepository] keeps current through
  * [setCustom]. Global exercise ids are UUIDv5 `exercise:<slug>` (C38), so the phone and the server agree
  * without a lookup; custom rows keep their stored UUIDv7. [doc] stays the bundled file (challenge definitions
  * resolve against it); [merged] is the document the engine reads.
@@ -70,7 +70,7 @@ class CatalogRepository(text: () -> String) {
 
     companion object {
         fun bundled(): CatalogRepository = CatalogRepository {
-            requireNotNull(CatalogRepository::class.java.getResource("/fitness/catalog/catalog-1.0.3.json")) {
+            requireNotNull(CatalogRepository::class.java.getResource("/fitness/catalog/catalog-1.0.4.json")) {
                 "bundled catalog missing"
             }.readText(Charsets.UTF_8)
         }

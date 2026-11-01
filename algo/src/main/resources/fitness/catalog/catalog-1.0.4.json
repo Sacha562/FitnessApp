@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.3",
+  "catalog_version": "1.0.4",
   "exercises": [
     {
       "slug": "ab_wheel_rollout",
@@ -333,11 +333,12 @@
       "requires_station": [
         "back_extension"
       ],
-      "load_mode": "external",
+      "load_mode": "bodyweight",
       "allowed_load_modes": [
-        "external"
+        "bodyweight",
+        "bodyweight_plus_external"
       ],
-      "bw_fraction": 0.0,
+      "bw_fraction": 0.6,
       "implement_base_kg": 0,
       "laterality": "bilateral",
       "measure": "reps",
@@ -372,7 +373,7 @@
       "external_refs": {
         "fedb_id": "Hyperextensions_Back_Extensions"
       },
-      "evidence_note": "45-degree back extension performed with spinal flexion/extension: erectors prime mover (expert-opinion).",
+      "evidence_note": "45-degree back extension performed with spinal flexion/extension: erectors prime mover (expert-opinion). Bodyweight with an optional held plate (D65): f_bw 0.6, the upper body above the hips is about 0.68 of bodyweight (segment tables) and the 45-degree bench shortens its lever (expert-opinion, weak).",
       "stimulus": {
         "erectors": 1,
         "glute_max": 0.5,
@@ -4335,6 +4336,7 @@
         "barbell"
       ],
       "requires_station": [
+        "landmine",
         "barbell"
       ],
       "load_mode": "external",
@@ -4342,7 +4344,7 @@
         "external"
       ],
       "bw_fraction": 0.0,
-      "implement_base_kg": 0,
+      "implement_base_kg": 10,
       "laterality": "unilateral",
       "measure": "reps",
       "contraction": "dynamic",
@@ -4374,7 +4376,7 @@
       "tags": [],
       "flags_offered": [],
       "external_refs": {},
-      "evidence_note": null,
+      "evidence_note": "Landmine (D66): plates on one sleeve, entered as their total; about half of the 20 kg bar rests on the hinge, so the bar counts 10 kg (expert-opinion).",
       "stimulus": {
         "chest_clavicular": 0.5,
         "delt_anterior": 1,
@@ -4877,7 +4879,7 @@
         "machine"
       ],
       "requires_station": [
-        "leg_press"
+        "leg_press_seated"
       ],
       "load_mode": "external",
       "allowed_load_modes": [
@@ -4978,9 +4980,10 @@
       "external_refs": {
         "fedb_id": "Lying_Leg_Curls"
       },
-      "evidence_note": null,
+      "evidence_note": "The gastrocnemius crosses the knee and works in leg curls (EMG), but no trial shows calf growth from them: gastrocnemius 0.25, fatigue only (C44, D67).",
       "stimulus": {
         "bf_short_head": 1,
+        "gastrocnemius": 0.25,
         "hams_biarticular": 1
       }
     },
@@ -7860,9 +7863,10 @@
       "external_refs": {
         "fedb_id": "Seated_Leg_Curl"
       },
-      "evidence_note": "Maeo 2021 (moderate): seated curls train the hamstrings at long length.",
+      "evidence_note": "Maeo 2021 (moderate): seated curls train the hamstrings at long length. The gastrocnemius crosses the knee and works in leg curls (EMG), but no trial shows calf growth from them: gastrocnemius 0.25, fatigue only (C44, D67).",
       "stimulus": {
         "bf_short_head": 1,
+        "gastrocnemius": 0.25,
         "hams_biarticular": 1
       }
     },
@@ -8923,13 +8927,16 @@
       "slug": "tbar_row",
       "name_en": "T-bar row",
       "name_nl": "T-bar row",
-      "aliases": [],
+      "aliases": [
+        "landmine row"
+      ],
       "pattern": "horiz_pull",
       "family": "hpull",
       "equipment": [
         "barbell"
       ],
       "requires_station": [
+        "landmine",
         "barbell"
       ],
       "load_mode": "external",
@@ -8937,7 +8944,7 @@
         "external"
       ],
       "bw_fraction": 0.0,
-      "implement_base_kg": 0,
+      "implement_base_kg": 10,
       "laterality": "bilateral",
       "measure": "reps",
       "contraction": "dynamic",
@@ -8971,7 +8978,7 @@
       "external_refs": {
         "fedb_id": "T-Bar_Row_with_Handle"
       },
-      "evidence_note": null,
+      "evidence_note": "Landmine (D66): plates on one sleeve, entered as their total; about half of the 20 kg bar rests on the hinge, so the bar counts 10 kg (expert-opinion).",
       "stimulus": {
         "biceps_brachii": 0.5,
         "brachialis": 0.5,

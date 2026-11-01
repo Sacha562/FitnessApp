@@ -146,7 +146,7 @@ class SetCreditTest {
 
     @Test
     fun `committedEqualsPlanned for the deload session A`() {
-        val doc: CatalogDoc = CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.3.json"))
+        val doc: CatalogDoc = CatalogDoc.parse(ChallengeTestSupport.resource("catalog/catalog-1.0.4.json"))
         val state = OapFixture.start()
         val date = LocalDate.parse("2026-10-08")
         val plan = Materializer.materialize(OapFixture.def, params, MaterializeInput("A", date, state, OapFixture.facts, doc, changeoverMin = 5))

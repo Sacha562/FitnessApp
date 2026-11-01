@@ -16,7 +16,7 @@ object ChallengeTestSupport {
     val context: ValidationContext by lazy {
         val params = TestParams.defaults()
         ValidationContext.fromTexts(
-            catalog = resource("catalog/catalog-1.0.3.json"),
+            catalog = resource("catalog/catalog-1.0.4.json"),
             muscleGroups = resource("reference/muscle_groups.json"),
             muscleRegions = resource("reference/muscle_regions.json"),
             metricDefs = resource("reference/metric_defs.json"),

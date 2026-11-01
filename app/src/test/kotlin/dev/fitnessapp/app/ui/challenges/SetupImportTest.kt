@@ -20,7 +20,7 @@ class SetupImportTest {
         Cds.load(
             resource("challenges/oap.challenge.v1.json"),
             ValidationContext.fromTexts(
-                resource("catalog/catalog-1.0.3.json"), resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"),
+                resource("catalog/catalog-1.0.4.json"), resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"),
                 resource("reference/metric_defs.json"), resource("reference/reason_codes.json"), resource("reference/equipment_types.json"),
                 resource("reference/body_regions.json"), resource("reference/symptom_codes.json"), FitExprLimits.from(params), 5,
                 EngineVersion.ENGINE_VERSION, params.int("challenge.eca.max_conditional_nesting"),

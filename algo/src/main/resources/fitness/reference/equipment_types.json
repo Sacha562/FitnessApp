@@ -168,6 +168,25 @@
       "sort": 70
     },
     {
+      "key": "landmine",
+      "category": "station",
+      "default_scheme_type": "stack",
+      "default_load_scheme": {
+        "type": "stack",
+        "unit": "kg",
+        "start": 0,
+        "step": 1.25,
+        "max": 100,
+        "add_on_steps": [],
+        "ratio": 1.0
+      },
+      "portable": false,
+      "label_en": "Landmine (plates on one sleeve)",
+      "label_nl": "Landmine (schijven aan één kant)",
+      "active": true,
+      "sort": 75
+    },
+    {
       "key": "dumbbells",
       "category": "implement",
       "default_scheme_type": "dumbbells",
@@ -406,6 +425,51 @@
     {
       "key": "leg_press",
       "category": "station",
+      "default_scheme_type": "plates",
+      "default_load_scheme": {
+        "type": "plates",
+        "unit": "kg",
+        "bar_kg": null,
+        "plates": [
+          {
+            "kg": 25,
+            "count": 4
+          },
+          {
+            "kg": 20,
+            "count": 4
+          },
+          {
+            "kg": 15,
+            "count": 4
+          },
+          {
+            "kg": 10,
+            "count": 4
+          },
+          {
+            "kg": 5,
+            "count": 4
+          },
+          {
+            "kg": 2.5,
+            "count": 4
+          },
+          {
+            "kg": 1.25,
+            "count": 4
+          }
+        ]
+      },
+      "portable": false,
+      "label_en": "45° leg press",
+      "label_nl": "Beenpers 45°",
+      "active": true,
+      "sort": 180
+    },
+    {
+      "key": "leg_press_seated",
+      "category": "station",
       "default_scheme_type": "stack",
       "default_load_scheme": {
         "type": "stack",
@@ -417,10 +481,10 @@
         "ratio": 1.0
       },
       "portable": false,
-      "label_en": "Leg press",
-      "label_nl": "Beenpers",
+      "label_en": "Seated leg press",
+      "label_nl": "Zittende beenpers",
       "active": true,
-      "sort": 180
+      "sort": 185
     },
     {
       "key": "hack_squat",

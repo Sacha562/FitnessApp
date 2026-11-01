@@ -234,7 +234,10 @@ class ChallengeRepositoryTest {
         )
         preview.sessions.single().changes.map { it.kind to it.key } shouldBe listOf("removed" to "wu_row")
         // D45: the elbow-trace rule widens; this gym has no cable, so the per-side Pallof press is not planned on either side.
-        preview.rules.map { it.kind to it.id } shouldBe listOf("changed" to "safety.elbow.traceFromPain")
+        // D63: the two protective pin rules subtract the re-entry offset.
+        preview.rules.map { it.kind to it.id } shouldBe listOf(
+            "changed" to "prog.A.pin.gated", "changed" to "prog.C.pin.hard", "changed" to "safety.elbow.traceFromPain",
+        )
         now += 60_000
         val out = repo.migrate(f.enrollment.id, to, preview)
         out.folded.def.version shouldBe "1.10.0"

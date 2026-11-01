@@ -5,6 +5,7 @@ import dev.fitnessapp.algo.core.load.Laterality
 import dev.fitnessapp.algo.core.load.LoadMode
 import dev.fitnessapp.algo.core.load.LoadScheme
 import dev.fitnessapp.algo.core.load.Loadables
+import dev.fitnessapp.algo.core.load.PlateCount
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.repo.EquipmentRepository
@@ -35,7 +36,7 @@ class ChecklistSchemeTest {
     @Test
     fun `lb stack in 10 lb steps up to the kg cap, shown with kg`() {
         val c = Checklist.defaults(types)
-        val key = types.first { it.defaultSchemeType == "stack" && it.key !in Checklist.HEAVY_STACKS }.key
+        val key = types.first { it.defaultSchemeType == "stack" && it.key !in Checklist.HEAVY_STACKS && it.key != "landmine" }.key
         val w = Loadables.enumerate(scheme(c, key), Loadables.Context(external, null), params)
         w.first().nativeValue shouldBe 10.0
         w.first().nativeUnit shouldBe "lb"
@@ -46,7 +47,7 @@ class ChecklistSchemeTest {
     @Test
     fun `kg stack keeps the kg grid`() {
         val c = Checklist.defaults(types).copy(stackUnit = "kg", stackStep = 5.0)
-        val key = types.first { it.defaultSchemeType == "stack" && it.key !in Checklist.HEAVY_STACKS }.key
+        val key = types.first { it.defaultSchemeType == "stack" && it.key !in Checklist.HEAVY_STACKS && it.key != "landmine" }.key
         val w = Loadables.enumerate(scheme(c, key), Loadables.Context(external, null), params)
         w.map { it.nativeValue } shouldBe (1..20).map { it * 5.0 }
     }
@@ -103,6 +104,40 @@ class ChecklistSchemeTest {
         val drafts = back.copy(stackUnit = "kg", stackStep = 5.0).drafts(types).associateBy { it.equipmentType }
         drafts.getValue("cable_station").loadScheme.toString() shouldBe own
         drafts.getValue("cable_station").calibrationSource shouldBe "measured"
-        LoadScheme.parse(drafts.getValue("leg_press").loadScheme).let { (it as LoadScheme.Stack).unit } shouldBe "kg"
+        LoadScheme.parse(drafts.getValue("leg_press_seated").loadScheme).let { (it as LoadScheme.Stack).unit } shouldBe "kg"
+    }
+
+    @Test
+    fun `the landmine takes one sleeve of plates in kg on the smallest plate, never the lb stack setting (D66)`() {
+        val c = Checklist.defaults(types).copy(plates = listOf(20.0, 10.0, 5.0, 2.5, 1.25))
+        val ex = ExerciseLoadAttrs(0.0, 10.0, Laterality.BILATERAL, listOf(LoadMode.EXTERNAL))
+        val w = Loadables.enumerate(scheme(c, "landmine"), Loadables.Context(ex, null), params)
+        w.first().nativeValue shouldBe 0.0
+        w.first { it.nativeValue == 20.0 }.let { it.nativeUnit shouldBe "kg"; it.addedKg shouldBe 20.0; it.wSys shouldBe 30.0 }
+        w.map { it.nativeValue!! }.zipWithNext { a, b -> b - a }.distinct() shouldBe listOf(1.25)
+        w.last().nativeValue shouldBe 100.0
+    }
+
+    @Test
+    fun `the 45 degree leg press is plate-loaded and keeps its sled mass (D64)`() {
+        val c = Checklist.defaults(types)
+        LoadScheme.parse(c.drafts(types).first { it.equipmentType == "leg_press" }.loadScheme) shouldBe
+            LoadScheme.Plates(null, listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5).map { PlateCount(it, Checklist.GYM_PLATE_COUNT) })
+        val rows = c.copy(sledKg = 75.7).drafts(types).mapIndexed { i, d ->
+            GymEquipmentEntity(
+                id = "e$i", user_id = "u", client_updated_at = 0L, device_id = "d", app_version = "t",
+                equipment_type = d.equipmentType, label = d.label, available = d.available,
+                scheme_type = d.loadScheme.getValue("type").jsonPrimitive.content,
+                load_scheme = d.loadScheme.toString(), calibration_source = d.calibrationSource,
+            )
+        }
+        val back = Checklist.fromRows(types, c.gymName, rows)
+        back.sledKg shouldBe 75.7
+        val sled = back.drafts(types).first { it.equipmentType == "leg_press" }
+        (LoadScheme.parse(sled.loadScheme) as LoadScheme.Plates).barKg shouldBe 75.7
+        sled.calibrationSource shouldBe "measured"
+        val w = Loadables.enumerate(LoadScheme.parse(sled.loadScheme), Loadables.Context(external, null), params)
+        w.first().nativeValue shouldBe 75.7 // the empty sled
+        w.first { it.addedKg == 215.7 }.let { it.nativeUnit shouldBe "kg"; it.plateBreakdown.sum() shouldBe 70.0 }
     }
 }
