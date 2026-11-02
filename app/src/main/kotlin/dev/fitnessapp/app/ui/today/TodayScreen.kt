@@ -127,6 +127,8 @@ fun TodayRoute(
                 )
             }
         }
+        // A run cancelled because its inputs changed is not a planner failure: the next run replaces it.
+        r.exceptionOrNull()?.let { if (it is kotlinx.coroutines.CancellationException) throw it }
         plan = r.getOrNull()
         planFailed = r.isFailure
         r.exceptionOrNull()?.let { android.util.Log.w("TodayPlan", "planner failed", it) }
