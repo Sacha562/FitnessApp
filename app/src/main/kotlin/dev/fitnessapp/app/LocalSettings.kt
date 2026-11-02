@@ -71,6 +71,16 @@ class LocalSettings(context: Context) {
         get() = prefs.getString(KEY_CAL_UNAVAILABLE, null)
         set(v) = prefs.edit().putString(KEY_CAL_UNAVAILABLE, v).apply()
 
+    /** The add-on picked on the Today card for [slot] on [date] (D70 (4)): a family code or `none`; one pick is kept. */
+    fun addOnPick(date: String, slot: String): String? = prefs.getString(KEY_ADD_ON_PICK, null)?.takeIf { it.startsWith("$date|$slot|") }?.substringAfterLast('|')
+
+    fun setAddOnPick(date: String, slot: String, family: String) = prefs.edit().putString(KEY_ADD_ON_PICK, "$date|$slot|$family").apply()
+
+    /** The day keys of the last week plan of [isoWeek] (ALGORITHMS_PLANNING 8.6 stability term), as JSON; only the newest week is kept. */
+    fun weekPlanKeys(isoWeek: String): String? = prefs.getString(KEY_WEEK_PLAN_KEYS, null)?.takeIf { it.startsWith("$isoWeek|") }?.substringAfter('|')
+
+    fun setWeekPlanKeys(isoWeek: String, json: String) = prefs.edit().putString(KEY_WEEK_PLAN_KEYS, "$isoWeek|$json").apply()
+
     /**
      * True the first time [key] is asked, false afterwards: once-per-day telemetry such as `weekplan_shown` (UX 19.5).
      * Only the newest key per prefix (the part before the first ':') is kept.
@@ -94,6 +104,8 @@ class LocalSettings(context: Context) {
         const val KEY_PLATFORM_HASH = "platform_config_hash"
         const val KEY_EXPORT_REMINDER_DATE = "export_reminder_date"
         const val KEY_SYNC_NOTICE_DATE = "sync_notice_date"
+        const val KEY_WEEK_PLAN_KEYS = "week_plan_keys"
+        const val KEY_ADD_ON_PICK = "add_on_pick"
         const val KEY_HABIT_REMINDERS = "habit_reminders_enabled"
         const val KEY_HABIT_SKIPS = "habit_skips"
     }

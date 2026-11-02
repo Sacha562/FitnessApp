@@ -17,6 +17,13 @@ import java.util.TreeSet
 class ParamView(private val values: JsonObject) {
     private val read = TreeSet<String>()
 
+    // Parsed values per key: the planners read the same keys in inner loops (weekplan's enumeration calls the allocator
+    // and TIME-1 thousands of times), and parsing decimal text every time dominated their run time. The values are
+    // immutable, so caching changes nothing but speed; tables are copied out so a caller can never alter the cache.
+    private val numbers = TreeMap<String, Double>()
+    private val tables = TreeMap<String, TreeMap<String, Double>>()
+    private val arrayTables = TreeMap<String, TreeMap<String, List<Double>>>()
+
     val hash: String by lazy { ParamsHashes.hash(values) }
 
     fun fork(): ParamView = ParamView(values)
@@ -29,7 +36,10 @@ class ParamView(private val values: JsonObject) {
 
     fun has(key: String): Boolean = values.containsKey(key)
 
-    fun double(key: String): Double = number(primitive(key), key)
+    fun double(key: String): Double {
+        numbers[key]?.let { read += key; return it }
+        return number(primitive(key), key).also { numbers[key] = it }
+    }
 
     fun int(key: String): Int {
         val x = double(key)
@@ -48,6 +58,11 @@ class ParamView(private val values: JsonObject) {
 
     /** An object of numbers (class tables such as `rest.base`), sorted by key. */
     fun table(key: String): TreeMap<String, Double> {
+        tables[key]?.let { read += key; return TreeMap(it) }
+        return TreeMap(parseTable(key).also { tables[key] = it })
+    }
+
+    private fun parseTable(key: String): TreeMap<String, Double> {
         val obj = element(key) as? JsonObject ?: throw IllegalArgumentException("params key $key is not a table")
         val out = TreeMap<String, Double>()
         obj.forEach { (k, v) -> out[k] = number(v as JsonPrimitive, "$key.$k") }
@@ -56,6 +71,11 @@ class ParamView(private val values: JsonObject) {
 
     /** An object of number arrays (tier tables such as `warmup.tier_high`), sorted by key. */
     fun tableArrays(key: String): TreeMap<String, List<Double>> {
+        arrayTables[key]?.let { read += key; return TreeMap(it) }
+        return TreeMap(parseTableArrays(key).also { arrayTables[key] = it })
+    }
+
+    private fun parseTableArrays(key: String): TreeMap<String, List<Double>> {
         val obj = element(key) as? JsonObject ?: throw IllegalArgumentException("params key $key is not a table")
         val out = TreeMap<String, List<Double>>()
         obj.forEach { (k, v) ->

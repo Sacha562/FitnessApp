@@ -149,6 +149,10 @@ class AppContainer(private val context: Context) {
     val sessionPlans: dev.fitnessapp.data.engine.SessionPlanRecorder by lazy {
         dev.fitnessapp.data.engine.SessionPlanRecorder(db, outbox, writeContext, syncScheduler, catalog, params, PARAMS_VERSION)
     }
+    /** The planner's `weekplan.plan` and `today.options` snapshots (M4.5, D70). */
+    val planSnapshots: dev.fitnessapp.data.engine.PlanSnapshotRecorder by lazy {
+        dev.fitnessapp.data.engine.PlanSnapshotRecorder(db, outbox, writeContext, syncScheduler, catalog, params, PARAMS_VERSION)
+    }
     /** The test-day wizard's storage (UX 14.9). */
     val testDays: dev.fitnessapp.data.challenge.TestDayRepository by lazy {
         dev.fitnessapp.data.challenge.TestDayRepository(

@@ -55,6 +55,8 @@ data class WeekVolume(
     val contributions: Map<String, List<Contribution>>,
     val runs: List<Run>,
     val challenge: WeekChallenge?,
+    /** The readiness doses of the logged history and of the committed challenge sessions and habits ahead (4.2). */
+    val doses: List<dev.fitnessapp.algo.accounting.readiness.Dose> = emptyList(),
 ) {
     companion object {
         /** The active challenge's groups and deload week (the contract of this week), without the coverage; null without one. */
@@ -175,6 +177,8 @@ data class WeekVolume(
             return WeekVolume(
                 monday, isoWeek, saved.isNotEmpty(), saved, targets, account, bars, warnings, contributions,
                 PlanningFacts.runs(c, monday), challenge,
+                credited.filter { it.set.ts <= now }.map { dev.fitnessapp.algo.accounting.readiness.Dose.of(it.credit, it.set.ts) } +
+                    committedCredits.map { dev.fitnessapp.algo.accounting.readiness.Dose.of(it.second, it.first.ts) },
             )
         }
     }

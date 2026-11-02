@@ -211,29 +211,36 @@ object Allocator : DeclaresParams {
             }
         }
 
-        // 3. Time fit with the dose estimator: drop the cheapest utility per minute first.
+        // 3. Time fit with the dose estimator: drop the cheapest utility per minute first. The loop runs on arrays in
+        // canonical order (an absent group is 0) with the arithmetic and order of the map helpers, so the results are
+        // the same; the week planner runs it thousands of times per week.
         val beforeFit = normal.keys.toList()
         val budgetS = input.budgetMin * 60.0
-        while (TimeModel.estDose(normal, !addon, params) > budgetS + 1e-9) {
-            val base = TimeModel.estDose(normal, !addon, params)
-            val uBase = utility(normal, input, table, stimBase, params)
-            var best: String? = null
+        val fit = Fit(input, table, stimBase, params)
+        var cur = DoubleArray(Groups.CANONICAL.size) { normal[Groups.CANONICAL[it]] ?: 0.0 }
+        while (fit.dose.estDose(cur, !addon) > budgetS + 1e-9) {
+            val base = fit.dose.estDose(cur, !addon)
+            val uBase = fit.utility(cur)
+            var best = -1
             var bestRatio = Double.MAX_VALUE
-            var bestCand: Map<String, Double>? = null
-            for (g in Groups.CANONICAL) {
-                val x = normal[g] ?: continue
-                val cand = TreeMap(normal)
-                reduce(cand, g, 0.5)
-                if ((credit(cand, table)[g] ?: 0.0) < gts.getValue(g).minTouch - 1e-9) cand.remove(g)
-                val dm = (base - TimeModel.estDose(cand, !addon, params)) / 60.0
-                if (dm <= 1e-9 || x <= 0.0) continue
-                val ratio = round6((uBase - utility(cand, input, table, stimBase, params)) / dm)
-                if (ratio < bestRatio) { bestRatio = ratio; best = g; bestCand = cand }
+            var bestCand: DoubleArray? = null
+            for (i in cur.indices) {
+                if (cur[i] <= 0.0) continue
+                val cand = cur.copyOf()
+                val v = cand[i] - 0.5
+                cand[i] = if (v <= 1e-9) 0.0 else v
+                val c = fit.credit(cand)[i]
+                if ((if (c < 0.0) 0.0 else c) < gts.getValue(Groups.CANONICAL[i]).minTouch - 1e-9) cand[i] = 0.0
+                val dm = (base - fit.dose.estDose(cand, !addon)) / 60.0
+                if (dm <= 1e-9) continue
+                val ratio = round6((uBase - fit.utility(cand)) / dm)
+                if (ratio < bestRatio) { bestRatio = ratio; best = i; bestCand = cand }
             }
-            if (best == null) return infeasible(input, "TIME_SHORT", a, dropped)
-            normal.clear()
-            normal.putAll(bestCand!!)
+            if (best < 0) return infeasible(input, "TIME_SHORT", a, dropped)
+            cur = bestCand!!
         }
+        normal.clear()
+        cur.forEachIndexed { i, x -> if (x > 0.0) normal[Groups.CANONICAL[i]] = x }
         beforeFit.filter { it !in normal }.forEach { dropped += Dropped(it, "TIME_SHORT") }
 
         // 4. Session transforms (C13, C27, C51): set factor min, RIR offset max, never below one set.
@@ -270,6 +277,46 @@ object Allocator : DeclaresParams {
             input.type, addon, label(direct, addon), true, null, grid(a), grid(normal), grid(direct), credit, setFactor, rirOffset,
             rirTarget, TimeModel.minutes(estS), TimeModel.minutes(TimeModel.estDose(normal, !addon, params)), tags, dropped, vhyp, dose,
         )
+    }
+
+    /**
+     * The time fit's `credit` and `utility` over arrays in canonical order: [credit] marks a group without credit with
+     * -1 (the map version leaves it out), and [utility] is the map [utility]'s sum in the same order.
+     */
+    private class Fit(input: AllocInput, table: Map<String, List<Pair<String, Double>>>, private val stimBase: Double, params: ParamView) {
+        private val n = Groups.CANONICAL.size
+        val dose = TimeModel.DoseModel(params)
+        private val util = Targets.Utility(params)
+        private val rows: Array<List<Pair<Int, Double>>> = Array(n) { i ->
+            table[Groups.CANONICAL[i]].orEmpty().map { (t, k) -> Groups.CANONICAL.indexOf(t) to k }
+        }
+        private val gts: Array<GroupTargets?> = Array(n) { input.targets.groups[Groups.CANONICAL[it]] }
+        private val v0 = DoubleArray(n) { input.vBefore[Groups.CANONICAL[it]] ?: 0.0 }
+        private val q = DoubleArray(n) { 0.5 + 0.5 * (input.readiness[Groups.CANONICAL[it]] ?: 1.0) }
+        private val base = input.targets.base
+        private val u0 = DoubleArray(n) { i -> gts[i]?.let { util.of(it, v0[i], base) } ?: 0.0 }
+
+        fun credit(d: DoubleArray): DoubleArray {
+            val ind = DoubleArray(n)
+            for (s in 0 until n) {
+                val x = d[s]
+                if (x <= 0.0) continue
+                for ((t, k) in rows[s]) ind[t] = ind[t] + k * x
+            }
+            return DoubleArray(n) { g -> val v = d[g] + ind[g]; if (v > 0.0) Grid.ratio(v) else -1.0 }
+        }
+
+        fun utility(d: DoubleArray): Double {
+            val c = credit(d)
+            var u = 0.0
+            for (g in 0 until n) {
+                val x = c[g]
+                if (x < 0.0) continue
+                val gt = gts[g] ?: continue
+                u += gt.w * (util.of(gt, v0[g] + x * stimBase * q[g], base) - u0[g])
+            }
+            return u
+        }
     }
 
     /** `utility(d)` of 7.4: the weighted utility gain of the credit of [d], with the quality factor `0.5 + 0.5 · R`. */

@@ -107,6 +107,33 @@ fun TodayRoute(
     var sheetBuilt by remember { mutableStateOf<BuiltStart?>(null) }
     var notice by remember { mutableStateOf<Pair<String, String>?>(null) }
     val goals by remember { c.goals.observe() }.collectAsState(initial = null)
+    // The planner and the Today card (M4.5, D70): rerun when sessions, the calendar, the goals or the time chip change.
+    val calendar by c.calendar.snapshot.collectAsState()
+    var plan by remember { mutableStateOf<TodayPlan?>(null) }
+    var planFailed by remember { mutableStateOf(false) }
+    var chipMin by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Int?>(null) }
+    var picked by remember { mutableStateOf<String?>(null) }
+    var override by remember { mutableStateOf<String?>(null) }
+    var planTick by remember { mutableStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(active?.id, recent.map { it.id + it.status }, calendar.anchors, goals, chipMin, planTick) {
+        val zoneNow = ZoneId.of("Europe/Amsterdam")
+        val todayNow = LocalDate.now(zoneNow).toString()
+        val r = runCatching {
+            withContext(Dispatchers.Default) {
+                TodayPlans.load(
+                    c, chipMin, activeSession = active != null,
+                    finishedToday = recent.any { it.status == "finished" && it.local_date == todayNow && it.habit_id == null },
+                    setupNeeded = goals?.isEmpty() == true && c.challenges.open().isEmpty(),
+                )
+            }
+        }
+        plan = r.getOrNull()
+        planFailed = r.isFailure
+        r.exceptionOrNull()?.let { android.util.Log.w("TodayPlan", "planner failed", it) }
+        if (plan?.options?.primaryOptionId != picked) picked = null
+        plan?.let { p -> runCatching { TodayPlans.shown(c, p) } }
+    }
+
 
     /** Starts a general session (fresh, a Repeat of [repeatOf] or [built] for a type, D62) and records the sheet. */
     fun startGeneral(repeatOf: String?, s: PreSheet?, a: PreAnswers, built: BuiltStart? = null) {
@@ -148,6 +175,26 @@ fun TodayRoute(
             }
         }
     }
+    /** Builds the picked option for the time chip and starts it through the readiness sheet (UX 9.8, D62). */
+    fun startOption(p: TodayPlan) {
+        val id = picked ?: p.options.primaryOptionId ?: return
+        val opt = p.options.options.firstOrNull { it.optionId == id } ?: return
+        val type = opt.sessionType?.let { dev.fitnessapp.algo.planning.allocator.SessionType.of(it) } ?: return
+        val budget = p.chip?.minutes ?: p.options.budgetMin.toInt()
+        scope.launch {
+            starting = true
+            val built = runCatching {
+                withContext(Dispatchers.Default) {
+                    val f = SessionBuild.facts(c)
+                    SessionBuild.build(c, SessionBuild.request(f, type, budget.toDouble()))
+                }
+            }.getOrNull()
+            starting = false
+            if (built == null || built.exercises.isEmpty()) { newSession = true; return@launch }
+            runCatching { TodayPlans.action(c, "start", p.options.options.indexOfFirst { it.optionId == id }) }
+            begin(null, BuiltStart(type, built, budget, p.chip?.source ?: p.options.budgetSource))
+        }
+    }
     val zone = ZoneId.of("Europe/Amsterdam")
     val today = LocalDate.now(zone)
 
@@ -167,7 +214,7 @@ fun TodayRoute(
                 )
             }
 
-            WeekStrip(today, recent)
+            PlanStrip(today, recent, plan)
 
             notice?.let { (kind, text) -> Banner(text, if (kind == "stop" || kind == "warn") BannerKind.SAFETY else BannerKind.ADVISORY, action = "OK", onAction = { notice = null }) }
 
@@ -184,6 +231,34 @@ fun TodayRoute(
             }
 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)
+
+            // The Today card (UX 9.3, D70): the verdict, options, chips and time chips; on a challenge day the add-on choice.
+            plan?.let { p ->
+                TodayCardTile(
+                    p, picked,
+                    onPick = { o ->
+                        picked = o.optionId
+                        // The add-on chosen on a challenge day is built at the session's start (D70 (4)).
+                        if (p.options.planned != null && p.options.planned?.kind != "general") {
+                            c.settings.setAddOnPick(p.options.date.toString(), p.options.planned?.slot ?: "", o.addon ?: "none")
+                        }
+                        scope.launch { runCatching { TodayPlans.action(c, "select_alt", p.options.options.indexOf(o)) } }
+                    },
+                    onChip = { ch -> chipMin = ch.minutes; scope.launch { runCatching { TodayPlans.action(c, "budget", ch.minutes) } } },
+                    onOtherOptions = { override = null; newSession = true },
+                    onLogAnyway = {
+                        override = p.options.restReasons.firstOrNull()?.let { r ->
+                            dev.fitnessapp.app.uidet.UiTodayCard.text(r.code, r.params, java.time.Instant.now(), ZoneId.of("Europe/Amsterdam")) { it }
+                        } ?: "Today is a rest day."
+                        newSession = true
+                    },
+                    onRestToday = { scope.launch { runCatching { TodayPlans.action(c, "rest_today", 0) } } },
+                )
+            }
+            if (plan == null && planFailed) Tile(spacing = 6.dp) {
+                Text("Couldn't work out a recommendation", style = MaterialTheme.typography.titleLarge)
+                LinkButton("Retry", { planTick++ })
+            }
 
             // The challenge's session of the day (UX 9, CHALLENGE_ENGINE 7.6); hidden without an enrollment.
             TodayChallengeTile(c, sessionActive = active != null, onOpenSession = { onOpenSession(it, false) }, onOpenTest = onOpenTest)
@@ -222,15 +297,35 @@ fun TodayRoute(
                     onOpenSession(a.id, true)
                 }, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
             } else {
-                // D62: the New session sheet builds a session for a type; Empty and Repeat (D49) sit at its bottom.
-                PrimaryButton("Start session", onClick = { newSession = true }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+                val p = plan
+                val st = p?.card?.state
+                val startable = p != null && (st == dev.fitnessapp.app.uidet.CardState.OPTIONAL ||
+                    (st == dev.fitnessapp.app.uidet.CardState.PLANNED && p.card.variant == "GENERAL") ||
+                    (st == dev.fitnessapp.app.uidet.CardState.PLANNED_BUT_REST && p.card.variant == "SOFT"))
+                val opt = p?.options?.options?.firstOrNull { it.optionId == (picked ?: p.options.primaryOptionId) }
+                when {
+                    startable && opt != null && st == dev.fitnessapp.app.uidet.CardState.PLANNED_BUT_REST ->
+                        TonalButton("Start anyway", onClick = { startOption(p!!) }, modifier = Modifier.fillMaxWidth())
+                    startable && opt != null ->
+                        PrimaryButton("Start " + opt.label.replaceFirstChar { it.lowercase() }, onClick = { startOption(p!!) }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+                    // D62: the New session sheet builds a session for a type; Empty and Repeat (D49) sit at its bottom.
+                    st == null || st == dev.fitnessapp.app.uidet.CardState.DONE || st == dev.fitnessapp.app.uidet.CardState.ENGINE_ERROR ->
+                        PrimaryButton("Start session", onClick = { override = null; newSession = true }, enabled = !starting, modifier = Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow)
+                    else -> Unit
+                }
             }
         }
     }
 
     if (newSession) NewSessionSheet(
         c, onDismiss = { newSession = false },
-        onStart = { b -> newSession = false; begin(null, b) },
+        today = plan?.options, banner = override,
+        onStart = { b ->
+            newSession = false
+            // "Log a session anyway" on a hard rest day (UX 9.3): the session is logged; the challenge decides what it means.
+            override?.let { scope.launch { runCatching { TodayPlans.action(c, "log_anyway", 0) } } }
+            begin(null, b)
+        },
         onEmpty = { newSession = false; begin(null) },
         onRepeat = { newSession = false; repeat = true },
     )
@@ -250,6 +345,60 @@ fun TodayRoute(
     if (weighIn) WeighInDialog(onDismiss = { weighIn = false }) { kg ->
         weighIn = false
         scope.launch { c.bodyweight.logWeighIn(kg) }
+    }
+}
+
+/**
+ * The week strip (UX 9.7, D70): Monday to Sunday with the planner's symbols (a check when trained, `*` planned in the
+ * calendar, `o` recommended, `x` a rest day the challenge blocks, `T` the test day); swipe for next week's provisional
+ * plan. Without a plan yet, the days with a finished session.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun PlanStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, plan: TodayPlan?) {
+    val weeks = listOfNotNull(plan?.week?.plan, plan?.next)
+    if (weeks.isEmpty()) return WeekStrip(today, recent)
+    val pager = androidx.compose.foundation.pager.rememberPagerState { weeks.size }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        androidx.compose.foundation.pager.HorizontalPager(pager) { page ->
+            val w = weeks[page]
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                w.days.forEach { d ->
+                    val isToday = d.date == today
+                    val kinds = d.items.map { it.kind }
+                    val trained = kinds.any { it == "done" || it == "done_general" } || (page == 0 && recent.any { it.status == "finished" && it.local_date == d.date.toString() })
+                    val symbol = when {
+                        trained -> "v"
+                        "test" in kinds -> "T"
+                        kinds.any { it == "challenge_session" || it == "planned_gym" } -> "*"
+                        "recommended_general" in kinds -> "o"
+                        d.status == "blocked" -> "x"
+                        else -> "-"
+                    }
+                    val label = when (symbol) {
+                        "v" -> "trained"; "T" -> "test day"; "*" -> "planned"; "o" -> "recommended"; "x" -> "rest day"; else -> "rest"
+                    }
+                    val name = d.date.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH))
+                    Column(
+                        Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (isToday) Fit.Accent else Fit.Tile)
+                            .semantics { contentDescription = "$name, $label" + (if (isToday) ", today" else "") },
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                    ) {
+                        val ink = if (isToday) Fit.OnAccent else Fit.Muted
+                        Text(name.take(1), style = MaterialTheme.typography.labelMedium, color = ink)
+                        when (symbol) {
+                            "v" -> Icon(Icons.Rounded.Check, null, tint = if (isToday) Fit.OnAccent else Fit.Accent, modifier = Modifier.size(16.dp))
+                            "-" -> Box(Modifier.padding(top = 5.dp, bottom = 6.dp).size(5.dp).clip(CircleShape).background(if (isToday) Fit.OnAccent else Fit.Line))
+                            else -> Text(if (symbol == "o") "○" else if (symbol == "*") "●" else symbol, style = MaterialTheme.typography.labelMedium, color = if (isToday) Fit.OnAccent else Fit.Ink)
+                        }
+                    }
+                }
+            }
+        }
+        if (weeks.size > 1) Text(
+            if (pager.currentPage == 0) "This week · swipe for next week" else "Next week (provisional)",
+            style = MaterialTheme.typography.labelSmall, color = Fit.Muted,
+        )
     }
 }
 

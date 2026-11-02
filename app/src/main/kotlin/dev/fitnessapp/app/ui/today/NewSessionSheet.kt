@@ -58,6 +58,10 @@ fun NewSessionSheet(
     onStart: (BuiltStart) -> Unit,
     onEmpty: () -> Unit,
     onRepeat: () -> Unit,
+    /** Today's ranked options (D70): shown on top, the primary preselected. */
+    today: dev.fitnessapp.algo.planning.today.TodayOptions? = null,
+    /** The rule a hard rest day breaks, for "Log a session anyway" (UX 9.3). */
+    banner: String? = null,
 ) {
     var facts by remember { mutableStateOf<SessionBuild.Facts?>(null) }
     var chips by remember { mutableStateOf<List<TimeChip>>(emptyList()) }
@@ -75,8 +79,8 @@ fun NewSessionSheet(
             return@LaunchedEffect
         }
         val profile = c.profiles.get()
-        val today = Week.localDate(f.at, PlanningFacts.ZONE)
-        val event = c.calendar.snapshot.value.anchors.filter { it.kind == AnchorKind.PLANNED_GYM && it.localDate == today }
+        val day = Week.localDate(f.at, PlanningFacts.ZONE)
+        val event = c.calendar.snapshot.value.anchors.filter { it.kind == AnchorKind.PLANNED_GYM && it.localDate == day }
             .maxByOrNull { it.endUtc.toEpochMilli() - it.beginUtc.toEpochMilli() }
             ?.let { ((it.endUtc.toEpochMilli() - it.beginUtc.toEpochMilli()) / 60_000L).toInt() - (profile?.changeover_min ?: AppContainer.CHANGEOVER_MIN) }
             ?.takeIf { it > 0 }
@@ -88,7 +92,8 @@ fun NewSessionSheet(
         facts = f
         val budget = chip!!.minutes.toDouble()
         allocations = SessionBuild.TYPES.associateWith { t -> SessionBuild.allocate(c, SessionBuild.request(f, t, budget)) }
-        type = SessionBuild.TYPES.firstOrNull { UiTrim.usable(allocations[it]) }
+        val primary = today?.options?.firstOrNull { it.optionId == today.primaryOptionId }?.sessionType?.let { SessionType.of(it) }
+        type = primary?.takeIf { UiTrim.usable(allocations[it]) } ?: SessionBuild.TYPES.firstOrNull { UiTrim.usable(allocations[it]) }
     }
     LaunchedEffect(facts, type, chip) {
         val f = facts ?: return@LaunchedEffect
@@ -105,6 +110,25 @@ fun NewSessionSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text("New session", style = MaterialTheme.typography.titleLarge)
+            banner?.let {
+                dev.fitnessapp.app.ui.common.Banner(
+                    "$it The session will be logged; your challenge decides what it means.", dev.fitnessapp.app.ui.common.BannerKind.SAFETY,
+                )
+            }
+            val ranked = today?.options?.filter { it.sessionType != null }.orEmpty()
+            if (ranked.isNotEmpty()) {
+                TileLabel("Recommended today")
+                ranked.take(3).forEach { o ->
+                    val t = SessionType.of(o.sessionType!!)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        ChipButton(o.label + " · ~" + UiTrim.minutes(o.estMinutes) + " min", selected = t == type, onClick = { type = t })
+                    }
+                }
+                today?.excluded?.let { ex ->
+                    dev.fitnessapp.app.uidet.UiTodayCard.notToday(ex, 2, java.time.Instant.now(), PlanningFacts.ZONE) { g -> g.replace('_', ' ').replaceFirstChar(Char::uppercase) }
+                        .forEach { Text("Not today: $it", style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+                }
+            }
             when {
                 failed -> Text("Couldn't build a session right now. You can still start an empty one.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                 facts == null -> Text("Working out what this week still needs…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)

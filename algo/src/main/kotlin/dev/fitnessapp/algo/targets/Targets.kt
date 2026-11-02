@@ -262,10 +262,18 @@ object Targets : DeclaresParams {
     }
 
     /** `U_g(V)` of 5.4 with `REF` = [base]; 0 for skip and covered groups. */
-    fun utility(gt: GroupTargets, v: Double, base: Double, params: ParamView): Double = when (gt.status) {
-        "improve" -> Det.sqrt(minOf(v, gt.mrv) / base) - params.double("targets.over_mrv_slope") * maxOf(0.0, v - gt.mrv) / base
-        "maintain" -> Det.sqrt(minOf(v, gt.t) / base) + params.double("targets.maintain_over_slope") * maxOf(0.0, v - gt.t) / base
-        else -> 0.0
+    fun utility(gt: GroupTargets, v: Double, base: Double, params: ParamView): Double = Utility(params).of(gt, v, base)
+
+    /** [utility] with its slopes read once, for the inner loops of the allocator and the week planner. */
+    class Utility(params: ParamView) {
+        private val overMrv = params.double("targets.over_mrv_slope")
+        private val maintainOver = params.double("targets.maintain_over_slope")
+
+        fun of(gt: GroupTargets, v: Double, base: Double): Double = when (gt.status) {
+            "improve" -> Det.sqrt(minOf(v, gt.mrv) / base) - overMrv * maxOf(0.0, v - gt.mrv) / base
+            "maintain" -> Det.sqrt(minOf(v, gt.t) / base) + maintainOver * maxOf(0.0, v - gt.t) / base
+            else -> 0.0
+        }
     }
 
     /** The perf score of one e1RM change (5.4.1): 1 up to 4 by `targets.perf_thresholds`. */

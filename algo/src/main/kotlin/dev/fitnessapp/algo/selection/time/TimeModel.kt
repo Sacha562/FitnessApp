@@ -157,6 +157,31 @@ object TimeModel : DeclaresParams {
         return Grid.s(s)
     }
 
+    /**
+     * [estDose] with its params read once, over direct FS in canonical group order: the allocator's time fit calls it
+     * for every candidate step. The arithmetic and its order are [estDose]'s, so the results are identical.
+     */
+    class DoseModel(params: ParamView) {
+        private val rows: List<List<Double>?> = params.tableArrays("time.group_profile").let { p -> Groups.CANONICAL.map { p[it] } }
+        private val tempo = params.double("time.tempo_s")
+        private val perSet = params.double("time.per_set_s")
+        private val transition = params.double("time.transition_s")
+        private val generalWarmup = params.double("time.general_warmup_s")
+        private val specific = specificWarmupSeconds(params)
+
+        fun estDose(direct: DoubleArray, warm: Boolean): Double {
+            var s = (if (warm) generalWarmup else 0.0) + specific
+            for (i in direct.indices) {
+                val x = direct[i]
+                if (x <= 0.0) continue
+                val (reps, rest, setup) = requireNotNull(rows[i]) { "time.group_profile lacks ${Groups.CANONICAL[i]}" }
+                val n = kotlin.math.ceil(x / 3.0 - 1e-9)
+                s += x * (reps * tempo + perSet + rest) - n * rest + n * (setup + transition)
+            }
+            return Grid.s(s)
+        }
+    }
+
     /** [estDose] in minutes. */
     fun estDoseMinutes(direct: Map<String, Double>, warm: Boolean, params: ParamView): Double = minutes(estDose(direct, warm, params))
 

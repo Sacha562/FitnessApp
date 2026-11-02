@@ -415,3 +415,31 @@ is the one whose allocation adds the most of this week's remaining Vhyp; a combi
 both families (`AddOnSlot.family` "PUSH+LEGS"); when the live capacity after the challenge block is below the minimum,
 the planned add-on stays as it is for the user to do or skip; the in-session trim prefers to cut later exercises
 among equals. `substitute@1.1.0`, ENGINE_VERSION 1.11.0, params 1.0.3 (D56's `select.per_group_k`), migration 043.
+
+**M4.5 (2026-11-02, D70, phone checks open)**: the week planner and the Today card. `weekplan@1.0.0` (ALGORITHMS_PLANNING 8)
+builds the day model (past, fixed, blocked, free with its slot and budget, no slot), enumerates every plan of up to
+`kMax` general sessions with a type each and a family or none for each add-on slot, simulates it in time order with the
+allocator and readiness, checks H1-H8 (H6 keeps heavy-legs sessions 40 h apart, H1 keeps gap-rule tags a day apart) and
+scores it by the objective of 8.6 (utility, frequency bonus, the marginal protection penalty, runs, consecutive days,
+session and add-on costs, no rest day, spill on skip groups, low whole-body readiness, stability against the week's
+last plan); the C52 tie band and key pick the plan, and every day without a gym item gets one rest reason.
+`today@1.0.0` (9) runs the same enumeration with today pinned: on a challenge day it compares the add-on families, on
+another day the eight types against the best week without a session today, and decides the verdict (train, soft rest,
+hard rest) with typed reasons, the excluded families and the 9.5 dedupe. `ui.todaycard` maps it to the states of UX 9.3.
+Today shows the card under the date and the week strip (D70: the other tiles stay below); the strip has the planner's
+symbols and swipes to next week's provisional plan. "Other options" and "Train anyway" open the New session sheet with
+today's ranked options on top; a hard rest offers "Log a session anyway" with the rule banner. The week plan picks the
+add-on family built at the start of C and A (or the one picked on the card) and gives the New session sheet its
+per-group opportunities. Each changed plan writes a `weekplan.plan` snapshot and each changed card a `today.options`
+snapshot; `today_card_shown` and `today_action` are logged. Speed: the first planner runs took 11 ms per plan, most of
+it in the allocator's time fit (TreeMap churn, decimal parsing of params, exact BigDecimal rounding); the fit now runs
+on arrays, `ParamView` caches parsed values and `Grid.round` has an exact double fast path, all with byte-identical
+results (every golden unchanged; a 250,000-value property test against the BigDecimal path), so an allocation takes
+1.7 ms instead of 24 and the W41 week 38 ms instead of 241. Goldens regenerated on catalog 1.0.2 (D55 (4)):
+GF-W41-WEEKPLAN, the GF-W41-TODAY days, GF-W41-TRAIN-ANYWAY-WED, GF-W41-CAPACITY19, GF-W41-NOVICE and
+GF-W41-TEST-POSTPONED; W41_elbowCheck2 and DST_W43_windows are not weekplan goldens (the elbow flags act in `select`,
+the DST window is the contract builder's) and W41_planItFri belongs to M4.6. The regenerated W41 week differs from 21.6:
+the Friday FULL after a Thursday legs add-on now credits 4.2 heavy-leg FS (3.62 in the spec), so H6 forbids that pair
+and the planner picks Wednesday FULL with a Thursday push add-on (J 4.856; the best Friday plan is 4.77). No engine
+module changed behaviour and the seeded 1.0.0 rows carry params 1.0.3's slice hashes, so ENGINE_VERSION stays 1.13.0
+and there is no migration (D70 amended). Tests: `:algo` 534, `:app` 133, `:data` 101, `:sim` 60, all green.

@@ -1,0 +1,1963 @@
+{
+    "id": "GF-W41-TODAY-THU",
+    "module": "today",
+    "description": "W41_today_thu (21.10): Thu 8 Oct 12:00 after resting on Wednesday; F-W41 (21.1, the accounting payload of GF-W41-ACCOUNTING on catalog 1.0.2; targets of GF-W41-ALLOC-FRI); ",
+    "input": {
+        "module": "today@1.0.0",
+        "scope_key": "golden:GF-W41-TODAY-THU",
+        "payload": {
+            "zone": "Europe/Amsterdam",
+            "regions": {
+                "chest_clavicular": "chest",
+                "chest_sternal": "chest",
+                "delt_anterior": "front_delts",
+                "delt_lateral": "side_delts",
+                "delt_posterior": "rear_delts",
+                "lats": "lats",
+                "traps_mid": "upper_back",
+                "traps_lower": "upper_back",
+                "rhomboids": "upper_back",
+                "traps_upper": "upper_traps",
+                "biceps_brachii": "biceps",
+                "brachialis": "biceps",
+                "brachioradialis": "biceps",
+                "triceps_long": "triceps",
+                "triceps_lat_med": "triceps",
+                "wrist_flexors_grip": "forearms",
+                "wrist_extensors": "forearms",
+                "pronators_supinators": "forearms",
+                "rectus_abdominis": "abs",
+                "obliques": "abs",
+                "anti_rotation": "abs",
+                "erectors": "lower_back",
+                "glute_max": "glutes",
+                "glute_med_min": "abductors",
+                "adductors": "adductors",
+                "vasti": "quads",
+                "rectus_femoris": "quads",
+                "hams_biarticular": "hamstrings",
+                "bf_short_head": "hamstrings",
+                "gastrocnemius": "calves",
+                "soleus": "calves"
+            },
+            "exercises": [
+                {
+                    "slug": "chinup_weighted",
+                    "name_en": "Weighted chin-up (underhand)",
+                    "name_nl": "Gewogen optrekken onderhands",
+                    "aliases": [],
+                    "pattern": "vert_pull",
+                    "family": "vpull",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "pullup_bar",
+                        "dip_belt"
+                    ],
+                    "load_mode": "bodyweight_plus_external",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "supinated",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 90,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 2,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [
+                        "grip_slip_before_last"
+                    ],
+                    "external_refs": {
+                        "fedb_id": "Chin-Up"
+                    },
+                    "evidence_note": "Supinated grip: biceps brachii (a supinator) works as a strong synergist (expert-opinion; user review 2026-10-08).",
+                    "stimulus": {
+                        "biceps_brachii": 0.75,
+                        "brachialis": 0.5,
+                        "brachioradialis": 0.25,
+                        "delt_posterior": 0.25,
+                        "lats": 1,
+                        "traps_lower": 0.25,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "db_pronation_supination",
+                    "name_en": "Dumbbell pronation-supination",
+                    "name_nl": "Pronatie-supinatie met dumbbell",
+                    "aliases": [],
+                    "pattern": "forearm_rot",
+                    "family": "forearm",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "prehab"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Dumbbell_Lying_Pronation"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "pronators_supinators": 1
+                    }
+                },
+                {
+                    "slug": "face_pull_cable",
+                    "name_en": "Face pull",
+                    "name_nl": "Face pull",
+                    "aliases": [],
+                    "pattern": "rear_delt_fly",
+                    "family": "hpull",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "prehab"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Face_Pull"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "delt_posterior": 1,
+                        "rotator_cuff_er": 0.5,
+                        "traps_mid": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_dead_hang",
+                    "name_en": "One-arm dead hang (neutral handle)",
+                    "name_nl": "One-arm dead hang (neutraal handvat)",
+                    "aliases": [],
+                    "pattern": "hang",
+                    "family": "skill",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "fixed_neutral_handle"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "duration",
+                    "contraction": "hang",
+                    "hold_class": "grip",
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "high_risk",
+                    "grip": "neutral",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "hang",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [
+                        "torso_rotation"
+                    ],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_hold90_machine",
+                    "name_en": "One-arm 90-degree hold (machine)",
+                    "name_nl": "Hold op 90° (machine)",
+                    "aliases": [],
+                    "pattern": "skill_static",
+                    "family": "skill",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "assisted_pullup_machine"
+                    ],
+                    "load_mode": "assisted_machine",
+                    "allowed_load_modes": [
+                        "assisted_machine"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "duration",
+                    "contraction": "isometric",
+                    "hold_class": "elbow",
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 40,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 2,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "skill",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 0.5,
+                        "biceps_brachii": 0.5,
+                        "brachialis": 0.5,
+                        "brachioradialis": 0.5,
+                        "lats": 0.5,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_negative",
+                    "name_en": "One-arm negative (no assistance)",
+                    "name_nl": "One-arm negatief zonder hulp",
+                    "aliases": [],
+                    "pattern": "vert_pull",
+                    "family": "vpull",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "pullup_bar"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "eccentric_only",
+                    "hold_class": null,
+                    "ecc_emphasis": true,
+                    "mechanics": "compound",
+                    "curve_class": null,
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 20,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 3,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "eccentric",
+                        "elbow_stress_high",
+                        "heavy_unilateral",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [
+                        "jerky",
+                        "hand_shift"
+                    ],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 0.5,
+                        "biceps_brachii": 0.5,
+                        "brachialis": 0.5,
+                        "brachioradialis": 0.5,
+                        "lats": 1,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_scap_pull",
+                    "name_en": "One-arm scapular pull (neutral handle)",
+                    "name_nl": "One-arm scapular pull (neutraal handvat)",
+                    "aliases": [],
+                    "pattern": "vert_pull",
+                    "family": "vpull",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "fixed_neutral_handle"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": "upper_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "high_risk",
+                    "grip": "neutral",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 20,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "skill",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [
+                        "torso_rotation"
+                    ],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 0.25,
+                        "lats": 0.5,
+                        "traps_lower": 0.5,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_straight_arm_hold",
+                    "name_en": "One-arm straight-arm hold (neutral handle)",
+                    "name_nl": "Gestrekte hold (neutraal handvat)",
+                    "aliases": [],
+                    "pattern": "hang",
+                    "family": "skill",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "fixed_neutral_handle"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "duration",
+                    "contraction": "hang",
+                    "hold_class": "shoulder",
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "high_risk",
+                    "grip": "neutral",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 1,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "hang",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [
+                        "torso_rotation"
+                    ],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oa_top_hold",
+                    "name_en": "One-arm top hold",
+                    "name_nl": "Top hold (één arm)",
+                    "aliases": [],
+                    "pattern": "skill_static",
+                    "family": "skill",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "pullup_bar"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "duration",
+                    "contraction": "isometric",
+                    "hold_class": "elbow",
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 2,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "skill",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 0.5,
+                        "biceps_brachii": 0.5,
+                        "brachialis": 0.5,
+                        "brachioradialis": 0.5,
+                        "lats": 0.5,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "oap_assisted_machine",
+                    "name_en": "Assisted one-arm pull-up (machine)",
+                    "name_nl": "One-arm pull-up met assistentie (machine)",
+                    "aliases": [],
+                    "pattern": "vert_pull",
+                    "family": "vpull",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "assisted_pullup_machine"
+                    ],
+                    "load_mode": "assisted_machine",
+                    "allowed_load_modes": [
+                        "assisted_machine"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "upper_compound",
+                    "rest_class": "compound_upper",
+                    "safety_class": "high_risk",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 40,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 2,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 1,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "heavy_unilateral",
+                        "unilateral_pull"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 0.5,
+                        "biceps_brachii": 0.5,
+                        "brachialis": 0.5,
+                        "brachioradialis": 0.5,
+                        "delt_posterior": 0.25,
+                        "lats": 1,
+                        "traps_lower": 0.25,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "one_arm_plank",
+                    "name_en": "One-arm plank",
+                    "name_nl": "Eenarmige plank",
+                    "aliases": [],
+                    "pattern": "core_anti_rot",
+                    "family": "core",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "duration",
+                    "contraction": "isometric",
+                    "hold_class": "trunk",
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "core"
+                    ],
+                    "flags_offered": [
+                        "hip_rotation"
+                    ],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "anti_rotation": 1,
+                        "obliques": 0.5,
+                        "rectus_abdominis": 0.25
+                    }
+                },
+                {
+                    "slug": "two_arm_dead_hang",
+                    "name_en": "Two-arm dead hang",
+                    "name_nl": "Dead hang aan twee armen",
+                    "aliases": [],
+                    "pattern": "hang",
+                    "family": "skill",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight"
+                    ],
+                    "bw_fraction": 1.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "duration",
+                    "contraction": "hang",
+                    "hold_class": "grip",
+                    "ecc_emphasis": false,
+                    "mechanics": "skill",
+                    "curve_class": null,
+                    "rest_class": "hold",
+                    "safety_class": "bodyweight",
+                    "grip": "pronated",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 0,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "challenge",
+                        "hang",
+                        "home"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Challenge-local row of oap.challenge.v1.json (C10); coefficients from the definition.",
+                    "stimulus": {
+                        "wrist_flexors_grip": 0.5
+                    }
+                }
+            ],
+            "last_done": {
+                "chinup_weighted": "2026-10-03",
+                "db_pronation_supination": "2026-10-03",
+                "face_pull_cable": "2026-10-03",
+                "oa_dead_hang": "2026-10-03",
+                "oa_hold90_machine": "2026-10-03",
+                "oa_negative": "2026-10-03",
+                "oa_scap_pull": "2026-10-03",
+                "oa_straight_arm_hold": "2026-10-03",
+                "oa_top_hold": "2026-10-03",
+                "oap_assisted_machine": "2026-10-03",
+                "one_arm_plank": "2026-10-03",
+                "two_arm_dead_hang": "2026-10-03"
+            },
+            "sets": [
+                {
+                    "id": "C-2026-10-06/oap_assisted_machine/1L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oap_assisted_machine",
+                    "side": "L",
+                    "ts": "2026-10-06T17:50:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oap_assisted_machine/1R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oap_assisted_machine",
+                    "side": "R",
+                    "ts": "2026-10-06T17:51:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oap_assisted_machine/2L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oap_assisted_machine",
+                    "side": "L",
+                    "ts": "2026-10-06T17:52:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oap_assisted_machine/2R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oap_assisted_machine",
+                    "side": "R",
+                    "ts": "2026-10-06T17:53:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/chinup_weighted/1both",
+                    "session": "C-2026-10-06",
+                    "exercise": "chinup_weighted",
+                    "side": "both",
+                    "ts": "2026-10-06T18:00:00Z",
+                    "rir": 1
+                },
+                {
+                    "id": "C-2026-10-06/chinup_weighted/2both",
+                    "session": "C-2026-10-06",
+                    "exercise": "chinup_weighted",
+                    "side": "both",
+                    "ts": "2026-10-06T18:01:00Z",
+                    "rir": 1
+                },
+                {
+                    "id": "C-2026-10-06/oa_scap_pull/1L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_scap_pull",
+                    "side": "L",
+                    "ts": "2026-10-06T18:10:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oa_scap_pull/1R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_scap_pull",
+                    "side": "R",
+                    "ts": "2026-10-06T18:11:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oa_scap_pull/2L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_scap_pull",
+                    "side": "L",
+                    "ts": "2026-10-06T18:12:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oa_scap_pull/2R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_scap_pull",
+                    "side": "R",
+                    "ts": "2026-10-06T18:13:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/oa_dead_hang/1L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_dead_hang",
+                    "side": "L",
+                    "ts": "2026-10-06T18:20:00Z",
+                    "duration_s": 10,
+                    "felt": "ok"
+                },
+                {
+                    "id": "C-2026-10-06/oa_dead_hang/1R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_dead_hang",
+                    "side": "R",
+                    "ts": "2026-10-06T18:21:00Z",
+                    "duration_s": 10,
+                    "felt": "ok"
+                },
+                {
+                    "id": "C-2026-10-06/oa_dead_hang/2L",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_dead_hang",
+                    "side": "L",
+                    "ts": "2026-10-06T18:22:00Z",
+                    "duration_s": 10,
+                    "felt": "ok"
+                },
+                {
+                    "id": "C-2026-10-06/oa_dead_hang/2R",
+                    "session": "C-2026-10-06",
+                    "exercise": "oa_dead_hang",
+                    "side": "R",
+                    "ts": "2026-10-06T18:23:00Z",
+                    "duration_s": 10,
+                    "felt": "ok"
+                },
+                {
+                    "id": "C-2026-10-06/face_pull_cable/1both",
+                    "session": "C-2026-10-06",
+                    "exercise": "face_pull_cable",
+                    "side": "both",
+                    "ts": "2026-10-06T18:30:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/db_pronation_supination/1L",
+                    "session": "C-2026-10-06",
+                    "exercise": "db_pronation_supination",
+                    "side": "L",
+                    "ts": "2026-10-06T18:35:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "C-2026-10-06/db_pronation_supination/1R",
+                    "session": "C-2026-10-06",
+                    "exercise": "db_pronation_supination",
+                    "side": "R",
+                    "ts": "2026-10-06T18:36:00Z",
+                    "rir": 2
+                },
+                {
+                    "id": "hang-2026-10-05/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-05",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-05T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-05/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-05",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-05T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-06/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-06",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-06T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-06/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-06",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-06T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-06/one_arm_plank/1L",
+                    "session": "plank-2026-10-06",
+                    "exercise": "one_arm_plank",
+                    "side": "L",
+                    "ts": "2026-10-06T19:30:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-06/one_arm_plank/1R",
+                    "session": "plank-2026-10-06",
+                    "exercise": "one_arm_plank",
+                    "side": "R",
+                    "ts": "2026-10-06T19:31:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-06/one_arm_plank/2L",
+                    "session": "plank-2026-10-06",
+                    "exercise": "one_arm_plank",
+                    "side": "L",
+                    "ts": "2026-10-06T19:32:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-06/one_arm_plank/2R",
+                    "session": "plank-2026-10-06",
+                    "exercise": "one_arm_plank",
+                    "side": "R",
+                    "ts": "2026-10-06T19:33:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                }
+            ],
+            "committed_sets": [
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "L",
+                    "ts": "2026-10-08T17:50:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "R",
+                    "ts": "2026-10-08T17:51:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/2L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "L",
+                    "ts": "2026-10-08T17:52:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/2R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "R",
+                    "ts": "2026-10-08T17:53:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/3L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "L",
+                    "ts": "2026-10-08T17:54:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oap_assisted_machine/3R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oap_assisted_machine",
+                    "side": "R",
+                    "ts": "2026-10-08T17:55:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oa_negative/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_negative",
+                    "side": "L",
+                    "ts": "2026-10-08T18:00:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/oa_negative/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_negative",
+                    "side": "R",
+                    "ts": "2026-10-08T18:01:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/chinup_weighted/1both",
+                    "session": "A-2026-10-08",
+                    "exercise": "chinup_weighted",
+                    "side": "both",
+                    "ts": "2026-10-08T18:05:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/chinup_weighted/2both",
+                    "session": "A-2026-10-08",
+                    "exercise": "chinup_weighted",
+                    "side": "both",
+                    "ts": "2026-10-08T18:06:00Z",
+                    "planned_rir": 1
+                },
+                {
+                    "id": "A-2026-10-08/oa_top_hold/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_top_hold",
+                    "side": "L",
+                    "ts": "2026-10-08T18:15:00Z",
+                    "duration_s": 8,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_top_hold/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_top_hold",
+                    "side": "R",
+                    "ts": "2026-10-08T18:16:00Z",
+                    "duration_s": 8,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_top_hold/2L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_top_hold",
+                    "side": "L",
+                    "ts": "2026-10-08T18:17:00Z",
+                    "duration_s": 8,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_top_hold/2R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_top_hold",
+                    "side": "R",
+                    "ts": "2026-10-08T18:18:00Z",
+                    "duration_s": 8,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_hold90_machine/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_hold90_machine",
+                    "side": "L",
+                    "ts": "2026-10-08T18:25:00Z",
+                    "duration_s": 7,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_hold90_machine/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_hold90_machine",
+                    "side": "R",
+                    "ts": "2026-10-08T18:26:00Z",
+                    "duration_s": 7,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_hold90_machine/2L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_hold90_machine",
+                    "side": "L",
+                    "ts": "2026-10-08T18:27:00Z",
+                    "duration_s": 7,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_hold90_machine/2R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_hold90_machine",
+                    "side": "R",
+                    "ts": "2026-10-08T18:28:00Z",
+                    "duration_s": 7,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_straight_arm_hold/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_straight_arm_hold",
+                    "side": "L",
+                    "ts": "2026-10-08T18:35:00Z",
+                    "duration_s": 6,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_straight_arm_hold/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_straight_arm_hold",
+                    "side": "R",
+                    "ts": "2026-10-08T18:36:00Z",
+                    "duration_s": 6,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_straight_arm_hold/2L",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_straight_arm_hold",
+                    "side": "L",
+                    "ts": "2026-10-08T18:37:00Z",
+                    "duration_s": 6,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/oa_straight_arm_hold/2R",
+                    "session": "A-2026-10-08",
+                    "exercise": "oa_straight_arm_hold",
+                    "side": "R",
+                    "ts": "2026-10-08T18:38:00Z",
+                    "duration_s": 6,
+                    "felt": "hard"
+                },
+                {
+                    "id": "A-2026-10-08/face_pull_cable/1both",
+                    "session": "A-2026-10-08",
+                    "exercise": "face_pull_cable",
+                    "side": "both",
+                    "ts": "2026-10-08T18:45:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/face_pull_cable/2both",
+                    "session": "A-2026-10-08",
+                    "exercise": "face_pull_cable",
+                    "side": "both",
+                    "ts": "2026-10-08T18:46:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/db_pronation_supination/1L",
+                    "session": "A-2026-10-08",
+                    "exercise": "db_pronation_supination",
+                    "side": "L",
+                    "ts": "2026-10-08T18:50:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/db_pronation_supination/1R",
+                    "session": "A-2026-10-08",
+                    "exercise": "db_pronation_supination",
+                    "side": "R",
+                    "ts": "2026-10-08T18:51:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/db_pronation_supination/2L",
+                    "session": "A-2026-10-08",
+                    "exercise": "db_pronation_supination",
+                    "side": "L",
+                    "ts": "2026-10-08T18:52:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "A-2026-10-08/db_pronation_supination/2R",
+                    "session": "A-2026-10-08",
+                    "exercise": "db_pronation_supination",
+                    "side": "R",
+                    "ts": "2026-10-08T18:53:00Z",
+                    "planned_rir": 2
+                },
+                {
+                    "id": "hang-2026-10-07/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-07",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-07T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-07/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-07",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-07T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-09/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-09",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-09T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-09/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-09",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-09T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-10/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-10",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-10T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-10/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-10",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-10T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-11/two_arm_dead_hang/1both",
+                    "session": "hang-2026-10-11",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-11T06:00:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "hang-2026-10-11/two_arm_dead_hang/2both",
+                    "session": "hang-2026-10-11",
+                    "exercise": "two_arm_dead_hang",
+                    "side": "both",
+                    "ts": "2026-10-11T06:01:00Z",
+                    "duration_s": 30,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-08/one_arm_plank/1L",
+                    "session": "plank-2026-10-08",
+                    "exercise": "one_arm_plank",
+                    "side": "L",
+                    "ts": "2026-10-08T20:00:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-08/one_arm_plank/1R",
+                    "session": "plank-2026-10-08",
+                    "exercise": "one_arm_plank",
+                    "side": "R",
+                    "ts": "2026-10-08T20:01:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-08/one_arm_plank/2L",
+                    "session": "plank-2026-10-08",
+                    "exercise": "one_arm_plank",
+                    "side": "L",
+                    "ts": "2026-10-08T20:02:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                },
+                {
+                    "id": "plank-2026-10-08/one_arm_plank/2R",
+                    "session": "plank-2026-10-08",
+                    "exercise": "one_arm_plank",
+                    "side": "R",
+                    "ts": "2026-10-08T20:03:00Z",
+                    "duration_s": 20,
+                    "felt": "ok"
+                }
+            ],
+            "now": "2026-10-08T10:00:00Z",
+            "week_start": "2026-10-05",
+            "targets": {
+                "iso_week": "2026-W41",
+                "today": "2026-10-07",
+                "training_age": "intermediate",
+                "owned": [
+                    "lats",
+                    "biceps",
+                    "forearms"
+                ],
+                "contract_active": true,
+                "deload_week": true,
+                "done": {
+                    "abs": 1.45,
+                    "rear_delts": 0.9,
+                    "upper_back": 1.4
+                },
+                "committed": {
+                    "abs": 2.98,
+                    "rear_delts": 0.9,
+                    "upper_back": 0.45
+                },
+                "goals": {
+                    "chest": {
+                        "goal": "improve"
+                    },
+                    "side_delts": {
+                        "goal": "improve"
+                    },
+                    "rear_delts": {
+                        "goal": "improve"
+                    },
+                    "lats": {
+                        "goal": "improve"
+                    },
+                    "upper_back": {
+                        "goal": "improve"
+                    },
+                    "biceps": {
+                        "goal": "improve"
+                    },
+                    "triceps": {
+                        "goal": "improve"
+                    },
+                    "quads": {
+                        "goal": "improve"
+                    },
+                    "hamstrings": {
+                        "goal": "improve"
+                    },
+                    "glutes": {
+                        "goal": "improve"
+                    },
+                    "front_delts": {
+                        "goal": "maintain"
+                    },
+                    "upper_traps": {
+                        "goal": "maintain"
+                    },
+                    "forearms": {
+                        "goal": "maintain"
+                    },
+                    "abs": {
+                        "goal": "maintain"
+                    },
+                    "lower_back": {
+                        "goal": "maintain"
+                    },
+                    "abductors": {
+                        "goal": "maintain"
+                    },
+                    "adductors": {
+                        "goal": "maintain"
+                    },
+                    "calves": {
+                        "goal": "maintain"
+                    }
+                }
+            },
+            "fixed": [
+                {
+                    "key": "W41-C",
+                    "kind": "challenge_session",
+                    "date": "2026-10-06",
+                    "start": "2026-10-06T17:45:00Z",
+                    "end": "2026-10-06T19:15:00Z",
+                    "label": "Session C",
+                    "slot": "C"
+                },
+                {
+                    "key": "W41-A",
+                    "kind": "challenge_session",
+                    "date": "2026-10-08",
+                    "start": "2026-10-08T17:45:00Z",
+                    "end": "2026-10-08T19:15:00Z",
+                    "label": "Session A",
+                    "slot": "A",
+                    "add_on": {
+                        "start": "2026-10-08T18:36:00Z",
+                        "capacity_min": 34,
+                        "families": [
+                            {
+                                "type": "LEGS",
+                                "allowed_groups": [
+                                    "quads",
+                                    "hamstrings",
+                                    "glutes",
+                                    "abductors",
+                                    "adductors",
+                                    "calves"
+                                ]
+                            },
+                            {
+                                "type": "PUSH",
+                                "allowed_groups": [
+                                    "chest",
+                                    "front_delts",
+                                    "side_delts",
+                                    "triceps"
+                                ]
+                            },
+                            {
+                                "type": "CORE",
+                                "allowed_groups": [
+                                    "abs"
+                                ]
+                            }
+                        ],
+                        "forbid_groups": [
+                            "lats",
+                            "biceps",
+                            "forearms"
+                        ],
+                        "max_sets": 4,
+                        "min_rir": 2,
+                        "forbidden_session_tags": [
+                            "elbow_flexor_heavy",
+                            "grip_heavy"
+                        ]
+                    }
+                },
+                {
+                    "key": "W41-TEST",
+                    "kind": "test",
+                    "date": "2026-10-11",
+                    "start": "2026-10-11T11:00:00Z",
+                    "end": "2026-10-11T13:00:00Z",
+                    "label": "Test day",
+                    "slot": "TEST"
+                }
+            ],
+            "windows": {
+                "2026-10-05": [
+                    [
+                        "19:45",
+                        "21:15"
+                    ]
+                ],
+                "2026-10-06": [
+                    [
+                        "19:45",
+                        "21:15"
+                    ]
+                ],
+                "2026-10-07": [
+                    [
+                        "19:45",
+                        "21:15"
+                    ]
+                ],
+                "2026-10-08": [
+                    [
+                        "19:45",
+                        "21:15"
+                    ]
+                ],
+                "2026-10-09": [
+                    [
+                        "19:45",
+                        "21:15"
+                    ]
+                ],
+                "2026-10-10": [
+                    [
+                        "09:00",
+                        "16:00"
+                    ]
+                ],
+                "2026-10-11": [
+                    [
+                        "09:00",
+                        "16:00"
+                    ]
+                ]
+            },
+            "busy": [
+                [
+                    "2026-10-05T17:30:00Z",
+                    "2026-10-05T20:30:00Z"
+                ]
+            ],
+            "blocked": [
+                {
+                    "date": "2026-10-05",
+                    "scope": "tags",
+                    "tags": [
+                        "pull_heavy",
+                        "grip_heavy",
+                        "elbow_flexor_heavy"
+                    ],
+                    "reason": "gap day",
+                    "rule_id": "gap"
+                },
+                {
+                    "date": "2026-10-07",
+                    "scope": "tags",
+                    "tags": [
+                        "pull_heavy",
+                        "grip_heavy",
+                        "elbow_flexor_heavy"
+                    ],
+                    "reason": "gap day",
+                    "rule_id": "gap"
+                },
+                {
+                    "date": "2026-10-09",
+                    "scope": "tags",
+                    "tags": [
+                        "pull_heavy",
+                        "grip_heavy",
+                        "elbow_flexor_heavy"
+                    ],
+                    "reason": "gap day",
+                    "rule_id": "gap"
+                },
+                {
+                    "date": "2026-10-10",
+                    "scope": "all_gym",
+                    "tags": [],
+                    "reason": "rest day before TEST",
+                    "rule_id": "restBefore"
+                }
+            ],
+            "gap_rule": {
+                "days": 1,
+                "applies_to_tags": [
+                    "pull_heavy",
+                    "grip_heavy",
+                    "elbow_flexor_heavy"
+                ]
+            },
+            "protected_windows": [
+                {
+                    "id": "pw.beforeA",
+                    "from": "2026-10-07T17:45:00Z",
+                    "to": "2026-10-08T17:45:00Z",
+                    "mode": "hard",
+                    "groups": [
+                        "lats",
+                        "biceps",
+                        "forearms"
+                    ],
+                    "regions": [
+                        "brachialis"
+                    ],
+                    "session_tags": [
+                        "grip_heavy",
+                        "elbow_flexor_heavy"
+                    ],
+                    "slot": "A"
+                },
+                {
+                    "id": "pw.beforeBT",
+                    "from": "2026-10-10T11:00:00Z",
+                    "to": "2026-10-11T11:00:00Z",
+                    "mode": "hard",
+                    "scope": "all_gym",
+                    "slot": "TEST"
+                },
+                {
+                    "id": "pw.softA",
+                    "from": "2026-10-07T11:45:00Z",
+                    "to": "2026-10-08T17:45:00Z",
+                    "mode": "penalty",
+                    "groups": [
+                        "lats",
+                        "biceps",
+                        "forearms"
+                    ],
+                    "r_min": 0.85,
+                    "tissue_r_min": {
+                        "elbow": 0.9
+                    },
+                    "slot": "A"
+                },
+                {
+                    "id": "pw.softBT",
+                    "from": "2026-10-09T11:00:00Z",
+                    "to": "2026-10-11T11:00:00Z",
+                    "mode": "penalty",
+                    "groups": [
+                        "lats",
+                        "biceps",
+                        "forearms",
+                        "upper_back"
+                    ],
+                    "r_min": 0.85,
+                    "tissue_r_min": {
+                        "elbow": 0.9
+                    },
+                    "slot": "TEST"
+                }
+            ],
+            "owned": [
+                "lats",
+                "biceps",
+                "forearms"
+            ],
+            "tag_rules": {
+                "pull_heavy": {
+                    "groups": [
+                        "lats",
+                        "upper_back"
+                    ],
+                    "minHardSets": 4
+                },
+                "elbow_flexor_heavy": {
+                    "groups": [
+                        "biceps"
+                    ],
+                    "minHardSets": 3,
+                    "orJointStress": {
+                        "elbow_medial": 2
+                    }
+                },
+                "grip_heavy": {
+                    "minGripDemand": 2,
+                    "minHardSets": 2
+                }
+            },
+            "availability": {
+                "gap_day_unavailable": [
+                    "upper_back",
+                    "upper_traps"
+                ]
+            },
+            "max_visits": 4,
+            "default_session_min": 75,
+            "changeover_min": 5,
+            "today": {}
+        }
+    },
+    "params": "default-1.0.3",
+    "expected": {
+        "outputs": {
+            "verdict": "TRAIN",
+            "budget_min": 85,
+            "budget_source": "calendar",
+            "planned": {
+                "kind": "challenge",
+                "slot": "A",
+                "label": "Session A"
+            },
+            "primary": "opt:A:PUSH",
+            "options": [
+                {
+                    "id": "opt:A:PUSH",
+                    "label": "Session A + push add-on",
+                    "score": 0.7361,
+                    "dj": 0.4721,
+                    "est_min": 90,
+                    "addon": "PUSH",
+                    "direct": {
+                        "chest": 2,
+                        "side_delts": 2
+                    },
+                    "reasons": [
+                        {
+                            "code": "VOLUME_DEFICIT",
+                            "class": 3,
+                            "weight": 0.3651,
+                            "params": {
+                                "after": "1.6",
+                                "done": "0",
+                                "group": "side_delts",
+                                "target": "6"
+                            }
+                        },
+                        {
+                            "code": "DELOAD_WEEK",
+                            "class": 1,
+                            "weight": 0.5,
+                            "params": {
+                                "source": "challenge"
+                            }
+                        },
+                        {
+                            "code": "ADDON",
+                            "class": 3,
+                            "weight": 0.1,
+                            "params": {
+                                "family": "PUSH",
+                                "minutes": "12.3",
+                                "slot": "A"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "opt:A:LEGS",
+                    "label": "Session A + legs add-on",
+                    "score": 0.6436,
+                    "dj": 0.2872,
+                    "est_min": 90,
+                    "addon": "LEGS",
+                    "direct": {
+                        "quads": 2,
+                        "hamstrings": 2
+                    },
+                    "reasons": [
+                        {
+                            "code": "VOLUME_DEFICIT",
+                            "class": 3,
+                            "weight": 0.3651,
+                            "params": {
+                                "after": "1.6",
+                                "done": "0",
+                                "group": "hamstrings",
+                                "target": "6"
+                            }
+                        },
+                        {
+                            "code": "DELOAD_WEEK",
+                            "class": 1,
+                            "weight": 0.5,
+                            "params": {
+                                "source": "challenge"
+                            }
+                        },
+                        {
+                            "code": "ADDON",
+                            "class": 3,
+                            "weight": 0.1,
+                            "params": {
+                                "family": "LEGS",
+                                "minutes": "13.8",
+                                "slot": "A"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "opt:A:none",
+                    "label": "Session A",
+                    "score": 0.5,
+                    "dj": 0,
+                    "est_min": 90,
+                    "direct": {},
+                    "reasons": [
+                        {
+                            "code": "DELOAD_WEEK",
+                            "class": 1,
+                            "weight": 0.5,
+                            "params": {
+                                "source": "challenge"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "rest_reasons": [],
+            "excluded": [
+                {
+                    "subject": "CORE",
+                    "code": "NOTHING_TO_TRAIN"
+                }
+            ],
+            "week": {
+                "j": 4.77,
+                "recommended_n": 4,
+                "visits": {
+                    "done": 1,
+                    "fixed": 2,
+                    "recommended": 1,
+                    "max": 4
+                },
+                "band": {
+                    "j_star": 4.77,
+                    "in_band": 1,
+                    "tie_key_used": "only"
+                },
+                "days": [
+                    {
+                        "date": "2026-10-05",
+                        "status": "past",
+                        "items": [],
+                        "rest_reason": {
+                            "code": "PAST_DAY"
+                        }
+                    },
+                    {
+                        "date": "2026-10-06",
+                        "status": "past",
+                        "items": [
+                            {
+                                "kind": "done",
+                                "slot": "C",
+                                "label": "Session C",
+                                "start": "2026-10-06T17:45:00Z",
+                                "est_min": 90,
+                                "write_policy": "never"
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-10-07",
+                        "status": "past",
+                        "items": [],
+                        "rest_reason": {
+                            "code": "PAST_DAY"
+                        }
+                    },
+                    {
+                        "date": "2026-10-08",
+                        "status": "fixed",
+                        "items": [
+                            {
+                                "kind": "challenge_session",
+                                "slot": "A",
+                                "label": "Session A",
+                                "start": "2026-10-08T17:45:00Z",
+                                "est_min": 90,
+                                "write_policy": "auto"
+                            },
+                            {
+                                "kind": "addon",
+                                "slot": "A",
+                                "type": "PUSH",
+                                "label": "Push add-on",
+                                "start": "2026-10-08T18:36:00Z",
+                                "est_min": 12.3,
+                                "write_policy": "in_parent_description"
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-10-09",
+                        "status": "free",
+                        "items": [
+                            {
+                                "kind": "recommended_general",
+                                "type": "FULL",
+                                "label": "Legs + push + rear delts",
+                                "start": "2026-10-09T17:45:00Z",
+                                "est_min": 47.1,
+                                "write_policy": "on_plan_it"
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-10-10",
+                        "status": "blocked",
+                        "items": [],
+                        "rest_reason": {
+                            "code": "REST_BEFORE",
+                            "params": {
+                                "rule_id": "restBefore",
+                                "slot": "TEST"
+                            }
+                        }
+                    },
+                    {
+                        "date": "2026-10-11",
+                        "status": "fixed",
+                        "items": [
+                            {
+                                "kind": "test",
+                                "slot": "TEST",
+                                "label": "Test day",
+                                "start": "2026-10-11T11:00:00Z",
+                                "est_min": 120,
+                                "write_policy": "auto"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "outputs_jcs_sha256": "600f1d7d9735666a93a09635446b48db2dcb556e87bff3227810862f92620bb3"
+    }
+}

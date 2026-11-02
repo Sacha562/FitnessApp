@@ -28,8 +28,8 @@ import java.time.Instant
  * Building a general block in the app (M4.4, D62; UX 22.6 `SessionBuilder`): the facts the L6 pipeline reads as the phone
  * holds them, gathered once per sheet ([Facts]), and the calls into the pure [Building]. A standalone session is built
  * for one of the eight types with a time budget; an add-on is built after a challenge session within the slot's
- * capacity and filters. The week planner (M4.5) does not exist yet, so every group gets one opportunity: the session
- * is asked for what this week still needs, within the allocator's per-session caps.
+ * capacity and filters. The week plan (M4.5, D70) gives each group its opportunities: this session and the general
+ * sessions it recommends later this week whose type trains the group (7.2 `opp_g`), and it picks the add-on family.
  */
 object SessionBuild {
     /** The New session sheet's types (ALGORITHMS_PLANNING 0.3), in the fixed tie order. */
@@ -85,6 +85,10 @@ object SessionBuild {
         val busy: Set<String>,
         val day: ChallengeConstraints.Day?,
         val elig: EligContext,
+        /** The types of the general sessions the week plan recommends after this one (D70 (4)). */
+        val laterTypes: List<SessionType> = emptyList(),
+        /** The add-on family the week plan chose for today's challenge session, null for none. */
+        val planAddOn: SessionType? = null,
     )
 
     suspend fun facts(c: AppContainer, at: Instant = c.clock.now(), slot: String? = null): Facts = withContext(Dispatchers.Default) {
@@ -101,9 +105,14 @@ object SessionBuild {
             skipGroups = goals.filterValues { it.status == "skip" }.keys,
             goalGroups = goals.filterValues { (it.status == "improve" || it.status == "maintain") && !it.coveredByChallenge }.keys,
         )
+        val plan = runCatching { WeekPlans.thisWeek(c, at).plan }.getOrNull()
+        val later = plan?.days.orEmpty().filter { it.date.isAfter(date) }.flatMap { d -> d.items.filter { it.kind == "recommended_general" } }
+            .mapNotNull { it.type?.let { t -> runCatching { SessionType.of(t) }.getOrNull() } }
+        val addOn = plan?.days?.firstOrNull { it.date == date }?.items?.firstOrNull { it.kind == "addon" && (slot == null || it.slot == slot) }?.type
+            ?.let { runCatching { SessionType.of(it) }.getOrNull() }
         Facts(
             at, week, readiness, prefs, c.equipment.types.filter { it.category == "station" }.map { it.key }.toSortedSet(),
-            c.selection.busyStations(at, zone), day, elig,
+            c.selection.busyStations(at, zone), day, elig, later, addOn,
         )
     }
 
@@ -128,11 +137,22 @@ object SessionBuild {
         return BuildRequest(
             type = type, start = f.at, budgetMin = budgetMin, warmup = warmup, targets = f.week.targets,
             vBefore = Groups.CANONICAL.associateWith { (f.week.account.done[it]?.vhyp ?: 0.0) + (f.week.account.committed[it] ?: 0.0) },
-            opp = Groups.CANONICAL.associateWith { 1 }, readiness = f.readiness, elig = elig,
+            opp = opp(type, addOn != null, f.laterTypes), readiness = f.readiness, elig = elig,
             forbiddenGroups = (owned + windowGroups + addOn?.forbidGroups.orEmpty()).toSet(),
             forbiddenSessionTags = d?.gapTags.orEmpty().toSet(), tagRules = d?.contract?.sessionTagRules?.let { SessionTagRule.parse(it) }.orEmpty(),
             addOn = addOn, prefM = f.prefs.mapValues { it.value.m }, stations = f.stations, busyStations = f.busy,
         )
+    }
+
+    /**
+     * `opp_g` (7.2): the standalone general sessions from this one on whose type trains `g` (every type but CORE also
+     * carries the core groups, as the allocator does); an add-on is not one of them. At least 1.
+     */
+    private fun opp(type: SessionType, addOn: Boolean, later: List<SessionType>): Map<String, Int> {
+        fun members(t: SessionType): Set<String> =
+            (t.families.flatMap { Groups.FAMILIES.getValue(it) } + if (t != SessionType.CORE) Groups.FAMILIES.getValue("CORE") else emptyList()).toSet()
+        val sessions = (if (addOn) emptyList() else listOf(type)) + later
+        return Groups.CANONICAL.associateWith { g -> sessions.count { g in members(it) }.coerceAtLeast(1) }
     }
 
     suspend fun build(c: AppContainer, req: BuildRequest): BuildResult = withContext(Dispatchers.Default) {
@@ -162,8 +182,12 @@ object SessionBuild {
         if (!plan.addOnOffered) return null
         val cap = plan.addOnCapacityMin ?: return null
         val f = facts(c, c.clock.now(), plan.slot)
-        val best = addOnChoices(c, f, cap.toDouble()).firstOrNull() ?: return null
-        val req = addOnRequest(c, f, best.first, cap.toDouble()) ?: return null
+        // D70 (4): the family picked on the Today card, else the week plan's, else the best by remaining volume (D62).
+        val pick = c.settings.addOnPick(f.at.atZone(PlanningFacts.ZONE).toLocalDate().toString(), plan.slot)
+        if (pick == "none") return null
+        val type = pick?.let { runCatching { SessionType.of(it) }.getOrNull() } ?: f.planAddOn
+            ?: addOnChoices(c, f, cap.toDouble()).firstOrNull()?.first ?: return null
+        val req = addOnRequest(c, f, type, cap.toDouble()) ?: return null
         val r = build(c, req)
         if (r.exercises.isEmpty()) return null
         val blockId = c.sessionRepository.addAddOnBlock(sessionId, items(c, r), cap)
