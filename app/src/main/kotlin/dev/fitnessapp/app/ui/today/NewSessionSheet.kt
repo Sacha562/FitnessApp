@@ -95,7 +95,7 @@ fun NewSessionSheet(
             ?: list.firstOrNull { it.minutes == 75 } ?: list.first()
         facts = f
         val budget = chip!!.minutes.toDouble()
-        allocations = SessionBuild.TYPES.associateWith { t -> SessionBuild.allocate(c, SessionBuild.request(f, t, budget)) }
+        allocations = SessionBuild.TYPES.associateWith { t -> SessionBuild.allocate(c, SessionBuild.request(f, t, budget, SessionBuild.laterOf(today, t))) }
         val primary = today?.options?.firstOrNull { it.optionId == today.primaryOptionId }?.sessionType?.let { SessionType.of(it) }
         type = primary?.takeIf { UiTrim.usable(allocations[it]) } ?: SessionBuild.TYPES.firstOrNull { UiTrim.usable(allocations[it]) }
     }
@@ -104,7 +104,7 @@ fun NewSessionSheet(
         val t = type ?: return@LaunchedEffect
         val ch = chip ?: return@LaunchedEffect
         building = true
-        built = runCatching { SessionBuild.build(c, SessionBuild.request(f, t, ch.minutes.toDouble())) }.getOrNull()
+        built = runCatching { SessionBuild.build(c, SessionBuild.request(f, t, ch.minutes.toDouble(), SessionBuild.laterOf(today, t))) }.getOrNull()
         building = false
     }
 

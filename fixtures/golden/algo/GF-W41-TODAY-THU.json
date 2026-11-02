@@ -1746,6 +1746,9 @@
                         "chest": 2,
                         "side_delts": 2
                     },
+                    "later": [
+                        "FULL"
+                    ],
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
@@ -1789,6 +1792,9 @@
                         "quads": 2,
                         "hamstrings": 2
                     },
+                    "later": [
+                        "UPPER"
+                    ],
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
@@ -1828,6 +1834,9 @@
                     "dj": 0,
                     "est_min": 90,
                     "direct": {},
+                    "later": [
+                        "FULL"
+                    ],
                     "reasons": [
                         {
                             "code": "DELOAD_WEEK",
@@ -1958,6 +1967,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "600f1d7d9735666a93a09635446b48db2dcb556e87bff3227810862f92620bb3"
+        "outputs_jcs_sha256": "54cfa3f7f758e66db0acb678c051166143fe5af52ce36eed8687a4988cfad0cb"
     }
 }

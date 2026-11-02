@@ -55,6 +55,11 @@ data class TodayOption(
     /** The add-on family code of a challenge option, or of the best week with this option. */
     val addon: String?,
     val reasons: List<Reason>,
+    /**
+     * The types of the standalone general sessions after today in this option's own best week (D78): session building
+     * divides the week's remaining sets over today and these, so the build matches the option.
+     */
+    val laterTypes: List<String> = emptyList(),
 )
 
 data class PlannedToday(val kind: String, val slot: String?, val type: String?, val start: Instant, val end: Instant, val anchorId: String, val label: String)
@@ -175,6 +180,7 @@ object TodayRecommender : DeclaresParams {
             options += TodayOption(
                 "opt:${x.slot ?: x.key}:${fam?.code ?: "none"}", null, label, Grid.ratio(0.5 + (e.j - jNone) / scale), dJ,
                 Grid.s(Duration.between(x.start, x.end).toMinutes().toDouble()), s?.alloc?.direct.orEmpty(), s?.alloc?.credit.orEmpty(), fam?.code, reasons,
+                laterTypes(e, today),
             )
         }
         options.sortWith(compareByDescending<TodayOption> { it.score }.thenBy { WeeklyPlanner.addOnRank(it.addon?.let { c -> SessionType.of(c) }) })
@@ -264,6 +270,7 @@ object TodayRecommender : DeclaresParams {
             val addOn = ev.sessions.firstOrNull { !it.point.standalone }?.type?.code
             options += TodayOption(
                 "opt:${t.code}", t.code, s.alloc.label, Grid.ratio(0.5 + dJ / scale), dJ, s.alloc.estMinutes, s.alloc.direct, s.alloc.credit, addOn, reasons,
+                laterTypes(ev, today),
             )
         }
         val chosenToday = chosen.sessions.firstOrNull { it.point.index == tp.index }
@@ -314,6 +321,10 @@ object TodayRecommender : DeclaresParams {
             week.planId, week,
         )
     }
+
+    /** The types of [e]'s standalone general sessions after [today], in time order (D78). */
+    private fun laterTypes(e: Eval, today: LocalDate): List<String> =
+        e.sessions.filter { it.point.standalone && it.point.date.isAfter(today) }.map { it.type.code }
 
     private fun planned(e: FixedItem) = PlannedToday("general", null, e.plannedType?.code, e.start, e.end, e.key, e.label)
 

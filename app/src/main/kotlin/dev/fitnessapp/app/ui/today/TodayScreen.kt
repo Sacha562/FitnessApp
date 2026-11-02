@@ -203,7 +203,7 @@ fun TodayRoute(
             val built = runCatching {
                 withContext(Dispatchers.Default) {
                     val f = SessionBuild.facts(c, weekPlan = p.week.plan.takeIf { planFresh })
-                    SessionBuild.build(c, SessionBuild.request(f, type, budget.toDouble()))
+                    SessionBuild.build(c, SessionBuild.request(f, type, budget.toDouble(), SessionBuild.laterOf(p.options, type)))
                 }
             }.getOrNull()
             starting = false

@@ -215,6 +215,17 @@ class WeeklyPlannerTest {
     }
 
     @Test
+    fun `optionLaterTypes - each option carries its own week's later sessions (D78)`() {
+        val params = TestParams.defaults()
+        val r = TodayRecommender.recommend(TodayInput(WeekGolden.input(base, params)), params)
+        r.verdict shouldBe TodayRecommender.TRAIN
+        // The primary option is the chosen week's session today, so its later sessions are the week plan's.
+        val primary = r.options.first { it.optionId == r.primaryOptionId }
+        val planned = r.weekPlan.days.filter { it.date.isAfter(r.date) }.flatMap { d -> d.items.filter { it.kind == WeeklyPlanner.KIND_RECOMMENDED } }.map { it.type }
+        primary.laterTypes shouldBe planned
+    }
+
+    @Test
     fun `reentryNamesTheGroup - the re-entry group with the most direct sets (D71)`() {
         val params = TestParams.defaults()
         val p0 = WeekGolden.input(base, params)

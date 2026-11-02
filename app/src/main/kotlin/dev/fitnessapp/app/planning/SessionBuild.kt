@@ -119,7 +119,16 @@ object SessionBuild {
     }
 
     /** The request for a standalone session of [type] with [budgetMin] (the "90+" chip as `today.max_budget_min`). */
-    fun request(f: Facts, type: SessionType, budgetMin: Double): BuildRequest = base(f, type, budgetMin, WarmupKind.GENERAL, f.elig, null)
+    /**
+     * The request for a general session of [type]; [later] are the session types after today in the week this build
+     * belongs to (a Today option's own week, D78), else the week plan's ([Facts.laterTypes]).
+     */
+    fun request(f: Facts, type: SessionType, budgetMin: Double, later: List<SessionType>? = null): BuildRequest =
+        base(f, type, budgetMin, WarmupKind.GENERAL, f.elig, null, later)
+
+    /** A Today option's later session types for [type] (D78), null when today has no option of that type. */
+    fun laterOf(today: dev.fitnessapp.algo.planning.today.TodayOptions?, type: SessionType): List<SessionType>? =
+        today?.options?.firstOrNull { it.sessionType == type.code }?.laterTypes?.mapNotNull { runCatching { SessionType.of(it) }.getOrNull() }
 
     /** The request for an add-on of [type] (one of [ADD_ON_TYPES]) within [capacityMin] after the day's challenge session. */
     fun addOnRequest(c: AppContainer, f: Facts, type: SessionType, capacityMin: Double): BuildRequest? {
@@ -132,14 +141,14 @@ object SessionBuild {
         return req.copy(forbiddenSessionTags = req.forbiddenSessionTags + slot.forbidSessionTags)
     }
 
-    private fun base(f: Facts, type: SessionType, budgetMin: Double, warmup: WarmupKind, elig: EligContext, addOn: AddOnSlot?): BuildRequest {
+    private fun base(f: Facts, type: SessionType, budgetMin: Double, warmup: WarmupKind, elig: EligContext, addOn: AddOnSlot?, later: List<SessionType>? = null): BuildRequest {
         val d = f.day
         val owned = f.week.challenge?.owns.orEmpty()
         val windowGroups = d?.windows?.filter { !it.allGym }?.flatMap { it.groups }.orEmpty()
         return BuildRequest(
             type = type, start = f.at, budgetMin = budgetMin, warmup = warmup, targets = f.week.targets,
             vBefore = Groups.CANONICAL.associateWith { (f.week.account.done[it]?.vhyp ?: 0.0) + (f.week.account.committed[it] ?: 0.0) },
-            opp = opp(type, addOn != null, f.laterTypes), readiness = f.readiness, elig = elig,
+            opp = opp(type, addOn != null, later ?: f.laterTypes), readiness = f.readiness, elig = elig,
             forbiddenGroups = (owned + windowGroups + addOn?.forbidGroups.orEmpty()).toSet(),
             forbiddenSessionTags = d?.gapTags.orEmpty().toSet(), tagRules = d?.contract?.sessionTagRules?.let { SessionTagRule.parse(it) }.orEmpty(),
             addOn = addOn, prefM = f.prefs.mapValues { it.value.m }, stations = f.stations, busyStations = f.busy,

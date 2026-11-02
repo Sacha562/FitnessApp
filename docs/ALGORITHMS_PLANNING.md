@@ -1650,7 +1650,9 @@ TodayOptions {
   date, budgetMin, budgetSource ∈ {calendar, chip, default},
   verdict ∈ {TRAIN, REST_SOFT, REST_HARD},               // C53; decided here, never re-thresholded by ui.todaycard
   planned?: {kind ∈ {challenge, test, general}, slot | type, start, end, anchorId, preview},
-  options[]: {optionId, sessionType, label, score, dJ, estMinutes, direct, credit, addon?, reasons[]},
+  options[]: {optionId, sessionType, label, score, dJ, estMinutes, direct, credit, addon?, reasons[],
+              laterTypes[]},                             // D78: the standalone general sessions after today in the
+                                                          // option's own best week (session building's opp_g)
   primaryOptionId,                                        // TRAIN: the option "Start" starts; REST_SOFT: the "Train anyway" default
   restReasons[]: {code, class, params, weight},           // empty for TRAIN (§9.6)
   restAdvice: {flag = verdict ≠ TRAIN, hard = verdict == REST_HARD, reasonCode, params},   // the first rest reason

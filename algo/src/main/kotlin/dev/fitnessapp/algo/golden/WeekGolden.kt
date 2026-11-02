@@ -79,6 +79,7 @@ internal object WeekGolden {
                         put("est_min", JsonNumbers.grid(o.estMinutes, GridKind.S))
                         o.addon?.let { put("addon", it) }
                         put("direct", groups(o.direct))
+                        if (o.laterTypes.isNotEmpty()) put("later", buildJsonArray { o.laterTypes.forEach { add(JsonPrimitive(it)) } })
                         put("reasons", buildJsonArray { o.reasons.forEach { x -> add(reasonJson(x.code, x.params, x.cls, x.weight)) } })
                     })
                 }
