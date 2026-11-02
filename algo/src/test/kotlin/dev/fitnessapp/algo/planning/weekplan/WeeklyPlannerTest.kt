@@ -186,6 +186,35 @@ class WeeklyPlannerTest {
     }
 
     @Test
+    fun `laterStart - heavy legs move to a start 40 h after Sunday's instead of failing (D77)`() {
+        // Only Tuesday 07:00-21:00 local is free; a heavy-lower session was logged on Sunday at 22:00 local.
+        val prior = buildJsonObject {
+            put("key", "sun-legs"); put("kind", "done_general"); put("date", "2026-10-04"); put("start", "2026-10-04T20:00:00Z")
+            put("end", "2026-10-04T21:10:00Z"); put("label", "Gym session"); put("heavy_lower_fs", 6.5)
+        }
+        val windows = buildJsonObject {
+            put("2026-10-06", buildJsonArray { add(buildJsonArray { add(JsonPrimitive("07:00")); add(JsonPrimitive("21:00")) }) })
+        }
+        val p = JsonObject(
+            noChallenge(1) + ("now" to JsonPrimitive("2026-10-05T06:00:00Z")) + ("windows" to windows) + ("prior_general" to JsonArray(listOf(prior))),
+        )
+        val params = TestParams.defaults()
+        val ctx = WeeklyPlanner.Context(WeekGolden.input(p, params), params)
+        val tue = ctx.points.single { it.date == LocalDate.parse("2026-10-06") }
+        // Starts every 2 h from 07:00 local while 50 min still fit: 07, 09, 11, 13, 15, 17, 19 local.
+        tue.starts.map { it.first.toString() } shouldBe listOf(5, 7, 9, 11, 13, 15, 17).map { "2026-10-06T" + (if (it < 10) "0$it" else "$it") + ":00:00Z" }
+        val choice = IntArray(ctx.points.size)
+        choice[tue.index] = tue.options.indexOf(dev.fitnessapp.algo.planning.allocator.SessionType.LEGS)
+        val e = ctx.simulate(choice)
+        e shouldNotBe null
+        val s = e!!.sessions.single()
+        val heavy = listOf("quads", "hamstrings", "glutes").sumOf { s.alloc.credit[it] ?: 0.0 } >= params.double("weekplan.heavy_lower_fs") - 1e-9
+        if (heavy) (java.time.Duration.between(java.time.Instant.parse("2026-10-04T20:00:00Z"), s.start).toHours() >= 40) shouldBe true
+        // Recovering legs at 07:00 make a later start the better one either way.
+        (s.start.isAfter(tue.starts.first().first)) shouldBe true
+    }
+
+    @Test
     fun `reentryNamesTheGroup - the re-entry group with the most direct sets (D71)`() {
         val params = TestParams.defaults()
         val p0 = WeekGolden.input(base, params)

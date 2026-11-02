@@ -372,7 +372,7 @@ object TodayRecommender : DeclaresParams {
     private fun constraint(ctx: WeeklyPlanner.Context, s: SimSession, today: LocalDate, dJ: Double, chosen: Eval, input: TodayInput, params: ParamView): Reason? {
         val w = params.double("today.constraint_chip_weight")
         val out = ArrayList<Reason>()
-        ctx.hardWindows(s.point.start, s.point.budgetMin).filter { it.scope != "all_gym" }.minWithOrNull(compareBy({ it.to }, { it.id }))?.let { h ->
+        ctx.hardWindows(s.start, s.budgetMin).filter { it.scope != "all_gym" }.minWithOrNull(compareBy({ it.to }, { it.id }))?.let { h ->
             out += Reason("PROTECT_REST", 1, sortedMapOf("family" to "PULL", "groups" to h.groups.joinToString(","), "slot" to h.slot, "when" to h.to.toString(), "window_id" to h.id), w)
         }
         if (ctx.gapDays[today] != null) out += Reason("GAP_DAY", 1, sortedMapOf("slot" to adjacentSlot(input, today), "rule_id" to (input.plan.gapRule?.let { "gap" } ?: "")), w)

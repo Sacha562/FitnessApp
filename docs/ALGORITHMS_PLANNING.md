@@ -1447,10 +1447,11 @@ for date d in isoWeek (Monday..Sunday):
   elif d is a restDayBefore day of a contract (scope all_gym):   status = blocked; restReason = REST_BEFORE
   else:
      W_d = availability windows of d minus busy anchors (± BUSY_BUFFER_MIN) minus (d == today ? [.., now) : ∅)
-     seg = first segment of W_d with length ≥ MIN_SLOT_MIN + changeoverMin
+     starts_d = for every segment of W_d: t = seg.start (today: max(seg.start, now rounded up to 5 min)), then every
+                START_STEP_MIN while seg.end − t ≥ MIN_SLOT_MIN + changeoverMin;
+                each with budget = min(default_session_min, seg.end − t − changeoverMin)  // D77; F11 revised, C49
      if none:                          status = no_slot; restReason = NO_SLOT(reason)
-     else: status = free; start_d = seg.start (today: max(seg.start, now rounded up to 5 min));
-           budget_d = min(default_session_min, seg.length − changeoverMin)          // F11 revised, C49
+     else: status = free; (start_d, budget_d) = starts_d[0]       // the default; simulate picks among starts_d
 ```
 
 A day with a user-planned gym event is `fixed`; its budget is the event duration − `changeoverMin` (C49), because
@@ -1487,6 +1488,9 @@ plan(isoWeek):
         for addons in product([none] ∪ allowedFamilies(X) for X in slots):
            if staticViolation(days, types, addons): continue                // H1 dates, H2, H5, H8
            sim = simulate(fixed ∪ zip(days, types) ∪ addons)               // chronological, below
+                 // D77: a free-day session tries starts_d in time order: H3, the allocation and H6 at each start; a later
+                 // start is tried only while the earlier ones break a hard rule or leave a member group below R_FULL, and
+                 // is taken only when its session gain (Σ W_g·ΔU_g − run penalty) beats the best so far by > TIE_BAND
            if sim.infeasible or dynamicViolation(sim): continue            // H1 pairs, H3, H6
            results += (objective(sim), sim)
   jStar = max J over results
@@ -3607,6 +3611,7 @@ whose source is [this doc], is an assumption and carries `tunable: true` in the 
 | `weekplan.k_cap` | 5 | 1-7 | engineering-fact | [this doc] (complexity) | — |
 | `weekplan.max_evals` | 1000000 | 1e5-1e7 | engineering-fact | [this doc] | — |
 | `weekplan.tie_band` | 0.05 | 0-0.2 | expert-opinion | C52 (ties ordered earlier session, fewer sessions, higher J, lexicographic) | T-WEEK |
+| `weekplan.start_step_min` | 120 | 30-240 | assumption | D77 (the user: "Every 2 hours"; a free day's candidate starts) | review |
 | `weekplan.freq_bonus` | 0.15 | 0-0.5 | strong (≥ 2/week), value expert | ACSM 2026; Schoenfeld 2016 | T-ACCEPT |
 | `weekplan.protect_w` | 5 | 1-20 | expert-opinion | planning lens | challenge session outcomes after general sessions in windows |
 | `weekplan.consec_w` | 0.5 | 0-2 | expert-opinion | planning lens | T-ACCEPT |

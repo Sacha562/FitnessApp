@@ -38,6 +38,8 @@ internal class Point(
     val options: List<SessionType?>,
     val fixed: FixedItem? = null,
     val addOn: AddOnSpec? = null,
+    /** A free day's candidate (start, budget) pairs, every `START_STEP_MIN` (D77); the first is [start] and [budgetMin]. */
+    val starts: List<Pair<Instant, Double>> = listOf(start to budgetMin),
 ) {
     val standalone: Boolean get() = kind != ADDON
 
@@ -51,6 +53,9 @@ internal class Point(
 /** One simulated general session or add-on of a plan. */
 internal class SimSession(
     val point: Point,
+    /** The start and budget the session got among its point's candidates (D77). */
+    val start: Instant,
+    val budgetMin: Double,
     val type: SessionType,
     val alloc: Allocation,
     val readiness: ReadinessOut,
@@ -76,6 +81,8 @@ internal class DayModel(
     val start: Instant? = null,
     val budgetMin: Double? = null,
     val reason: ReasonCode? = null,
+    /** Every candidate (start, budget) of a free day (D77), [start] first. */
+    val starts: List<Pair<Instant, Double>> = listOfNotNull(start?.let { s -> budgetMin?.let { s to it } }),
 )
 
 /**
@@ -106,6 +113,7 @@ object WeeklyPlanner : DeclaresParams {
         ParamSpec.number("weekplan.session_cost", "J per session", 0.0, 1.0),
         ParamSpec.number("weekplan.skip_w", "J per spilled FS/4", 0.0, 1.0),
         ParamSpec.number("weekplan.stability_w", "J per day", 0.0, 0.2),
+        ParamSpec.integer("weekplan.start_step_min", "min", 30.0, 240.0),
         ParamSpec.number("weekplan.tie_band", "J", 0.0, 0.2),
     )
 
@@ -190,7 +198,7 @@ object WeeklyPlanner : DeclaresParams {
 
         init {
             val pts = ArrayList<Point>()
-            for (d in days.filter { it.status == "free" }) pts += Point(0, Point.FREE, d.date, d.start!!, d.budgetMin!!, listOf<SessionType?>(null) + SessionType.entries)
+            for (d in days.filter { it.status == "free" }) pts += Point(0, Point.FREE, d.date, d.start!!, d.budgetMin!!, listOf<SessionType?>(null) + SessionType.entries, starts = d.starts)
             for (f in input.fixed.filter { it.kind == FixedItem.KIND_PLANNED_GYM && !it.date.isBefore(today) && it.end.isAfter(input.now) }) {
                 val start = if (input.todayOverride?.date == f.date) input.todayOverride.start else maxOf(f.start, input.now)
                 val budget = if (input.todayOverride?.date == f.date) input.todayOverride.budgetMin
@@ -204,7 +212,7 @@ object WeeklyPlanner : DeclaresParams {
                 pts += Point(0, Point.ADDON, f.date, a.start, a.capacityMin, listOf<SessionType?>(null) + a.families.map { it.type }, fixed = f, addOn = a)
             }
             pts.sortWith(compareBy<Point>({ it.start }, { it.kind }, { it.fixed?.key ?: "" }))
-            points = pts.mapIndexed { i, p -> Point(i, p.kind, p.date, p.start, p.budgetMin, p.options, p.fixed, p.addOn) }
+            points = pts.mapIndexed { i, p -> Point(i, p.kind, p.date, p.start, p.budgetMin, p.options, p.fixed, p.addOn, p.starts) }
             freeCount = points.count { it.kind == Point.FREE }
             val used = visitDates().size
             var k = minOf(input.maxVisits - used, freeCount, params.int("weekplan.k_cap")).coerceAtLeast(0)
@@ -254,10 +262,19 @@ object WeeklyPlanner : DeclaresParams {
             val seg = segs.firstOrNull { minutes(it) >= need - 1e-9 }
                 ?: return if (o?.anyTime == true) DayModel(d, "free", o.start, o.budgetMin)
                 else DayModel(d, "no_slot", reason = ReasonCode("NO_SLOT", sortedMapOf("reason" to if (d == today) "late" else "busy")))
-            var start = seg.start
-            if (d == today) start = maxOf(seg.start, ceil5(input.now))
-            val budget = minOf(input.defaultSessionMin, minutes(Interval(start, seg.end)) - changeover)
-            return DayModel(d, "free", o?.start ?: start, o?.budgetMin ?: budget)
+            if (o != null) return DayModel(d, "free", o.start, o.budgetMin)
+            // D77: a start every START_STEP_MIN in every free stretch that still fits a session; the earliest is the default.
+            val step = Duration.ofMinutes(params.int("weekplan.start_step_min").toLong())
+            val starts = ArrayList<Pair<Instant, Double>>()
+            for (s in segs.filter { minutes(it) >= need - 1e-9 }) {
+                var t = if (d == today) maxOf(s.start, ceil5(input.now)) else s.start
+                while (minutes(Interval(t, s.end)) >= need - 1e-9) {
+                    starts += t to minOf(input.defaultSessionMin, minutes(Interval(t, s.end)) - changeover)
+                    t = t.plus(step)
+                }
+            }
+            if (starts.isEmpty()) return DayModel(d, "no_slot", reason = ReasonCode("NO_SLOT", sortedMapOf("reason" to if (d == today) "late" else "busy")))
+            return DayModel(d, "free", starts[0].first, starts[0].second, starts = starts)
         }
 
         private fun ceil5(t: Instant): Instant {
@@ -350,23 +367,24 @@ object WeeklyPlanner : DeclaresParams {
             var spill = 0.0
             for (p in chosen) {
                 val type = p.options[choice[p.index]]!!
-                if (input.protectedWindows.any { it.mode == "hard" && it.scope == "all_gym" } && p.standalone &&
-                    hardWindows(p.start, p.budgetMin).any { it.scope == "all_gym" }
-                ) { failure = "REST_BEFORE" to p.index; return null } // H3
-                val r = ready(p.start, extra, prefix)
                 val opp = TreeMap<String, Int>()
                 val later = standalone.filter { it.start >= p.start }
                 for (g in Groups.CANONICAL) opp[g] = later.count { s -> g in members(s.options[choice[s.index]]!!) }.coerceAtLeast(1)
-                val allocKey = "${p.index}:${choice[p.index]}|$prefix|${opp.values.joinToString(",")}"
-                val alloc = allocMemo.getOrPut(allocKey) { allocate(p, type, vh, opp, r) }
-                if (!alloc.feasible) { failure = (alloc.infeasibleReason ?: "NOTHING_TO_TRAIN") to p.index; return null }
-                // H6: heavy-lower sessions at least HEAVY_LOWER_MIN_H apart.
-                val lower = listOf("quads", "hamstrings", "glutes").sumOf { alloc.credit[it] ?: 0.0 }
-                if (lower >= heavyFs - 1e-9) {
-                    if (heavy.any { kotlin.math.abs(Week.elapsedHours(it, p.start)) < heavyH - 1e-9 }) { failure = "HEAVY_LOWER_GAP" to p.index; return null }
-                    heavy += p.start
+                // D77: the candidate starts in time order. A later start is tried only while the earlier ones break a hard
+                // rule or leave a member group below R_FULL, and it is taken only when its session gain beats the best so far
+                // by more than the tie band.
+                var pick: Cand? = null
+                var firstFailure: Pair<String, Int>? = null
+                for ((ci, sb) in p.starts.withIndex()) {
+                    if (pick != null && !pick.recovering) break
+                    val c = candidate(p, ci, sb.first, sb.second, type, choice, vh, opp, extra, prefix, heavy)
+                    if (c.failure != null) { if (firstFailure == null) firstFailure = c.failure to p.index; continue }
+                    if (pick == null || c.gain > pick.gain + tieBand + 1e-9) pick = c
                 }
-                // H1 pairwise: general sessions with a gap-rule tag keep `minGapDays` apart.
+                if (pick == null) { failure = firstFailure; return null }
+                val alloc = pick.alloc
+                if (pick.heavy) heavy += pick.start
+                // H1 pairwise: general sessions with a gap-rule tag keep `minGapDays` apart (the date does not depend on the start).
                 val gr = input.gapRule
                 if (gr != null && alloc.predictedTags.any { it in gr.appliesToTags }) {
                     if (tagged.any { kotlin.math.abs(Week.calendarDays(it, p.date)) <= gr.days }) { failure = "GAP_DAY" to p.index; return null }
@@ -375,20 +393,68 @@ object WeeklyPlanner : DeclaresParams {
                 val before = TreeMap(vh)
                 alloc.vhyp.forEach { (g, v) -> vh[g] = (vh[g] ?: 0.0) + v }
                 Groups.CANONICAL.filter { (alloc.vhyp[it] ?: 0.0) >= trainedMin }.forEach { trained[it] = (trained[it] ?: 0) + 1 }
-                alloc.dose?.let { extra += it.copy(id = "plan:${p.index}:${choice[p.index]}"); extraKeys += allocKey }
-                val legFs = Groups.FAMILIES.getValue("LEGS").sumOf { alloc.direct[it] ?: 0.0 }
-                val pen = Runs.penalty(p.start, p.start.plusMillis((alloc.estMinutes * 60_000.0).toLong()), legFs, input.runs, input.runningPriority, params).value
-                runPen += pen
-                if (p.standalone && r.g < params.double("weekplan.g_low")) lowG++
+                alloc.dose?.let { extra += it.copy(id = "plan:${p.index}:${choice[p.index]}"); extraKeys += pick.key }
+                runPen += pick.pen
+                if (p.standalone && pick.r.g < params.double("weekplan.g_low")) lowG++
                 input.targets.groups.forEach { (g, gt) -> if (gt.status == "skip") spill += alloc.credit[g] ?: 0.0 }
-                sessions += SimSession(p, type, alloc, r, before, pen)
-                prefix += "${p.index}:${choice[p.index]};"
+                sessions += SimSession(p, pick.start, pick.budget, type, alloc, pick.r, before, pick.pen)
+                prefix += "${p.index}:${choice[p.index]}@${pick.index};"
             }
             return score(choice, sessions, vh, trained, extra, extraKeys, runPen, lowG, spill)
         }
 
-        private fun allocate(p: Point, type: SessionType, vBefore: Map<String, Double>, opp: Map<String, Int>, r: ReadinessOut): Allocation {
-            val hard = hardWindows(p.start, p.budgetMin).filter { it.scope != "all_gym" }
+        /** One candidate start of a session (D77): its allocation, the hard rule it breaks, its gain and run penalty. */
+        private class Cand(
+            val index: Int,
+            val start: Instant,
+            val budget: Double,
+            val key: String,
+            val alloc: Allocation,
+            val r: ReadinessOut,
+            val failure: String?,
+            val heavy: Boolean,
+            val pen: Double,
+            val gain: Double,
+            /** A member group of the session is below R_FULL at this start, so a later start may do better. */
+            val recovering: Boolean,
+        )
+
+        private val utilityOf = Targets.Utility(params)
+        private val rFull = params.double("readiness.r_full")
+        private val tieBand = params.double("weekplan.tie_band")
+
+        /** Simulates the session of [p] at one candidate start: H3, the allocation, H6, the run penalty and the utility gain. */
+        private fun candidate(
+            p: Point, ci: Int, start: Instant, budget: Double, type: SessionType, choice: IntArray, vh: Map<String, Double>, opp: Map<String, Int>,
+            extra: List<Dose>, prefix: String, heavy: List<Instant>,
+        ): Cand {
+            val r = ready(start, extra, prefix)
+            val key = "${p.index}:${choice[p.index]}@$ci|$prefix|${opp.values.joinToString(",")}"
+            val alloc = allocMemo.getOrPut(key) { allocate(p, type, vh, opp, r, start, budget) }
+            val recovering = members(type).any { (r.r[it] ?: 1.0) < rFull - 1e-9 }
+            fun fail(code: String) = Cand(ci, start, budget, key, alloc, r, code, false, 0.0, 0.0, recovering)
+            // H3: a hard all-gym window excludes any overlapping standalone session.
+            if (input.protectedWindows.any { it.mode == "hard" && it.scope == "all_gym" } && p.standalone &&
+                hardWindows(start, budget).any { it.scope == "all_gym" }
+            ) return fail("REST_BEFORE")
+            if (!alloc.feasible) return fail(alloc.infeasibleReason ?: "NOTHING_TO_TRAIN")
+            // H6: heavy-lower sessions at least HEAVY_LOWER_MIN_H apart.
+            val isHeavy = listOf("quads", "hamstrings", "glutes").sumOf { alloc.credit[it] ?: 0.0 } >= heavyFs - 1e-9
+            if (isHeavy && heavy.any { kotlin.math.abs(Week.elapsedHours(it, start)) < heavyH - 1e-9 }) return fail("HEAVY_LOWER_GAP")
+            val legFs = Groups.FAMILIES.getValue("LEGS").sumOf { alloc.direct[it] ?: 0.0 }
+            val pen = Runs.penalty(start, start.plusMillis((alloc.estMinutes * 60_000.0).toLong()), legFs, input.runs, input.runningPriority, params).value
+            var gain = -pen
+            for (g in Groups.CANONICAL) {
+                val gt = input.targets.groups[g] ?: continue
+                val v = alloc.vhyp[g] ?: continue
+                val v0 = vh[g] ?: 0.0
+                gain += gt.w * (utilityOf.of(gt, v0 + v, input.targets.base) - utilityOf.of(gt, v0, input.targets.base))
+            }
+            return Cand(ci, start, budget, key, alloc, r, null, isHeavy, pen, gain, recovering)
+        }
+
+        private fun allocate(p: Point, type: SessionType, vBefore: Map<String, Double>, opp: Map<String, Int>, r: ReadinessOut, start: Instant, budgetMin: Double): Allocation {
+            val hard = hardWindows(start, budgetMin).filter { it.scope != "all_gym" }
             val a = p.addOn
             val fam = a?.families?.first { it.type == type }
             val forbiddenGroups = input.ownedGroups + hard.flatMap { it.groups } + fam?.slot?.forbidGroups.orEmpty()
@@ -397,7 +463,7 @@ object WeeklyPlanner : DeclaresParams {
             else input.availability.of(p.date !in challengeDates, gapDays[p.date].orEmpty(), hard.map { it.id }.sorted())
             return Allocator.allocate(
                 AllocInput(
-                    type = type, start = p.start, budgetMin = p.budgetMin, vBefore = vBefore, opp = opp, readiness = r.r, targets = input.targets,
+                    type = type, start = start, budgetMin = budgetMin, vBefore = vBefore, opp = opp, readiness = r.r, targets = input.targets,
                     available = available, forbiddenGroups = forbiddenGroups.toSortedSet(), forbiddenSessionTags = tags, tagRules = input.tagRules,
                     addOn = fam?.slot, qBase = input.qBase, doseId = "plan:${p.index}",
                 ),
@@ -429,7 +495,7 @@ object WeeklyPlanner : DeclaresParams {
             var protect = 0.0
             for ((wi, w) in input.protectedWindows.withIndex()) {
                 if (w.mode != "penalty" || !w.to.isAfter(input.now)) continue
-                val inside = sessions.filter { !it.point.start.isBefore(w.from) && it.point.start.isBefore(w.to) }
+                val inside = sessions.filter { !it.start.isBefore(w.from) && it.start.isBefore(w.to) }
                 if (inside.isEmpty()) continue
                 val ids = inside.map { "plan:${it.point.index}:${choice[it.point.index]}" }.toSet()
                 val with = protectReady(wi, w.to, extra, extraKeys) { true }
@@ -476,7 +542,7 @@ object WeeklyPlanner : DeclaresParams {
 
         // ---- Tie key (C52) ----
 
-        private fun firstStart(e: Eval): Instant? = e.sessions.firstOrNull { it.point.kind == Point.FREE }?.point?.start
+        private fun firstStart(e: Eval): Instant? = e.sessions.firstOrNull { it.point.kind == Point.FREE }?.start
         private fun general(e: Eval) = e.sessions.filter { it.point.standalone }
         private fun addOnTuple(e: Eval): List<Int> = points.filter { it.kind == Point.ADDON }.map { addOnRank(it.options[e.choice[it.index]]) }
 
@@ -569,9 +635,9 @@ object WeeklyPlanner : DeclaresParams {
         }
 
         private fun item(s: SimSession, kind: String, policy: String, key: String): PlanItem {
-            val end = s.point.start.plusMillis((s.alloc.estMinutes * 60_000.0).toLong())
+            val end = s.start.plusMillis((s.alloc.estMinutes * 60_000.0).toLong())
             return PlanItem(
-                key, kind, s.point.fixed?.slot, s.type.code, s.alloc.label, s.point.start, end, s.alloc.estMinutes, s.alloc.direct, s.alloc.credit,
+                key, kind, s.point.fixed?.slot, s.type.code, s.alloc.label, s.start, end, s.alloc.estMinutes, s.alloc.direct, s.alloc.credit,
                 s.alloc.rirOffset, policy, "weekplan",
             )
         }

@@ -19,7 +19,7 @@ import java.time.ZoneId
 
 /** ALGORITHMS_PLANNING 19.1 tests for `ui.todaycard` on hand-made `today` outputs (the engine's own are its goldens). */
 class UiTodayCardTest {
-    private val params = ParamView.fromParamsFile(requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.3.json")).readText(Charsets.UTF_8))
+    private val params = ParamView.fromParamsFile(requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.4.json")).readText(Charsets.UTF_8))
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val wed = Instant.parse("2026-10-07T10:00:00Z")
     private val week = WeekPlan(
