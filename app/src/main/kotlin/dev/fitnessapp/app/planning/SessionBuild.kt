@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.planning
 
+import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.accounting.readiness.Dose
 import dev.fitnessapp.algo.accounting.readiness.Readiness
 import dev.fitnessapp.algo.common.Groups
@@ -167,11 +168,28 @@ object SessionBuild {
     }
 
     suspend fun build(c: AppContainer, req: BuildRequest): BuildResult = withContext(Dispatchers.Default) {
-        Building.build(req, c.catalogModel, c.params.fork())
+        cached(builds, req, c) { Building.build(req, c.catalogModel, c.params.fork()) }
     }
 
     suspend fun allocate(c: AppContainer, req: BuildRequest): Allocation = withContext(Dispatchers.Default) {
-        Building.allocate(req, c.catalogModel, c.params.fork())
+        cached(allocations, req, c) { Building.allocate(req, c.catalogModel, c.params.fork()) }
+    }
+
+    // Builds and allocations are pure functions of their request (a data class), the catalog and the params: the same
+    // request (another time chip and back, the card's Start after the sheet) reuses the result.
+    private class Lru<V>(private val max: Int) : LinkedHashMap<Pair<BuildRequest, String>, V>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<BuildRequest, String>, V>?): Boolean = size > max
+    }
+
+    private val builds = Lru<BuildResult>(32)
+    private val allocations = Lru<Allocation>(64)
+
+    private inline fun <V> cached(lru: Lru<V>, req: BuildRequest, c: AppContainer, f: () -> V): V {
+        val k = req to (c.params.fork().hash + "|" + c.catalog.version + "|" + EngineVersion.ENGINE_VERSION)
+        synchronized(lru) { lru[k]?.let { return it } }
+        val v = f()
+        synchronized(lru) { lru[k] = v }
+        return v
     }
 
     /**

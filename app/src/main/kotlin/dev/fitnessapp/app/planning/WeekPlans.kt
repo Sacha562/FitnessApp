@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.planning
 
+import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.accounting.readiness.Dose
 import dev.fitnessapp.algo.challenge.contract.ChallengeContract
 import dev.fitnessapp.algo.challenge.contract.ContractBuilder
@@ -8,6 +9,7 @@ import dev.fitnessapp.algo.challenge.plan.Interval
 import dev.fitnessapp.algo.common.Groups
 import dev.fitnessapp.algo.core.calendar.AnchorKind
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.det.Sha256Hex
 import dev.fitnessapp.algo.planning.SessionTagRule
 import dev.fitnessapp.algo.planning.allocator.AddOnSlot
 import dev.fitnessapp.algo.planning.allocator.SessionType
@@ -51,15 +53,19 @@ object WeekPlans {
     /** The add-on families the planner weighs (8.6: none < LEGS < PUSH < CORE). */
     private val ADD_ON_TYPES = listOf(SessionType.LEGS, SessionType.PUSH, SessionType.CORE)
 
-    /** One planner run: its input, the plan, and the facts the UI reads beside it. */
-    class Run(val input: WeekPlanInput, val plan: WeekPlan, val contract: ChallengeContract?, val volume: WeekVolume)
+    /** One planner run: its input, the plan, the facts the UI reads beside it, and the cache key of its inputs. */
+    class Run(val input: WeekPlanInput, val plan: WeekPlan, val contract: ChallengeContract?, val volume: WeekVolume, val key: String)
 
     suspend fun thisWeek(c: AppContainer, now: Instant = c.clock.now()): Run = withContext(Dispatchers.Default) {
         val wv = WeekVolume.compute(c, now)
-        val input = input(c, now, 0, wv, wv.doses).let { it.copy(previous = previous(c, it.isoWeek)) }
-        val plan = WeeklyPlanner.plan(input, c.params.fork())
-        remember(c, plan)
-        Run(input, plan, contract(c, now, 0), wv)
+        val (base, extra) = input(c, now, 0, wv, wv.doses)
+        val input = base.copy(previous = previous(c, base.isoWeek))
+        val k = key(c, "this", input, extra)
+        cached(k) {
+            val plan = WeeklyPlanner.plan(input, c.params.fork())
+            remember(c, plan)
+            Run(input, plan, contract(c, now, 0), wv, k)
+        }
     }
 
     /** Next ISO week's provisional plan (8.8): general items are only shown, never written (Plan it is M4.6). */
@@ -67,13 +73,43 @@ object WeekPlans {
         val nextMonday = Week.isoWeekStart(Week.localDate(now, PlanningFacts.ZONE)).plusWeeks(1)
         val wv = WeekVolume.compute(c, Week.atLocal(nextMonday, LocalTime.of(0, 1), PlanningFacts.ZONE))
         val carried = current.volume.doses.filter { it.t.isAfter(now) } + current.plan.planDoses
-        val input = input(c, now, 1, wv, wv.doses + carried).copy(provisional = true)
-        Run(input, WeeklyPlanner.plan(input, c.params.fork()), contract(c, now, 1), wv)
+        val (base, extra) = input(c, now, 1, wv, wv.doses + carried)
+        val input = base.copy(provisional = true)
+        val k = key(c, "next", input, extra)
+        cached(k) { Run(input, WeeklyPlanner.plan(input, c.params.fork()), contract(c, now, 1), wv, k) }
     }
 
     /** Today's options (9) at the chosen time chip ([chipMin] null: the calendar budget or the default length). */
     suspend fun today(c: AppContainer, week: Run, chipMin: Double?): TodayOptions = withContext(Dispatchers.Default) {
-        TodayRecommender.recommend(TodayInput(week.input, chipMin = chipMin), c.params.fork())
+        cached(Sha256Hex.ofUtf8(week.key + "|today|" + chipMin)) { TodayRecommender.recommend(TodayInput(week.input, chipMin = chipMin), c.params.fork()) }
+    }
+
+    // ---- Cache: a run is reused while its inputs are unchanged within the same five minutes ----
+
+    /**
+     * The key of a planner run: the input with `now` floored to five minutes (today's slots start on five-minute steps)
+     * and without the availability function and the stability keys, [extra] (what the availability function reads: the
+     * contract, the preferences, the stations, the catalog), the params hash and the engine version. Any change to the
+     * logged sets, the calendar, the goals, the profile or the challenge changes the input and so the key.
+     */
+    private fun key(c: AppContainer, kind: String, input: WeekPlanInput, extra: String): String {
+        val bucket = Instant.ofEpochMilli(Math.floorDiv(input.now.toEpochMilli(), BUCKET_MS) * BUCKET_MS)
+        val stable = input.copy(now = bucket, availability = NO_AVAILABILITY, previous = emptyMap())
+        return Sha256Hex.ofUtf8(listOf(kind, stable.toString(), extra, c.params.fork().hash, EngineVersion.ENGINE_VERSION).joinToString("\u0000"))
+    }
+
+    private const val BUCKET_MS = 5 * 60_000L
+    private val NO_AVAILABILITY = GroupAvailability { _, _, _ -> emptyMap() }
+    private val cache = object : LinkedHashMap<String, Any>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Any>?): Boolean = size > 16
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private inline fun <T : Any> cached(k: String, f: () -> T): T {
+        synchronized(cache) { cache[k]?.let { return it as T } }
+        val v = f()
+        synchronized(cache) { cache[k] = v }
+        return v
     }
 
     private suspend fun contract(c: AppContainer, now: Instant, weekOffset: Int): ChallengeContract? {
@@ -95,7 +131,8 @@ object WeekPlans {
         c.settings.setWeekPlanKeys(plan.isoWeek, kotlinx.serialization.json.JsonObject(keys.entries.associate { it.key.toString() to kotlinx.serialization.json.JsonPrimitive(it.value) }).toString())
     }
 
-    private suspend fun input(c: AppContainer, now: Instant, weekOffset: Int, wv: WeekVolume, doses: List<Dose>): WeekPlanInput {
+    /** The planner's input and the cache-key part of what its availability function reads. */
+    private suspend fun input(c: AppContainer, now: Instant, weekOffset: Int, wv: WeekVolume, doses: List<Dose>): Pair<WeekPlanInput, String> {
         val zone = PlanningFacts.ZONE
         val monday = Week.isoWeekStart(Week.localDate(now, zone)).plusWeeks(weekOffset.toLong())
         val sunday = monday.plusDays(6)
@@ -204,7 +241,7 @@ object WeekPlans {
             done = wv.account.done.mapValues { it.value.vhyp }, committed = wv.account.committed, sessionsTraining = wv.account.sessionsTraining,
             doses = doses, maxVisits = profile?.max_gym_visits_per_week ?: 4, defaultSessionMin = (profile?.default_session_min ?: 75).toDouble(),
             changeoverMin = changeover.toDouble(), availability = availability,
-        )
+        ) to listOf(contract, prefs, stations, c.catalog.version).toString()
     }
 
     /** ELIG-1's context for a general session (12.2), as the New session sheet builds it (ChallengeConstraints, D53). */
