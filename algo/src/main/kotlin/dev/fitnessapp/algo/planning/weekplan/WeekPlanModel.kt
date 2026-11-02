@@ -63,8 +63,11 @@ fun interface GroupAvailability {
     fun of(gapDay: Boolean, gapTags: List<String>, hardWindowIds: List<String>): Map<String, Boolean>
 }
 
-/** `today`'s own start and budget for the session it asks about (9.2: the time chip, or start = now). */
-data class TodayOverride(val date: LocalDate, val start: Instant, val budgetMin: Double)
+/**
+ * `today`'s own start and budget for the session it asks about (9.2: the time chip, or start = now). [anyTime] makes a day
+ * without a free slot free at that start for `today`'s "Train anyway" options (D76).
+ */
+data class TodayOverride(val date: LocalDate, val start: Instant, val budgetMin: Double, val anyTime: Boolean = false)
 
 /** The inputs of 8.2. [done] and [committed] are this week's Vhyp per group (3); [doses] the readiness doses of both. */
 data class WeekPlanInput(

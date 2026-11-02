@@ -1684,7 +1684,11 @@ today(now, ctx):
      dJ_C = J_C − J_REST;  score_C = 0.5 + dJ_C / UI_SCALE
   chosen = weekplan.choose(all plans)                            // §8.6 band + tie key (C52)
   if hard:
-     verdict = REST_HARD; restReasons = [REST_BEFORE | SAFETY_JOINT | SAFETY_PROTOCOL | NO_SLOT]
+     verdict = REST_HARD; restReasons = [REST_BEFORE | SAFETY_JOINT | SAFETY_PROTOCOL]
+  elif today has no slot (busy or outside the usual times) and no E:                     // D76: not a rule, so soft
+     options scored at (start = now, budget = chip ?: DEFAULT_SESSION_MIN), today's day treated as free for them only
+     verdict = REST_SOFT; primary = argmax_C J_C (ties by TYPE_ORDER)                     // the "Train anyway" default
+     restReasons = [NO_SLOT {reason}, NEXT_FIXED {slot, at}]
   elif E exists:                                                 // the user's plan is a hard user constraint (§0.1)
      primary = (E.type != AUTO) ? E.type : the type of the chosen plan's session today
      verdict = (every type is infeasible at E) ? REST_SOFT : TRAIN; restReasons = [RECOVERING | NOT_NEEDED] if REST_SOFT

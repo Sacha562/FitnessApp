@@ -171,6 +171,21 @@ class WeeklyPlannerTest {
     }
 
     @Test
+    fun `noSlotIsSoft - a day past its window is a soft rest with options from now (D76)`() {
+        // Monday 21:30 local, after the 18:00-21:00 window of the week without the challenge.
+        val late = JsonObject(noChallenge(2) + ("now" to JsonPrimitive("2026-10-05T19:30:00Z")))
+        val params = TestParams.defaults()
+        val r = TodayRecommender.recommend(TodayInput(WeekGolden.input(late, params)), params)
+        r.verdict shouldBe TodayRecommender.REST_SOFT
+        r.restReasons.first().code shouldBe "NO_SLOT"
+        r.restAdvice.hard shouldBe false
+        (r.options.isNotEmpty()) shouldBe true
+        r.primaryOptionId shouldBe r.options.first().optionId
+        // The week plan keeps today without a session.
+        r.weekPlan.days.first { it.date == LocalDate.parse("2026-10-05") }.items.shouldBeEmpty()
+    }
+
+    @Test
     fun `reentryNamesTheGroup - the re-entry group with the most direct sets (D71)`() {
         val params = TestParams.defaults()
         val p0 = WeekGolden.input(base, params)

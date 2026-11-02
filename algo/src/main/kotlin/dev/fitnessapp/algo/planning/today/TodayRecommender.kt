@@ -207,19 +207,27 @@ object TodayRecommender : DeclaresParams {
         }
         val constraintW = params.double("today.constraint_chip_weight")
         val hard: ReasonCode? = input.safetyRest ?: dm.reason?.takeIf { it.code == "REST_BEFORE" }
-            ?: dm.reason?.takeIf { it.code == "NO_SLOT" && e == null }
-        val ctx = if (dm.status == "free" || e != null) WeeklyPlanner.Context(p.copy(todayOverride = TodayOverride(today, start, budget)), params) else base
+        // D76: no free slot (busy or outside the usual times) is a soft rest; "Train anyway" scores the types from now.
+        val noSlot = dm.reason?.takeIf { it.code == "NO_SLOT" && e == null && hard == null }
+        val ctx = when {
+            dm.status == "free" || e != null -> WeeklyPlanner.Context(p.copy(todayOverride = TodayOverride(today, start, budget)), params)
+            noSlot != null -> WeeklyPlanner.Context(p.copy(todayOverride = TodayOverride(today, start, budget, anyTime = true)), params)
+            else -> base
+        }
         val tp = ctx.points.firstOrNull { it.date == today && it.standalone }
         val best = TreeMap<Int, Eval>()
         val all = Collector(ctx, params)
+        // With no slot the week plan is the best one without a session today, as the planner's own plan has it.
+        val rest = Collector(ctx, params)
         ctx.enumerate { ev ->
             all.add(ev)
             val c = tp?.let { ev.choice[it.index] } ?: 0
+            if (noSlot != null && tp?.options?.get(c) == null) rest.add(ev)
             val b = best[c]
             if (b == null || better(ctx, ev, b)) best[c] = ev
         }
-        val chosen = all.chosen()
-        val week = all.output(chosen)
+        val chosen = if (noSlot != null) rest.chosen() else all.chosen()
+        val week = if (noSlot != null) rest.output(chosen) else all.output(chosen)
         val next = nextFixed(input, today)
         val excluded = ArrayList<Excluded>()
         excluded += notToday(ctx, today, start, budget, input)
@@ -263,7 +271,11 @@ object TodayRecommender : DeclaresParams {
         var verdict: String
         var primary: String?
         val restReasons = ArrayList<Reason>()
-        if (e != null) {
+        if (noSlot != null) {
+            verdict = REST_SOFT
+            primary = argmax?.sessionType
+            restReasons += Reason(noSlot.code, precedence(noSlot.code), noSlot.params, constraintW)
+        } else if (e != null) {
             primary = e.plannedType?.code ?: chosenToday?.type?.code ?: argmax?.sessionType
             verdict = if (options.isEmpty()) REST_SOFT else TRAIN
             if (verdict == REST_SOFT) {

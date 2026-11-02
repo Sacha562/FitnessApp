@@ -250,12 +250,13 @@ object WeeklyPlanner : DeclaresParams {
             for (b in input.busy.sortedWith(compareBy({ it.start }, { it.end }))) segs = subtract(segs, Interval(b.start.minus(buffer), b.end.plus(buffer)))
             if (d == today) segs = subtract(segs, Interval(Instant.MIN, input.now))
             val need = params.int("weekplan.min_slot_min") + changeover
+            val o = input.todayOverride?.takeIf { it.date == d }
             val seg = segs.firstOrNull { minutes(it) >= need - 1e-9 }
-                ?: return DayModel(d, "no_slot", reason = ReasonCode("NO_SLOT", sortedMapOf("reason" to if (d == today) "late" else "busy")))
+                ?: return if (o?.anyTime == true) DayModel(d, "free", o.start, o.budgetMin)
+                else DayModel(d, "no_slot", reason = ReasonCode("NO_SLOT", sortedMapOf("reason" to if (d == today) "late" else "busy")))
             var start = seg.start
             if (d == today) start = maxOf(seg.start, ceil5(input.now))
             val budget = minOf(input.defaultSessionMin, minutes(Interval(start, seg.end)) - changeover)
-            val o = input.todayOverride?.takeIf { it.date == d }
             return DayModel(d, "free", o?.start ?: start, o?.budgetMin ?: budget)
         }
 
