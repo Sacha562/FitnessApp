@@ -52,7 +52,7 @@ object ModuleRegistry {
 
     /**
      * Modules past 1.0.0 (ALGORITHMS.md A7): structured test protocols (D36, ENGINE_VERSION 1.1.0) and a slot that goes
-     * first in its week (D38, ENGINE_VERSION 1.2.0); the setup's decisions fold with the creation (D40, ENGINE_VERSION 1.3.0); the comparison baseline per measurement (D41, ENGINE_VERSION 1.4.0); train now tries every slot not done yet, at any time of day (D42, ENGINE_VERSION 1.5.0); definition updates of a running enrollment (D44, ENGINE_VERSION 1.6.0); a creation that corrects the imported earlier tests (D48, ENGINE_VERSION 1.7.0); REST-1's modifiers, pair and superset rests, readout and adaptation (M3.3, ENGINE_VERSION 1.8.0); the rest multiplier, also in RX-1's inputs (D50, ENGINE_VERSION 1.9.0); no WE-V1 in a deload week (D61, ENGINE_VERSION 1.10.0); SUB-1's "Do {k} now" in ORD-1 order with busy stations ranked last (D62, ENGINE_VERSION 1.11.0); a plate-loaded machine's own mass counted outside the shown load (D68, ENGINE_VERSION 1.12.0); the next set's target refitted to the last set and the actual rest, and RANGE rep proposals across the whole range (D69, ENGINE_VERSION 1.13.0); the re-entry reason names the group with the most direct sets, shown as "Lighter start for {group}" (D71, ENGINE_VERSION 1.14.0).
+     * first in its week (D38, ENGINE_VERSION 1.2.0); the setup's decisions fold with the creation (D40, ENGINE_VERSION 1.3.0); the comparison baseline per measurement (D41, ENGINE_VERSION 1.4.0); train now tries every slot not done yet, at any time of day (D42, ENGINE_VERSION 1.5.0); definition updates of a running enrollment (D44, ENGINE_VERSION 1.6.0); a creation that corrects the imported earlier tests (D48, ENGINE_VERSION 1.7.0); REST-1's modifiers, pair and superset rests, readout and adaptation (M3.3, ENGINE_VERSION 1.8.0); the rest multiplier, also in RX-1's inputs (D50, ENGINE_VERSION 1.9.0); no WE-V1 in a deload week (D61, ENGINE_VERSION 1.10.0); SUB-1's "Do {k} now" in ORD-1 order with busy stations ranked last (D62, ENGINE_VERSION 1.11.0); a plate-loaded machine's own mass counted outside the shown load (D68, ENGINE_VERSION 1.12.0); the next set's target refitted to the last set and the actual rest, and RANGE rep proposals across the whole range (D69, ENGINE_VERSION 1.13.0); the re-entry reason names the group with the most direct sets, shown as "Lighter start for {group}" (D71, ENGINE_VERSION 1.14.0); H6 and H1 see the previous week's general sessions (D74, ENGINE_VERSION 1.15.0).
      */
     private val BUMPED: Map<String, SemVer> = mapOf(
         "autoreg" to SemVer(1, 1, 0),
@@ -64,9 +64,10 @@ object ModuleRegistry {
         "rest" to SemVer(1, 2, 0),
         "rx" to SemVer(1, 1, 0),
         "substitute" to SemVer(1, 1, 0),
-        "today" to SemVer(1, 1, 0),
+        "today" to SemVer(1, 2, 0),
         "ui.todaycard" to SemVer(1, 1, 0),
         "warnings" to SemVer(1, 1, 0),
+        "weekplan" to SemVer(1, 1, 0),
     )
 
     private fun layer(layer: Layer, vararg ids: String): List<Entry> =

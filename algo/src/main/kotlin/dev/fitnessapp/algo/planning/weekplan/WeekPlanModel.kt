@@ -77,6 +77,11 @@ data class WeekPlanInput(
     /** Busy calendar anchors that are not gym sessions. */
     val busy: List<Interval>,
     val fixed: List<FixedItem>,
+    /**
+     * The previous ISO week's logged general sessions (D74): only H6 and H1's pairwise check read them, so a heavy leg
+     * day on Sunday keeps Monday free of heavy legs. They are no visits, add no volume and lock no day.
+     */
+    val priorGeneral: List<FixedItem> = emptyList(),
     /** `challenge.plan`'s rest days before a slot (scope `all_gym`) and gap days (scope `tags`). */
     val blocked: List<BlockedDay> = emptyList(),
     val gapRule: GapRule? = null,

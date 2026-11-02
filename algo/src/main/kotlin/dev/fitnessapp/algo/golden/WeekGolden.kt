@@ -217,6 +217,7 @@ internal object WeekGolden {
             fixed = p["fixed"]?.jsonArray.orEmpty().map { fixed(it.jsonObject) }.map { f ->
                 if ((f.kind == FixedItem.KIND_CHALLENGE || f.kind == FixedItem.KIND_TEST) && !f.end.isAfter(now)) f.copy(kind = FixedItem.KIND_DONE, addOn = null) else f
             } + logged.map { it.fixed },
+            priorGeneral = p["prior_general"]?.jsonArray.orEmpty().map { fixed(it.jsonObject) },
             blocked = p["blocked"]?.jsonArray.orEmpty().map { e ->
                 val o = e.jsonObject
                 BlockedDay(LocalDate.parse(str(o, "date")), str(o, "scope"), strings(o["tags"]), str(o, "reason"), str(o, "rule_id"))

@@ -1409,6 +1409,7 @@ globally optimal for the model and fully explainable; it is deterministic and fa
 | `isoWeek`, `now`, `today` | From `core:clock` (Europe/Amsterdam, ISO Monday-Sunday, F18) |
 | `anchors` | `calendar.classify` output for the week (§1) |
 | `doneSessions` | Logged sessions of the week (past days are locked) |
+| `priorGeneral` | Logged general sessions of the previous ISO week, with their heavy-lower FS and session tags (D74). Only H1's pairwise check and H6 read them: they are no visits, add no volume (the week's targets start on Monday) and lock no day; readiness already sees them through the doses. |
 | `contracts` | One ChallengeContract per active enrollment (§0.5): reserved sessions (calendar-matched or suggested by `challenge.plan`), hard rules, protected windows, add-on slots, session tag rules, owned muscles, coverage |
 | `runs` | §6 |
 | `profile` | `availability` (default: the gym's opening hours intersected with the usual training windows, weekdays 19:45-21:15 and weekends 09:00-16:00 in the fixture), `max_gym_visits_per_week` (D5, 4), `default_session_min` (F11, 75), `changeoverMin` (F11 revised, C49: 5 min) |
@@ -1463,12 +1464,12 @@ Checked before (static) or during (dynamic) the simulation; a plan that violates
 
 | Id | Rule | Source |
 |---|---|---|
-| H1 | Gap rule: a session whose tags intersect `minGapDays.appliesToTags` must have no other such session within `minGapDays` calendar days. Implemented by passing `forbiddenSessionTags = appliesToTags` to the allocator for every date adjacent to a tagged session (OAP: Wed and Fri this week), plus a pairwise check between general sessions. On such a gap day, pull work is limited to the C50 light-pull filter (grip demand ≤ 1, biceps-group coefficient < 0.5, outside protected windows, only for pull groups the user's goals ask for; ELIG §12.3). | C11, D5, C50 |
+| H1 | Gap rule: a session whose tags intersect `minGapDays.appliesToTags` must have no other such session within `minGapDays` calendar days. The pairwise check of general sessions also sees the tagged sessions of `priorGeneral` (D74). Implemented by passing `forbiddenSessionTags = appliesToTags` to the allocator for every date adjacent to a tagged session (OAP: Wed and Fri this week), plus a pairwise check between general sessions. On such a gap day, pull work is limited to the C50 light-pull filter (grip demand ≤ 1, biceps-group coefficient < 0.5, outside protected windows, only for pull groups the user's goals ask for; ELIG §12.3). | C11, D5, C50 |
 | H2 | No gym on a `restDayBefore` date (scope `all_gym`); a run that day only warns. | C11, D5 |
 | H3 | Hard protected windows: the allocator excludes their groups, regions and session tags; a window with `scope = all_gym` excludes any overlapping session. | C12 |
 | H4 | `maxPerWeek` session-tag caps (OAP: `heavy_unilateral ≤ 3`): general sessions never carry `heavy_unilateral` (ELIG removes such exercises from general blocks), so only challenge sessions count; the planner warns if they exceed the cap. | C11 |
 | H5 | Gym visits (done + fixed + recommended general) ≤ `max_gym_visits_per_week`. Add-on blocks are not visits. | D5 |
-| H6 | Two sessions (general or add-on) each with ≥ `HEAVY_LOWER_FS` credited FS in quads + hamstrings + glutes must start ≥ `HEAVY_LOWER_MIN_H` apart. | planning lens (expert-opinion) |
+| H6 | Two sessions (general or add-on) each with ≥ `HEAVY_LOWER_FS` credited FS in quads + hamstrings + glutes must start ≥ `HEAVY_LOWER_MIN_H` apart, also across the week boundary: a heavy-lower session of `priorGeneral` counts (D74). | planning lens (expert-opinion) |
 | H7 | Safety: `forbidSessionTags` and joint flags (allocator + ELIG) | C33 |
 | H8 | General sessions only on `free` days (one gym visit per day); on a challenge day extra work is only possible as an add-on. | C50 |
 

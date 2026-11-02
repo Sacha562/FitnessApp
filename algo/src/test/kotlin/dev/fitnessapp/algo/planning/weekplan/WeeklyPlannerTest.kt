@@ -148,6 +148,29 @@ class WeeklyPlannerTest {
     }
 
     @Test
+    fun `priorHeavyLegs - a heavy leg day on the previous Sunday keeps Monday free of heavy legs (D74)`() {
+        // The week without the challenge, replanned on Monday 08:00 local; a heavy-lower session was logged on Sunday 19:00.
+        val prior = buildJsonObject {
+            put("key", "sun-legs"); put("kind", "done_general"); put("date", "2026-10-04"); put("start", "2026-10-04T17:00:00Z")
+            put("end", "2026-10-04T18:10:00Z"); put("label", "Gym session"); put("heavy_lower_fs", 6.5)
+        }
+        val monday = JsonObject(noChallenge(2) + ("now" to JsonPrimitive("2026-10-05T06:00:00Z")))
+        val withPrior = JsonObject(monday + ("prior_general" to JsonArray(listOf(prior))))
+        val params = TestParams.defaults()
+        fun heavy(credit: Map<String, Double>) = listOf("quads", "hamstrings", "glutes").sumOf { credit[it] ?: 0.0 } >= params.double("weekplan.heavy_lower_fs") - 1e-9
+        val without = TodayRecommender.recommend(TodayInput(WeekGolden.input(monday, params)), params)
+        val with = TodayRecommender.recommend(TodayInput(WeekGolden.input(withPrior, params)), params)
+        without.options.any { heavy(it.credit) } shouldBe true
+        with.options.none { heavy(it.credit) } shouldBe true
+        with.excluded.any { it.reasonCode == "HEAVY_LOWER_GAP" } shouldBe true
+        // The week plan keeps every heavy-legs session 40 h after Sunday's; the prior session is no visit.
+        val w = plan(withPrior)
+        w.days.flatMap { it.items }.filter { it.kind == WeeklyPlanner.KIND_RECOMMENDED && heavy(it.credit) }
+            .forEach { (java.time.Duration.between(java.time.Instant.parse("2026-10-04T17:00:00Z"), it.start).toHours() >= 40) shouldBe true }
+        w.visits.done shouldBe 0
+    }
+
+    @Test
     fun `reentryNamesTheGroup - the re-entry group with the most direct sets (D71)`() {
         val params = TestParams.defaults()
         val p0 = WeekGolden.input(base, params)

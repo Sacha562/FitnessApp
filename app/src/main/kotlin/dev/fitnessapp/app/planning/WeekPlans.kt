@@ -28,6 +28,7 @@ import dev.fitnessapp.algo.selection.elig.HardWindow
 import dev.fitnessapp.algo.selection.elig.LightPullRule
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
+import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -144,21 +145,24 @@ object WeekPlans {
             }
         }
 
-        // Logged general sessions of the week (and one in progress): H6's heavy-lower FS and the gap rule's tags.
+        // Logged general sessions of the week (and one in progress): H6's heavy-lower FS and the gap rule's tags; the
+        // previous week's for H6 and H1 across the week boundary (D74).
         val tagRules = contract?.sessionTagRules?.let { SessionTagRule.parse(it) }.orEmpty()
         val credited = PlanningFacts.credited(c, now)
-        val general = c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday)).filter { it.kind == "gym" && it.challenge_slot == null && it.habit_id == null && it.started_at != null && it.deleted_at == null } +
-            listOfNotNull(c.sessionRepository.observeActiveOnce()?.takeIf { it.kind == "gym" && it.challenge_slot == null && it.habit_id == null && it.started_at != null && it.local_date >= monday.toString() && it.local_date <= sunday.toString() })
-        for (s in general) {
+        fun generalOnly(s: WorkoutSessionEntity) = s.kind == "gym" && s.challenge_slot == null && s.habit_id == null && s.started_at != null && s.deleted_at == null
+        fun item(s: WorkoutSessionEntity): FixedItem {
             val fs = TreeMap<String, Double>()
             credited.filter { it.set.sessionId == s.id }.forEach { cs -> cs.credit.fs.forEach { (g, v) -> fs[g] = (fs[g] ?: 0.0) + v } }
-            val start = Instant.ofEpochMilli(s.started_at!!)
-            fixed += FixedItem(
-                key = s.id, kind = FixedItem.KIND_DONE_GENERAL, date = LocalDate.parse(s.local_date), start = start,
+            return FixedItem(
+                key = s.id, kind = FixedItem.KIND_DONE_GENERAL, date = LocalDate.parse(s.local_date), start = Instant.ofEpochMilli(s.started_at!!),
                 end = s.finished_at?.let { Instant.ofEpochMilli(it) } ?: now, label = "Gym session",
                 heavyLowerFs = listOf("quads", "hamstrings", "glutes").sumOf { fs[it] ?: 0.0 }, tags = tagRules.filter { it.reached(fs) }.map { it.tag },
             )
         }
+        val general = c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday)).filter(::generalOnly) +
+            listOfNotNull(c.sessionRepository.observeActiveOnce()?.takeIf { generalOnly(it) && it.local_date >= monday.toString() && it.local_date <= sunday.toString() })
+        general.forEach { fixed += item(it) }
+        val priorGeneral = c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday.minusWeeks(1))).filter(::generalOnly).map(::item)
 
         // The user's own planned gym events (C49: the event is training time; its length minus the changeover is the budget).
         val anchors = c.calendar.snapshot.value.anchors.filter { !it.localDate.isBefore(monday) && !it.localDate.isAfter(sunday) }
@@ -190,7 +194,7 @@ object WeekPlans {
             }
         }
         return WeekPlanInput(
-            isoWeek = Week.isoWeek(monday), monday = monday, zone = zone, now = now, windows = windows,
+            isoWeek = Week.isoWeek(monday), monday = monday, zone = zone, now = now, windows = windows, priorGeneral = priorGeneral,
             busy = anchors.filter { it.kind == AnchorKind.BUSY }.map { Interval(it.beginUtc, it.endUtc) },
             fixed = fixed, blocked = gapDays, gapRule = contract?.gapRule, protectedWindows = contract?.protectedWindows.orEmpty(),
             ownedGroups = contract?.ownsMuscles.orEmpty().toSet(), forbiddenSessionTags = contract?.forbiddenSessionTags.orEmpty().toSet(),

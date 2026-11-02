@@ -339,8 +339,10 @@ object WeeklyPlanner : DeclaresParams {
             // The allocation memo key behind each dose of [extra]: equal keys give equal doses (the protection memo).
             val extraKeys = ArrayList<String>()
             val sessions = ArrayList<SimSession>()
-            val heavy = input.fixed.filter { it.general && it.heavyLowerFs >= heavyFs - 1e-9 }.map { it.start }.toMutableList()
-            val tagged = input.fixed.filter { it.general && it.tags.any { t -> t in input.gapRule?.appliesToTags.orEmpty() } }.map { it.date }.toMutableList()
+            // The week's general sessions and, across the week boundary, the previous week's (D74).
+            val generalDone = input.priorGeneral + input.fixed.filter { it.general }
+            val heavy = generalDone.filter { it.heavyLowerFs >= heavyFs - 1e-9 }.map { it.start }.toMutableList()
+            val tagged = generalDone.filter { it.tags.any { t -> t in input.gapRule?.appliesToTags.orEmpty() } }.map { it.date }.toMutableList()
             var prefix = ""
             var runPen = 0.0
             var lowG = 0
