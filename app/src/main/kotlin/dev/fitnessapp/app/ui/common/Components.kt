@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.fitnessapp.app.ui.theme.Fit
+import dev.fitnessapp.app.uidet.UiPrefill
 
 /** Tabular numbers for every changing value (UX 4.2); the theme's styles already set it. */
 val TabularNums = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
@@ -106,11 +107,14 @@ internal fun emphasizeNumbers(value: String): AnnotatedString = buildAnnotatedSt
     if (last < value.length) withStyle(small) { append(value.substring(last)) }
 }
 
+/** Holding repeats the step (UX 6.1), after `ui.prefill.accel_after` repeats `ui.prefill.accel_factor` steps at a time. */
 @Composable
 private fun StepButton(label: String?, fallback: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, enabled: Boolean) {
+    val params = LocalParams.current
+    val hold = rememberHoldRepeat(enabled, onClick) { n -> repeat(params?.let { UiPrefill.longPressMultiplier(n, it) } ?: 1) { onClick() } }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         FilledIconButton(
-            onClick = onClick, enabled = enabled, shape = CircleShape,
+            onClick = hold.onClick, enabled = enabled, shape = CircleShape, interactionSource = hold.interactionSource,
             colors = IconButtonDefaults.filledIconButtonColors(containerColor = Fit.Raised, contentColor = Fit.Accent, disabledContainerColor = Fit.Raised.copy(alpha = 0.5f), disabledContentColor = Fit.Muted),
             modifier = Modifier.size(64.dp).semantics { contentDescription = label ?: fallback },
         ) { Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp)) }

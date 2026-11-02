@@ -588,9 +588,12 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val running = t.state == "running"
-            TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
+            // Holding repeats in timer.longPressStepS steps (UX 11.13.6).
+            TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp,
+                onRepeat = { if (guard()) vm.adjustRest(-c.platformConfig.timerLongPressStepS) })
             TonalButton(if (interval) "Done" else "Skip", { if (guard()) vm.skipRest() }, Modifier.weight(1f), height = 64.dp)
-            TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp)
+            TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp,
+                onRepeat = { if (guard()) vm.adjustRest(c.platformConfig.timerLongPressStepS) })
         }
         ui.restNext?.takeIf { !interval }?.let {
             Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 2.dp) {

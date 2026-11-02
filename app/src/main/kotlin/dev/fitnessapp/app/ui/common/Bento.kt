@@ -111,7 +111,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     }
 }
 
-/** Every other button (P1): a raised pill. */
+/** Every other button (P1): a raised pill. With [onRepeat] holding it repeats (UX 6.1, [rememberHoldRepeat]). */
 @Composable
 fun TonalButton(
     text: String,
@@ -122,9 +122,11 @@ fun TonalButton(
     icon: ImageVector? = null,
     container: Color = Fit.Raised,
     content: Color = Fit.Ink,
+    onRepeat: ((Int) -> Unit)? = null,
 ) {
+    val hold = rememberHoldRepeat(enabled && onRepeat != null, onClick, onRepeat ?: {})
     Button(
-        onClick = onClick, enabled = enabled, shape = CircleShape,
+        onClick = hold.onClick, enabled = enabled, shape = CircleShape, interactionSource = hold.interactionSource,
         colors = ButtonDefaults.buttonColors(containerColor = container, contentColor = content, disabledContainerColor = container.copy(alpha = 0.5f), disabledContentColor = Fit.Muted.copy(alpha = 0.7f)),
         contentPadding = PaddingValues(horizontal = 20.dp),
         elevation = null,

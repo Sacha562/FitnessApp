@@ -6,10 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import dev.fitnessapp.app.nav.Routes
 import dev.fitnessapp.app.ui.AppRoot
+import dev.fitnessapp.app.ui.common.LocalParams
 import dev.fitnessapp.app.ui.theme.FitnessTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +26,9 @@ class MainActivity : ComponentActivity() {
         val container = (application as FitnessApplication).container
         if (savedInstanceState == null) reportOpened(intent)
         setContent {
-            FitnessTheme { AppRoot(container, route) }
+            CompositionLocalProvider(LocalParams provides container.params) {
+                FitnessTheme { AppRoot(container, route) }
+            }
         }
     }
 
