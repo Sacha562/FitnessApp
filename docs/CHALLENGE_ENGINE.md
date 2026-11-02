@@ -1698,6 +1698,18 @@ session of the current week happens as planned and counts, and a planned test is
 labelled `projected: true`. Every real state change (session logged, test postponed, pause)
 recomputes both weeks; the write plan then updates the app's own events.
 
+**Expected test date (D72).** While `plannedTest.date` is null and the test is not postponed,
+`TestProjection.expected(def, params, state, facts, today)` gives the date the definition's own
+`scheduleTest` action would set if every remaining week counts. The method is the `scheduleTest`
+argument of the gate-open rules triggered by `week.started` (nested `if` actions included); several
+or none give no date. `testWeekday`: weeks ahead = `structure.block.weeks` - `block.week`, plus one
+when the current mode does not count as a block week (`countsAsBlockWeek`, for example
+`extra_deload`); the date is the test weekday (`testDate`) of the ISO week that many weeks after
+today's. `fixedDate`: `nextFixedTestDate` from this Monday in `normal`, from next Monday in a mode
+that does not count. No date in `injury` (its end is not known) or when the enrollment is not
+active. The result is display only (basis `blockRelative` or `fixedList`) and never written to the
+state; a missed week repeats (`onMissed`) and moves it on the next render.
+
 ### 7.8 Engine constants (planner)
 
 | Key | Default | Bounds | Grade | Tunable | Tuned by |

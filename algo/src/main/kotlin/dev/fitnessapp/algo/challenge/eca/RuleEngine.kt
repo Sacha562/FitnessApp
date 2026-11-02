@@ -373,7 +373,8 @@ object RuleEngine : DeclaresParams {
         else -> records.firstOrNull { it.outcome != Outcome.NO_EFFECT }?.outcome ?: Outcome.NO_EFFECT
     }
 
-    private fun countsAsBlockWeek(def: CompiledDefinition, env: RuleEnv, mode: String): Boolean {
+    /** Whether a week closed in [mode] advances `block.week` (`countsAsBlockWeek`, through `inherits`; 4.7). */
+    fun countsAsBlockWeek(def: CompiledDefinition, env: RuleEnv, mode: String): Boolean {
         var m: String? = mode
         val visited = sortedSetOf<String>()
         while (m != null && visited.add(m)) {

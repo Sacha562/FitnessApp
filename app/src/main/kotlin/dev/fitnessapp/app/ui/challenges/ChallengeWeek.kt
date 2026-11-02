@@ -8,6 +8,7 @@ import dev.fitnessapp.algo.challenge.plan.GymAnchor
 import dev.fitnessapp.algo.challenge.plan.Interval
 import dev.fitnessapp.algo.challenge.plan.PlanInput
 import dev.fitnessapp.algo.challenge.plan.SlotAnchor
+import dev.fitnessapp.algo.challenge.plan.TestProjection
 import dev.fitnessapp.algo.challenge.plan.WeekPlanner
 import dev.fitnessapp.algo.core.calendar.AnchorKind
 import dev.fitnessapp.algo.core.clock.Week
@@ -63,16 +64,19 @@ object ChallengeWeek {
 
     /**
      * "Next test" for the library card and the dashboard: the test day as this week's plan places it (calendar event or
-     * suggestion, with its time), else the program's planned test date.
+     * suggestion, with its time), else the program's planned test date, else the expected one (D72).
      */
-    suspend fun nextTestText(c: AppContainer, f: FoldedEnrollment, facts: EngineFacts): String? {
+    suspend fun nextTestText(c: AppContainer, f: FoldedEnrollment, facts: EngineFacts, now: Instant = Instant.now()): String? {
         val s = f.state
         if (s.status == dev.fitnessapp.algo.challenge.enrollment.EnrollmentState.ACTIVE) {
             val testSlot = f.def.doc.structure.block.testSlot
-            val placed = runCatching { plan(c, f, facts).second.sessions.firstOrNull { it.slot == testSlot && it.source != "done" } }.getOrNull()
+            val placed = runCatching { plan(c, f, facts, now).second.sessions.firstOrNull { it.slot == testSlot && it.source != "done" } }.getOrNull()
             if (placed != null) return "Next test: ${ChallengeTexts.date(placed.date)} ${ChallengeTexts.time(Week.localTime(placed.interval.start, ZONE))}"
         }
-        return s.plannedTest.date?.let { "Next test: ${ChallengeTexts.date(it)}" } ?: if (s.plannedTest.basis == "postponed") "Test postponed" else null
+        s.plannedTest.date?.let { return "Next test: ${ChallengeTexts.date(it)}" }
+        if (s.plannedTest.basis == "postponed") return "Test postponed"
+        val expected = runCatching { TestProjection.expected(f.def, c.params, s, facts, Week.localDate(now, ZONE)) }.getOrNull()
+        return expected?.let { "Next test: expected ${ChallengeTexts.date(it.date)}" }
     }
 
     private fun interval(start: Long?, end: Long?): Interval? =
