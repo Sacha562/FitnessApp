@@ -1070,7 +1070,7 @@ One row per user, created lazily by the app on first login (never by a trigger o
 | `max_gym_visits_per_week` | smallint | not null | `4` | 1-7 | D5. |
 | `default_session_min` | smallint | not null | `75` | 20-240 | F11: budget when no calendar event exists. |
 | `changeover_min` | smallint | not null | `5` | 0-60 | F11 as revised by C49: calendar gym events are training time (travel happens before them), so the session budget is the event duration minus this changeover. Replaces the earlier `travel_buffer_min` (15). |
-| `availability` | jsonb | not null | `'{}'` | object | `{"mon": [["17:30","21:30"]], ...}`; `{}` means "use gym opening hours". |
+| `availability` | jsonb | not null | `'{}'` | object | `{"mon": [["17:30","21:30"]], ...}`; `{}` means not set yet: the planner uses the default windows (weekdays 19:45-21:15, weekends 09:00-16:00, D75). "Any time the gym is open" is stored as every day `00:00`-`23:59`; a day without a window is not a training day. The gym's opening hours narrow every window. |
 | `default_gym_id` | uuid | null | | FK `(default_gym_id, user_id) -> gyms(id, user_id)` | |
 | `calendar_read_enabled` | boolean | not null | `true` | | D11 (the device permission is separate state). |
 | `calendar_scope` | text | not null | `'primary_only'` | `primary_only`, `selected` | D11. |

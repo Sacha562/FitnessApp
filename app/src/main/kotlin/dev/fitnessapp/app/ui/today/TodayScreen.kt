@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.planning.SessionBuild
 import dev.fitnessapp.app.format.Numbers
+import dev.fitnessapp.app.planning.TrainingWindows
 import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.common.Banner
 import dev.fitnessapp.app.ui.common.BannerKind
@@ -62,8 +63,10 @@ import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
 import dev.fitnessapp.app.ui.common.TileLabel
 import dev.fitnessapp.app.ui.theme.Fit
+import dev.fitnessapp.app.ui.you.WindowsSheet
 import dev.fitnessapp.data.db.Scaled
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
+import dev.fitnessapp.data.repo.Setting
 import dev.fitnessapp.data.sync.PendingStatus
 import dev.fitnessapp.data.sync.SyncState
 import kotlinx.coroutines.Dispatchers
@@ -109,6 +112,8 @@ fun TodayRoute(
     var sheetBuilt by remember { mutableStateOf<BuiltStart?>(null) }
     var notice by remember { mutableStateOf<Pair<String, String>?>(null) }
     val goals by remember { c.goals.observe() }.collectAsState(initial = null)
+    val profile by remember { c.profiles.observe() }.collectAsState(initial = null)
+    var editTimes by remember { mutableStateOf(false) }
     // The planner and the Today card (M4.5, D70): rerun when sessions, the calendar, the goals or the time chip change.
     val calendar by c.calendar.snapshot.collectAsState()
     var plan by remember { mutableStateOf<TodayPlan?>(null) }
@@ -119,7 +124,7 @@ fun TodayRoute(
     var picked by remember { mutableStateOf<String?>(null) }
     var override by remember { mutableStateOf<String?>(null) }
     var planTick by remember { mutableStateOf(0) }
-    androidx.compose.runtime.LaunchedEffect(active?.id, recent.map { it.id + it.status }, calendar.anchors, goals, chipMin, planTick) {
+    androidx.compose.runtime.LaunchedEffect(active?.id, recent.map { it.id + it.status }, calendar.anchors, goals, profile?.availability, chipMin, planTick) {
         val zoneNow = ZoneId.of("Europe/Amsterdam")
         val todayNow = LocalDate.now(zoneNow).toString()
         planFresh = false
@@ -240,6 +245,22 @@ fun TodayRoute(
                     )
                     LinkButton("Set goals", onSetGoals)
                 }
+            }
+
+            // D75: until the usual training times are saved, a card opens their editor; the plan uses the default times meanwhile.
+            if (profile != null && !TrainingWindows.isSet(profile?.availability)) {
+                Tile(spacing = 6.dp, onClick = { editTimes = true }) {
+                    Text("When do you usually train?", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Until you set your times, the plan assumes weekday evenings 19:45-21:15 and weekends 09:00-16:00.",
+                        style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                    )
+                    LinkButton("Set times", { editTimes = true })
+                }
+            }
+            if (editTimes) WindowsSheet(profile?.availability, onDismiss = { editTimes = false }) { json ->
+                editTimes = false
+                scope.launch { c.profiles.set(Setting.AVAILABILITY, json) }
             }
 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)

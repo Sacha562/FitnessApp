@@ -177,12 +177,14 @@ object WeekPlans {
 
         val gym = c.equipment.defaultGym()
         val windows = TreeMap<LocalDate, List<Interval>>()
-        val user = days(profile?.availability)
+        // The usual training times, or the default evenings and weekend days while none are saved (D75); a day the user
+        // switched off has no window. The gym's opening hours narrow them.
+        val user = TrainingWindows.effective(profile?.availability)
         val open = days(gym?.opening_hours)
         for (i in 0L..6L) {
             val d = monday.plusDays(i)
             val key = DAYS[i.toInt()]
-            val w = intersect(user[key] ?: open[key] ?: (LocalTime.of(6, 0) to LocalTime.of(23, 0)), open[key])
+            val w = user[key]?.let { intersect(it, open[key]) }
             windows[d] = listOfNotNull(w?.let { (a, b) -> Interval(Week.atLocal(d, a, zone), Week.atLocal(d, b, zone)) })
         }
         val gapDays = contract?.blockedDays.orEmpty()

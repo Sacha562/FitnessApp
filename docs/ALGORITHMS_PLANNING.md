@@ -1412,7 +1412,7 @@ globally optimal for the model and fully explainable; it is deterministic and fa
 | `priorGeneral` | Logged general sessions of the previous ISO week, with their heavy-lower FS and session tags (D74). Only H1's pairwise check and H6 read them: they are no visits, add no volume (the week's targets start on Monday) and lock no day; readiness already sees them through the doses. |
 | `contracts` | One ChallengeContract per active enrollment (§0.5): reserved sessions (calendar-matched or suggested by `challenge.plan`), hard rules, protected windows, add-on slots, session tag rules, owned muscles, coverage |
 | `runs` | §6 |
-| `profile` | `availability` (default: the gym's opening hours intersected with the usual training windows, weekdays 19:45-21:15 and weekends 09:00-16:00 in the fixture), `max_gym_visits_per_week` (D5, 4), `default_session_min` (F11, 75), `changeoverMin` (F11 revised, C49: 5 min) |
+| `profile` | `availability` (the usual training windows intersected with the gym's opening hours; while the user has saved none, the default windows weekdays 19:45-21:15 and weekends 09:00-16:00, never the whole opening day (D75); a day without a window offers no slot), `max_gym_visits_per_week` (D5, 4), `default_session_min` (F11, 75), `changeoverMin` (F11 revised, C49: 5 min) |
 | `targets`, `account`, `readiness doses`, `safety` | §5, §3, §4, §2 |
 | `previousPlan` | The last `weekplan.plan` snapshot of this ISO week (stability term) |
 

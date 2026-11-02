@@ -1032,7 +1032,7 @@ Preset definitions (UX defaults; the user edits freely after applying one):
 | Default time budget (no calendar event) | 75 min | F11 |
 | Changeover subtracted from a calendar gym event (the event is training time; travel happens before it) | 5 min | F11, C49 |
 | Maximum gym visits per week | 4 | D5 |
-| Usual training windows | Weekdays 19:45-21:15, weekends 09:00-16:00 | planning lens facts (editable) |
+| Usual training windows | Weekdays 19:45-21:15, weekends 09:00-16:00; used by the planner while none are saved (D75), with a Today card "When do you usually train?" that opens the editor until they are saved | planning lens facts (editable) |
 | Running priority | Low | F6 |
 | Supersets | Only when a plan does not fit the time (otherwise off) | F13 |
 | RIR check sets | Off (opt-in, at most 1 per week, machine / cable / isolation only, never challenge lifts) | F14 |

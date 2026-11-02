@@ -39,6 +39,7 @@ import dev.fitnessapp.algo.targets.Targets
 import dev.fitnessapp.algo.targets.TargetsInput
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.planning.PlanningFacts
+import dev.fitnessapp.app.planning.TrainingWindows
 import dev.fitnessapp.app.planning.WeekChallenge
 import dev.fitnessapp.app.planning.WeekVolume
 import dev.fitnessapp.app.ui.common.ChipButton
@@ -59,13 +60,6 @@ import dev.fitnessapp.data.repo.Setting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -195,7 +189,7 @@ fun SessionsTile(c: AppContainer, profile: ProfileEntity?) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Usual training times", style = MaterialTheme.typography.titleMedium)
-                Text(windowsSummary(p?.availability), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                Text(TrainingWindows.summary(p?.availability), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
             }
             LinkButton("Edit", { editWindows = true })
         }
@@ -257,33 +251,11 @@ private fun AgeDialog(birthYear: Int?, onDismiss: () -> Unit, onSave: (Int?) -> 
 
 private val DAYS = listOf("mon" to "Monday", "tue" to "Tuesday", "wed" to "Wednesday", "thu" to "Thursday", "fri" to "Friday", "sat" to "Saturday", "sun" to "Sunday")
 
-/** UX 8.11 default windows: weekdays 19:45-21:15, weekends 09:00-16:00 (planning lens facts, editable). */
-private val DEFAULT_WINDOWS = DAYS.associate { (d, _) -> d to if (d == "sat" || d == "sun") ("09:00" to "16:00") else ("19:45" to "21:15") }
-
-/** `profiles.availability` (DATA_MODEL 9.3.1): day -> [[from, to]]; `{}` means the gym's opening hours. One window a day here. */
-private fun parseWindows(json: String?): Map<String, Pair<String, String>> {
-    val o = runCatching { Json.parseToJsonElement(json ?: "{}").jsonObject }.getOrNull() ?: return emptyMap()
-    return o.mapNotNull { (d, v) ->
-        val w = runCatching { v.jsonArray.first().jsonArray }.getOrNull() ?: return@mapNotNull null
-        d to (w[0].jsonPrimitive.content to w[1].jsonPrimitive.content)
-    }.toMap()
-}
-
-private fun windowsJson(w: Map<String, Pair<String, String>>): String = JsonObject(
-    DAYS.mapNotNull { (d, _) -> w[d]?.let { (a, b) -> d to JsonArray(listOf(JsonArray(listOf(JsonPrimitive(a), JsonPrimitive(b))))) } }.toMap(),
-).toString()
-
-private fun windowsSummary(json: String?): String {
-    val w = parseWindows(json)
-    if (w.isEmpty()) return "Any time the gym is open"
-    return DAYS.filter { it.first in w }.joinToString(" · ") { (d, _) -> d.replaceFirstChar(Char::uppercase) + " " + w.getValue(d).let { "${it.first}-${it.second}" } }
-}
-
-/** One window per weekday, in 15-minute steps; "Any time" stores `{}` (the gym's opening hours). */
+/** One window per weekday, in 15-minute steps; "Any time" stores [TrainingWindows.ANY_TIME] (D75). Also opened from Today. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WindowsSheet(json: String?, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var w by remember { mutableStateOf(parseWindows(json).ifEmpty { DEFAULT_WINDOWS }) }
+fun WindowsSheet(json: String?, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var w by remember { mutableStateOf(TrainingWindows.parse(json).let { if (it.isEmpty() || it == TrainingWindows.ANY_TIME) TrainingWindows.DEFAULT else it }) }
     fun shift(t: String, min: Long) = LocalTime.parse(t).plusMinutes(min).let { if (it.minute % 15 != 0) it.withMinute(it.minute / 15 * 15) else it }.toString()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp)) {
@@ -294,7 +266,7 @@ private fun WindowsSheet(json: String?, onDismiss: () -> Unit, onSave: (String) 
                     val win = w[d]
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                        Switch(checked = win != null, onCheckedChange = { on -> w = if (on) w + (d to DEFAULT_WINDOWS.getValue(d)) else w - d })
+                        Switch(checked = win != null, onCheckedChange = { on -> w = if (on) w + (d to TrainingWindows.DEFAULT.getValue(d)) else w - d })
                     }
                     if (win != null) {
                         StepperRow("from ${win.first}", null,
@@ -307,8 +279,8 @@ private fun WindowsSheet(json: String?, onDismiss: () -> Unit, onSave: (String) 
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp).navigationBarsPadding(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TonalButton("Any time", { onSave("{}") }, Modifier.weight(1f))
-                PrimaryButton("Save", { onSave(windowsJson(w)) }, Modifier.weight(1f))
+                TonalButton("Any time", { onSave(TrainingWindows.json(TrainingWindows.ANY_TIME)) }, Modifier.weight(1f))
+                PrimaryButton("Save", { onSave(TrainingWindows.json(w)) }, Modifier.weight(1f))
             }
         }
     }
