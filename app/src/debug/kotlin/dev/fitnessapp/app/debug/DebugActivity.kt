@@ -96,6 +96,7 @@ class DebugActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         when (intent?.getStringExtra("action")) {
             "selftest" -> runSelfTest()
+            "plan_dump" -> planDump()
             "restore_set" -> restoreSet(intent.getStringExtra("set_id"))
             "reminder_probe" -> {
                 val mode = (application as FitnessApplication).container.reminders.probe(intent.getIntExtra("in_s", 90))
@@ -132,6 +133,47 @@ class DebugActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Logs today's planner view per group (tag `PlanDump`): this week's volume against the target, readiness now and at
+     * today's slot start, each option's direct sets and score, and the exercises of each option's build at 75 min.
+     */
+    private fun planDump() {
+        val c = (application as FitnessApplication).container
+        c.appScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            val out = ArrayList<String>()
+            runCatching {
+                val now = c.clock.now()
+                val week = dev.fitnessapp.app.planning.WeekPlans.thisWeek(c, now)
+                val today = dev.fitnessapp.app.planning.WeekPlans.today(c, week, null)
+                val day = week.plan.days.first { it.date == today.date }
+                val slot = day.slotStart ?: now
+                val params = c.params.fork()
+                val rNow = dev.fitnessapp.algo.accounting.readiness.Readiness.evaluate(week.input.doses, now, null, null, params).r
+                val rSlot = dev.fitnessapp.algo.accounting.readiness.Readiness.evaluate(week.input.doses, slot, null, null, params).r
+                out += "now=$now slot=$slot budget=${day.slotBudgetMin} verdict=${today.verdict} primary=${today.primaryOptionId}"
+                today.options.forEach { o -> out += "option ${o.optionId} score=${o.score} dJ=${o.dJ} est=${o.estMinutes} reasons=${o.reasons.map { it.code + it.params }}" }
+                out += "group status done+committed/targetEff (t) rNow rSlot " + today.options.joinToString(" ") { it.optionId }
+                dev.fitnessapp.algo.common.Groups.CANONICAL.forEach { g ->
+                    val gt = week.input.targets.groups[g]
+                    val v = (week.input.done[g] ?: 0.0) + (week.input.committed[g] ?: 0.0)
+                    out += "$g ${gt?.status} ${"%.2f".format(v)}/${gt?.targetEffective} (${gt?.t}) reentry=${gt?.reentry?.active} " +
+                        "rNow=${"%.2f".format(rNow[g] ?: 1.0)} rSlot=${"%.2f".format(rSlot[g] ?: 1.0)} " +
+                        today.options.joinToString(" ") { o -> "%.2f".format(o.direct[g] ?: 0.0) }
+                }
+                week.plan.days.forEach { d -> out += "day ${d.date} ${d.status} ${d.restReason?.code ?: ""} " + d.items.joinToString { "${it.kind}:${it.type ?: it.slot}@${it.start}" } }
+                val f = dev.fitnessapp.app.planning.SessionBuild.facts(c, now, weekPlan = week.plan)
+                today.options.mapNotNull { it.sessionType }.forEach { t ->
+                    val type = dev.fitnessapp.algo.planning.allocator.SessionType.of(t)
+                    val b = dev.fitnessapp.app.planning.SessionBuild.build(c, dev.fitnessapp.app.planning.SessionBuild.request(f, type, 75.0))
+                    out += "build $t est=${b.estMin} " + b.exercises.joinToString { "${it.slug} x${it.sets}" }
+                    out += "  alloc direct " + b.allocation.direct.filterValues { it > 0.0 }.entries.joinToString { "${it.key}=${"%.2f".format(it.value)}" }
+                }
+            }.onFailure { out += "failed: $it" }
+            out.forEach { Log.i("PlanDump", it) }
+            report.value = out.joinToString("\n")
         }
     }
 
