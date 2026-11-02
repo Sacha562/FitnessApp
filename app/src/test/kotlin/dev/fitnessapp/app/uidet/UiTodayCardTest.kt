@@ -96,4 +96,11 @@ class UiTodayCardTest {
         card(t, active = true).state shouldBe CardState.IN_PROGRESS
         card(today(TodayRecommender.REST_SOFT, emptyList(), null), finished = true).state shouldBe CardState.DONE
     }
+
+    @Test
+    fun `reentryNamesTheGroup - D71`() {
+        val r = Reason("REENTRY", 3, mapOf("group" to "calves", "family" to "legs", "sessions_remaining" to "1"), 0.5)
+        val t = today(TodayRecommender.TRAIN, listOf(opt("opt:LEGS", "LEGS", 0.6, listOf(r))), "opt:LEGS")
+        card(t).chips.single { it.code == "REENTRY" }.text shouldBe "Lighter start for calves"
+    }
 }

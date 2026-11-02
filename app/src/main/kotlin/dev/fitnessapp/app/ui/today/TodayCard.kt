@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.core.registry.ModuleRegistry
 import dev.fitnessapp.algo.planning.today.TodayOption
 import dev.fitnessapp.algo.planning.today.TodayOptions
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
@@ -72,7 +73,7 @@ object TodayPlans {
     suspend fun shown(c: AppContainer, p: TodayPlan) {
         c.sessionRepository.event(
             EventDraft(
-                type = "today_card_shown", entityType = "none", screen = "today", moduleId = "ui.todaycard", moduleVersion = "1.0.0",
+                type = "today_card_shown", entityType = "none", screen = "today", moduleId = "ui.todaycard", moduleVersion = ModuleRegistry.ref("ui.todaycard").version.toString(),
                 payload = mapOf(
                     "state" to JsonPrimitive(p.card.state.name), "verdict" to JsonPrimitive(p.options.verdict),
                     "variant" to (p.card.variant?.let { JsonPrimitive(it) } ?: JsonPrimitive("")),

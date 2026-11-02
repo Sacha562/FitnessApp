@@ -283,7 +283,7 @@ visits, time budget), `GENERAL` 3. Codes are a versioned enum (`today.reason_cod
 | `VOLUME_DEFICIT` | GENERAL | today, weekplan | group, done, after, target | "{group} {done}→{after}/{target} sets this week" |
 | `RECOVERED` | GENERAL | today | family, pct | "{family} {pct}% recovered" |
 | `HOURS_SINCE` | GENERAL | today | subject, hours | "{subject} {hours} h ago" |
-| `REENTRY` | GENERAL | targets, today | family, days | "First {family} in {days} days: lighter start" |
+| `REENTRY` | GENERAL | targets, today | group, family, sessions_remaining | "Lighter start for {group}" (D71: the re-entry group with the most direct sets in the option, ties by id) |
 | `BETTER_OTHER_DAY` | GENERAL | today | type, day, dJ | "{type} fits better on {day}" |
 | `BETTER_THIS_DAY` | GENERAL | weekplan | day, reason | "Better today than {day}: {reason}" |
 | `FREQ_BONUS` | GENERAL | today, weekplan | group, n | "{group}: 2nd session this week" |
@@ -1723,7 +1723,7 @@ code and subject, and shows at most `MAX_CHIPS` (§19.1; UX §19.1 adds only the
 | Kind | Codes | Weight |
 |---|---|---|
 | volume | `VOLUME_DEFICIT` for the group with the largest `W_g·ΔU_g` (params `group, done, after, target`) | `W_g·ΔU_g` |
-| transform | `DELOAD_WEEK`, `REENTRY` | `TRANSFORM_CHIP_WEIGHT` (0.5) |
+| transform | `DELOAD_WEEK`, `REENTRY` for the re-entry group with the most direct sets in the option, ties by group id (D71; params `group, family, sessions_remaining`) | `TRANSFORM_CHIP_WEIGHT` (0.5) |
 | constraint | `PROTECT_REST`, `GAP_DAY`, `RUN_NEAR`, `BETTER_OTHER_DAY`, `MAX_VISITS`, `LOW_SYSTEMIC`, `RECOVERING`, `HEAVY_LOWER_GAP` | the penalty or `|dJ|` in J, or `CONSTRAINT_CHIP_WEIGHT` (0.4) for hard exclusions |
 | context | `PLANNED_CAL`, `CHALLENGE_DUE`, `NEXT_FIXED`, `RECOVERED`, `HOURS_SINCE`, `ADDON`, `BUDGET_FIT` | `CONTEXT_CHIP_WEIGHT` (0.1) |
 

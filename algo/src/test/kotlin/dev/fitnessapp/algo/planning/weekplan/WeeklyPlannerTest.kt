@@ -4,6 +4,7 @@ import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.golden.WeekGolden
 import dev.fitnessapp.algo.planning.today.TodayInput
 import dev.fitnessapp.algo.planning.today.TodayRecommender
+import dev.fitnessapp.algo.targets.Reentry
 import dev.fitnessapp.algo.testing.TestParams
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
@@ -144,6 +145,18 @@ class WeeklyPlannerTest {
         r.options.shouldBeEmpty()
         r.primaryOptionId shouldBe null
         r.restAdvice.reasonCode shouldBe "REST_BEFORE"
+    }
+
+    @Test
+    fun `reentryNamesTheGroup - the re-entry group with the most direct sets (D71)`() {
+        val params = TestParams.defaults()
+        val p0 = WeekGolden.input(base, params)
+        val t = p0.targets.copy(deload = p0.targets.deload.copy(active = false), groups = p0.targets.groups.mapValues { (_, gt) -> gt.copy(reentry = Reentry(true, 2)) })
+        val r = TodayRecommender.recommend(TodayInput(p0.copy(targets = t)), params)
+        val primary = r.options.first { it.optionId == r.primaryOptionId }
+        val re = primary.reasons.single { it.code == "REENTRY" }
+        re.params["group"] shouldBe primary.direct.entries.filter { it.value > 0.0 }.sortedWith(compareBy({ -it.value }, { it.key })).first().key
+        re.params["sessions_remaining"] shouldBe "2"
     }
 
     /** F-W41 without the challenge: no logged or planned sets, no fixed items or rules, every day free. */

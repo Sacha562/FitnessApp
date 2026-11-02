@@ -3448,7 +3448,7 @@ section 5. Chips are short; longer explanations live in the Why sheet.
 | `RECOVERED` | GENERAL | `{family} {pct} % recovered` | "Legs 100 % recovered" |
 | `RECOVERING` | GENERAL | `{group} still recovering ({pct} %)` | "Quads still recovering (70 %)" |
 | `HOURS_SINCE` | GENERAL | `{subject} {hours} h ago` | "C 48 h ago" |
-| `REENTRY` | GENERAL | `First {family} in {days} days` | "First legs in 23 days" |
+| `REENTRY` | GENERAL | `Lighter start for {group}` | "Lighter start for abductors" (D71: the cause, never logged, early in the history or back after a break, is left to the Why sheet) |
 | `BETTER_OTHER_DAY` | GENERAL | `{type} fits better on {day}` | "Legs fits better on Friday" |
 | `BETTER_THIS_DAY` | GENERAL | `Better today than {day}` | "Better today than Friday" |
 | `SORE` | GENERAL | `{group} still sore` | "Quads still sore" |

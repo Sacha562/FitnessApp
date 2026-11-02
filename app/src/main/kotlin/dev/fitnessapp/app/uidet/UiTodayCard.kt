@@ -121,7 +121,7 @@ object UiTodayCard {
         "NO_SLOT" -> "No free slot"
         "VOLUME_DEFICIT" -> "${groupLabel(p["group"] ?: "")} ${num(p["done"])}/${num(p["target"])} wk"
         "RECOVERING" -> "Still recovering"
-        "REENTRY" -> "First ${p["family"] ?: "session"} in a while"
+        "REENTRY" -> "Lighter start for ${p["group"]?.let { groupLabel(it).lowercase() } ?: p["family"] ?: "this session"}"
         "BETTER_OTHER_DAY" -> "${p["type"]} fits better on ${p["day"]?.lowercase()?.replaceFirstChar(Char::uppercase)}"
         "LOW_SYSTEMIC" -> "Whole-body readiness ${p["pct"]} %"
         "HEAVY_LOWER_GAP" -> "Heavy legs too recently"

@@ -338,13 +338,22 @@ object TodayRecommender : DeclaresParams {
         return best?.takeIf { it.weight > 0.0 }
     }
 
-    /** The transform kind (9.6): `DELOAD_WEEK`, else `REENTRY` when a trained group is in re-entry. */
+    /**
+     * The transform kind (9.6): `DELOAD_WEEK`, else `REENTRY` for the trained group in re-entry with the most direct
+     * sets, ties by group id (D71).
+     */
     private fun transform(s: SimSession?, input: TodayInput, params: ParamView): Reason? {
         val t = input.plan.targets
         val w = params.double("today.transform_chip_weight")
         if (t.deload.active) return Reason("DELOAD_WEEK", precedence("DELOAD_WEEK", t.deload.source), sortedMapOf("source" to t.deload.source), w)
-        val g = s?.alloc?.direct?.keys?.firstOrNull { t.groups[it]?.reentry?.active == true } ?: return null
-        return Reason("REENTRY", 3, sortedMapOf("family" to Groups.familyOf(g).lowercase()), w)
+        val (g, re) = s?.alloc?.direct.orEmpty().entries
+            .mapNotNull { (g, v) -> t.groups[g]?.reentry?.takeIf { it.active && v > 0.0 }?.let { Triple(g, v, it) } }
+            .sortedWith(compareBy({ -it.second }, { it.first }))
+            .firstOrNull()?.let { it.first to it.third } ?: return null
+        return Reason(
+            "REENTRY", 3,
+            sortedMapOf("group" to g, "family" to Groups.familyOf(g).lowercase(), "sessions_remaining" to re.sessionsRemaining.toString()), w,
+        )
     }
 
     /** The constraint kind (9.6): the largest of the windows, the gap day, a run, a better day and low readiness. */
