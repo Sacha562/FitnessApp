@@ -1283,10 +1283,11 @@ allocate(type, start, budgetMin, Vbefore, opp, ctx):
      while Σ_{g ∈ rule.groups} credit(normal)[g] > rule.minHardSets − 1:
         remove 0.5 FS from the rule group with (lowest W, then largest value, then canonical order)
   // grip_heavy is enforced at exercise level: ELIG removes exercises with grip_demand ≥ 2 (§12)
-  // 3. time fit (TIME-1 dose estimator, §17.5)
-  while estDose(normal, warm = !addon) > budgetMin:
-     for each g with normal[g] > 0: candidate = normal with g reduced by 0.5 (to 0 if credit_g < minTouch_g)
-     choose the candidate with the smallest (Δutility / Δminutes), ties by canonical order    // utility below
+  // 3. time fit (TIME-1 dose estimator, §17.5), on the sets done: done(x)_g = step 4's transform of x_g (D79)
+  while estDose(done(normal), warm = !addon) > budgetMin:
+     for each g with normal[g] > 0: candidate = normal with g reduced by 0.5 until done(candidate)_g changes
+                                    (to 0 if credit_g < minTouch_g)
+     choose the candidate with the smallest (Δutility(done) / Δminutes(done)), ties by canonical order    // utility below
      if no candidate saves time: return infeasible(TIME_SHORT)
   // 4. session transforms (C13, C27; no stacking, §5.4.3)
   for g in normal:
@@ -3246,6 +3247,13 @@ calves 1; expected credit including indirect: front_delts 2.25, triceps 2.25, up
 0.38; estimated 49.6 min. Session tags: credited lats + upper_back = 1.25 < 4, no grip-heavy or elbow-flexor-heavy
 work → the gap rule holds. Heavy-legs check (H6): credited quads + hamstrings + glutes = 3.62 < 4, so the session may
 follow the Thursday add-on (4.83) after 23 hours.
+
+D79 (2026-11-02) changes these numbers: the time fit now prices the sets done after the transform, so `normal` keeps
+chest 10, side_delts 7, rear_delts 6, triceps 3, lower_back 3, abductors 2, calves 3, quads 7, hamstrings 9 (134.0 min
+before the transform) and `direct` becomes chest 5, side_delts 3.5, rear_delts 3, triceps 1.5, lower_back 1.5,
+abductors 1, calves 1.5, quads 3.5, hamstrings 4.5, estimated 73.9 min of the 75 (was 49.6: the deload halved a share
+already cut to fit the time). The Thursday add-on is unchanged (its 4-set cap binds), and Wednesday's train-anyway FULL
+estimates 74.9 min (was 48.6). The W41 week plan keeps its choice (Wednesday FULL, push add-on after A, J 6.0337).
 
 **SEL-1 (§13) and ORD-1 (§14)** on the prototype catalog (§22.4) with the gap-day filters (RDL and walking lunge
 removed for grip demand 2; rows removed for their biceps coefficient 0.5, C50; shrugs removed), `sPref` 3 and `mult`

@@ -213,27 +213,33 @@ object Allocator : DeclaresParams {
 
         // 3. Time fit with the dose estimator: drop the cheapest utility per minute first. The loop runs on arrays in
         // canonical order (an absent group is 0) with the arithmetic and order of the map helpers, so the results are
-        // the same; the week planner runs it thousands of times per week.
+        // the same; the week planner runs it thousands of times per week. D79: time and utility are those of the sets
+        // done, after step 4's transforms (a re-entry or deload group does fewer sets than `normal` holds).
         val beforeFit = normal.keys.toList()
         val budgetS = input.budgetMin * 60.0
         val fit = Fit(input, table, stimBase, params)
+        val factor = DoubleArray(Groups.CANONICAL.size) { i -> gts[Groups.CANONICAL[i]]?.transform?.setFactor ?: 1.0 }
+        fun doneOf(i: Int, x: Double): Double = if (x > 0.0 && factor[i] < 1.0) maxOf(1.0, Groups.roundHalf(x * factor[i])) else x
+        fun done(x: DoubleArray): DoubleArray = DoubleArray(x.size) { i -> doneOf(i, x[i]) }
         var cur = DoubleArray(Groups.CANONICAL.size) { normal[Groups.CANONICAL[it]] ?: 0.0 }
-        while (fit.dose.estDose(cur, !addon) > budgetS + 1e-9) {
-            val base = fit.dose.estDose(cur, !addon)
-            val uBase = fit.utility(cur)
+        while (fit.dose.estDose(done(cur), !addon) > budgetS + 1e-9) {
+            val base = fit.dose.estDose(done(cur), !addon)
+            val uBase = fit.utility(done(cur))
             var best = -1
             var bestRatio = Double.MAX_VALUE
             var bestCand: DoubleArray? = null
             for (i in cur.indices) {
                 if (cur[i] <= 0.0) continue
                 val cand = cur.copyOf()
-                val v = cand[i] - 0.5
+                // Half sets off until the sets done change (a transformed group can keep its sets done for a step or two).
+                var v = cand[i] - 0.5
+                while (v > 1e-9 && doneOf(i, v) == doneOf(i, cur[i])) v -= 0.5
                 cand[i] = if (v <= 1e-9) 0.0 else v
                 val c = fit.credit(cand)[i]
                 if ((if (c < 0.0) 0.0 else c) < gts.getValue(Groups.CANONICAL[i]).minTouch - 1e-9) cand[i] = 0.0
-                val dm = (base - fit.dose.estDose(cand, !addon)) / 60.0
+                val dm = (base - fit.dose.estDose(done(cand), !addon)) / 60.0
                 if (dm <= 1e-9) continue
-                val ratio = round6((uBase - fit.utility(cand)) / dm)
+                val ratio = round6((uBase - fit.utility(done(cand))) / dm)
                 if (ratio < bestRatio) { bestRatio = ratio; best = i; bestCand = cand }
             }
             if (best < 0) return infeasible(input, "TIME_SHORT", a, dropped)

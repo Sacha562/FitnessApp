@@ -1770,7 +1770,7 @@
             "rest_reasons": [],
             "excluded": [],
             "week": {
-                "j": 5.07,
+                "j": 6.325,
                 "recommended_n": 4,
                 "visits": {
                     "done": 3,
@@ -1779,7 +1779,7 @@
                     "max": 4
                 },
                 "band": {
-                    "j_star": 5.07,
+                    "j_star": 6.325,
                     "in_band": 1,
                     "tie_key_used": "only"
                 },
@@ -1843,7 +1843,7 @@
                                 "kind": "done_general",
                                 "label": "Legs + push + rear delts",
                                 "start": "2026-10-09T17:45:00Z",
-                                "est_min": 47,
+                                "est_min": 74,
                                 "write_policy": "never"
                             }
                         ]
@@ -1873,6 +1873,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "322fe276b570a39156eee75444ccc8a96d34d7945e963ac234ff72ae3da2de95"
+        "outputs_jcs_sha256": "a79578a1a32a20d56aeeee2738891ef1c3a52221c201edb2fd4150c7ef4d484a"
     }
 }

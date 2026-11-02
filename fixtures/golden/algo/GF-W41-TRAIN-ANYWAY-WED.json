@@ -1745,23 +1745,24 @@
                 {
                     "id": "opt:A:PUSH",
                     "label": "Session A + push add-on",
-                    "score": 0.7776,
-                    "dj": 0.5551,
+                    "score": 0.7405,
+                    "dj": 0.481,
                     "est_min": 90,
                     "addon": "PUSH",
                     "direct": {
-                        "chest": 2,
-                        "side_delts": 2
+                        "chest": 1,
+                        "side_delts": 1.5,
+                        "triceps": 1.5
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.1425,
+                            "weight": 0.129,
                             "params": {
-                                "after": "3.0926",
-                                "done": "1.6",
-                                "group": "side_delts",
+                                "after": "3.4632",
+                                "done": "2",
+                                "group": "triceps",
                                 "target": "6"
                             }
                         },
@@ -1779,7 +1780,7 @@
                             "weight": 0.1,
                             "params": {
                                 "family": "PUSH",
-                                "minutes": "12.3",
+                                "minutes": "12.2",
                                 "slot": "A"
                             }
                         }
@@ -1816,7 +1817,7 @@
                 }
             ],
             "week": {
-                "j": 5.056,
+                "j": 6.2337,
                 "recommended_n": 4,
                 "visits": {
                     "done": 2,
@@ -1825,7 +1826,7 @@
                     "max": 4
                 },
                 "band": {
-                    "j_star": 5.056,
+                    "j_star": 6.2337,
                     "in_band": 1,
                     "tie_key_used": "only"
                 },
@@ -1860,7 +1861,7 @@
                                 "kind": "done_general",
                                 "label": "Legs + push + rear delts",
                                 "start": "2026-10-07T17:45:00Z",
-                                "est_min": 49,
+                                "est_min": 74,
                                 "write_policy": "never"
                             }
                         ]
@@ -1883,7 +1884,7 @@
                                 "type": "PUSH",
                                 "label": "Push add-on",
                                 "start": "2026-10-08T18:36:00Z",
-                                "est_min": 12.3,
+                                "est_min": 12.2,
                                 "write_policy": "in_parent_description"
                             }
                         ]
@@ -1935,6 +1936,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "6ed4d8f262de45a1edefeb58e745c2b39c193733938fa5fcc5f1fc8e20e530d3"
+        "outputs_jcs_sha256": "5bed076b885a3fa58679c73b745b3e8d68b552c8a2ca8baeda78158fadb26bbe"
     }
 }

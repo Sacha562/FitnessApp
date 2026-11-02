@@ -1724,7 +1724,7 @@
     "params": "default-1.0.3",
     "expected": {
         "outputs": {
-            "j": 4.856,
+            "j": 6.0337,
             "recommended_n": 4,
             "visits": {
                 "done": 1,
@@ -1733,9 +1733,9 @@
                 "max": 4
             },
             "band": {
-                "j_star": 4.856,
+                "j_star": 6.0337,
                 "in_band": 2,
-                "tie_key_used": "higher_j"
+                "tie_key_used": "earlier_session"
             },
             "days": [
                 {
@@ -1769,17 +1769,17 @@
                             "type": "FULL",
                             "label": "Legs + push + rear delts",
                             "start": "2026-10-07T17:45:00Z",
-                            "est_min": 49.7,
+                            "est_min": 74.9,
                             "write_policy": "on_plan_it",
                             "direct": {
-                                "chest": 4.5,
-                                "side_delts": 2,
-                                "rear_delts": 1,
+                                "chest": 5,
+                                "side_delts": 3.5,
+                                "rear_delts": 3,
                                 "lower_back": 1,
                                 "abductors": 1,
-                                "quads": 2,
-                                "hamstrings": 2.5,
-                                "calves": 1
+                                "quads": 5,
+                                "hamstrings": 5,
+                                "calves": 1.5
                             }
                         }
                     ]
@@ -1802,11 +1802,12 @@
                             "type": "PUSH",
                             "label": "Push add-on",
                             "start": "2026-10-08T18:36:00Z",
-                            "est_min": 12.3,
+                            "est_min": 12.2,
                             "write_policy": "in_parent_description",
                             "direct": {
-                                "chest": 2,
-                                "side_delts": 2
+                                "chest": 1,
+                                "side_delts": 1.5,
+                                "triceps": 1.5
                             }
                         }
                     ]
@@ -1860,7 +1861,7 @@
             "terms": {
                 "addons": -0.1,
                 "consecutive": 0,
-                "freq": 0.3,
+                "freq": 0.6,
                 "low_g": 0,
                 "no_rest": 0,
                 "protect": 0,
@@ -1868,65 +1869,65 @@
                 "sessions": -0.2,
                 "skip": 0,
                 "stability": 0,
-                "utility": 4.856
+                "utility": 5.7337
             },
             "evaluated": 37,
             "k_max": 1,
             "top": [
                 {
-                    "j": 4.856,
+                    "j": 6.0337,
                     "choices": "2026-10-07/free=FULL 2026-10-08/addon=PUSH 2026-10-09/free=-"
                 },
                 {
-                    "j": 4.8116,
-                    "choices": "2026-10-07/free=PUSH+LEGS 2026-10-08/addon=PUSH 2026-10-09/free=-"
-                },
-                {
-                    "j": 4.77,
+                    "j": 6.025,
                     "choices": "2026-10-07/free=- 2026-10-08/addon=PUSH 2026-10-09/free=FULL"
                 },
                 {
-                    "j": 4.6234,
+                    "j": 5.6603,
                     "choices": "2026-10-07/free=- 2026-10-08/addon=PUSH 2026-10-09/free=PUSH+LEGS"
                 },
                 {
-                    "j": 4.5929,
-                    "choices": "2026-10-07/free=UPPER 2026-10-08/addon=LEGS 2026-10-09/free=-"
+                    "j": 5.6486,
+                    "choices": "2026-10-07/free=PUSH+LEGS 2026-10-08/addon=PUSH 2026-10-09/free=-"
                 },
                 {
-                    "j": 4.5851,
-                    "choices": "2026-10-07/free=- 2026-10-08/addon=LEGS 2026-10-09/free=UPPER"
+                    "j": 5.5527,
+                    "choices": "2026-10-07/free=FULL 2026-10-08/addon=- 2026-10-09/free=-"
                 },
                 {
-                    "j": 4.5523,
+                    "j": 5.5449,
+                    "choices": "2026-10-07/free=- 2026-10-08/addon=- 2026-10-09/free=FULL"
+                },
+                {
+                    "j": 5.2149,
                     "choices": "2026-10-07/free=PULL+LEGS 2026-10-08/addon=PUSH 2026-10-09/free=-"
                 },
                 {
-                    "j": 4.5444,
+                    "j": 5.207,
                     "choices": "2026-10-07/free=- 2026-10-08/addon=PUSH 2026-10-09/free=PULL+LEGS"
                 }
             ],
             "projected_end": {
-                "chest": 4.9856,
-                "front_delts": 2.5286,
-                "side_delts": 3.0926,
-                "rear_delts": 3.6026,
+                "chest": 4.679,
+                "front_delts": 2.3597,
+                "side_delts": 3.8564,
+                "rear_delts": 5.1077,
                 "lats": 11.3,
-                "upper_back": 2.749,
+                "upper_back": 3.4971,
                 "biceps": 6.425,
-                "triceps": 2.5396,
+                "triceps": 3.4632,
                 "forearms": 11.225,
                 "abs": 4.425,
                 "lower_back": 0.8,
-                "glutes": 0.73,
+                "glutes": 1.66,
                 "abductors": 0.8,
-                "adductors": 0.4,
-                "quads": 1.6,
-                "hamstrings": 2,
-                "calves": 0.8
+                "adductors": 1,
+                "quads": 4,
+                "hamstrings": 4,
+                "calves": 1.2
             },
             "warnings": []
         },
-        "outputs_jcs_sha256": "6d0927f44e9b6927ed27a26d0beb00f7cda8e165c75c2737ff28588b0f53d895"
+        "outputs_jcs_sha256": "d2e9851bfd0ff1938eb30a46d17e9c539e718bb93d19bbc6a219283cd394e5f9"
     }
 }

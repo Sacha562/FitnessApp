@@ -222,52 +222,55 @@
                     "calves": 4
                 },
                 "normal": {
-                    "chest": 8.5,
-                    "side_delts": 3.5,
-                    "rear_delts": 3.5,
-                    "lower_back": 1,
-                    "abductors": 1,
-                    "quads": 2.5,
-                    "hamstrings": 4,
-                    "calves": 1
+                    "chest": 10,
+                    "side_delts": 7,
+                    "rear_delts": 6,
+                    "triceps": 3,
+                    "lower_back": 3,
+                    "abductors": 2,
+                    "quads": 7,
+                    "hamstrings": 9,
+                    "calves": 3
                 },
                 "direct": {
-                    "chest": 4.5,
-                    "side_delts": 2,
-                    "rear_delts": 2,
-                    "lower_back": 1,
+                    "chest": 5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
+                    "triceps": 1.5,
+                    "lower_back": 1.5,
                     "abductors": 1,
-                    "quads": 1.5,
-                    "hamstrings": 2,
-                    "calves": 1
+                    "quads": 3.5,
+                    "hamstrings": 4.5,
+                    "calves": 1.5
                 },
                 "credit": {
-                    "chest": 4.5,
-                    "front_delts": 2.25,
-                    "side_delts": 2,
-                    "rear_delts": 2,
-                    "upper_back": 1,
-                    "triceps": 2.25,
-                    "lower_back": 1,
-                    "glutes": 0.705,
+                    "chest": 5,
+                    "front_delts": 2.5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
+                    "upper_back": 1.5,
+                    "triceps": 4,
+                    "lower_back": 1.5,
+                    "glutes": 1.6175,
                     "abductors": 1,
-                    "adductors": 0.375,
-                    "quads": 1.5,
-                    "hamstrings": 2,
-                    "calves": 1
+                    "adductors": 0.875,
+                    "quads": 3.5,
+                    "hamstrings": 4.5,
+                    "calves": 1.5
                 },
                 "rir_target": {
                     "chest": 4,
                     "side_delts": 4,
                     "rear_delts": 4,
+                    "triceps": 4,
                     "lower_back": 4,
                     "abductors": 4,
                     "quads": 4,
                     "hamstrings": 4,
                     "calves": 4
                 },
-                "est_min": 49.5,
-                "normal_min": 73.9,
+                "est_min": 73.9,
+                "normal_min": 134,
                 "predicted_tags": [],
                 "dropped": [
                     {
@@ -301,55 +304,52 @@
                     {
                         "group": "glutes",
                         "reason": "TIME_SHORT"
-                    },
-                    {
-                        "group": "triceps",
-                        "reason": "TIME_SHORT"
                     }
                 ],
                 "vhyp": {
-                    "chest": 3.6,
-                    "front_delts": 1.8,
-                    "side_delts": 1.6,
-                    "rear_delts": 1.4306,
-                    "upper_back": 0.7424,
-                    "triceps": 1.8,
-                    "lower_back": 0.8,
-                    "glutes": 0.5476,
+                    "chest": 4,
+                    "front_delts": 2,
+                    "side_delts": 2.8,
+                    "rear_delts": 2.1458,
+                    "upper_back": 1.1135,
+                    "triceps": 3.2,
+                    "lower_back": 1.2,
+                    "glutes": 1.2565,
                     "abductors": 0.8,
-                    "adductors": 0.293,
-                    "quads": 1.1162,
-                    "hamstrings": 1.4777,
-                    "calves": 0.8
+                    "adductors": 0.6837,
+                    "quads": 2.6044,
+                    "hamstrings": 3.3248,
+                    "calves": 1.2
                 },
                 "dose": {
-                    "t": "2026-10-09T18:34:28Z",
+                    "t": "2026-10-09T18:58:52.500Z",
                     "fat": {
-                        "chest": 5.4,
-                        "front_delts": 2.7,
-                        "side_delts": 2.4,
-                        "rear_delts": 2.4,
-                        "upper_back": 1.2,
-                        "triceps": 2.7,
-                        "lower_back": 1.2,
-                        "glutes": 0.846,
+                        "chest": 6,
+                        "front_delts": 3,
+                        "side_delts": 4.2,
+                        "rear_delts": 3.6,
+                        "upper_back": 1.8,
+                        "triceps": 4.8,
+                        "lower_back": 1.8,
+                        "glutes": 1.941,
                         "abductors": 1.2,
-                        "adductors": 0.45,
-                        "quads": 1.8,
-                        "hamstrings": 2.4,
-                        "calves": 1.2
+                        "adductors": 1.05,
+                        "quads": 4.2,
+                        "hamstrings": 5.4,
+                        "calves": 1.8
                     },
                     "tissue": {
+                        "elbow_lateral": 0.12,
                         "hip": 0.08,
-                        "knee": 0.76,
-                        "lumbar": 0.4,
-                        "shoulder_ant": 0.36,
-                        "shoulder_overhead": 0.16
+                        "knee": 1.76,
+                        "lumbar": 0.6,
+                        "shoulder_ant": 0.4,
+                        "shoulder_overhead": 0.28
                     },
-                    "sys": 0.5533
+                    "sys": 0.9067
                 }
             }
         },
-        "outputs_jcs_sha256": "ecc679495869b8bd3f04c550aa4cf19b6ad374a7000872e0c5b1b6a7347c7f46"
+        "outputs_jcs_sha256": "d2cf1c7e124e6b9fdeb033ef950f1c4bc1eace6587a33a6b1f075b50263e7d29"
     }
 }

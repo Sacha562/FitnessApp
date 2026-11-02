@@ -4586,10 +4586,10 @@
                     "calves": 4
                 },
                 "normal": {
-                    "abductors": 1,
-                    "quads": 4,
-                    "hamstrings": 5.5,
-                    "calves": 1
+                    "abductors": 2,
+                    "quads": 9,
+                    "hamstrings": 10,
+                    "calves": 2
                 },
                 "direct": {
                     "quads": 2,
@@ -4606,7 +4606,7 @@
                     "hamstrings": 4
                 },
                 "est_min": 13.8,
-                "normal_min": 32.5,
+                "normal_min": 62.8,
                 "predicted_tags": [],
                 "dropped": [
                     {
@@ -4703,6 +4703,6 @@
                 }
             ]
         },
-        "outputs_jcs_sha256": "e7286bdee6b60fc216245c9eead3f42be7418deccdf9d846a1b2429432822b10"
+        "outputs_jcs_sha256": "8e08c55bb887c11ab3e056157e6fd92644e5979508402483ac8fbcf368d38953"
     }
 }

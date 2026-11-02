@@ -86,8 +86,9 @@ class AllocatorTest {
     @Test
     fun `Thursday legs add-on of 21_8`() {
         val a = alloc(SessionType.LEGS, budget = 34.0, addOn = W41Support.legsAddOnSlot())
-        a.normal shouldBe mapOf("abductors" to 1.0, "calves" to 1.0, "hamstrings" to 5.5, "quads" to 4.0)
-        a.normalMinutes shouldBe 32.5
+        // D79: the time fit prices the sets done (after the deload), so `normal` keeps more; the 4-set cap binds.
+        a.normal shouldBe mapOf("abductors" to 2.0, "calves" to 2.0, "hamstrings" to 10.0, "quads" to 9.0)
+        a.normalMinutes shouldBe 62.8
         a.direct shouldBe mapOf("hamstrings" to 2.0, "quads" to 2.0) // deload 0.5, then the 4-set cap
         a.credit shouldBe mapOf("adductors" to 0.5, "glutes" to 0.83, "hamstrings" to 2.0, "quads" to 2.0)
         a.estMinutes shouldBe 13.8
@@ -105,15 +106,22 @@ class AllocatorTest {
             "abductors" to 4.0, "adductors" to 4.0, "calves" to 4.0, "chest" to 10.0, "front_delts" to 4.0, "glutes" to 10.0, "hamstrings" to 10.0,
             "lower_back" to 4.0, "quads" to 10.0, "rear_delts" to 10.0, "side_delts" to 10.0, "triceps" to 10.0,
         )
-        a.normal shouldBe mapOf("abductors" to 1.0, "calves" to 1.0, "chest" to 8.5, "hamstrings" to 3.0, "lower_back" to 1.0, "quads" to 2.5, "rear_delts" to 5.0, "side_delts" to 3.5)
-        a.normalMinutes shouldBe 74.8
-        // deload + re-entry: x 0.5, at least one set (deloadMinOneSet: calves 1 stays 1)
-        a.direct shouldBe mapOf("abductors" to 1.0, "calves" to 1.0, "chest" to 4.5, "hamstrings" to 1.5, "lower_back" to 1.0, "quads" to 1.5, "rear_delts" to 2.5, "side_delts" to 2.0)
-        a.estMinutes shouldBe 49.6
-        a.credit["front_delts"] shouldBe 2.25
-        a.credit["triceps"] shouldBe 2.25
-        a.credit["upper_back"] shouldBe 1.25
-        a.vhyp["chest"] shouldBe 3.6
+        // D79: the 75-min time fit prices the sets done after the deload, so the session uses its time.
+        a.normal shouldBe mapOf(
+            "abductors" to 2.0, "calves" to 3.0, "chest" to 10.0, "hamstrings" to 9.0, "lower_back" to 3.0, "quads" to 7.0, "rear_delts" to 6.0,
+            "side_delts" to 7.0, "triceps" to 3.0,
+        )
+        a.normalMinutes shouldBe 134.0
+        // deload + re-entry: x 0.5, at least one set (deloadMinOneSet: abductors 2 gives 1)
+        a.direct shouldBe mapOf(
+            "abductors" to 1.0, "calves" to 1.5, "chest" to 5.0, "hamstrings" to 4.5, "lower_back" to 1.5, "quads" to 3.5, "rear_delts" to 3.0,
+            "side_delts" to 3.5, "triceps" to 1.5,
+        )
+        a.estMinutes shouldBe 73.9
+        a.credit["front_delts"] shouldBe 2.5
+        a.credit["triceps"] shouldBe 4.0
+        a.credit["upper_back"] shouldBe 1.5
+        a.vhyp["chest"] shouldBe 4.0
         a.predictedTags shouldBe emptyList()
         a.label shouldBe "Legs + push + rear delts"
         a.dropped shouldContain Dropped("upper_back", "NO_ELIGIBLE_EXERCISE")
@@ -124,11 +132,30 @@ class AllocatorTest {
     fun `Wednesday train-anyway FULL of 21_8`() {
         val wedR = mapOf("lats" to 0.73, "biceps" to 0.88, "forearms" to 0.63, "rear_delts" to 0.89, "upper_back" to 0.87, "abs" to 0.86)
         val a = alloc(readiness = wedR, budget = 75.0, available = W41Support.gapDayAvailable, tags = W41Support.gapDayTags)
-        a.normal shouldBe mapOf("abductors" to 1.0, "calves" to 1.0, "chest" to 8.0, "hamstrings" to 4.0, "lower_back" to 1.0, "quads" to 3.5, "rear_delts" to 3.0, "side_delts" to 3.5)
-        a.normalMinutes shouldBe 74.6
-        // deloadReentryNoStack: quads 3.5 -> round_half(1.75) = 2.0
-        a.direct shouldBe mapOf("abductors" to 1.0, "calves" to 1.0, "chest" to 4.0, "hamstrings" to 2.0, "lower_back" to 1.0, "quads" to 2.0, "rear_delts" to 1.5, "side_delts" to 2.0)
-        a.estMinutes shouldBe 48.6
+        // D79: the time fit prices the sets done after the deload.
+        a.normal shouldBe mapOf(
+            "abductors" to 2.0, "calves" to 3.0, "chest" to 10.0, "hamstrings" to 10.0, "lower_back" to 2.0, "quads" to 10.0, "rear_delts" to 6.0,
+            "side_delts" to 7.0,
+        )
+        a.normalMinutes shouldBe 136.9
+        // deloadReentryNoStack: x 0.5 once, at least one set
+        a.direct shouldBe mapOf(
+            "abductors" to 1.0, "calves" to 1.5, "chest" to 5.0, "hamstrings" to 5.0, "lower_back" to 1.0, "quads" to 5.0, "rear_delts" to 3.0,
+            "side_delts" to 3.5,
+        )
+        a.estMinutes shouldBe 74.9
+    }
+
+    @Test
+    fun `the time fit prices the sets done, after the transform (D79)`() {
+        // Uncut, then at a budget equal to the uncut allocation's own estimate (the sets done, warm-up included): nothing
+        // may be cut, even though `normal` (before the transform) would take longer.
+        val wedR = mapOf("lats" to 0.73, "biceps" to 0.88, "forearms" to 0.63, "rear_delts" to 0.89, "upper_back" to 0.87, "abs" to 0.86)
+        val free = alloc(readiness = wedR, available = W41Support.gapDayAvailable, tags = W41Support.gapDayTags)
+        (free.normalMinutes > free.estMinutes) shouldBe true
+        val fit = alloc(readiness = wedR, budget = free.estMinutes, available = W41Support.gapDayAvailable, tags = W41Support.gapDayTags)
+        fit.direct shouldBe free.direct
+        fit.estMinutes shouldBeLessThanOrEqual free.estMinutes
     }
 
     @Test

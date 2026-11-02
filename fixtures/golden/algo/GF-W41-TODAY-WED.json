@@ -1733,27 +1733,27 @@
                 {
                     "id": "opt:FULL",
                     "label": "Legs + push + rear delts",
-                    "score": 0.5431,
-                    "dj": 0.0861,
-                    "est_min": 49.7,
+                    "score": 0.5044,
+                    "dj": 0.0088,
+                    "est_min": 74.9,
                     "addon": "PUSH",
                     "direct": {
-                        "chest": 4.5,
-                        "side_delts": 2,
-                        "rear_delts": 1,
+                        "chest": 5,
+                        "side_delts": 3.5,
+                        "rear_delts": 3,
                         "lower_back": 1,
                         "abductors": 1,
-                        "quads": 2,
-                        "hamstrings": 2.5,
-                        "calves": 1
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 1.5
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.5477,
+                            "weight": 0.5774,
                             "params": {
-                                "after": "3.6",
+                                "after": "4",
                                 "done": "0",
                                 "group": "chest",
                                 "target": "6"
@@ -1784,66 +1784,19 @@
                 {
                     "id": "opt:PUSH+LEGS",
                     "label": "Legs + push",
-                    "score": 0.5209,
-                    "dj": 0.0417,
-                    "est_min": 48.4,
+                    "score": 0.3118,
+                    "dj": -0.3763,
+                    "est_min": 74.8,
                     "addon": "PUSH",
-                    "direct": {
-                        "chest": 4.5,
-                        "side_delts": 2,
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 2,
-                        "hamstrings": 3,
-                        "calves": 1
-                    },
-                    "reasons": [
-                        {
-                            "code": "VOLUME_DEFICIT",
-                            "class": 3,
-                            "weight": 0.5477,
-                            "params": {
-                                "after": "3.6",
-                                "done": "0",
-                                "group": "chest",
-                                "target": "6"
-                            }
-                        },
-                        {
-                            "code": "DELOAD_WEEK",
-                            "class": 1,
-                            "weight": 0.5,
-                            "params": {
-                                "source": "challenge"
-                            }
-                        },
-                        {
-                            "code": "PROTECT_REST",
-                            "class": 1,
-                            "weight": 0.4,
-                            "params": {
-                                "family": "PULL",
-                                "groups": "lats,biceps,forearms",
-                                "slot": "A",
-                                "when": "2026-10-08T17:45:00Z",
-                                "window_id": "pw.beforeA"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "id": "opt:UPPER",
-                    "label": "Push + rear delts",
-                    "score": 0.4115,
-                    "dj": -0.177,
-                    "est_min": 45.8,
-                    "addon": "LEGS",
                     "direct": {
                         "chest": 5,
                         "side_delts": 3.5,
-                        "rear_delts": 3,
-                        "triceps": 1,
-                        "lower_back": 1.5
+                        "triceps": 2,
+                        "lower_back": 1.5,
+                        "abductors": 1.5,
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 1.5
                     },
                     "reasons": [
                         {
@@ -1882,27 +1835,29 @@
                 {
                     "id": "opt:PULL+LEGS",
                     "label": "Legs + rear delts",
-                    "score": 0.3911,
-                    "dj": -0.2177,
-                    "est_min": 45.5,
+                    "score": 0.0949,
+                    "dj": -0.8101,
+                    "est_min": 72.4,
                     "addon": "PUSH",
                     "direct": {
                         "rear_delts": 3,
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 3,
-                        "hamstrings": 4,
-                        "calves": 1
+                        "lower_back": 2,
+                        "glutes": 3,
+                        "abductors": 2,
+                        "adductors": 1,
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.5164,
+                            "weight": 0.5817,
                             "params": {
-                                "after": "3.2",
+                                "after": "4.06",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "glutes",
                                 "target": "6"
                             }
                         },
@@ -1929,17 +1884,18 @@
                     ]
                 },
                 {
-                    "id": "opt:PUSH",
-                    "label": "Push",
-                    "score": 0.211,
-                    "dj": -0.5781,
-                    "est_min": 44.4,
+                    "id": "opt:UPPER",
+                    "label": "Push + rear delts",
+                    "score": -0.107,
+                    "dj": -1.2141,
+                    "est_min": 53.6,
                     "addon": "LEGS",
                     "direct": {
                         "chest": 5,
                         "side_delts": 5,
-                        "triceps": 2,
-                        "lower_back": 1.5
+                        "rear_delts": 3,
+                        "triceps": 2.5,
+                        "lower_back": 2
                     },
                     "reasons": [
                         {
@@ -1978,16 +1934,65 @@
                 {
                     "id": "opt:LEGS",
                     "label": "Legs",
-                    "score": 0.2077,
-                    "dj": -0.5846,
-                    "est_min": 43.7,
+                    "score": -0.1851,
+                    "dj": -1.3701,
+                    "est_min": 65.4,
                     "addon": "PUSH",
                     "direct": {
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 4,
+                        "lower_back": 2,
+                        "glutes": 3,
+                        "abductors": 2,
+                        "adductors": 1,
+                        "quads": 5,
                         "hamstrings": 5,
-                        "calves": 1
+                        "calves": 2
+                    },
+                    "reasons": [
+                        {
+                            "code": "VOLUME_DEFICIT",
+                            "class": 3,
+                            "weight": 0.5817,
+                            "params": {
+                                "after": "4.06",
+                                "done": "0",
+                                "group": "glutes",
+                                "target": "6"
+                            }
+                        },
+                        {
+                            "code": "DELOAD_WEEK",
+                            "class": 1,
+                            "weight": 0.5,
+                            "params": {
+                                "source": "challenge"
+                            }
+                        },
+                        {
+                            "code": "PROTECT_REST",
+                            "class": 1,
+                            "weight": 0.4,
+                            "params": {
+                                "family": "PULL",
+                                "groups": "lats,biceps,forearms",
+                                "slot": "A",
+                                "when": "2026-10-08T17:45:00Z",
+                                "window_id": "pw.beforeA"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "opt:PUSH",
+                    "label": "Push",
+                    "score": -0.3871,
+                    "dj": -1.7741,
+                    "est_min": 46.6,
+                    "addon": "LEGS",
+                    "direct": {
+                        "chest": 5,
+                        "side_delts": 5,
+                        "triceps": 2.5,
+                        "lower_back": 2
                     },
                     "reasons": [
                         {
@@ -1997,7 +2002,7 @@
                             "params": {
                                 "after": "4",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "chest",
                                 "target": "6"
                             }
                         },
@@ -2026,10 +2031,10 @@
                 {
                     "id": "opt:PULL",
                     "label": "Rear delts",
-                    "score": -0.4338,
-                    "dj": -1.8677,
+                    "score": -1.0956,
+                    "dj": -3.1911,
                     "est_min": 24.3,
-                    "addon": "PUSH",
+                    "addon": "LEGS",
                     "direct": {
                         "rear_delts": 3,
                         "lower_back": 2
@@ -2085,7 +2090,7 @@
                 }
             ],
             "week": {
-                "j": 4.856,
+                "j": 6.0337,
                 "recommended_n": 4,
                 "visits": {
                     "done": 1,
@@ -2094,9 +2099,9 @@
                     "max": 4
                 },
                 "band": {
-                    "j_star": 4.856,
+                    "j_star": 6.0337,
                     "in_band": 2,
-                    "tie_key_used": "higher_j"
+                    "tie_key_used": "earlier_session"
                 },
                 "days": [
                     {
@@ -2130,7 +2135,7 @@
                                 "type": "FULL",
                                 "label": "Legs + push + rear delts",
                                 "start": "2026-10-07T17:45:00Z",
-                                "est_min": 49.7,
+                                "est_min": 74.9,
                                 "write_policy": "on_plan_it"
                             }
                         ]
@@ -2153,7 +2158,7 @@
                                 "type": "PUSH",
                                 "label": "Push add-on",
                                 "start": "2026-10-08T18:36:00Z",
-                                "est_min": 12.3,
+                                "est_min": 12.2,
                                 "write_policy": "in_parent_description"
                             }
                         ]
@@ -2205,6 +2210,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "f423cf5711fc3da50623b74ced5459d4d8c238c97feebe53f715d31b5fcfce02"
+        "outputs_jcs_sha256": "588d47032357961236f0e4d547839ee932b47443ea2d3a58cf8b2db064136f8f"
     }
 }

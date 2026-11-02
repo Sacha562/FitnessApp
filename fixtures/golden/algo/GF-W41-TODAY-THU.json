@@ -1738,13 +1738,14 @@
                 {
                     "id": "opt:A:PUSH",
                     "label": "Session A + push add-on",
-                    "score": 0.7361,
-                    "dj": 0.4721,
+                    "score": 0.74,
+                    "dj": 0.4801,
                     "est_min": 90,
                     "addon": "PUSH",
                     "direct": {
-                        "chest": 2,
-                        "side_delts": 2
+                        "chest": 1,
+                        "side_delts": 1.5,
+                        "triceps": 1.5
                     },
                     "later": [
                         "FULL"
@@ -1757,7 +1758,7 @@
                             "params": {
                                 "after": "1.6",
                                 "done": "0",
-                                "group": "side_delts",
+                                "group": "triceps",
                                 "target": "6"
                             }
                         },
@@ -1775,8 +1776,29 @@
                             "weight": 0.1,
                             "params": {
                                 "family": "PUSH",
-                                "minutes": "12.3",
+                                "minutes": "12.2",
                                 "slot": "A"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "opt:A:none",
+                    "label": "Session A",
+                    "score": 0.5,
+                    "dj": 0,
+                    "est_min": 90,
+                    "direct": {},
+                    "later": [
+                        "FULL"
+                    ],
+                    "reasons": [
+                        {
+                            "code": "DELOAD_WEEK",
+                            "class": 1,
+                            "weight": 0.5,
+                            "params": {
+                                "source": "challenge"
                             }
                         }
                     ]
@@ -1784,8 +1806,8 @@
                 {
                     "id": "opt:A:LEGS",
                     "label": "Session A + legs add-on",
-                    "score": 0.6436,
-                    "dj": 0.2872,
+                    "score": 0.1291,
+                    "dj": -0.7418,
                     "est_min": 90,
                     "addon": "LEGS",
                     "direct": {
@@ -1826,27 +1848,6 @@
                             }
                         }
                     ]
-                },
-                {
-                    "id": "opt:A:none",
-                    "label": "Session A",
-                    "score": 0.5,
-                    "dj": 0,
-                    "est_min": 90,
-                    "direct": {},
-                    "later": [
-                        "FULL"
-                    ],
-                    "reasons": [
-                        {
-                            "code": "DELOAD_WEEK",
-                            "class": 1,
-                            "weight": 0.5,
-                            "params": {
-                                "source": "challenge"
-                            }
-                        }
-                    ]
                 }
             ],
             "rest_reasons": [],
@@ -1857,7 +1858,7 @@
                 }
             ],
             "week": {
-                "j": 4.77,
+                "j": 6.025,
                 "recommended_n": 4,
                 "visits": {
                     "done": 1,
@@ -1866,7 +1867,7 @@
                     "max": 4
                 },
                 "band": {
-                    "j_star": 4.77,
+                    "j_star": 6.025,
                     "in_band": 1,
                     "tie_key_used": "only"
                 },
@@ -1919,7 +1920,7 @@
                                 "type": "PUSH",
                                 "label": "Push add-on",
                                 "start": "2026-10-08T18:36:00Z",
-                                "est_min": 12.3,
+                                "est_min": 12.2,
                                 "write_policy": "in_parent_description"
                             }
                         ]
@@ -1933,7 +1934,7 @@
                                 "type": "FULL",
                                 "label": "Legs + push + rear delts",
                                 "start": "2026-10-09T17:45:00Z",
-                                "est_min": 47.1,
+                                "est_min": 74.9,
                                 "write_policy": "on_plan_it"
                             }
                         ]
@@ -1967,6 +1968,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "54cfa3f7f758e66db0acb678c051166143fe5af52ce36eed8687a4988cfad0cb"
+        "outputs_jcs_sha256": "61a367b666d7a7295f26760f153232988ea277250e921ecf71cd2a2f783c1138"
     }
 }

@@ -1741,28 +1741,28 @@
                 {
                     "id": "opt:FULL",
                     "label": "Legs + push + rear delts",
-                    "score": 1.7234,
-                    "dj": 2.4469,
-                    "est_min": 47.1,
+                    "score": 2.3981,
+                    "dj": 3.7962,
+                    "est_min": 74.9,
                     "direct": {
-                        "chest": 3.5,
-                        "side_delts": 1,
-                        "rear_delts": 1.5,
+                        "chest": 5,
+                        "side_delts": 3.5,
+                        "rear_delts": 3,
                         "lower_back": 1,
                         "abductors": 1,
-                        "quads": 2,
-                        "hamstrings": 3,
-                        "calves": 1
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 1.5
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.4472,
+                            "weight": 0.5774,
                             "params": {
-                                "after": "2.4",
+                                "after": "4",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "quads",
                                 "target": "6"
                             }
                         },
@@ -1788,27 +1788,28 @@
                 {
                     "id": "opt:PUSH+LEGS",
                     "label": "Legs + push",
-                    "score": 1.6502,
-                    "dj": 2.3003,
-                    "est_min": 46.7,
+                    "score": 2.2157,
+                    "dj": 3.4315,
+                    "est_min": 74.5,
                     "direct": {
-                        "chest": 3.5,
-                        "side_delts": 1,
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 3,
-                        "hamstrings": 3,
-                        "calves": 1
+                        "chest": 5,
+                        "side_delts": 3.5,
+                        "lower_back": 2,
+                        "abductors": 1.5,
+                        "adductors": 1,
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.4472,
+                            "weight": 0.5774,
                             "params": {
-                                "after": "2.4",
+                                "after": "4",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "quads",
                                 "target": "6"
                             }
                         },
@@ -1834,26 +1835,28 @@
                 {
                     "id": "opt:PULL+LEGS",
                     "label": "Legs + rear delts",
-                    "score": 1.6106,
-                    "dj": 2.2213,
-                    "est_min": 45.5,
+                    "score": 1.9891,
+                    "dj": 2.9782,
+                    "est_min": 72.4,
                     "direct": {
                         "rear_delts": 3,
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 3,
-                        "hamstrings": 4,
-                        "calves": 1
+                        "lower_back": 2,
+                        "glutes": 3,
+                        "abductors": 2,
+                        "adductors": 1,
+                        "quads": 5,
+                        "hamstrings": 5,
+                        "calves": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.5164,
+                            "weight": 0.5817,
                             "params": {
-                                "after": "3.2",
+                                "after": "4.06",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "glutes",
                                 "target": "6"
                             }
                         },
@@ -1879,25 +1882,27 @@
                 {
                     "id": "opt:LEGS",
                     "label": "Legs",
-                    "score": 1.4311,
-                    "dj": 1.8622,
-                    "est_min": 43.7,
+                    "score": 1.713,
+                    "dj": 2.426,
+                    "est_min": 65.4,
                     "direct": {
-                        "lower_back": 1,
-                        "abductors": 1,
-                        "quads": 4,
+                        "lower_back": 2,
+                        "glutes": 3,
+                        "abductors": 2,
+                        "adductors": 1,
+                        "quads": 5,
                         "hamstrings": 5,
-                        "calves": 1
+                        "calves": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.5774,
+                            "weight": 0.5817,
                             "params": {
-                                "after": "4",
+                                "after": "4.06",
                                 "done": "0",
-                                "group": "hamstrings",
+                                "group": "glutes",
                                 "target": "6"
                             }
                         },
@@ -1923,24 +1928,24 @@
                 {
                     "id": "opt:UPPER",
                     "label": "Push + rear delts",
-                    "score": 1.3919,
-                    "dj": 1.7838,
-                    "est_min": 45.8,
+                    "score": 1.5114,
+                    "dj": 2.0228,
+                    "est_min": 53.6,
                     "direct": {
                         "chest": 5,
-                        "side_delts": 3.5,
+                        "side_delts": 5,
                         "rear_delts": 3,
-                        "triceps": 1,
-                        "lower_back": 1.5
+                        "triceps": 2.5,
+                        "lower_back": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.3027,
+                            "weight": 0.366,
                             "params": {
-                                "after": "5.3518",
-                                "done": "1.6",
+                                "after": "4.6758",
+                                "done": "0.8",
                                 "group": "chest",
                                 "target": "6"
                             }
@@ -1967,24 +1972,24 @@
                 {
                     "id": "opt:PUSH",
                     "label": "Push",
-                    "score": 1.1957,
-                    "dj": 1.3914,
-                    "est_min": 45.5,
+                    "score": 1.2353,
+                    "dj": 1.4707,
+                    "est_min": 46.6,
                     "direct": {
                         "chest": 5,
                         "side_delts": 5,
-                        "triceps": 2,
+                        "triceps": 2.5,
                         "lower_back": 2
                     },
                     "reasons": [
                         {
                             "code": "VOLUME_DEFICIT",
                             "class": 3,
-                            "weight": 0.3385,
+                            "weight": 0.366,
                             "params": {
-                                "after": "4.2731",
+                                "after": "4.6758",
                                 "done": "0.8",
-                                "group": "triceps",
+                                "group": "chest",
                                 "target": "6"
                             }
                         },
@@ -2061,7 +2066,7 @@
                 }
             ],
             "week": {
-                "j": 4.87,
+                "j": 6.125,
                 "recommended_n": 4,
                 "visits": {
                     "done": 2,
@@ -2070,7 +2075,7 @@
                     "max": 4
                 },
                 "band": {
-                    "j_star": 4.87,
+                    "j_star": 6.125,
                     "in_band": 1,
                     "tie_key_used": "only"
                 },
@@ -2135,7 +2140,7 @@
                                 "type": "FULL",
                                 "label": "Legs + push + rear delts",
                                 "start": "2026-10-09T17:45:00Z",
-                                "est_min": 47.1,
+                                "est_min": 74.9,
                                 "write_policy": "on_plan_it"
                             }
                         ]
@@ -2169,6 +2174,6 @@
                 ]
             }
         },
-        "outputs_jcs_sha256": "50e6099b1112dd017af4c882fa2b6cc347a790cfb6a2ccdac1489aa818c96c8b"
+        "outputs_jcs_sha256": "7625131764e07082846132d2a28e91e588925ec6381c9aa430383bf1a5667fed"
     }
 }

@@ -6392,52 +6392,55 @@
                     "calves": 4
                 },
                 "normal": {
-                    "chest": 8.5,
-                    "side_delts": 3.5,
-                    "rear_delts": 3.5,
-                    "lower_back": 1,
-                    "abductors": 1,
-                    "quads": 2.5,
-                    "hamstrings": 4,
-                    "calves": 1
+                    "chest": 10,
+                    "side_delts": 7,
+                    "rear_delts": 6,
+                    "triceps": 3,
+                    "lower_back": 3,
+                    "abductors": 2,
+                    "quads": 7,
+                    "hamstrings": 9,
+                    "calves": 3
                 },
                 "direct": {
-                    "chest": 4.5,
-                    "side_delts": 2,
-                    "rear_delts": 2,
-                    "lower_back": 1,
+                    "chest": 5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
+                    "triceps": 1.5,
+                    "lower_back": 1.5,
                     "abductors": 1,
-                    "quads": 1.5,
-                    "hamstrings": 2,
-                    "calves": 1
+                    "quads": 3.5,
+                    "hamstrings": 4.5,
+                    "calves": 1.5
                 },
                 "credit": {
-                    "chest": 4.5,
-                    "front_delts": 2.25,
-                    "side_delts": 2,
-                    "rear_delts": 2,
-                    "upper_back": 1,
-                    "triceps": 2.25,
-                    "lower_back": 1,
-                    "glutes": 0.705,
+                    "chest": 5,
+                    "front_delts": 2.5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
+                    "upper_back": 1.5,
+                    "triceps": 4,
+                    "lower_back": 1.5,
+                    "glutes": 1.6175,
                     "abductors": 1,
-                    "adductors": 0.375,
-                    "quads": 1.5,
-                    "hamstrings": 2,
-                    "calves": 1
+                    "adductors": 0.875,
+                    "quads": 3.5,
+                    "hamstrings": 4.5,
+                    "calves": 1.5
                 },
                 "rir_target": {
                     "chest": 4,
                     "side_delts": 4,
                     "rear_delts": 4,
+                    "triceps": 4,
                     "lower_back": 4,
                     "abductors": 4,
                     "quads": 4,
                     "hamstrings": 4,
                     "calves": 4
                 },
-                "est_min": 49.5,
-                "normal_min": 73.9,
+                "est_min": 73.9,
+                "normal_min": 134,
                 "predicted_tags": [],
                 "dropped": [
                     {
@@ -6471,52 +6474,49 @@
                     {
                         "group": "glutes",
                         "reason": "TIME_SHORT"
-                    },
-                    {
-                        "group": "triceps",
-                        "reason": "TIME_SHORT"
                     }
                 ],
                 "vhyp": {
-                    "chest": 3.6,
-                    "front_delts": 1.8,
-                    "side_delts": 1.6,
-                    "rear_delts": 1.4306,
-                    "upper_back": 0.7424,
-                    "triceps": 1.8,
-                    "lower_back": 0.8,
-                    "glutes": 0.5476,
+                    "chest": 4,
+                    "front_delts": 2,
+                    "side_delts": 2.8,
+                    "rear_delts": 2.1458,
+                    "upper_back": 1.1135,
+                    "triceps": 3.2,
+                    "lower_back": 1.2,
+                    "glutes": 1.2565,
                     "abductors": 0.8,
-                    "adductors": 0.293,
-                    "quads": 1.1162,
-                    "hamstrings": 1.4777,
-                    "calves": 0.8
+                    "adductors": 0.6837,
+                    "quads": 2.6044,
+                    "hamstrings": 3.3248,
+                    "calves": 1.2
                 },
                 "dose": {
-                    "t": "2026-10-09T18:34:28Z",
+                    "t": "2026-10-09T18:58:52.500Z",
                     "fat": {
-                        "chest": 5.4,
-                        "front_delts": 2.7,
-                        "side_delts": 2.4,
-                        "rear_delts": 2.4,
-                        "upper_back": 1.2,
-                        "triceps": 2.7,
-                        "lower_back": 1.2,
-                        "glutes": 0.846,
+                        "chest": 6,
+                        "front_delts": 3,
+                        "side_delts": 4.2,
+                        "rear_delts": 3.6,
+                        "upper_back": 1.8,
+                        "triceps": 4.8,
+                        "lower_back": 1.8,
+                        "glutes": 1.941,
                         "abductors": 1.2,
-                        "adductors": 0.45,
-                        "quads": 1.8,
-                        "hamstrings": 2.4,
-                        "calves": 1.2
+                        "adductors": 1.05,
+                        "quads": 4.2,
+                        "hamstrings": 5.4,
+                        "calves": 1.8
                     },
                     "tissue": {
+                        "elbow_lateral": 0.12,
                         "hip": 0.08,
-                        "knee": 0.76,
-                        "lumbar": 0.4,
-                        "shoulder_ant": 0.36,
-                        "shoulder_overhead": 0.16
+                        "knee": 1.76,
+                        "lumbar": 0.6,
+                        "shoulder_ant": 0.4,
+                        "shoulder_overhead": 0.28
                     },
-                    "sys": 0.5533
+                    "sys": 0.9067
                 }
             },
             "budget_min": 62,
@@ -6531,41 +6531,40 @@
             ],
             "exercises": [
                 {
+                    "exercise": "single_leg_rdl_db",
+                    "sets": 2,
+                    "est_s": 415,
+                    "b": 2.9816
+                },
+                {
+                    "exercise": "dip_neutral",
+                    "sets": 2,
+                    "est_s": 270,
+                    "b": 4.0428
+                },
+                {
                     "exercise": "good_morning_smith",
                     "sets": 2,
                     "est_s": 385,
-                    "b": 3.393
+                    "b": 3.846
                 },
                 {
                     "exercise": "incline_db_press",
                     "sets": 2,
                     "est_s": 295,
-                    "b": 4.0142
+                    "b": 4.1947
                 },
                 {
                     "exercise": "leg_press_45",
                     "sets": 2,
                     "est_s": 320,
-                    "b": 3.47
-                },
-                {
-                    "exercise": "leg_press_calf_raise",
-                    "sets": 1,
-                    "est_s": 110,
-                    "b": 0.678,
-                    "chained_after": "leg_press_45"
+                    "b": 4.8987
                 },
                 {
                     "exercise": "machine_chest_press",
                     "sets": 2,
                     "est_s": 290,
-                    "b": 3.83
-                },
-                {
-                    "exercise": "dip_chest",
-                    "sets": 1,
-                    "est_s": 115,
-                    "b": 1.9732
+                    "b": 4.0023
                 },
                 {
                     "exercise": "reverse_pec_deck",
@@ -6580,36 +6579,45 @@
                     "b": 2.392
                 }
             ],
-            "sets": 14,
-            "est_min": 33.6,
+            "sets": 16,
+            "est_min": 41.2,
             "coverage": {
-                "chest": 5,
-                "front_delts": 2.5,
+                "chest": 5.5,
+                "front_delts": 3,
                 "side_delts": 2,
                 "rear_delts": 2,
                 "upper_back": 1,
-                "triceps": 2.75,
+                "triceps": 4,
                 "lower_back": 1.5,
-                "glutes": 2,
+                "glutes": 3.5,
                 "adductors": 1,
                 "quads": 2,
-                "hamstrings": 2,
-                "calves": 1
+                "hamstrings": 4
             },
             "shortfall": {
-                "abductors": 1
+                "side_delts": 1.5,
+                "rear_delts": 1,
+                "upper_back": 0.5,
+                "abductors": 1,
+                "quads": 1.5,
+                "hamstrings": 0.5,
+                "calves": 1.5
             },
             "pref_limits_volume": false,
             "terms": {
-                "v": 22.9904,
-                "o": 0.295,
+                "v": 29.598,
+                "o": 0.8825,
                 "rb": 0,
                 "k": 0,
                 "x": 0,
-                "t": 34,
-                "j": 21.1429
+                "t": 41.25,
+                "j": 27.0943
             },
             "top_candidates": [
+                {
+                    "exercise": "leg_press_45",
+                    "j": 5.4897
+                },
                 {
                     "exercise": "incline_db_press",
                     "j": 4.2668
@@ -6619,19 +6627,15 @@
                     "j": 4.244
                 },
                 {
-                    "exercise": "machine_chest_press",
-                    "j": 4.0639
+                    "exercise": "leg_press_high_wide",
+                    "j": 4.1349
                 },
                 {
-                    "exercise": "dip_neutral",
-                    "j": 4.039
-                },
-                {
-                    "exercise": "leg_press_45",
-                    "j": 3.7921
+                    "exercise": "good_morning_smith",
+                    "j": 4.1252
                 }
             ]
         },
-        "outputs_jcs_sha256": "8351d626a0fe7bdd2e9be43ac551106921b1cd9f41de44ea46a212ddee349c8d"
+        "outputs_jcs_sha256": "e01ca5e62919897f0f28595a4ad6769515220366d603f9bf179fe9df44e59559"
     }
 }

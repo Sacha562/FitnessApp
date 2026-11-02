@@ -6346,39 +6346,39 @@
                     "calves": 4
                 },
                 "normal": {
-                    "chest": 8.5,
-                    "side_delts": 3.5,
-                    "rear_delts": 2,
-                    "lower_back": 1,
-                    "abductors": 1,
-                    "quads": 3.5,
-                    "hamstrings": 4.5,
-                    "calves": 1
+                    "chest": 10,
+                    "side_delts": 7,
+                    "rear_delts": 6,
+                    "lower_back": 2,
+                    "abductors": 2,
+                    "quads": 10,
+                    "hamstrings": 10,
+                    "calves": 3
                 },
                 "direct": {
-                    "chest": 4.5,
-                    "side_delts": 2,
-                    "rear_delts": 1,
+                    "chest": 5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
                     "lower_back": 1,
                     "abductors": 1,
-                    "quads": 2,
-                    "hamstrings": 2.5,
-                    "calves": 1
+                    "quads": 5,
+                    "hamstrings": 5,
+                    "calves": 1.5
                 },
                 "credit": {
-                    "chest": 4.5,
-                    "front_delts": 2.25,
-                    "side_delts": 2,
-                    "rear_delts": 1,
-                    "upper_back": 0.5,
-                    "triceps": 2.25,
+                    "chest": 5,
+                    "front_delts": 2.5,
+                    "side_delts": 3.5,
+                    "rear_delts": 3,
+                    "upper_back": 1.5,
+                    "triceps": 2.5,
                     "lower_back": 1,
-                    "glutes": 0.9125,
+                    "glutes": 2.075,
                     "abductors": 1,
-                    "adductors": 0.5,
-                    "quads": 2,
-                    "hamstrings": 2.5,
-                    "calves": 1
+                    "adductors": 1.25,
+                    "quads": 5,
+                    "hamstrings": 5,
+                    "calves": 1.5
                 },
                 "rir_target": {
                     "chest": 4,
@@ -6390,8 +6390,8 @@
                     "hamstrings": 4,
                     "calves": 4
                 },
-                "est_min": 49.7,
-                "normal_min": 74.5,
+                "est_min": 74.9,
+                "normal_min": 136.9,
                 "predicted_tags": [],
                 "dropped": [
                     {
@@ -6432,45 +6432,45 @@
                     }
                 ],
                 "vhyp": {
-                    "chest": 3.6,
-                    "front_delts": 1.8,
-                    "side_delts": 1.6,
-                    "rear_delts": 0.7526,
-                    "upper_back": 0.374,
-                    "triceps": 1.8,
+                    "chest": 4,
+                    "front_delts": 2,
+                    "side_delts": 2.8,
+                    "rear_delts": 2.2577,
+                    "upper_back": 1.1221,
+                    "triceps": 2,
                     "lower_back": 0.8,
-                    "glutes": 0.73,
+                    "glutes": 1.66,
                     "abductors": 0.8,
-                    "adductors": 0.4,
-                    "quads": 1.6,
-                    "hamstrings": 2,
-                    "calves": 0.8
+                    "adductors": 1,
+                    "quads": 4,
+                    "hamstrings": 4,
+                    "calves": 1.2
                 },
                 "dose": {
-                    "t": "2026-10-07T18:34:43Z",
+                    "t": "2026-10-07T18:59:55.500Z",
                     "fat": {
-                        "chest": 5.4,
-                        "front_delts": 2.7,
-                        "side_delts": 2.4,
-                        "rear_delts": 1.2,
-                        "upper_back": 0.6,
-                        "triceps": 2.7,
+                        "chest": 6,
+                        "front_delts": 3,
+                        "side_delts": 4.2,
+                        "rear_delts": 3.6,
+                        "upper_back": 1.8,
+                        "triceps": 3,
                         "lower_back": 1.2,
-                        "glutes": 1.095,
+                        "glutes": 2.49,
                         "abductors": 1.2,
-                        "adductors": 0.6,
-                        "quads": 2.4,
-                        "hamstrings": 3,
-                        "calves": 1.2
+                        "adductors": 1.5,
+                        "quads": 6,
+                        "hamstrings": 6,
+                        "calves": 1.8
                     },
                     "tissue": {
                         "hip": 0.08,
-                        "knee": 1,
+                        "knee": 2.4,
                         "lumbar": 0.4,
-                        "shoulder_ant": 0.36,
-                        "shoulder_overhead": 0.16
+                        "shoulder_ant": 0.4,
+                        "shoulder_overhead": 0.28
                     },
-                    "sys": 0.57
+                    "sys": 0.94
                 }
             },
             "budget_min": 62,
@@ -6480,92 +6480,102 @@
                 "hard_window": 6
             },
             "unlocked": [],
-            "coverage_gaps": [],
+            "coverage_gaps": [
+                "upper_back"
+            ],
             "exercises": [
                 {
-                    "exercise": "good_morning_smith",
+                    "exercise": "bulgarian_split_squat_db",
                     "sets": 2,
-                    "est_s": 385,
-                    "b": 3.5142
+                    "est_s": 415,
+                    "b": 3.6255
                 },
                 {
                     "exercise": "incline_db_press",
                     "sets": 2,
-                    "est_s": 295,
-                    "b": 4.0142
+                    "est_s": 265,
+                    "b": 4.41,
+                    "chained_after": "bulgarian_split_squat_db"
+                },
+                {
+                    "exercise": "good_morning_smith",
+                    "sets": 2,
+                    "est_s": 385,
+                    "b": 3.6739
                 },
                 {
                     "exercise": "leg_press_45",
                     "sets": 2,
                     "est_s": 320,
-                    "b": 4.5223
-                },
-                {
-                    "exercise": "leg_press_calf_raise",
-                    "sets": 1,
-                    "est_s": 110,
-                    "b": 0.678,
-                    "chained_after": "leg_press_45"
+                    "b": 4.8757
                 },
                 {
                     "exercise": "machine_chest_press",
                     "sets": 2,
                     "est_s": 290,
-                    "b": 3.83
+                    "b": 4.2077
                 },
                 {
                     "exercise": "dip_chest",
                     "sets": 1,
                     "est_s": 115,
-                    "b": 1.9732
+                    "b": 2.1676
+                },
+                {
+                    "exercise": "reverse_pec_deck",
+                    "sets": 2,
+                    "est_s": 260,
+                    "b": 3.24
                 },
                 {
                     "exercise": "db_lateral_raise",
                     "sets": 2,
                     "est_s": 240,
                     "b": 2.392
-                },
-                {
-                    "exercise": "reverse_pec_deck",
-                    "sets": 1,
-                    "est_s": 135,
-                    "b": 1.62
                 }
             ],
-            "sets": 13,
-            "est_min": 31.5,
+            "sets": 15,
+            "est_min": 38.2,
             "coverage": {
                 "chest": 5,
                 "front_delts": 2.5,
                 "side_delts": 2,
-                "rear_delts": 1,
-                "upper_back": 0.5,
+                "rear_delts": 2,
+                "upper_back": 1,
                 "triceps": 2.75,
                 "lower_back": 1.5,
-                "glutes": 2,
-                "adductors": 1,
-                "quads": 2,
-                "hamstrings": 2,
-                "calves": 1
+                "glutes": 3.5,
+                "adductors": 2,
+                "quads": 4,
+                "hamstrings": 2
             },
             "shortfall": {
+                "side_delts": 1.5,
+                "rear_delts": 1,
+                "upper_back": 0.5,
                 "abductors": 1,
-                "hamstrings": 0.5
+                "quads": 1,
+                "hamstrings": 3,
+                "calves": 1.5
             },
             "pref_limits_volume": false,
             "terms": {
-                "v": 22.5439,
-                "o": 0.0875,
+                "v": 28.5924,
+                "o": 0.425,
                 "rb": 0,
                 "k": 0,
                 "x": 0,
-                "t": 31.9167,
-                "j": 20.9043
+                "t": 38.6667,
+                "j": 26.4466
             },
             "top_candidates": [
                 {
                     "exercise": "leg_press_45",
-                    "j": 4.9947
+                    "j": 5.5997
+                },
+                {
+                    "exercise": "leg_press_high_wide",
+                    "j": 4.3822
                 },
                 {
                     "exercise": "incline_db_press",
@@ -6576,15 +6586,11 @@
                     "j": 4.244
                 },
                 {
-                    "exercise": "machine_chest_press",
-                    "j": 4.0639
-                },
-                {
-                    "exercise": "dip_neutral",
-                    "j": 4.039
+                    "exercise": "bulgarian_split_squat_db",
+                    "j": 4.1642
                 }
             ]
         },
-        "outputs_jcs_sha256": "149b2a15ba4bc1b5839e33596b97e5052a4fc38cdb7f92660c9afe88027523d1"
+        "outputs_jcs_sha256": "ea3959a9fa20776dfe9c73b68b482b93a6fcba5a64e2de6cd2eae13a6fb34a3c"
     }
 }

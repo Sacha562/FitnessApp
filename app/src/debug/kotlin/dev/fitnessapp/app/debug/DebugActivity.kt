@@ -167,9 +167,14 @@ class DebugActivity : ComponentActivity() {
                 val f = dev.fitnessapp.app.planning.SessionBuild.facts(c, now, weekPlan = week.plan)
                 today.options.mapNotNull { it.sessionType }.forEach { t ->
                     val type = dev.fitnessapp.algo.planning.allocator.SessionType.of(t)
-                    val b = dev.fitnessapp.app.planning.SessionBuild.build(c, dev.fitnessapp.app.planning.SessionBuild.request(f, type, 75.0))
-                    out += "build $t est=${b.estMin} " + b.exercises.joinToString { "${it.slug} x${it.sets}" }
-                    out += "  alloc direct " + b.allocation.direct.filterValues { it > 0.0 }.entries.joinToString { "${it.key}=${"%.2f".format(it.value)}" }
+                    val later = dev.fitnessapp.app.planning.SessionBuild.laterOf(today, type)
+                    for (min in listOf(45.0, 60.0, 75.0, 90.0)) {
+                        val b = dev.fitnessapp.app.planning.SessionBuild.build(c, dev.fitnessapp.app.planning.SessionBuild.request(f, type, min, later))
+                        out += "build $t @$min est=${b.estMin} alloc.est=${b.allocation.estMinutes} sel.est=${b.select?.estMin}/${b.select?.budgetMin} shortfall=${b.select?.shortfall?.filterValues { it > 0.0 }} " +
+                            b.exercises.joinToString { "${it.slug} x${it.sets}" } + if (b.trimmed.isNotEmpty()) " trimmed=" + b.trimmed.joinToString { "${it.slug}-${it.setsRemoved}" } else ""
+                        out += "  alloc direct " + b.allocation.direct.filterValues { it > 0.0 }.entries.joinToString { "${it.key}=${"%.2f".format(it.value)}" } +
+                            " normal " + b.allocation.normal.filterValues { it > 0.0 }.entries.joinToString { "${it.key}=${"%.2f".format(it.value)}" }
+                    }
                 }
             }.onFailure { out += "failed: $it" }
             out.forEach { Log.i("PlanDump", it) }
