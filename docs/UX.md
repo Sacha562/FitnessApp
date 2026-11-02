@@ -1105,6 +1105,13 @@ session store. `today` provides the verdict `TRAIN`, `REST_SOFT` or `REST_HARD` 
 | `REST` hard | Verdict `REST_HARD`: a challenge hard constraint or a safety state forbids gym today | "Rest today" + rule text | none | "Why"; "Log a session anyway" in the overflow (never blocked, P10) |
 | `ENGINE_ERROR` | The `today` module failed | "Couldn't work out a recommendation" | "Start empty session" | "Retry" |
 
+While the planner runs for the first time the card's place holds a loading tile (D73): a dumbbell that lifts and settles
+over its shadow, with "Warming up the planner…", "Counting this week's sets…" and "Weighing today's options…" fading
+one into the next every two seconds, announced once as "Loading". A rerun (another time chip, a new session) keeps the
+card it replaces until the new one is ready. The New session sheet shows the same indicator while it builds its options
+("Warming up the planner…", "Building your options…") and a smaller one with "Building your session…" while the
+preview of the picked type and time is built.
+
 "Log a session anyway" (hard rest) opens the template picker with a red banner: "This breaks the
 OAP rule 'no gym the day before a test'. The session will be logged; your challenge decides what it
 means for the test." The challenge engine shows a warning and logs `rule_override` (CHALLENGE_ENGINE

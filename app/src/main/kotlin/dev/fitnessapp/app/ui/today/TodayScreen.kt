@@ -53,6 +53,8 @@ import dev.fitnessapp.app.ui.common.Banner
 import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.LoadingDumbbell
+import dev.fitnessapp.app.ui.common.PLANNER_LINES
 import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
@@ -111,6 +113,8 @@ fun TodayRoute(
     val calendar by c.calendar.snapshot.collectAsState()
     var plan by remember { mutableStateOf<TodayPlan?>(null) }
     var planFailed by remember { mutableStateOf(false) }
+    // Whether [plan] was computed for the current inputs: only then do Start and the sheet reuse its week plan (D73).
+    var planFresh by remember { mutableStateOf(false) }
     var chipMin by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Int?>(null) }
     var picked by remember { mutableStateOf<String?>(null) }
     var override by remember { mutableStateOf<String?>(null) }
@@ -118,6 +122,7 @@ fun TodayRoute(
     androidx.compose.runtime.LaunchedEffect(active?.id, recent.map { it.id + it.status }, calendar.anchors, goals, chipMin, planTick) {
         val zoneNow = ZoneId.of("Europe/Amsterdam")
         val todayNow = LocalDate.now(zoneNow).toString()
+        planFresh = false
         val r = runCatching {
             withContext(Dispatchers.Default) {
                 TodayPlans.load(
@@ -131,6 +136,7 @@ fun TodayRoute(
         r.exceptionOrNull()?.let { if (it is kotlinx.coroutines.CancellationException) throw it }
         plan = r.getOrNull()
         planFailed = r.isFailure
+        planFresh = r.isSuccess
         r.exceptionOrNull()?.let { android.util.Log.w("TodayPlan", "planner failed", it) }
         if (plan?.options?.primaryOptionId != picked) picked = null
         plan?.let { p ->
@@ -191,7 +197,7 @@ fun TodayRoute(
             starting = true
             val built = runCatching {
                 withContext(Dispatchers.Default) {
-                    val f = SessionBuild.facts(c)
+                    val f = SessionBuild.facts(c, weekPlan = p.week.plan.takeIf { planFresh })
                     SessionBuild.build(c, SessionBuild.request(f, type, budget.toDouble()))
                 }
             }.getOrNull()
@@ -261,6 +267,8 @@ fun TodayRoute(
                     onRestToday = { scope.launch { runCatching { TodayPlans.action(c, "rest_today", 0) } } },
                 )
             }
+            // While the planner runs for the first time (D73); a rerun keeps the card it replaces.
+            if (plan == null && !planFailed && active == null) Tile(spacing = 6.dp) { LoadingDumbbell(PLANNER_LINES) }
             if (plan == null && planFailed) Tile(spacing = 6.dp) {
                 Text("Couldn't work out a recommendation", style = MaterialTheme.typography.titleLarge)
                 LinkButton("Retry", { planTick++ })
@@ -325,7 +333,7 @@ fun TodayRoute(
 
     if (newSession) NewSessionSheet(
         c, onDismiss = { newSession = false },
-        today = plan?.options, banner = override,
+        today = plan?.options, banner = override, weekPlan = plan?.week?.plan?.takeIf { planFresh },
         onStart = { b ->
             newSession = false
             // "Log a session anyway" on a hard rest day (UX 9.3): the session is logged; the challenge decides what it means.

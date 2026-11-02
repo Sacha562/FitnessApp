@@ -12,6 +12,7 @@ import dev.fitnessapp.algo.planning.allocator.AddOnSlot
 import dev.fitnessapp.algo.planning.allocator.Allocation
 import dev.fitnessapp.algo.planning.allocator.Allocator
 import dev.fitnessapp.algo.planning.allocator.SessionType
+import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.selection.elig.AddOnFilter
 import dev.fitnessapp.algo.selection.elig.Elig
 import dev.fitnessapp.algo.selection.elig.EligContext
@@ -91,7 +92,8 @@ object SessionBuild {
         val planAddOn: SessionType? = null,
     )
 
-    suspend fun facts(c: AppContainer, at: Instant = c.clock.now(), slot: String? = null): Facts = withContext(Dispatchers.Default) {
+    /** The build facts at [at]; [weekPlan] is this week's current plan when the caller has one (D73), else it is planned here. */
+    suspend fun facts(c: AppContainer, at: Instant = c.clock.now(), slot: String? = null, weekPlan: WeekPlan? = null): Facts = withContext(Dispatchers.Default) {
         val zone = PlanningFacts.ZONE
         val date = Week.localDate(at, zone)
         val week = WeekVolume.compute(c, at)
@@ -105,7 +107,7 @@ object SessionBuild {
             skipGroups = goals.filterValues { it.status == "skip" }.keys,
             goalGroups = goals.filterValues { (it.status == "improve" || it.status == "maintain") && !it.coveredByChallenge }.keys,
         )
-        val plan = runCatching { WeekPlans.thisWeek(c, at).plan }.getOrNull()
+        val plan = weekPlan ?: runCatching { WeekPlans.thisWeek(c, at).plan }.getOrNull()
         val later = plan?.days.orEmpty().filter { it.date.isAfter(date) }.flatMap { d -> d.items.filter { it.kind == "recommended_general" } }
             .mapNotNull { it.type?.let { t -> runCatching { SessionType.of(t) }.getOrNull() } }
         val addOn = plan?.days?.firstOrNull { it.date == date }?.items?.firstOrNull { it.kind == "addon" && (slot == null || it.slot == slot) }?.type

@@ -34,6 +34,8 @@ import dev.fitnessapp.app.planning.PlanningFacts
 import dev.fitnessapp.app.planning.SessionBuild
 import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.LinkButton
+import dev.fitnessapp.app.ui.common.LoadingDumbbell
+import dev.fitnessapp.app.ui.common.SHEET_LINES
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.TileDivider
 import dev.fitnessapp.app.ui.common.TileLabel
@@ -62,6 +64,8 @@ fun NewSessionSheet(
     today: dev.fitnessapp.algo.planning.today.TodayOptions? = null,
     /** The rule a hard rest day breaks, for "Log a session anyway" (UX 9.3). */
     banner: String? = null,
+    /** This week's current plan from Today (D73): the sheet then does not plan the week again. */
+    weekPlan: dev.fitnessapp.algo.planning.weekplan.WeekPlan? = null,
 ) {
     var facts by remember { mutableStateOf<SessionBuild.Facts?>(null) }
     var chips by remember { mutableStateOf<List<TimeChip>>(emptyList()) }
@@ -73,7 +77,7 @@ fun NewSessionSheet(
     var failed by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val f = runCatching { SessionBuild.facts(c) }.getOrNull()
+        val f = runCatching { SessionBuild.facts(c, weekPlan = weekPlan) }.getOrNull()
         if (f == null) {
             failed = true
             return@LaunchedEffect
@@ -131,7 +135,7 @@ fun NewSessionSheet(
             }
             when {
                 failed -> Text("Couldn't build a session right now. You can still start an empty one.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-                facts == null -> Text("Working out what this week still needs…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                facts == null || allocations.isEmpty() -> LoadingDumbbell(SHEET_LINES)
                 else -> {
                     TileLabel("Train")
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -154,7 +158,7 @@ fun NewSessionSheet(
                     val b = built
                     when {
                         type == null -> Text("Nothing to build today: everything is covered or rests.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-                        building && b == null -> Text("Building…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                        building && b == null -> LoadingDumbbell(listOf("Building your session…"), height = 40.dp)
                         b == null || b.exercises.isEmpty() -> Text(UiTrim.emptyText(b), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                         else -> {
                             val title = SessionBuild.title(b, c)
