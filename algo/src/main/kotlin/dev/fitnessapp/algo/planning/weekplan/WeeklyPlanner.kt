@@ -302,10 +302,21 @@ object WeeklyPlanner : DeclaresParams {
         private fun ready(t: Instant, extra: List<Dose>, key: String): ReadinessOut =
             readyMemo.getOrPut("${t.toEpochMilli()}|$key") { Readiness.evaluate(baseDoses + extra, t, null, null, params) }
 
-        private fun members(t: SessionType): Set<String> {
+        private val protectMemo = TreeMap<String, ReadinessOut>()
+
+        /** Readiness at a penalty window's end over the base doses and the plan doses [keep] passes, memoised on their allocation keys. */
+        private fun protectReady(wi: Int, t: Instant, extra: List<Dose>, keys: List<String>, keep: (Dose) -> Boolean): ReadinessOut {
+            val kept = extra.indices.filter { keep(extra[it]) }
+            val key = "$wi|" + kept.joinToString(";") { extra[it].id + "=" + keys[it] }
+            return protectMemo.getOrPut(key) { Readiness.evaluate(baseDoses + kept.map { extra[it] }, t, null, null, params) }
+        }
+
+        private val membersMemo = TreeMap<SessionType, Set<String>>()
+
+        private fun members(t: SessionType): Set<String> = membersMemo.getOrPut(t) {
             val m = t.families.flatMap { Groups.FAMILIES.getValue(it) }.toMutableSet()
             if (t != SessionType.CORE) m += Groups.FAMILIES.getValue("CORE")
-            return m
+            m
         }
 
         fun hardWindows(start: Instant, budgetMin: Double) = input.protectedWindows.filter {
@@ -325,6 +336,8 @@ object WeeklyPlanner : DeclaresParams {
             Groups.CANONICAL.forEach { g -> vh[g] = (input.done[g] ?: 0.0) + (input.committed[g] ?: 0.0) }
             val trained = TreeMap(input.sessionsTraining)
             val extra = ArrayList<Dose>()
+            // The allocation memo key behind each dose of [extra]: equal keys give equal doses (the protection memo).
+            val extraKeys = ArrayList<String>()
             val sessions = ArrayList<SimSession>()
             val heavy = input.fixed.filter { it.general && it.heavyLowerFs >= heavyFs - 1e-9 }.map { it.start }.toMutableList()
             val tagged = input.fixed.filter { it.general && it.tags.any { t -> t in input.gapRule?.appliesToTags.orEmpty() } }.map { it.date }.toMutableList()
@@ -341,7 +354,8 @@ object WeeklyPlanner : DeclaresParams {
                 val opp = TreeMap<String, Int>()
                 val later = standalone.filter { it.start >= p.start }
                 for (g in Groups.CANONICAL) opp[g] = later.count { s -> g in members(s.options[choice[s.index]]!!) }.coerceAtLeast(1)
-                val alloc = allocMemo.getOrPut("${p.index}:${choice[p.index]}|$prefix|${opp.values.joinToString(",")}") { allocate(p, type, vh, opp, r) }
+                val allocKey = "${p.index}:${choice[p.index]}|$prefix|${opp.values.joinToString(",")}"
+                val alloc = allocMemo.getOrPut(allocKey) { allocate(p, type, vh, opp, r) }
                 if (!alloc.feasible) { failure = (alloc.infeasibleReason ?: "NOTHING_TO_TRAIN") to p.index; return null }
                 // H6: heavy-lower sessions at least HEAVY_LOWER_MIN_H apart.
                 val lower = listOf("quads", "hamstrings", "glutes").sumOf { alloc.credit[it] ?: 0.0 }
@@ -358,7 +372,7 @@ object WeeklyPlanner : DeclaresParams {
                 val before = TreeMap(vh)
                 alloc.vhyp.forEach { (g, v) -> vh[g] = (vh[g] ?: 0.0) + v }
                 Groups.CANONICAL.filter { (alloc.vhyp[it] ?: 0.0) >= trainedMin }.forEach { trained[it] = (trained[it] ?: 0) + 1 }
-                alloc.dose?.let { extra += it.copy(id = "plan:${p.index}:${choice[p.index]}") }
+                alloc.dose?.let { extra += it.copy(id = "plan:${p.index}:${choice[p.index]}"); extraKeys += allocKey }
                 val legFs = Groups.FAMILIES.getValue("LEGS").sumOf { alloc.direct[it] ?: 0.0 }
                 val pen = Runs.penalty(p.start, p.start.plusMillis((alloc.estMinutes * 60_000.0).toLong()), legFs, input.runs, input.runningPriority, params).value
                 runPen += pen
@@ -367,7 +381,7 @@ object WeeklyPlanner : DeclaresParams {
                 sessions += SimSession(p, type, alloc, r, before, pen)
                 prefix += "${p.index}:${choice[p.index]};"
             }
-            return score(choice, sessions, vh, trained, extra, runPen, lowG, spill)
+            return score(choice, sessions, vh, trained, extra, extraKeys, runPen, lowG, spill)
         }
 
         private fun allocate(p: Point, type: SessionType, vBefore: Map<String, Double>, opp: Map<String, Int>, r: ReadinessOut): Allocation {
@@ -394,6 +408,7 @@ object WeeklyPlanner : DeclaresParams {
             vEnd: Map<String, Double>,
             trained: Map<String, Int>,
             extra: List<Dose>,
+            extraKeys: List<String>,
             runPen: Double,
             lowG: Int,
             spill: Double,
@@ -409,12 +424,13 @@ object WeeklyPlanner : DeclaresParams {
             freq *= params.double("weekplan.freq_bonus")
             // Protection (8.6): the marginal deficit the plan's sessions inside a penalty window cause at its reference time.
             var protect = 0.0
-            for (w in input.protectedWindows.filter { it.mode == "penalty" && it.to.isAfter(input.now) }) {
+            for ((wi, w) in input.protectedWindows.withIndex()) {
+                if (w.mode != "penalty" || !w.to.isAfter(input.now)) continue
                 val inside = sessions.filter { !it.point.start.isBefore(w.from) && it.point.start.isBefore(w.to) }
                 if (inside.isEmpty()) continue
                 val ids = inside.map { "plan:${it.point.index}:${choice[it.point.index]}" }.toSet()
-                val with = Readiness.evaluate(baseDoses + extra, w.to, null, null, params)
-                val without = Readiness.evaluate(baseDoses + extra.filter { it.id !in ids }, w.to, null, null, params)
+                val with = protectReady(wi, w.to, extra, extraKeys) { true }
+                val without = protectReady(wi, w.to, extra, extraKeys) { it.id !in ids }
                 val rMin = w.rMin ?: 0.0
                 for (g in w.groups) protect += maxOf(0.0, rMin - (with.r[g] ?: 1.0)) - maxOf(0.0, rMin - (without.r[g] ?: 1.0))
                 for ((k, min) in w.tissueRMin.toSortedMap()) protect += maxOf(0.0, min - (with.tissueR[k] ?: 1.0)) - maxOf(0.0, min - (without.tissueR[k] ?: 1.0))

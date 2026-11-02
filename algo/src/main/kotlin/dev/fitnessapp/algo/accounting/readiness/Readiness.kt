@@ -91,6 +91,12 @@ object Readiness : DeclaresParams {
         return base * (kappa?.get(cls) ?: params.table("readiness.kappa_default").getValue(cls))
     }
 
+    /**
+     * `x · e^(−h/τ)`, skipping the exponential when the dose has no [x] for this group or tissue: the term is then 0.0 and
+     * adding it leaves the sum unchanged, so results are byte-identical and most of the `StrictMath.exp` calls go away.
+     */
+    private fun decayed(x: Double?, h: Double, tau: Double): Double = if (x == null || x == 0.0) 0.0 else x * Det.exp(-h / tau)
+
     private fun window(doses: List<Dose>, t: Instant, params: ParamView): List<Pair<Double, Dose>> {
         val w = params.double("readiness.window_h")
         return doses.sortedWith(compareBy({ it.t }, { it.id }))
@@ -101,7 +107,7 @@ object Readiness : DeclaresParams {
     /** Fatigue of [group] at [t] without check-in modifiers. */
     fun fatigue(group: String, doses: List<Dose>, t: Instant, kappa: Map<String, Double>?, params: ParamView): Double {
         val tau = tau(group, kappa, params)
-        return window(doses, t, params).sumOf { (h, d) -> (d.fat[group] ?: 0.0) * Det.exp(-h / tau) }
+        return window(doses, t, params).sumOf { (h, d) -> decayed(d.fat[group], h, tau) }
     }
 
     /** Readiness(t) with the check-in modifiers (4.4); [kappa] is the user's approved per-class multipliers, null for the defaults. */
@@ -112,7 +118,7 @@ object Readiness : DeclaresParams {
         val f = TreeMap<String, Double>()
         for (g in Groups.CANONICAL) {
             val tau = tau(g, kappa, params)
-            val fg = win.sumOf { (h, d) -> (d.fat[g] ?: 0.0) * Det.exp(-h / tau) }
+            val fg = win.sumOf { (h, d) -> decayed(d.fat[g], h, tau) }
             f[g] = fg
             r[g] = (1.0 - fg / fRef.getValue(g)).coerceIn(0.0, 1.0)
         }
@@ -120,7 +126,7 @@ object Readiness : DeclaresParams {
         val tRef = params.double("readiness.tissue_ref")
         val rt = TreeMap<String, Double>()
         for (k in Groups.TISSUES) {
-            val ft = win.sumOf { (h, d) -> (d.tissue[k] ?: 0.0) * Det.exp(-h / tTau) }
+            val ft = win.sumOf { (h, d) -> decayed(d.tissue[k], h, tTau) }
             rt[k] = (1.0 - ft / tRef).coerceIn(0.0, 1.0)
         }
         val sTau = params.double("readiness.sys_tau_h")

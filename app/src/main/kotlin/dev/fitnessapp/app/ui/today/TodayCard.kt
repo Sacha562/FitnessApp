@@ -39,7 +39,10 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
 
-/** What Today shows from the planner (D70): this week's and next week's plans, today's options, the card and its chips. */
+/**
+ * What Today shows from the planner (D70): this week's and next week's plans, today's options, the card and its chips.
+ * [next] is null until [TodayPlans.next] has run, so the card does not wait for next week's plan.
+ */
 class TodayPlan(
     val week: WeekPlans.Run,
     val next: WeekPlan?,
@@ -47,7 +50,9 @@ class TodayPlan(
     val card: TodayCard,
     val chips: List<TimeChip>,
     val chip: TimeChip?,
-)
+) {
+    fun withNext(next: WeekPlan?) = TodayPlan(week, next, options, card, chips, chip)
+}
 
 object TodayPlans {
     /** Runs the planner and `today` for [chipMin] (null: the calendar budget or the default length) and maps the card. */
@@ -55,7 +60,6 @@ object TodayPlans {
         val now = c.clock.now()
         val week = WeekPlans.thisWeek(c, now)
         val options = WeekPlans.today(c, week, chipMin?.toDouble())
-        val next = runCatching { WeekPlans.nextWeek(c, week, now).plan }.getOrNull()
         val params = c.params.fork()
         val labels = c.catalogModel.taxonomy.activeGroups.associate { it.id to (it.labelEn ?: it.id) }
         val card = UiTodayCard.card(options, activeSession, finishedToday, false, setupNeeded, now, PlanningFacts.ZONE, params) { g ->
@@ -66,8 +70,11 @@ object TodayPlans {
         val chip = chips.firstOrNull { it.minutes == chipMin } ?: chips.firstOrNull { it.source == "calendar" } ?: chips.firstOrNull { it.minutes == options.budgetMin.toInt() }
         runCatching { c.planSnapshots.week(week.plan) }
         runCatching { c.planSnapshots.today(options) }
-        return TodayPlan(week, next, options, card, chips, chip)
+        return TodayPlan(week, null, options, card, chips, chip)
     }
+
+    /** Next week's provisional plan (8.8) for the week strip, run after the card is shown; null when it fails. */
+    suspend fun next(c: AppContainer, p: TodayPlan): WeekPlan? = runCatching { WeekPlans.nextWeek(c, p.week, p.week.input.now).plan }.getOrNull()
 
     /** `today_card_shown` (UX 20.4) with the registry payload. */
     suspend fun shown(c: AppContainer, p: TodayPlan) {

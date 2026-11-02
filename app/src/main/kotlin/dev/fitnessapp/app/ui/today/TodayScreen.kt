@@ -133,7 +133,11 @@ fun TodayRoute(
         planFailed = r.isFailure
         r.exceptionOrNull()?.let { android.util.Log.w("TodayPlan", "planner failed", it) }
         if (plan?.options?.primaryOptionId != picked) picked = null
-        plan?.let { p -> runCatching { TodayPlans.shown(c, p) } }
+        plan?.let { p ->
+            runCatching { TodayPlans.shown(c, p) }
+            val next = withContext(Dispatchers.Default) { TodayPlans.next(c, p) }
+            if (plan === p) plan = p.withNext(next)
+        }
     }
 
 
