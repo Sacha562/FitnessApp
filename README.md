@@ -182,8 +182,8 @@ How each part was built: CHALLENGE_ENGINE 16.2.
 | M2b.2 Challenges tab and setup wizard | built | The tab, the setup wizard (three steps since D35: overview with grip, starting point, first two weeks with Start; proposals at their recommendation), the dashboard (gate rows, rules, proposals, history, tests), Correct, pause, resume, abandon. |
 | M2b.3 Challenge sessions | built | Today's challenge tile with the elbow check, materialized sessions, in-session rules with Undo, the alarm-backed warm-up row, the negative, top-hold round and finger cards, pain forwarding, the home habits (quick-done and the mini-session) and their reminders (off until the cutover). |
 | M2b.4 Test day | built | The test-day wizard (UX 14.9, D36): validity at the start, one card per step in the template's order (weigh-in, warm-up, strength attempts, max reps, holds and the assistance ladder per side, yes / no attempts), the review against the previous valid test, Submit with `session.completed`, `test.completed` and the observations, and the recalculation report. Structured test protocols in `oap@1.1.0` (migration 023, engine 1.1.0, migration 024); the attempt card also serves phase 3's attempts block. Entry from the dashboard and Today. |
-| M2b.5 Calendar | built (test calendar) | `calendar.classify` and `challenge.calendar` in `:algo` (marker, classifier, slot matching, write plan; ALGORITHMS_PLANNING 1.7 and GF-CE-25 to 28), Room v6 with `calendar_events` sync, the provider reader and the guarded executor, refresh at app start, on calendar changes, at 05:00 and after challenge changes, Adopt / Rename / Remove / Add to calendar, corrections per event or series, You → Calendars, the event sheet and the dashboard's This week status (D39), the calendar budget (C49) and the session link (C35). Writes go to the device-only test calendar until you switch on real writes. |
-| M2b.6 Cutover | started 2026-10-22 | `oap@1.4.0` (migration 028: Pallof press in A, B, C; P28; P29 lighter week after the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol and start date, week of the program, block counts, earlier tests), debug `setup_draft` / `calendar_delete_test`, the Today banner opening the screen that fixes it. Test data wiped; the real enrollment runs (D40). Engine 1.7.0 corrected the earlier tests' per-arm values (D48). Todoist closed on 2026-10-30 (recurrence removed, the six tasks completed). Open: T17 and real calendar writes, the artifact frozen. The schedule editor stays deferred (the definition's times match). |
+| M2b.5 Calendar | built (test calendar) | `calendar.classify` and `challenge.calendar` in `:algo` (marker, classifier, slot matching, write plan; ALGORITHMS_PLANNING 1.7 and GF-CE-25 to 28), Room v6 with `calendar_events` sync, the provider reader and the guarded executor, refresh at app start, on calendar changes, at 05:00 and after challenge changes, Adopt / Rename / Remove / Add to calendar, corrections per event or series, You → Calendars, the event sheet and the dashboard's This week status (D39), the calendar budget (C49) and the session link (C35). Writes went to the device-only test calendar until real writes were switched on at the cutover (2026-10-22); T17 passed on 2026-11-03. |
+| M2b.6 Cutover | started 2026-10-22 | `oap@1.4.0` (migration 028: Pallof press in A, B, C; P28; P29 lighter week after the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol and start date, week of the program, block counts, earlier tests), debug `setup_draft` / `calendar_delete_test`, the Today banner opening the screen that fixes it. Test data wiped; the real enrollment runs (D40). Engine 1.7.0 corrected the earlier tests' per-arm values (D48). Todoist closed on 2026-10-30 (recurrence removed, the six tasks completed). Real calendar writes on since 2026-10-22, T17 passed on 2026-11-03 (M4 log). Open: the artifact frozen. The schedule editor stays deferred (the definition's times match). |
 
 **M2b.6 cutover (2026-10-22, real data from here on)**: the 11 October test never happened (elbow complaint from 8 October,
 pain-free since 12 October), so D40 imports the elbow protocol with the last pre-injury loads from the calendar. A phone
@@ -229,7 +229,8 @@ calendars"), the event sheet with a correction applied and removed, and the dash
 "moved by you"). Fixed there: the event sheet's chip rows overflowed (now wrapping, sheet fully open), long titles were cut
 to one line, "Marker removed" and "Session Test" wording, and "Next test" showed the due date (Thu) while the plan placed
 the test on Fri 17:30 (the card and the dashboard now show the planned day and time). Not covered on the phone:
-real-calendar writes (off until you switch them on, after T17) and the C36 rename prompt (unit tests only).
+real-calendar writes (covered by T17's primary-calendar half, closed on 2026-11-03, M4 log) and the C36 rename prompt
+(unit tests only).
 
 **M2b.4 phone checks (2026-10-21, invented values)**: two full test days from the dashboard, each ending in
 `test.completed` and the report: one after "Start with a test week", one after "Enter my numbers" with "I'm
@@ -443,3 +444,14 @@ the Friday FULL after a Thursday legs add-on now credits 4.2 heavy-leg FS (3.62 
 and the planner picks Wednesday FULL with a Thursday push add-on (J 4.856; the best Friday plan is 4.77). No engine
 module changed behaviour and the seeded 1.0.0 rows carry params 1.0.3's slice hashes, so ENGINE_VERSION stays 1.13.0
 and there is no migration (D70 amended). Tests: `:algo` 534, `:app` 133, `:data` 101, `:sim` 60, all green.
+
+**T17, primary-calendar half (closed 2026-11-03, `0.0.144+93eb1fb`, real data)**: the precondition of M4.6 (D55).
+"Write to my own calendar" has been on since the cutover: saving the calendar selection on 2026-10-22 at 16:51 wrote
+the first events to the main Google calendar, and the test calendar has been removed. Checked read-only over adb (the
+Room database and the calendar provider): the app wrote OAP sessions for W43 to W46 (11 inserts, 6 updates, every op
+on its own marked events; no `calendar_write_failed`, no Adopt); the six future events of W45 and W46 carry their
+`[fitapp:v1 …]` marker and have a Google sync id with `dirty = 0`, so they reached the server; your own unmarked "Gym"
+events of 27, 29 and 30 October and the chess events were not touched. The five events of W43 and W44 you deleted
+yourself became `user_deleted` and were not re-created. The planner placed W46's session A at 17:30 instead of 19:45
+because of the chess round at 19:30. You confirmed the deletions and the 4 November session C on calendar.google.com
+(title, time, exercise lines, human line and marker).

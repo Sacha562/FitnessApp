@@ -1857,7 +1857,7 @@ Checklist (pass criteria in brackets; each result is recorded in the test log of
 | T14 | Determinism self-test | All golden hashes equal |
 | T15 | Audio hardening test (API 37 phone or `set-enable-hardening enable`) | Tone plays while session FGS runs; skipped gracefully otherwise |
 | T16 | Habit reminder at a set time with screen off | Delivered within 1 min |
-| T17 | Calendar write in the sandbox local test calendar, then (after user OK) the primary calendar for one week | Events appear in Google Calendar on the web within a few minutes; markers present; no unmarked event changed. Test-calendar half passed on 2026-10-22 (README M2b log); the primary-calendar week waits for the user's OK. |
+| T17 | Calendar write in the sandbox local test calendar, then (after user OK) the primary calendar for one week | Events appear in Google Calendar on the web within a few minutes; markers present; no unmarked event changed. Test-calendar half passed on 2026-10-22 (README M2b log); primary-calendar half passed on 2026-11-03 (README M4 log): real writes on since 2026-10-22, W43-W46 written. |
 
 ---
 

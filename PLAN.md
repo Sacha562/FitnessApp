@@ -3,7 +3,7 @@
 Personal Android gym app with deterministic, explainable recommendations, Google Calendar integration,
 in-gym logging, and data-driven challenges (first: the one-arm pull-up challenge).
 
-*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes after T17). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators), M3.2 (estimator storage and the L8 update), M3.3 (prescription engine) and M3.4 (targets in the live session; migration 036 applied) and M3.5 (suggestions, warnings and preferences; no server migration) built the same day, followed by D50 (rest multiplier and goal presets; migration 037). M3.6 (substitution and custom exercises, D53; no server migration) built on 2026-10-28.*
+*Plan date: 2026-10-07. Status: M0 done on 2026-10-08, M1 done on 2026-10-11 (logs in `README.md`). M2a done on 2026-10-20. M2b in progress: steps M2b.1-M2b.3 built on 2026-10-20, M2b.4 (test day) on 2026-10-21 (D32, D33, D36), M2b.5 (calendar) on 2026-10-22 against the test calendar (D39), M2b.6 cutover on 2026-10-22 (D40: real enrollment started; Todoist closed after the first app week, real calendar writes on since the cutover, T17 passed on 2026-11-03). M3 started on 2026-10-27 with its scope and six steps fixed by D49; M3.1 (estimators), M3.2 (estimator storage and the L8 update), M3.3 (prescription engine) and M3.4 (targets in the live session; migration 036 applied) and M3.5 (suggestions, warnings and preferences; no server migration) built the same day, followed by D50 (rest multiplier and goal presets; migration 037). M3.6 (substitution and custom exercises, D53; no server migration) built on 2026-10-28.*
 
 ---
 
@@ -624,7 +624,8 @@ M2b is built in six steps (D33), each ending with a green build and checks on th
    the elbow protocol), engine 1.3.0 (setup decisions fold with the creation), setup's mid-program import (elbow protocol,
    week ordinal, block counts, earlier tests), the debug `setup_draft` and `calendar_delete_test` actions, the test-data wipe.
    Todoist closed on 2026-10-30 after the first app week: the recurrence removed and the six tasks completed (D40).
-   Still open: T17 and real calendar writes, and freezing the artifact. The earlier tests' missing per-arm values (D40 changelog) were restored on 2026-10-26 (D48, engine 1.7.0).
+   Real calendar writes have been on since the cutover (2026-10-22) and T17 passed on 2026-11-03 (README M4 log).
+   Still open: freezing the artifact. The earlier tests' missing per-arm values (D40 changelog) were restored on 2026-10-26 (D48, engine 1.7.0).
 
 ### M3 — General load prescription (3–4 sessions)
 
@@ -713,8 +714,8 @@ catalog 1.0.2 (OI-16).
    W41_testPostponed and DST_W43_windows. The Today card sits on top of the current Today screen, "Other options" and
    "Train anyway" open the New session sheet, the week plan picks the add-on family and the per-group opportunities for
    session building, and the week strip can show next week's provisional plan.
-6. **M4.6 Week tab and Plan it.** Before this step, T17 and the switch to real calendar writes (the open M2b.6 items) are
-   done with your agreement. The Week tab shows recommended versus planned per day with the reasons, the day sheet, Plan
+6. **M4.6 Week tab and Plan it.** T17 and the switch to real calendar writes, required before this step, are done
+   (real writes on since 2026-10-22, T17 passed on 2026-11-03). The Week tab shows recommended versus planned per day with the reasons, the day sheet, Plan
    it (a marked calendar event that is then read back as a planned gym session and sets the session's time budget) and
    next week. Golden: W41_planItFri.
 7. **M4.7 Rotation and progress.** `rotate`: main lifts are locked for a mesocycle that follows the challenge block, and
@@ -808,13 +809,12 @@ everything else and its constants need real data.
 
 Settled at M0: the phone is a OnePlus CPH2747 on Android 16 (API 36), so Live Updates are available and
 the OnePlus battery guidance applies; the application id `dev.fitnessapp` is confirmed and installed;
-`pg_jsonschema` is installed.
+`pg_jsonschema` is installed. Settled on 2026-11-03: real calendar writes (D39) have been on since the cutover
+(2026-10-22) and T17's primary-calendar half passed.
 
 - Running frequency and priority (setting; default low).
 - Muscle goals (set in onboarding, D6).
 - Approve/decline each OAP `P` rule (M2 setup).
-- Real calendar writes (D39): switched on by you in You → Calendars after the primary-calendar week of T17; until
-  then the app writes only to the test calendar on the phone.
 - Editing the challenge schedule (preferred days and times) and the habit times: moved out of setup by D35 and not
   built yet; needed before or at the cutover (M2b.6).
 - Health Connect, widget, GitHub Actions + Obtainium (M6).
