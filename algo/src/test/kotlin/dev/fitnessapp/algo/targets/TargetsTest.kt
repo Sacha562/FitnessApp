@@ -45,12 +45,12 @@ class TargetsTest {
         fun sum(p: String, age: String) = Targets.compute(input(p, age, owned = emptyList()), params).groups.values.sumOf { it.t }
         sum("balanced", "intermediate") shouldBe 152.0
         sum("balanced", "novice") shouldBe 124.0
-        sum("legs_only", "intermediate") shouldBe 68.0
-        sum("legs_only", "novice") shouldBe 58.0
+        sum("legs_only", "intermediate") shouldBe 80.0
+        sum("legs_only", "novice") shouldBe 66.0
         sum("no_legs", "intermediate") shouldBe 104.0
         sum("no_legs", "novice") shouldBe 85.0
-        sum("pull_focus", "intermediate") shouldBe 114.0
-        sum("pull_focus", "novice") shouldBe 93.0
+        sum("pull_focus", "intermediate") shouldBe 120.0
+        sum("pull_focus", "novice") shouldBe 97.0
         presets.ids shouldBe listOf("balanced", "legs_only", "no_legs", "pull_focus")
     }
 
@@ -115,11 +115,11 @@ class TargetsTest {
         )
         up.ramp.getValue("chest").t shouldBe 14.0 // +2, capped at max(1, floor(2.4)) = 2
         up.rampTrace.first { it.group == "chest" }.let { it.p shouldBe 1; it.s shouldBe 1; it.delta shouldBe 2 }
-        // T 6 (front delts as an improve group, special 6): the cap is 1.
-        val goals = presets.goals("balanced") + ("front_delts" to GroupGoal("improve"))
-        val c6 = Targets.compute(input(goals = goals, owned = emptyList()), params)
-        Targets.closeWeek(WeekCloseInput(c6, emptyMap(), mapOf("front_delts" to RampSignals(listOf(0.05), listOf("never_sore"))), ReactiveSignals(), 2, false), params)
-            .ramp.getValue("front_delts").t shouldBe 7.0
+        // T 4 (lower back as an improve group, special 4): the cap is 1.
+        val goals = presets.goals("balanced") + ("lower_back" to GroupGoal("improve"))
+        val c4 = Targets.compute(input(goals = goals, owned = emptyList()), params)
+        Targets.closeWeek(WeekCloseInput(c4, emptyMap(), mapOf("lower_back" to RampSignals(listOf(0.05), listOf("never_sore"))), ReactiveSignals(), 2, false), params)
+            .ramp.getValue("lower_back").t shouldBe 5.0
         // Missing soreness: no change; a big drop: -2, floored at T_base - 2.
         Targets.closeWeek(WeekCloseInput(closing, emptyMap(), mapOf("chest" to RampSignals(listOf(0.03))), ReactiveSignals(), 2, false), params)
             .ramp.getValue("chest").t shouldBe 12.0

@@ -1067,8 +1067,8 @@ sets × 0.3, which no source supports.
 ### 5.5 Constants
 
 `BASE_BY_AGE {novice 10, intermediate 12, advanced 14}` (C14; ACSM 2026 ≥ 10 sets/week, strong; Baz-Valle 2022 12-20);
-`DEFAULT_TRAINING_AGE novice` (C64); `FOCUS_BONUS 4` (C14); `SPECIAL_IMPROVE {front_delts 6, forearms 6,
-lower_back 4, adductors 6, abductors 6, upper_traps 6}` (planning lens, expert-opinion; abductors [this doc]);
+`DEFAULT_TRAINING_AGE novice` (C64); `FOCUS_BONUS 4` (C14); `SPECIAL_IMPROVE {lower_back 4}` (D85: the
+other groups get BASE, because indirect work already counts toward T; lower_back's squat and row load is 0.25, no FS);
 `MRV {chest, lats, upper_back, quads, glutes, hamstrings 22; side_delts, rear_delts 24; biceps, triceps, calves, abs,
 front_delts, upper_traps, forearms, abductors, adductors 20; lower_back 16}` (RP expert opinion, used only as caps,
 C14); `MAINTAIN_MIN 3`, `MAINTAIN_DIVISOR 3` (C14; Bickel 2011), `MAINTAIN_MIN_60 6`, `AGE_60 60`;
@@ -1097,9 +1097,9 @@ Resulting weekly targets (normal week, no ramp yet, no challenge):
 | Preset | intermediate (BASE 12) | novice (BASE 10) |
 |---|---|---|
 | `balanced` | 10 improve groups × 12 = 120; 8 maintain groups × 4 = 32 → 152 FS-equivalent Vhyp/week | 10 × 10 + 8 × 3 = 124 |
-| `legs_only` | quads, hamstrings, glutes 12; adductors, abductors 6; calves 12; abs, lower_back 4 → 68 | 30 + 12 + 10 + 6 = 58 |
+| `legs_only` | quads, hamstrings, glutes 12; adductors, abductors 12; calves 12; abs, lower_back 4 → 80 | 30 + 20 + 10 + 6 = 66 |
 | `no_legs` | 7 × 12 + 5 × 4 = 104 | 7 × 10 + 5 × 3 = 85 |
-| `pull_focus` | lats 16, upper_back 16, biceps 12, rear_delts 12, forearms 6; 13 maintain × 4 = 52 → 114 | 14 + 14 + 10 + 10 + 6 + 39 = 93 |
+| `pull_focus` | lats 16, upper_back 16, biceps 12, rear_delts 12, forearms 12; 13 maintain × 4 = 52 → 120 | 14 + 14 + 10 + 10 + 10 + 39 = 97 |
 
 With the OAP challenge active, lats, biceps and forearms are covered (their targets drop out of the general engine), so
 `balanced` asks the general engine for 152 − 12 − 12 − 4 = 124 (intermediate).
@@ -3553,7 +3553,7 @@ whose source is [this doc], is an assumption and carries `tunable: true` in the 
 | `targets.base_by_age` | {"novice": 10, "intermediate": 12, "advanced": 14} | 6-20 | strong (≥ 10/week), moderate (12-20) | C14; ACSM 2026; Baz-Valle 2022 | T-TARGET |
 | `targets.default_training_age` | "novice" | enum | expert-opinion | C64 | onboarding answer |
 | `targets.focus_bonus` | 4 | 0-8 | expert-opinion | C14 | T-TARGET |
-| `targets.special_improve` | {"front_delts": 6, "forearms": 6, "lower_back": 4, "adductors": 6, "abductors": 6, "upper_traps": 6} | 2-12 | expert-opinion | planning lens; abductors [this doc] | T-TARGET |
+| `targets.special_improve` | {"lower_back": 4} | 2-12 | expert-opinion | planning lens; D85 (only lower_back; indirect work already counts toward the target) | T-TARGET |
 | `targets.mrv` | chest, lats, upper_back, quads, glutes, hamstrings 22; side_delts, rear_delts 24; biceps, triceps, calves, abs, front_delts, upper_traps, forearms, abductors, adductors 20; lower_back 16 | 10-35 | expert-opinion (RP; caps only) | C14; planning lens; others [this doc] | T-TARGET |
 | `targets.maintain_min` | 3 | 1-6 | moderate | C14; Bickel 2011; Spiering 2021 | T-TARGET |
 | `targets.maintain_divisor` | 3 | 2-9 | moderate | Bickel 2011 (1/3 and 1/9 doses) | review |

@@ -278,7 +278,7 @@ class AppContainer(private val context: Context) {
 
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
-        const val PARAMS_VERSION = "1.0.4"
+        const val PARAMS_VERSION = "1.0.5"
 
         /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
         const val CHANGEOVER_MIN = 5
