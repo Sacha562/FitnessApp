@@ -88,6 +88,8 @@ fun AppRoot(c: AppContainer, route: MutableStateFlow<Routes.Target?>) {
 private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlow<Routes.Target?>) {
     val backStack = rememberSaveable(saver = BackStackSaver) { mutableStateListOf<AppKey>(AppKey.Main) }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
+    // A day tapped in Today's week strip: the Week tab opens at that week with the day marked (UX 9.7, D82).
+    var weekFocus by remember { mutableStateOf<java.time.LocalDate?>(null) }
     val pending by route.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -177,8 +179,12 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                             onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
                             onSetGoals = { push(AppKey.Preferences) },
+                            onOpenWeek = { d -> weekFocus = d; tab = Tab.WEEK },
                         )
-                        Tab.WEEK -> dev.fitnessapp.app.ui.week.WeekRoute(c, m, onSetGoals = { push(AppKey.Preferences) })
+                        Tab.WEEK -> dev.fitnessapp.app.ui.week.WeekRoute(
+                            c, m, onSetGoals = { push(AppKey.Preferences) }, onOpenCalendars = { push(AppKey.Calendars) },
+                            onOpenToday = { tab = Tab.TODAY }, focus = weekFocus, onFocusUsed = { weekFocus = null },
+                        )
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) }, onCreate = { push(AppKey.CustomExercise(it)) })
                         Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })
                         Tab.YOU -> YouRoute(

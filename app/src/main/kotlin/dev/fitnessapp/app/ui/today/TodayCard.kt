@@ -116,6 +116,8 @@ fun TodayCardTile(
     onOtherOptions: () -> Unit,
     onLogAnyway: () -> Unit,
     onRestToday: () -> Unit,
+    /** "Plan it in calendar" (UX 9.3, D82 (3)); null hides it (no recommended session today, or no calendar to write). */
+    onPlanIt: (() -> Unit)? = null,
 ) {
     val card = p.card
     val o = p.options
@@ -172,6 +174,7 @@ fun TodayCardTile(
                 card.state == CardState.OPTIONAL || card.state == CardState.PLANNED -> LinkButton("Other options", onOtherOptions)
                 else -> Unit
             }
+            if (card.state == CardState.OPTIONAL && onPlanIt != null) LinkButton("Plan it in calendar", onPlanIt)
         }
     }
 }

@@ -455,3 +455,35 @@ events of 27, 29 and 30 October and the chess events were not touched. The five 
 yourself became `user_deleted` and were not re-created. The planner placed W46's session A at 17:30 instead of 19:45
 because of the chess round at 19:30. You confirmed the deletions and the 4 November session C on calendar.google.com
 (title, time, exercise lines, human line and marker).
+
+**M4.6 (2026-11-03, D82, D83, phone checks open)**: the Week tab and Plan it. `PlanIt` in `:algo` (`planning.weekplan`, part
+of ALGORITHMS_PLANNING 8.9, no registry module of its own): the event of an accepted recommended general session (title
+`Gym — {label}`, the planner's start, length = estimate + changeover rounded up to 5 minutes, the English exercise lines,
+the human line and the C37 marker `[fitapp:v1 <recommendationId> gen/<isoYear>-W<ww>/<isoDow>]` last), and the reconciliation
+of the general links with the edit policy of ANDROID 16.7, which yields title and description updates for unedited future
+events only: no insert, delete or time change. The marker's uuid is the stored `weekplan.plan` snapshot of the plan the
+item came from (a provisional next-week plan is stored when one of its items is planned). The calendar writer
+(`CalendarSync.planIt`, `removeGeneral`, `offerGeneral`) inserts through the guarded executor, logs `plan_it_tapped`,
+`calendar_event_written {kind: general, cause: plan_it | undo | user_remove}` and `action_undone`, and on every refresh
+reconciles the general links and writes the updates the screens offer (the plan's session on that day built at the
+event's own budget). A Plan it event's synced row gets its `recommendation_id` and `link_method = created_from_plan`.
+Choices where the spec is open: the classifier reads a session type from the title, and "Legs + push + rear delts" (a
+full-body plan) reads as legs and push, so the app reads a Plan it event's type from its snapshot instead (D82 (4));
+"planned (not recommended)" means the current plan gives the planned session no sets, because the planner keeps a
+planned event in every plan; past weeks show the logged sessions and their volume, weeks after next only the
+challenge's block. The Week tab (D83, replacing D82's stacked rows after the first install) is a calendar time grid:
+gym sessions as accent blocks (done ones with a check, the add-on as a line inside its challenge session), the
+planner's suggestions outlined with a dashed accent border and a "+" for one-tap Plan it at 3 or 5 days, every other
+event muted in the background colour, overlapping blocks side by side, a current-time line, and chips for 3, 5 or 7
+days on screen (7 by default, the user's pick; fewer scroll sideways and open at today). A day header or block opens
+the day sheet (the session's exercises, minutes and readiness per family, the day's events with their status and
+classification, Plan it, Adopt, Remove from calendar, Correct, Go to Today). Today's card has "Plan it in calendar" with
+Undo and its week strip opens the Week tab at the tapped day. You → Calendars' write-switch line now says where
+sessions go. Golden GF-W41-PLAN-IT-FRI, regenerated on catalog 1.0.2 from the GF-W41-TODAY-FRI state: Friday's FULL item
+(est. 74.9 min) becomes the event 19:45-21:05 with the `gen/2026-W41/5` marker last, read back as `planned_gym` by marker
+(its title alone would read as PUSH+LEGS), and Friday's card is PLANNED general with the calendar budget 75 (the spec's
+19:45-20:40 and 50 min came from the pre-1.0.2 estimate). Also: D80's engine bump to 1.20.0 had left the 18 challenge
+persona goldens of `:sim` at 1.19.0; regenerated, only that line changed. Not fixed: `gradlew check` stops on a lint
+error in `PreferencesScreen.kt:138` (a coroutine launched during composition), older than this step. No engine,
+params or server change. Tests: `:algo` 556, `:app` 154, `:data` 104, `:sim` 60, all green; screenshots
+`week_grid_{3,5,7}.png`.

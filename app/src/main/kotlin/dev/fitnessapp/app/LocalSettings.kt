@@ -61,6 +61,11 @@ class LocalSettings(context: Context) {
         get() = prefs.getBoolean(KEY_CAL_REAL_WRITES, false)
         set(v) = prefs.edit().putBoolean(KEY_CAL_REAL_WRITES, v).apply()
 
+    /** How many days the Week grid shows on the screen at once: 3, 5 or 7 (D83). */
+    var weekDaysVisible: Int
+        get() = prefs.getInt(KEY_WEEK_DAYS, 7).takeIf { it in setOf(3, 5, 7) } ?: 7
+        set(v) = prefs.edit().putInt(KEY_WEEK_DAYS, v).apply()
+
     /** Series keys whose override applies to the whole series (D39 scope "the whole series"). */
     var calendarSeriesOverrides: Set<String>
         get() = prefs.getStringSet(KEY_CAL_SERIES, emptySet()).orEmpty().toSortedSet()
@@ -98,6 +103,7 @@ class LocalSettings(context: Context) {
         const val KEY_CAL_PRIMARY = "calendar_primary_identity"
         const val KEY_CAL_EXTRA = "calendar_extra_identities"
         const val KEY_CAL_REAL_WRITES = "calendar_real_writes"
+        const val KEY_WEEK_DAYS = "week_days_visible"
         const val KEY_CAL_SERIES = "calendar_series_overrides"
         const val KEY_CAL_UNAVAILABLE = "calendar_unavailable_reason"
         const val KEY_EXPORT_REMINDER = "export_reminder_enabled"

@@ -54,6 +54,7 @@ object GoldenRunner {
             "select" -> SessionGolden.select(payload(), params.fork())
             "weekplan" -> WeekGolden.weekplan(payload(), params.fork())
             "today" -> WeekGolden.today(payload(), params.fork())
+            "planit" -> WeekGolden.planIt(payload(), params.fork())
             else -> throw IllegalArgumentException("no golden adapter for module $module")
         }
         return Result(outputs, Jcs.canonicalize(outputs), Jcs.sha256Hex(outputs))

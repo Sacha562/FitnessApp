@@ -40,8 +40,12 @@ class PlanSnapshotRecorder(
     private val params: ParamView,
     private val paramsVersion: String,
 ) {
-    suspend fun week(plan: WeekPlan): String? {
-        if (plan.provisional) return null
+    /**
+     * The `weekplan.plan` snapshot of [plan]. Next week's provisional plan is stored only when [accepted]: a "Plan it"
+     * on one of its items makes it the recommendation that event's marker names (D82).
+     */
+    suspend fun week(plan: WeekPlan, accepted: Boolean = false): String? {
+        if (plan.provisional && !accepted) return null
         val outputs = buildJsonObject {
             put("days", buildJsonArray {
                 plan.days.forEach { d ->
@@ -61,7 +65,10 @@ class PlanSnapshotRecorder(
             put("band", buildJsonObject { put("in_band", JsonPrimitive(plan.band.candidatesInBand)); put("tie_key_used", plan.band.tieKeyUsed) })
             put("evaluated", JsonPrimitive(plan.evaluated))
         }
-        val inputs = JsonObject(mapOf("plan_id" to JsonPrimitive(plan.planId), "iso_week" to JsonPrimitive(plan.isoWeek)))
+        val inputs = JsonObject(
+            mapOf("plan_id" to JsonPrimitive(plan.planId), "iso_week" to JsonPrimitive(plan.isoWeek)) +
+                (if (plan.provisional) mapOf("provisional" to JsonPrimitive(true)) else emptyMap()),
+        )
         return write("weekplan.plan", WeeklyPlanner.ref.id.value, WeeklyPlanner.ref.version.toString(), "week:${plan.isoWeek}", plan.days.first().date, inputs, outputs)
     }
 

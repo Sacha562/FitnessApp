@@ -8,7 +8,11 @@ import dev.fitnessapp.algo.challenge.contract.ContractWindow
 import dev.fitnessapp.algo.challenge.contract.GapRule
 import dev.fitnessapp.algo.challenge.plan.BlockedDay
 import dev.fitnessapp.algo.challenge.plan.Interval
+import dev.fitnessapp.algo.challenge.calendar.SlotMatcher
 import dev.fitnessapp.algo.common.Groups
+import dev.fitnessapp.algo.core.calendar.CalendarClassifier
+import dev.fitnessapp.algo.core.calendar.CalendarInstance
+import dev.fitnessapp.algo.core.calendar.ClassifyContext
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.core.det.GridKind
 import dev.fitnessapp.algo.core.det.JsonNumbers
@@ -27,6 +31,7 @@ import dev.fitnessapp.algo.planning.weekplan.AddOnFamily
 import dev.fitnessapp.algo.planning.weekplan.AddOnSpec
 import dev.fitnessapp.algo.planning.weekplan.FixedItem
 import dev.fitnessapp.algo.planning.weekplan.GroupAvailability
+import dev.fitnessapp.algo.planning.weekplan.PlanIt
 import dev.fitnessapp.algo.planning.weekplan.ReasonCode
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeekPlanInput
@@ -87,6 +92,54 @@ internal object WeekGolden {
             put("rest_reasons", buildJsonArray { r.restReasons.forEach { x -> add(reasonJson(x.code, x.params, x.cls, x.weight)) } })
             put("excluded", buildJsonArray { r.excluded.forEach { x -> add(buildJsonObject { put("subject", x.subject); put("code", x.reasonCode) }) } })
             put("week", planJson(r.weekPlan, full = false))
+        }
+    }
+
+    /**
+     * W41_planItFri (24.2, D82): "Plan it" on the plan's recommended item of `plan_it.date`, the event read back and
+     * classified, then Today with the planned event as a fixed planned gym session of the planned type.
+     */
+    fun planIt(p: JsonObject, params: ParamView): JsonObject {
+        val input = input(p, params)
+        val zone = input.zone
+        val plan = WeeklyPlanner.plan(input, params)
+        val pi = p.getValue("plan_it").jsonObject
+        val date = LocalDate.parse(str(pi, "date"))
+        val item = plan.days.first { it.date == date }.items.first { it.kind == WeeklyPlanner.KIND_RECOMMENDED }
+        val e = PlanIt.event(str(pi, "recommendation_id"), item, zone, strings(pi["lines"]), input.changeoverMin, str(pi, "human_line"))
+        val inst = CalendarInstance(
+            instanceKey = "plan-it", seriesKey = "plan-it", eventId = 1, calendarId = 1, calendarName = "primary", calendarWritable = true,
+            beginUtc = e.start, endUtc = e.end, allDay = false, title = e.title, description = e.description, location = null,
+            status = "confirmed", declined = false, availabilityFree = false,
+        )
+        val ctx = ClassifyContext(input.now, zone, setOf(1L), emptyList(), true, emptyList(), emptyList(), emptyMap(), emptyList())
+        val anchor = CalendarClassifier.classify(listOf(inst), ctx, params, SlotMatcher.matching(params, zone)).anchors.single()
+        val budget = (PlanIt.minutes(item.estMinutes, input.changeoverMin) - input.changeoverMin)
+        val planned = FixedItem(
+            anchor.instanceKey, FixedItem.KIND_PLANNED_GYM, anchor.localDate, anchor.beginUtc, anchor.endUtc, "Planned gym",
+            plannedType = SessionType.of(requireNotNull(item.type)), budgetMin = budget,
+        )
+        val r = TodayRecommender.recommend(TodayInput(input.copy(fixed = input.fixed + planned)), params)
+        return buildJsonObject {
+            put("item", buildJsonObject {
+                put("type", item.type); put("label", item.label); put("start", item.start.toString()); put("est_min", JsonNumbers.grid(item.estMinutes, GridKind.S))
+            })
+            put("event", buildJsonObject {
+                put("title", e.title); put("start", e.start.toString()); put("end", e.end.toString())
+                put("minutes", JsonNumbers.int(PlanIt.minutes(item.estMinutes, input.changeoverMin).toLong()))
+                put("last_line", e.description.lines().last { it.isNotBlank() })
+            })
+            put("classified", buildJsonObject {
+                put("kind", anchor.kind.code); put("method", anchor.method?.code ?: ""); anchor.gymType?.let { put("type_from_title", it) }
+            })
+            put("today", buildJsonObject {
+                put("verdict", r.verdict)
+                put("budget_min", JsonNumbers.grid(r.budgetMin, GridKind.S))
+                put("budget_source", r.budgetSource)
+                r.planned?.let { pl -> put("planned", buildJsonObject { put("kind", pl.kind); put("label", pl.label) }) }
+                r.primaryOptionId?.let { put("primary", it) }
+                r.options.firstOrNull { it.optionId == r.primaryOptionId }?.let { o -> put("primary_est_min", JsonNumbers.grid(o.estMinutes, GridKind.S)) }
+            })
         }
     }
 

@@ -44,6 +44,8 @@ class CalendarRepository(
      * Stores one refresh: the cache rows of the window, `calendar_classified` for each instance whose classification
      * changed, and the synced rows of classified events (only when their content changed, so a refresh that finds the
      * same calendar writes nothing). Rows of the window that the provider no longer returned get `missing_since`.
+     * [planned] maps the instance key of a "Plan it" event to its stored `weekplan.plan` snapshot (D82): the row gets
+     * that `recommendation_id` and `link_method = created_from_plan`.
      */
     suspend fun storeRefresh(
         instances: List<CalendarInstance>,
@@ -51,6 +53,7 @@ class CalendarRepository(
         anchors: List<Anchor>,
         windowFromMs: Long,
         windowToMs: Long,
+        planned: Map<String, String> = emptyMap(),
     ) {
         val user = ctx.userId()
         val now = ctx.nowMs()
@@ -127,6 +130,8 @@ class CalendarRepository(
                     score = (a.matchScore ?: a.score.toDouble()).let { Math.round(it * MILLI) },
                     features = a.features, app_written = base.app_written || marker != null,
                     marker = marker ?: base.marker, attention = attentionOf(a, base), missing_since = null,
+                    recommendation_id = planned[a.instanceKey] ?: base.recommendation_id,
+                    link_method = if (planned[a.instanceKey] != null && base.link_method == null) PLANNED_LINK else base.link_method,
                 )
                 if (existing == null || contentDiffers(existing, next)) {
                     upsert(next.copy(client_updated_at = ctx.nextClientMs(), last_seen_at = now))
@@ -226,7 +231,8 @@ class CalendarRepository(
 
     /**
      * The post-hoc link of a finished session to its calendar event (C35, `auto_window`): set once on the synced row
-     * when neither the event nor the session is linked yet; a manual link is never replaced.
+     * when neither the event nor the session is linked yet; a manual link is never replaced, and a "Plan it" event keeps
+     * `created_from_plan` (D82).
      */
     suspend fun linkSession(instanceKey: String, sessionId: String) {
         var wrote = false
@@ -234,11 +240,12 @@ class CalendarRepository(
             val row = db.calendarEvents().byInstanceKey(instanceKey) ?: return@withTransaction
             if (row.linked_session_id != null || row.deleted_at != null) return@withTransaction
             if (db.calendarEvents().linkedTo(sessionId) != null) return@withTransaction
-            upsert(row.copy(linked_session_id = sessionId, link_method = "auto_window", client_updated_at = ctx.nextClientMs()))
+            val method = if (row.link_method == PLANNED_LINK) PLANNED_LINK else "auto_window"
+            upsert(row.copy(linked_session_id = sessionId, link_method = method, client_updated_at = ctx.nextClientMs()))
             telemetry.write(
                 EventDraft(
                     type = "calendar_link_changed", entityType = "calendar_event", entityId = row.id, sessionId = sessionId,
-                    payload = mapOf("to_instance_key" to JsonPrimitive(instanceKey), "method" to JsonPrimitive("auto_window")),
+                    payload = mapOf("to_instance_key" to JsonPrimitive(instanceKey), "method" to JsonPrimitive(method)),
                 ),
             )
             wrote = true
@@ -353,6 +360,8 @@ class CalendarRepository(
         private const val MAX_TEXT = 200
         private const val MS_PER_MIN = 60_000L
         private const val MAX_RUN_MIN = 600
+        /** `link_method` of a "Plan it" event (DATA_MODEL 9.7.3, D82). */
+        private const val PLANNED_LINK = "created_from_plan"
         /** ANDROID 8.3: cache rows older than 60 days are purged. */
         private const val PURGE_MS = 60L * 24 * 3600 * 1000
 

@@ -32,6 +32,8 @@ import dev.fitnessapp.algo.core.calendar.Marker
 import dev.fitnessapp.algo.core.calendar.OpeningHours
 import dev.fitnessapp.algo.core.calendar.SlotKey
 import dev.fitnessapp.algo.core.clock.Week
+import dev.fitnessapp.algo.planning.weekplan.PlanIt
+import dev.fitnessapp.algo.planning.weekplan.PlanItem
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.BuildConfig
 import dev.fitnessapp.app.ui.challenges.ChallengeLines
@@ -96,6 +98,9 @@ class CalendarSync(private val c: AppContainer) {
     val snapshot: StateFlow<CalendarSnapshot> = _snapshot
     private var observer: ContentObserver? = null
     private var pendingRefresh: Job? = null
+
+    /** What each unedited "Plan it" event should show, by marker line (D82 (4)); filled by [offerGeneral]. */
+    @Volatile private var generalDesired: Map<String, PlanIt.Desired> = emptyMap()
 
     fun canRead(): Boolean = granted(Manifest.permission.READ_CALENDAR)
     fun canWrite(): Boolean = granted(Manifest.permission.WRITE_CALENDAR)
@@ -212,17 +217,18 @@ class CalendarSync(private val c: AppContainer) {
             catalogNames = c.catalog.doc.exercises.flatMap { listOfNotNull(it.nameEn, it.nameNl) + it.aliases },
         )
         val cls = CalendarClassifier.classify(instances, ctx, c.params, SlotMatcher.matching(c.params, zone))
+        val (anchors, planned) = plannedTypes(cls.anchors)
         val identities = read.associate { it.id to identityHash(it) }
-        repo.storeRefresh(instances, identities, cls.anchors, from.toEpochMilli(), to.toEpochMilli())
+        repo.storeRefresh(instances, identities, anchors, from.toEpochMilli(), to.toEpochMilli(), planned)
         // C35: finished sessions of last week and this week link to the event on their day (within 3 h).
         val finished = (c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday.minusWeeks(1))) + c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday)))
             .filter { it.habit_id == null && it.started_at != null && it.deleted_at == null }
         for (s in finished) {
-            val a = CalendarClassifier.linkSession(Instant.ofEpochMilli(s.started_at!!), s.challenge_slot, cls.anchors, zone, c.params) ?: continue
+            val a = CalendarClassifier.linkSession(Instant.ofEpochMilli(s.started_at!!), s.challenge_slot, anchors, zone, c.params) ?: continue
             repo.linkSession(a.instanceKey, s.id)
         }
         // The planner of every screen reads these anchors from now on.
-        _snapshot.value = _snapshot.value.copy(status = CalendarClassification.OK, anchors = cls.anchors)
+        _snapshot.value = _snapshot.value.copy(status = CalendarClassification.OK, anchors = anchors)
 
         // Write-back per enrollment that has events or links (an abandoned one still removes its future events).
         val links = repo.links()
@@ -243,7 +249,7 @@ class CalendarSync(private val c: AppContainer) {
                 .map { "${Week.isoWeek(LocalDate.parse(it.local_date))}/${it.challenge_slot}" }.toSet()
             val input = WritePlanInput(
                 id, slug, f?.def?.doc?.structure?.block?.testSlot ?: "TEST", now, zone, from, to, horizon, desired, done,
-                instances, cls.anchors, links, wb?.humanLine?.get("en") ?: HUMAN_LINE,
+                instances, anchors, links, wb?.humanLine?.get("en") ?: HUMAN_LINE,
             )
             val plan = WritePlanner.plan(input)
             prompts += plan.prompts.map { CalendarPrompt(id, it) }
@@ -266,12 +272,34 @@ class CalendarSync(private val c: AppContainer) {
             }
             if (applied.ops.isNotEmpty() || applied.linkChanges.isNotEmpty()) saveLinks(id, links, applied, inserted, target, instances, input.testSlot)
         }
+
+        // D82 (4): "Plan it" events are reconciled on every refresh and follow the plan while the user has not edited them.
+        val general = links.filter { it.kind == PlanIt.KIND }
+        val gp = PlanIt.updates(PlanIt.UpdateInput(now, from, to, general, instances, generalDesired, HUMAN_LINE))
+        var gApplied = WritePlan(emptyList(), emptyList(), gp.linkChanges)
+        if (writeOff == null && target != null && gp.ops.isNotEmpty()) {
+            val r = executor.execute(gp.ops, target, eventCalendar, now, zone, gym?.name)
+            logResult(r, gp, cause, PlanIt.KIND)
+            pending += r.refused.map { it.first }
+            if (r.failure != null) {
+                pending += gp.ops
+            } else {
+                anyWritten = anyWritten || r.applied.isNotEmpty()
+                gApplied = WritePlan(r.applied, emptyList(), gp.linkChanges + r.markerMissing.mapNotNull { releasedLink(it, general) })
+                updatedKeys += r.applied.filterIsInstance<WriteOp.Update>().map { it.marker.slotKey }
+            }
+        } else {
+            pending += gp.ops
+        }
+        if (gApplied.ops.isNotEmpty() || gApplied.linkChanges.isNotEmpty()) {
+            PlanIt.linksAfter(general, gApplied).groupBy { it.markerUuid }.forEach { (uuid, ls) -> repo.saveLinks(uuid, ls, target?.identity.orEmpty()) }
+        }
         val finalLinks = repo.links()
         val byMarker = instances.mapNotNull { i -> Marker.ofDescription(i.description)?.let { it.render() to i.instanceKey } }.toMap()
         repo.applyLinkStates(finalLinks, byMarker, instances.associate { it.eventId to it.instanceKey }, updatedKeys)
         _snapshot.value = CalendarSnapshot(
             status = CalendarClassification.OK, canWrite = canWrite(), calendars = calendars, primary = primary, needsPick = needsPick,
-            testCalendar = test, readIds = readIds, target = target, writeOff = writeOff, anchors = cls.anchors,
+            testCalendar = test, readIds = readIds, target = target, writeOff = writeOff, anchors = anchors,
             instances = instances.associateBy { it.instanceKey }, prompts = prompts, pending = pending, links = finalLinks, refreshedAt = now,
         )
         // Our own inserts and updates come back through the observer; refresh once more so the new events are classified.
@@ -301,9 +329,8 @@ class CalendarSync(private val c: AppContainer) {
         return dev.fitnessapp.algo.challenge.calendar.LinkChange(l.copy(state = CalendarLink.RELEASED))
     }
 
-    private suspend fun logResult(r: ExecResult, plan: WritePlan, cause: String) {
+    private suspend fun logResult(r: ExecResult, plan: WritePlan, cause: String, kind: String = "challenge") {
         for (op in r.applied) {
-            val kind = "challenge"
             repo.log(
                 "calendar_event_written",
                 mapOf(
@@ -370,6 +397,30 @@ class CalendarSync(private val c: AppContainer) {
     }
 
     fun identityHash(cal: ProviderCalendar): String = CalendarKeys.calendarIdentity(cal.accountName, cal.accountType, cal.ownerAccount)
+
+    /**
+     * D82 (4): the anchors with each "Plan it" event's planned session type (the type its `weekplan.plan` snapshot
+     * recommended that day), and the instance key -> snapshot id of those events for their synced rows. The classifier
+     * reads a type from the title, and a label such as "Legs + push + rear delts" (a full-body plan) would read as legs
+     * and push, so the planned type wins.
+     */
+    private suspend fun plannedTypes(anchors: List<Anchor>): Pair<List<Anchor>, Map<String, String>> {
+        val general = anchors.mapNotNull { a -> a.marker?.takeIf { it.parsedKey() is SlotKey.General }?.let { a to it } }
+        if (general.isEmpty()) return anchors to emptyMap()
+        val recs = c.db.recommendations().byIds(general.map { it.second.uuid }.distinct()).filter { it.kind == "weekplan.plan" }.associateBy { it.id }
+        val types = HashMap<String, String>()
+        val planned = sortedMapOf<String, String>()
+        for ((a, m) in general) {
+            val r = recs[m.uuid] ?: continue
+            planned[a.instanceKey] = r.id
+            val date = PlanIt.dateOf(m.slotKey)?.toString() ?: continue
+            val day = runCatching {
+                Json.parseToJsonElement(r.outputs).jsonObject["days"]?.jsonArray?.firstOrNull { it.jsonObject["date"]?.jsonPrimitive?.content == date }?.jsonObject
+            }.getOrNull()
+            day?.get("type")?.jsonPrimitive?.content?.takeIf { day["kind"]?.jsonPrimitive?.content == "recommended_general" }?.let { types[a.instanceKey] = it }
+        }
+        return anchors.map { a -> types[a.instanceKey]?.let { a.copy(gymType = it) } ?: a } to planned
+    }
 
     // ------------------------------------------------------------------------------------------ user actions
 
@@ -494,6 +545,78 @@ class CalendarSync(private val c: AppContainer) {
         val from = anchor.slot?.let { "${anchor.kind.code}:$it" } ?: anchor.gymType?.let { "${anchor.kind.code}:$it" } ?: anchor.kind.code
         repo.setOverride(anchor, cached, kind, slot, enrollmentId, gymType, if (series) "series" else "event", from)
         refresh("correction")
+    }
+
+    /**
+     * "Plan it" (UX 10.4, D82): writes the recommended general [item] accepted under [recommendationId] (the stored
+     * `weekplan.plan` snapshot of the plan it belongs to) as a marked event in the write target, with [label] and the
+     * exercise [lines] of its build. Returns null, or the code of the guard or failure that stopped it.
+     */
+    suspend fun planIt(recommendationId: String, item: PlanItem, label: String, lines: List<String>): String? {
+        val s = _snapshot.value
+        s.writeOff?.let { return it }
+        val target = s.target ?: return "no_target"
+        val date = Week.localDate(item.start, ChallengeWeek.ZONE)
+        val taken = s.links.any { it.kind == PlanIt.KIND && it.slotKey == PlanIt.slotKey(date) && it.state != CalendarLink.DELETED_BY_APP && it.state != CalendarLink.USER_DELETED }
+        if (taken) return "already_planned"
+        val changeover = (c.profiles.get()?.changeover_min ?: AppContainer.CHANGEOVER_MIN).toDouble()
+        val e = PlanIt.event(recommendationId, item.copy(label = label), ChallengeWeek.ZONE, lines, changeover, HUMAN_LINE)
+        val gym = c.equipment.defaultGym()
+        val r = mutex.withLock {
+            val r = executor.execute(listOf(e.insert()), target, emptyMap(), c.clock.now(), ChallengeWeek.ZONE, gym?.name)
+            if (r.applied.isNotEmpty()) {
+                val links = repo.links().filter { it.markerUuid == e.marker.uuid && it.slotKey != e.marker.slotKey }
+                repo.saveLinks(e.marker.uuid, links + PlanIt.link(e, r.insertedIds[e.marker.slotKey]), target.identity)
+            }
+            r
+        }
+        if (r.applied.isEmpty()) {
+            val code = r.refused.firstOrNull()?.second ?: r.failure ?: "provider_error"
+            repo.log("calendar_write_failed", mapOf("op" to "insert", "error_class" to code))
+            return code
+        }
+        repo.log("calendar_event_written", mapOf("op" to "insert", "kind" to PlanIt.KIND, "marker_key" to e.marker.slotKey, "cause" to "plan_it", "provider_rows" to 1))
+        refresh("plan_it")
+        return null
+    }
+
+    /**
+     * Undo of "Plan it" and Remove app event (UX 10.4, 10.9): deletes the app's general event while it still carries its
+     * marker and lies ahead; the link becomes `deleted_by_app`, so the day can be planned again.
+     */
+    suspend fun removeGeneral(marker: Marker, cause: String): String? {
+        val s = _snapshot.value
+        val target = s.target ?: return "no_target"
+        val link = s.links.firstOrNull { it.markerUuid == marker.uuid && it.slotKey == marker.slotKey }
+        val inst = s.instances.values.firstOrNull { Marker.ofDescription(it.description) == marker }
+        val eventId = inst?.eventId ?: link?.eventId ?: return "gone"
+        val start = inst?.beginUtc ?: link?.lastStart ?: return "gone"
+        val calendars = s.instances.values.associate { it.eventId to it.calendarId } + (eventId to (inst?.calendarId ?: target.calendarId))
+        val res = executor.userConfirmed(WriteOp.Delete(eventId, inst?.instanceKey.orEmpty(), marker, start), target, calendars, c.clock.now())
+        if (res.applied.isEmpty()) {
+            val code = res.refused.firstOrNull()?.second ?: res.failure ?: "marker_missing"
+            repo.log("calendar_write_failed", mapOf("op" to "delete", "error_class" to code))
+            return code
+        }
+        repo.log("calendar_event_written", mapOf("op" to "delete", "kind" to PlanIt.KIND, "instance_key" to inst?.instanceKey, "marker_key" to marker.slotKey, "cause" to cause, "provider_rows" to 1))
+        mutex.withLock {
+            val links = repo.links().filter { it.markerUuid == marker.uuid }
+            repo.saveLinks(marker.uuid, links.map { if (it.slotKey == marker.slotKey) it.copy(state = CalendarLink.DELETED_BY_APP) else it }, target.identity)
+        }
+        refresh(cause)
+        return null
+    }
+
+    /**
+     * What the plan wants the unedited "Plan it" events of [weeks] to show (D82 (4)), by marker line; entries of other
+     * weeks are kept. A change asks for a refresh, which writes the updates under the edit policy.
+     */
+    fun offerGeneral(weeks: Set<String>, desired: Map<String, PlanIt.Desired>) {
+        val kept = generalDesired.filterKeys { key -> Marker.parseLine(key)?.parsedKey().let { it is SlotKey.General && it.isoWeek !in weeks } }
+        val next = kept + desired
+        if (next == generalDesired) return
+        generalDesired = next
+        requestRefresh("plan_changed", 0)
     }
 
     /** Debug and checks: switches the write target to the user's calendar (D39, after T17 and the user's OK). */

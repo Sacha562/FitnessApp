@@ -183,7 +183,11 @@ private fun WriteTile(c: AppContainer, snap: CalendarSnapshot, onRealWrites: () 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Write to my own calendar", style = MaterialTheme.typography.bodyLarge)
-                    Text("Off while the app is being tested.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+                    Text(
+                        if (c.settings.calendarRealWrites) "Challenge sessions and the sessions you plan go to your main calendar."
+                        else "Off: only the test calendar on this phone is changed.",
+                        style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+                    )
                 }
                 Switch(c.settings.calendarRealWrites, { on -> if (on) onRealWrites() else c.calendar.setRealWrites(false).also { onMessage("New sessions go to the test calendar again.") } })
             }

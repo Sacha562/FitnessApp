@@ -4,6 +4,7 @@ import dev.fitnessapp.algo.EngineVersion
 import dev.fitnessapp.algo.accounting.readiness.Dose
 import dev.fitnessapp.algo.challenge.contract.ChallengeContract
 import dev.fitnessapp.algo.challenge.contract.ContractBuilder
+import dev.fitnessapp.algo.challenge.enrollment.EnrollmentFold
 import dev.fitnessapp.algo.challenge.enrollment.EnrollmentState
 import dev.fitnessapp.algo.challenge.plan.Interval
 import dev.fitnessapp.algo.common.Groups
@@ -30,6 +31,7 @@ import dev.fitnessapp.algo.selection.elig.HardWindow
 import dev.fitnessapp.algo.selection.elig.LightPullRule
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.challenges.ChallengeWeek
+import dev.fitnessapp.data.challenge.FoldedEnrollment
 import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -68,7 +70,7 @@ object WeekPlans {
         }
     }
 
-    /** Next ISO week's provisional plan (8.8): general items are only shown, never written (Plan it is M4.6). */
+    /** Next ISO week's provisional plan (8.8): its general items are written only on "Plan it" (D82). */
     suspend fun nextWeek(c: AppContainer, current: Run, now: Instant = c.clock.now()): Run = withContext(Dispatchers.Default) {
         val nextMonday = Week.isoWeekStart(Week.localDate(now, PlanningFacts.ZONE)).plusWeeks(1)
         val wv = WeekVolume.compute(c, Week.atLocal(nextMonday, LocalTime.of(0, 1), PlanningFacts.ZONE))
@@ -82,6 +84,23 @@ object WeekPlans {
     /** Today's options (9) at the chosen time chip ([chipMin] null: the calendar budget or the default length). */
     suspend fun today(c: AppContainer, week: Run, chipMin: Double?): TodayOptions = withContext(Dispatchers.Default) {
         cached(Sha256Hex.ofUtf8(week.key + "|today|" + chipMin)) { TodayRecommender.recommend(TodayInput(week.input, chipMin = chipMin), c.params.fork()) }
+    }
+
+    /**
+     * The challenge's block and week in the ISO week starting [monday] (UX 10.7: next week's header and the block
+     * structure of the weeks after it), from a dry-run catch-up of the enrollment to that Monday; null without one.
+     */
+    suspend fun blockAt(c: AppContainer, monday: LocalDate): WeekChallenge? = withContext(Dispatchers.Default) {
+        val e = c.challenges.open().firstOrNull() ?: return@withContext null
+        val f = c.challenges.folded(e.id)
+        if (f.state.status != EnrollmentState.ACTIVE) return@withContext null
+        val zone = PlanningFacts.ZONE
+        val at = Week.atLocal(monday, LocalTime.of(5, 0), zone)
+        val state = runCatching { EnrollmentFold.catchUp(f.def, c.params, f.state, at, zone).second.lastOrNull()?.state }.getOrNull() ?: f.state
+        val p = FoldedEnrollment.projected(f, state)
+        val (_, plan) = ChallengeWeek.plan(c, p, c.challengeFacts.facts(p.def, p.state), at)
+        val contract = ContractBuilder.build(p.def, c.params, p.state, plan, c.profiles.get()?.changeover_min ?: AppContainer.CHANGEOVER_MIN)
+        WeekChallenge(e.id, dev.fitnessapp.app.ui.challenges.ChallengeTexts.title(f.def), contract.blockIndex, contract.blockWeek, contract.deloadWeek, contract.ownsMuscles)
     }
 
     // ---- Cache: a run is reused while its inputs are unchanged within the same five minutes ----

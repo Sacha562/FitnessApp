@@ -56,6 +56,7 @@ import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.LoadingDumbbell
 import dev.fitnessapp.app.ui.common.PLANNER_LINES
+import dev.fitnessapp.app.ui.common.showUndo
 import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
@@ -72,6 +73,7 @@ import dev.fitnessapp.data.sync.SyncState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import dev.fitnessapp.app.planning.PlanItContent
 import dev.fitnessapp.app.planning.PromptPlans
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -92,9 +94,11 @@ fun TodayRoute(
     c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {},
     onHistory: () -> Unit = {}, onOpenTest: (enrollmentId: String) -> Unit = {},
     onOpenReliability: () -> Unit = {}, onOpenEquipment: () -> Unit = {}, onSetGoals: () -> Unit = {},
+    onOpenWeek: (LocalDate) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
     val active by c.sessionRepository.observeActive().collectAsState(initial = null)
     val recent by c.sessionRepository.observeRecent(8).collectAsState(initial = emptyList())
     val latestBw by c.bodyweight.observeLatest().collectAsState(initial = null)
@@ -231,7 +235,7 @@ fun TodayRoute(
                 )
             }
 
-            PlanStrip(today, recent, plan)
+            PlanStrip(today, recent, plan, onOpenWeek)
 
             notice?.let { (kind, text) -> Banner(text, if (kind == "stop" || kind == "warn") BannerKind.SAFETY else BannerKind.ADVISORY, action = "OK", onAction = { notice = null }) }
 
@@ -286,6 +290,23 @@ fun TodayRoute(
                         newSession = true
                     },
                     onRestToday = { scope.launch { runCatching { TodayPlans.action(c, "rest_today", 0) } } },
+                    onPlanIt = todayItem(p)?.takeIf { calendar.status == "ok" && calendar.writeOff == null && calendar.target != null }?.let { item ->
+                        {
+                            // "Plan it in calendar" (UX 9.3, D82 (3)): today's recommended session into the calendar, with Undo.
+                            scope.launch {
+                                val t0 = System.currentTimeMillis()
+                                val (marker, err) = PlanItContent.planIt(c, p.week.plan, item)
+                                runCatching { TodayPlans.action(c, "plan_it", 0) }
+                                planTick++
+                                if (marker == null) {
+                                    snackbar.showSnackbar(if (err == "nothing_to_train") "Nothing to plan for today any more." else "Couldn't add to calendar.")
+                                } else if (snackbar.showUndo("Added to calendar", context) == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                    PlanItContent.undo(c, marker, t0)
+                                    planTick++
+                                }
+                            }
+                        }
+                    },
                 )
             }
             // While the planner runs for the first time (D73); a rerun keeps the card it replaces.
@@ -324,6 +345,7 @@ fun TodayRoute(
             }
         }
 
+        androidx.compose.material3.SnackbarHost(snackbar, Modifier.padding(horizontal = 12.dp))
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
             val a = active
             if (a != null) {
@@ -390,9 +412,9 @@ fun TodayRoute(
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun PlanStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, plan: TodayPlan?) {
+private fun PlanStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, plan: TodayPlan?, onOpenWeek: (LocalDate) -> Unit) {
     val weeks = listOfNotNull(plan?.week?.plan, plan?.next)
-    if (weeks.isEmpty()) return WeekStrip(today, recent)
+    if (weeks.isEmpty()) return WeekStrip(today, recent, onOpenWeek)
     val pager = androidx.compose.foundation.pager.rememberPagerState { weeks.size }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         androidx.compose.foundation.pager.HorizontalPager(pager) { page ->
@@ -416,6 +438,7 @@ private fun PlanStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, plan
                     val name = d.date.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH))
                     Column(
                         Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (isToday) Fit.Accent else Fit.Tile)
+                            .clickable { onOpenWeek(d.date) }
                             .semantics { contentDescription = "$name, $label" + (if (isToday) ", today" else "") },
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                     ) {
@@ -437,9 +460,14 @@ private fun PlanStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, plan
     }
 }
 
+/** Today's recommended general session in this week's plan, the item "Plan it in calendar" writes (D82 (3)). */
+private fun todayItem(p: TodayPlan): dev.fitnessapp.algo.planning.weekplan.PlanItem? =
+    p.week.plan.days.firstOrNull { it.date == p.options.date }?.items
+        ?.firstOrNull { it.kind == dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner.KIND_RECOMMENDED && it.start.isAfter(java.time.Instant.now()) }
+
 /** Monday to Sunday of this week: a check on days with a finished session, today in the accent. */
 @Composable
-private fun WeekStrip(today: LocalDate, recent: List<WorkoutSessionEntity>) {
+private fun WeekStrip(today: LocalDate, recent: List<WorkoutSessionEntity>, onOpenWeek: (LocalDate) -> Unit) {
     val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val done = recent.filter { it.status == "finished" }.map { it.local_date }.toSet()
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -450,6 +478,7 @@ private fun WeekStrip(today: LocalDate, recent: List<WorkoutSessionEntity>) {
             val name = day.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH))
             Column(
                 Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (isToday) Fit.Accent else Fit.Tile)
+                    .clickable { onOpenWeek(day) }
                     .semantics { contentDescription = name + (if (isToday) ", today" else "") + (if (trained) ", trained" else "") },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {

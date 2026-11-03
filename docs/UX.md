@@ -1409,9 +1409,11 @@ tap ("Plan it", D11), and show weekly muscle volume against targets.
 +-------------------------------------+
 ```
 
-As built (D82), each day is one stacked row instead of two columns: the RECOMMENDED line on top, the CALENDAR
-line below it, and the row's action (Plan it, Adopt, Add to calendar) on the right, so long labels do not wrap at
-phone width. The sketch above shows the content of both parts.
+As built (D83, replacing D82's stacked rows), the days are a calendar time grid: hours down, days across, gym
+sessions as accent blocks (done ones with a check), the planner's suggested sessions as outlined blocks, and every
+other event as a muted block in the background colour. Chips "3 · 5 · 7 days" set the day width; with fewer than 7
+the grid scrolls sideways. Tapping a day header or a block opens the day sheet (10.9). The sketch above shows the
+content, not the layout.
 
 `[E]` = an event from the user's calendar without the app's marker; an app-written event shows
 `[App]` with the `edit_calendar` icon. In the real fixture week the C, A and test events were created
