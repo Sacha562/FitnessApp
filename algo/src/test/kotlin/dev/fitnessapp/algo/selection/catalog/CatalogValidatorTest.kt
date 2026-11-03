@@ -124,4 +124,15 @@ class CatalogValidatorTest {
         Ids.exercise("two_arm_dead_hang").toString() shouldBe "637a638c-b2cb-5f42-a874-c7f0066cfbb1"
         Ids.fitness("fixture-user:owner").toString() shouldBe "63750a4b-f9b8-5269-a927-91957167fe62"
     }
+
+    @Test
+    fun `a dip is high-risk only when loaded, weighted pulls always (D80)`() {
+        fun ex(slug: String) = doc.exercises.single { it.slug == slug }
+        ex("dip_chest").highRiskIn("bodyweight") shouldBe false
+        ex("dip_chest").highRiskIn("bodyweight_plus_external") shouldBe true
+        ex("dip_neutral").highRiskIn("bodyweight") shouldBe false
+        ex("pullup_weighted").highRiskIn("bodyweight_plus_external") shouldBe true
+        ex("oap_attempt").highRiskIn("bodyweight") shouldBe true
+        ex("dip_machine").highRiskIn("external") shouldBe false
+    }
 }

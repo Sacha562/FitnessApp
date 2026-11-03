@@ -42,6 +42,7 @@ object WarnTexts {
             "WE-P9" -> "$name: aiming for failure. On this lift stopping 1 rep short gives nearly the same benefit."
             "WE-P10" -> "$name: grip failed ${num("events")} times in four weeks. Grip work or straps can help."
             "WE-P11" -> "$name: many reps at bodyweight for two sessions. A weighted mode or a harder variant progresses better."
+            "WE-P12" -> "$name: about ${num("cap_over_q")} reps possible at your target, above the top of the range. Add weight with the dip belt to keep progressing."
             "WE-T1" -> "$name: progress has stalled. The plan suggests a change; your setting is kept."
             "WE-T2" -> "Several tired or bad days lately. Check sleep, food and stress before the next hard session."
             "WE-V1" -> "$name: about ${num("x")} hard sets per week planned, below the growth range."

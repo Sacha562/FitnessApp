@@ -276,7 +276,7 @@ class PrescriptionRunner(
         val delta = deltaToday(session, se, sessionSets, feelingGood)
         val input = base.copy(deltaStart = delta, cardsShown = cards)
         val r = Autoreg.evaluate(input, params.fork())
-        val highRisk = ex.safetyClass == "high_risk"
+        val highRisk = ex.highRiskIn(se.load_mode)
         if (!r.card) return@withLock Suggestion(null, se.id, sideKey, r, highRisk)
         val lastSet = input.logged.last().set.id
         val inputs = buildJsonObject {
@@ -435,7 +435,7 @@ class PrescriptionRunner(
             }
             RxRequest(
                 exerciseId = se.exercise_id, side = side, facts = facts, isolation = ex.mechanics == "isolation",
-                highRisk = ex.safetyClass == "high_risk", bodyweightOnly = mode == LoadMode.BODYWEIGHT,
+                highRisk = ex.highRiskIn(mode.code), bodyweightOnly = mode == LoadMode.BODYWEIGHT,
                 prefs = prefs, item = slot.item, sets = se.planned_sets ?: SessionRepository.DEFAULT_SETS, restS = restS,
                 loadables = loadables, bodyweightW = bodyweightW,
                 sse = (sse[side] ?: sse["both"])?.let(::sseState), rcmK = rcmK, rircal = rircal, transferM = transferM,

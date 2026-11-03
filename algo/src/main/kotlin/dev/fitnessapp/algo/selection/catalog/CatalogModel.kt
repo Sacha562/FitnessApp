@@ -66,6 +66,12 @@ data class CatalogExercise(
     val stimulus: Map<String, Double> = emptyMap(),
 ) {
     fun js(joint: String): Int = jointStress[joint] ?: 0
+
+    /**
+     * Whether D10's safety rules (WE-S1, WE-S5, the RIR floor) apply in load mode [mode]: every `high_risk` lift, except
+     * that a dip is high-risk only when loaded (D80: D10 names "loaded dips"; a bodyweight dip may go to RIR 0).
+     */
+    fun highRiskIn(mode: String): Boolean = safetyClass == "high_risk" && !(pattern == "dip" && mode != "bodyweight_plus_external")
 }
 
 @Serializable

@@ -2118,6 +2118,7 @@ and REASON-1 events, `evidence_mode`.
 | WE-P9 | failure_on_safe | R3 | `q* = 0` on a non-high-risk exercise -> INFO | 0.2 | moderate (Refalo 2023/2024: trivial benefit) | `q*` 1 |
 | WE-P10 | grip_limited | REASON-1 | >= 3 `grip_failure` events in 28 days -> INFO | 0.3 | expert-opinion | grip work or straps |
 | WE-P11 | bodyweight_reps_high | B9.12 | `cap - q* > 20` for 2 exposures -> INFO | 0.3 | expert-opinion | weighted mode or harder variant |
+| WE-P12 | bodyweight_add_load | D80 | load mode `bodyweight`, the belt allowed, a working set of this or the last exposure with `reps + RIR - q* >= r_hi + rx.double_max_extension` -> INFO | 0.3 | expert-opinion | add weight with the dip belt |
 | WE-L1 | no_rest_days | W8 | the week plan has no rest day or >= 4 consecutive training days (challenge sessions and hard runs included) -> INFO | 0.3 | weak (Bell 2023) | move a session |
 | WE-T1 | stall_action | B14 | a STALL-1 tier action would change a user-owned field -> INFO with "use suggested" | 0.5 | expert-opinion | the tier change |
 | WE-T2 | recovery_check | B14 T3, REASON-1 | `feeling_bad + too_tired >= 3` in 14 days, or a global deload trigger -> INFO with the checklist | 0.5 | expert-opinion | checklist |
@@ -2127,7 +2128,9 @@ RP MEV numbers are never compared with fractional counts (C14); WE-V4 uses the M
 ### B15.3 Which rules override (SAFETY)
 
 Only WE-S1 to WE-S5 are SAFETY. They implement D10's list "no failure on weighted / one-arm pulls or loaded
-dips, load-jump caps, pain protocol, challenge hard constraints". For engine outputs they are **enforced**
+dips, load-jump caps, pain protocol, challenge hard constraints". A dip (pattern `dip`) is `high_risk` for these
+rules only in load mode `bodyweight_plus_external`; a bodyweight dip is not (D80, `CatalogExercise.highRiskIn`).
+For engine outputs they are **enforced**
 (`enforced = true`, the prescription is clamped, the planner and SEL-1 never produce the violation). For user
 actions they produce SAFETY notices that persist until acknowledged; logging is never blocked (UX 11.12,
 16.2). For challenge RULE items (D13, C45; B9.11): WE-S2 is not enforced (generic load-jump caps do not

@@ -135,6 +135,19 @@ class SessionRepository(
     suspend fun history(exerciseId: String, excludeSessionId: String, limit: Int = 60): List<SetWithSessionStart> =
         db.setLogs().historyForExercise(exerciseId, excludeSessionId, limit)
 
+    /**
+     * The load mode a new row of [e] starts in: the catalog's, except that a bodyweight lift whose last exposure carried
+     * added load (the dip belt) starts with the belt again, so RX-1 progresses the added load instead of bodyweight only.
+     */
+    suspend fun plannedMode(e: CatalogExercise, excludeSessionId: String): LoadMode {
+        val base = LoadMode.of(e.loadMode)
+        if (base != LoadMode.BODYWEIGHT || LoadMode.BODYWEIGHT_PLUS_EXTERNAL.code !in e.allowedLoadModes) return base
+        val h = history(catalog.idOf(e), excludeSessionId)
+        val last = h.firstOrNull()?.set?.session_id ?: return base
+        val loaded = h.any { it.set.session_id == last && it.set.set_kind != "warmup" && it.set.added_kg > 0 }
+        return if (loaded) LoadMode.BODYWEIGHT_PLUS_EXTERNAL else base
+    }
+
     // ------------------------------------------------------------------------------------------ lifecycle
 
     /**
@@ -225,10 +238,12 @@ class SessionRepository(
             profile?.bodyweight_fallback_kg?.let { Scaled.toDouble(it, 2) }, params,
         )
         val gym = equipment.defaultGym()
+        // The server CHECK and DATA_MODEL 9.6.1 take the lower-case family codes (`push`, `pull`, ...).
+        val fams = families.map { it.lowercase() }
         db.withTransaction {
             val s = WorkoutSessionEntity(
                 id = id, user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
-                app_version = ctx.appVersion, kind = "gym", status = "in_progress", template_source = "family_combo",
+                app_version = ctx.appVersion, kind = "gym", status = "in_progress", template_source = "family_combo", families = fams,
                 local_date = date.toString(), timezone = zone.id, iso_week = Week.isoWeek(date), gym_id = gym?.id,
                 started_at = now, bodyweight_kg = snap.valueKg?.let { Scaled.fromDouble(it, 2) },
                 bodyweight_source = snap.source.code, bodyweight_stale = snap.stale,
@@ -250,7 +265,7 @@ class SessionRepository(
                     type = "session_started", sessionId = id, entityType = "session", entityId = id,
                     payload = mapOf(
                         "kind" to JsonPrimitive("gym"), "template_source" to JsonPrimitive("family_combo"),
-                        "source_session_id" to JsonNull, "families" to JsonArray(families.map { JsonPrimitive(it) }),
+                        "source_session_id" to JsonNull, "families" to JsonArray(fams.map { JsonPrimitive(it) }),
                         "started_from" to JsonPrimitive("today"), "budget_min" to JsonPrimitive(budgetMin),
                         "budget_source" to JsonPrimitive(budgetSource),
                         "params_hash" to JsonPrimitive(params.hash), "engine_version" to JsonPrimitive(EngineVersion.ENGINE_VERSION),
@@ -372,7 +387,7 @@ class SessionRepository(
     /** A planned row of a built block (D62), shaped like an added exercise (side mode, scheme, equipment). */
     private suspend fun insertPlanned(uid: String, sessionId: String, blockId: String, item: BuiltItem, position: Long, now: Long) {
         val e = item.exercise
-        val mode = LoadMode.of(e.loadMode)
+        val mode = plannedMode(e, sessionId)
         val row = SessionExerciseEntity(
             id = ctx.ids.next(), user_id = uid, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(),
             app_version = ctx.appVersion, session_id = sessionId, block_id = blockId, exercise_id = catalog.idOf(e),
@@ -532,7 +547,8 @@ class SessionRepository(
     // ------------------------------------------------------------------------------------------ exercises
 
     /** Adds a catalog exercise at the end (UX 16.6); planned sets = last time's working sets, else 3. */
-    suspend fun addExercise(sessionId: String, e: CatalogExercise, mode: LoadMode = LoadMode.of(e.loadMode)): String {
+    suspend fun addExercise(sessionId: String, e: CatalogExercise, modeOrNull: LoadMode? = null): String {
+        val mode = modeOrNull ?: plannedMode(e, sessionId)
         val uid = ctx.requireUser()
         val now = ctx.nowMs()
         val exerciseId = catalog.idOf(e)
@@ -601,7 +617,7 @@ class SessionRepository(
             val old = db.sessionExercises().get(sessionExerciseId) ?: return@withTransaction
             val sets = db.setLogs().bySession(old.session_id).count { it.session_exercise_id == old.id && it.set_kind != "warmup" }
             if (sets > 0 || old.challenge_item_key != null) return@withTransaction
-            val mode = LoadMode.of(to.loadMode)
+            val mode = plannedMode(to, old.session_id)
             val resolved = equipment.resolve(to, mode)
             val id = ctx.ids.next()
             val code = reason ?: "other"
@@ -663,9 +679,35 @@ class SessionRepository(
             val e = db.sessionExercises().get(sessionExerciseId) ?: return@withTransaction
             val ex = catalog.byId(e.exercise_id) ?: return@withTransaction
             val resolved = equipment.resolve(ex, mode)
-            writeExercise(e.copy(load_mode = mode.code, equipment_id = resolved.row?.id))
+            writeExercise(unplannedIfUnstarted(e.copy(load_mode = mode.code, equipment_id = resolved.row?.id)))
         }
         scheduler.request()
+    }
+
+    /**
+     * A machine's stack changed in the live session (D43): its exercises without a working set lose their prescription,
+     * so RX-1 plans them again on the new stack instead of a load the stack no longer has (D80). Returns their ids.
+     */
+    suspend fun replanOnEquipment(sessionId: String, equipmentId: String): List<String> {
+        val out = ArrayList<String>()
+        db.withTransaction {
+            for (e in db.sessionExercises().bySession(sessionId)) {
+                if (e.equipment_id != equipmentId || e.status !in OPEN || e.recommendation_id == null) continue
+                val fresh = unplannedIfUnstarted(e)
+                if (fresh === e) continue
+                writeExercise(fresh)
+                out += e.id
+            }
+        }
+        if (out.isNotEmpty()) scheduler.request()
+        return out
+    }
+
+    /** [e] without its prescription and planned load while no working set is logged (RX-1 plans it again), else [e]. */
+    private suspend fun unplannedIfUnstarted(e: SessionExerciseEntity): SessionExerciseEntity {
+        if (e.recommendation_id == null) return e
+        val started = db.setLogs().bySession(e.session_id).any { it.session_exercise_id == e.id && it.set_kind != "warmup" }
+        return if (started) e else e.copy(recommendation_id = null, planned_effective_load_kg = null)
     }
 
     suspend fun skip(sessionExerciseId: String, reason: String, chipPosition: Int) = exerciseEvent(sessionExerciseId) { e, sets ->
@@ -944,5 +986,8 @@ class SessionRepository(
         /** `session_exercises.position` is numeric(9,4): whole positions are multiples of 10^4. */
         const val POSITION_STEP = 10_000L
         const val DEFAULT_SETS = 3
+
+        /** Exercise statuses still to be done in the live session. */
+        private val OPEN = setOf("pending", "active", "deferred")
     }
 }

@@ -1280,7 +1280,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun setLoadMode(mode: LoadMode) {
         val card = _ui.value.card ?: return
-        viewModelScope.launch { c.sessionRepository.setLoadMode(card.item.se.id, mode) }
+        viewModelScope.launch {
+            c.sessionRepository.setLoadMode(card.item.se.id, mode)
+            rxRequested.remove(card.item.se.id) // the row may have lost its prescription: RX-1 plans the new mode (D80)
+        }
     }
 
     /** "Stack setup" (D43): saves this machine's stack, then rebuilds the card on it (`gym_equipment` is not observed). */
@@ -1288,6 +1291,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val rowId = _ui.value.card?.stackRowId ?: return
         viewModelScope.launch {
             c.equipment.saveStack(rowId, unit, start, step, max)
+            rxRequested.removeAll(c.sessionRepository.replanOnEquipment(sessionId, rowId).toSet())
             equipmentChanged = true
             last?.let { rebuild(it) }
         }

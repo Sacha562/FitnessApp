@@ -30,6 +30,20 @@ class WarningsTest {
     }
 
     @Test
+    fun `WE-P12 suggests the belt once capacity at q star passes the ladder's top (D80)`() {
+        // dip_chest 3 Nov: 10 reps at RIR 5 with q* 1 -> 14 = r_hi 10 + rx.double_max_extension 4.
+        Warnings.bodyweightAddLoad("se:dips", 14.0, 10, true, params)!!.let {
+            it.ruleId shouldBe "WE-P12"
+            it.severity shouldBe Severity.INFO
+            it.suggestion shouldBe "add_load"
+            it.enforced shouldBe false
+        }
+        Warnings.bodyweightAddLoad("se:dips", 13.0, 10, true, params).shouldBeNull()
+        Warnings.bodyweightAddLoad("se:dips", 20.0, 10, false, params).shouldBeNull()
+        Warnings.bodyweightAddLoad("se:dips", null, 10, true, params).shouldBeNull()
+    }
+
+    @Test
     fun `GF-WE-02 strength reps of 12 are WE-P5 STRONG`() {
         val ws = Warnings.scheme("ex:wpu", SchemeFacts(12, 12, 2.0, strength = true, highRisk = true), params)
         ws.single { it.ruleId == "WE-P5" }.severity shouldBe Severity.STRONG

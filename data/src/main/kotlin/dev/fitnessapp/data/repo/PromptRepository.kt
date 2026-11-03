@@ -65,7 +65,7 @@ class PromptRepository(
                         save(w)
                         answered(sessionId, "soreness", s.group, code, w.id, latencyMs)
                     } ?: skipped.add(PromptNotAnswered("soreness", s.group, "user"))
-                    "elbow_check" -> if (!elbowAnswered) skipped.add(PromptNotAnswered("elbow_check", null, "user"))
+                    "elbow_check" -> if (elbowAnswered) linkElbow(sessionId) else skipped.add(PromptNotAnswered("elbow_check", null, "user"))
                 }
             }
             skippedEvents(sessionId, skipped)
@@ -171,6 +171,16 @@ class PromptRepository(
                 ),
             ),
         )
+    }
+
+    /**
+     * The sheet's elbow answer is written before the session exists (its challenge rules may stop the session), so it
+     * is tied to [sessionId] here; the review views read it by `session_id`.
+     */
+    private suspend fun linkElbow(sessionId: String) {
+        val date = Instant.ofEpochMilli(ctx.nowMs()).atZone(ctx.zone()).toLocalDate().toString()
+        val w = db.wellness().latestUnlinkedPre("elbow_check", date) ?: return
+        save(w.copy(session_id = sessionId, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion))
     }
 
     private suspend fun save(w: WellnessLogEntity) {

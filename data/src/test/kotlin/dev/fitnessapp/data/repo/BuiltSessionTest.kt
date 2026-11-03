@@ -29,6 +29,7 @@ import java.time.ZoneId
 class BuiltSessionTest {
     private lateinit var db: FitnessDatabase
     private lateinit var sessions: SessionRepository
+    private lateinit var prompts: PromptRepository
     private val catalog = CatalogRepository.bundled()
     private val params = ParamView.fromParamsFile(
         requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.4.json")).readText(Charsets.UTF_8),
@@ -50,6 +51,7 @@ class BuiltSessionTest {
         val bodyweight = BodyweightRepository(db, outbox, ctx, scheduler)
         val profiles = ProfileRepository(db, outbox, telemetry, ctx, scheduler)
         sessions = SessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles)
+        prompts = PromptRepository(db, outbox, telemetry, ctx, scheduler)
     }
 
     @After
@@ -64,11 +66,24 @@ class BuiltSessionTest {
         s.template_source shouldBe "family_combo"
         s.time_budget_min shouldBe 60
         s.time_budget_source shouldBe "chip"
+        s.families shouldBe listOf("legs") // the server CHECK's lower-case codes (D80)
         db.blocks().bySession(id).single().let { it.id shouldBe blockId; it.origin shouldBe "standalone"; it.budget_min shouldBe 60 }
         val rows = db.sessionExercises().bySession(id).sortedBy { it.position }
         rows.map { catalog.byId(it.exercise_id)!!.slug to it.planned_sets } shouldBe listOf("leg_press_45" to 4, "leg_extension" to 2)
         rows.all { it.origin == "plan" && it.block_id == blockId } shouldBe true
-        db.events().bySession(id).single { it.event_type == "session_started" }.payload.contains("\"LEGS\"") shouldBe true
+        db.events().bySession(id).single { it.event_type == "session_started" }.payload.contains("\"legs\"") shouldBe true
+    }
+
+    @Test
+    fun `the sheet's elbow answer, written before the session, is tied to it (D80)`() = runBlocking<Unit> {
+        prompts.elbowOnly(0, emptyList())
+        now += 2_000
+        val (id, _) = sessions.startBuilt(params, listOf(item("leg_press_45", 3)), listOf("LEGS"), 60, "chip")
+        prompts.recordPre(id, listOf(PromptShown("readiness"), PromptShown("elbow_check")), "normal", emptyMap(), true, emptyList(), 2_000)
+        val logs = db.wellness().bySession(id)
+        logs.map { it.kind }.sorted() shouldBe listOf("elbow_check", "readiness")
+        logs.single { it.kind == "elbow_check" }.elbow_score shouldBe 0
+        db.events().bySession(id).none { it.event_type == "prompt_skipped" } shouldBe true
     }
 
     @Test

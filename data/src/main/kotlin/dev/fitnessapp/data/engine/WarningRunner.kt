@@ -57,7 +57,7 @@ class WarningRunner(
         for (se in db.sessionExercises().bySession(sessionId).filter { it.status != "removed" }) {
             val ex = catalog.byId(se.exercise_id) ?: continue
             val entity = "session_exercise:${se.id}"
-            val highRisk = ex.safetyClass == "high_risk"
+            val highRisk = ex.highRiskIn(se.load_mode)
             val rx = se.recommendation_id?.let { prescriptions.get(it) }
             if (rx != null) {
                 val scheme = rx.outputs["scheme"]?.jsonObject
@@ -98,6 +98,14 @@ class WarningRunner(
                 val cap = capFor(se.exercise_id, sessionId, highRisk, ex.mechanics == "isolation")
                 val heaviest = mine.mapNotNull { it.effective_load_kg?.let { w -> Scaled.toDouble(w, 2) } }.maxOrNull()
                 if (cap != null && heaviest != null) Warnings.loadAboveCap(entity, heaviest, cap, ruleItem = false, hold = false)?.let { out += it }
+            }
+            // WE-P12: a bodyweight row whose capacity at q* passed the ladder's top, here or in the last exposure (D80).
+            if (rx != null && se.load_mode == "bodyweight") {
+                val last = db.setLogs().historyForExercise(se.exercise_id, sessionId, HISTORY_LIMIT).filter { it.set.set_kind in WORKING }
+                val lastId = last.firstOrNull()?.set?.session_id
+                val evidence = mine + last.filter { it.set.session_id == lastId }.map { it.set }
+                val capOverQ = evidence.mapNotNull { s -> s.reps?.let { r -> s.rir_reported?.let { r + Scaled.toDouble(it, 1) - rx.qStar } } }.maxOrNull()
+                Warnings.bodyweightAddLoad(entity, capOverQ, rx.rHi, "bodyweight_plus_external" in ex.allowedLoadModes, p)?.let { out += it }
             }
             suggestions[se.id]?.let { s ->
                 if (s.highRisk && mine.size < (se.planned_sets ?: Int.MAX_VALUE)) Warnings.predictedFailure(entity, true, s.result.rirNextCur, p)?.let { out += it }

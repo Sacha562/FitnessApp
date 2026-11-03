@@ -1675,7 +1675,8 @@ From top to bottom:
    unilateral work, `:` exercise menu (Swap · Skip · Do later · Add a set (C63) · End
    exercise · Remove (only with 0 logged sets) · Move up / down · Stack setup (machines with a kg or
    lb stack, D43: unit, step, lightest and heaviest of this machine; the card rebuilds on the new
-   stack) · Note · Exercise details).
+   stack, and an exercise on that machine without a working set is prescribed again on it, D80) · Note ·
+   Exercise details).
 2. **Target line**: the prescription from `rx` (or the challenge item in RULE mode, C15), for example
    "Target BW + 22.5 kg x 4 · aim: 2 in reserve", with `(i)` opening the Why sheet for this
    prescription (RX-1 mode MODEL / DOUBLE / RULE, rule id, numbers). An amber dot appears when the

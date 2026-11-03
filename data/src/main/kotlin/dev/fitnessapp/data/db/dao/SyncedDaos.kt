@@ -294,6 +294,13 @@ interface WellnessLogDao : SyncDao<WellnessLogEntity> {
     @Query("SELECT COUNT(*) FROM wellness_logs WHERE kind = :kind AND local_date = :date AND deleted_at IS NULL")
     suspend fun countKindOn(kind: String, date: String): Int
 
+    /** The latest pre-session answer of [kind] on [date] not yet tied to a session (the sheet's elbow check). */
+    @Query(
+        "SELECT * FROM wellness_logs WHERE kind = :kind AND local_date = :date AND phase = 'pre' AND session_id IS NULL " +
+            "AND deleted_at IS NULL ORDER BY observed_at DESC, id DESC LIMIT 1",
+    )
+    suspend fun latestUnlinkedPre(kind: String, date: String): WellnessLogEntity?
+
     /** Every pain report (the challenge facts' last pain date per body region, CHALLENGE_ENGINE 3.9). */
     @Query("SELECT * FROM wellness_logs WHERE kind = 'pain' AND deleted_at IS NULL ORDER BY observed_at, id")
     suspend fun painLogs(): List<WellnessLogEntity>

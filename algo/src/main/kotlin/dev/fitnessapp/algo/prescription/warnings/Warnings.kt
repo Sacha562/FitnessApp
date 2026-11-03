@@ -215,6 +215,17 @@ object Warnings : DeclaresParams {
             nums("w" to unclampedW, "w_cap" to limitW), null, listOf("C15"))
     }
 
+    /**
+     * WE-P12 (D80): a bodyweight lift that can carry the dip belt, where a working set showed more capacity at `q*`
+     * ([capOverQ] = reps + reported RIR - q*) than the DOUBLE ladder's top (`r_hi + rx.double_max_extension`): only
+     * added load progresses it, so the note suggests the belt (never automatic, D10).
+     */
+    fun bodyweightAddLoad(entity: String, capOverQ: Double?, rHi: Int, beltAllowed: Boolean, params: ParamView): Warning? {
+        val top = rHi + params.int("rx.double_max_extension")
+        if (!beltAllowed || capOverQ == null || capOverQ < top) return null
+        return Warning("WE-P12", Severity.INFO, entity, 0.3, "expert-opinion", false, nums("cap_over_q" to capOverQ, "top" to top.toDouble()), "add_load", listOf("D80"))
+    }
+
     /** WE-S5: on a `high_risk` exercise the next set at the current load is predicted below `rx.min_q_high_risk`. */
     fun predictedFailure(entity: String, highRisk: Boolean, rirNext: Double?, params: ParamView): Warning? {
         val min = params.double("rx.min_q_high_risk")

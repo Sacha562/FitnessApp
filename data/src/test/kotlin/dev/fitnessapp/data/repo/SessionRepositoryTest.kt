@@ -281,6 +281,68 @@ class SessionRepositoryTest {
     }
 
     @Test
+    fun `a bodyweight lift loaded last time starts with the belt again, an unloaded one does not (D80)`() = blocking {
+        setUpGym()
+        bodyweight.logWeighIn(70.7)
+        now += 60_000
+        val back = catalog.bySlug("back_extension_45")!!
+        val first = sessions.start(params)
+        val seId = sessions.addExercise(first, back, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        val (_, points) = equipment.loadables(back, LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 70.7, params)
+        now += 90_000
+        sessions.logSet(
+            LogSetCommand(
+                first, seId, catalog.idOf(back), 1, "both", "working", points.first { it.nativeValue == 20.0 }, reps = 10, durationS = null, rir = 3.0,
+                rirLowerBound = false, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(),
+                deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+            ),
+        )
+        sessions.finish(first, null)
+        now += 2 * 86_400_000L
+        val next = sessions.start(params)
+        db.sessionExercises().get(sessions.addExercise(next, back))!!.let {
+            it.load_mode shouldBe "bodyweight_plus_external"
+            (it.equipment_id != null) shouldBe true
+        }
+        db.sessionExercises().get(sessions.addExercise(next, catalog.bySlug("dip_chest")!!))!!.load_mode shouldBe "bodyweight"
+    }
+
+    @Test
+    fun `a load-mode switch or a stack change re-plans an exercise without working sets (D80)`() = blocking {
+        setUpGym()
+        val sid = sessions.start(params)
+        val dips = sessions.addExercise(sid, catalog.bySlug("dip_chest")!!)
+        db.sessionExercises().upsert(db.sessionExercises().get(dips)!!.copy(recommendation_id = "rx-old", planned_effective_load_kg = 6978L))
+        sessions.setLoadMode(dips, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        db.sessionExercises().get(dips)!!.let {
+            it.load_mode shouldBe "bodyweight_plus_external"
+            it.recommendation_id shouldBe null
+            it.planned_effective_load_kg shouldBe null
+        }
+        val belt = db.sessionExercises().get(dips)!!.equipment_id!!
+        db.sessionExercises().upsert(db.sessionExercises().get(dips)!!.copy(recommendation_id = "rx-belt"))
+        sessions.replanOnEquipment(sid, belt) shouldBe listOf(dips)
+        db.sessionExercises().get(dips)!!.recommendation_id shouldBe null
+
+        // With a working set logged, the prescription stays (AUTO-1 adjusts the rest of the exercise).
+        val ex = catalog.bySlug("db_bench_press")!!
+        val bench = sessions.addExercise(sid, ex)
+        val (_, points) = equipment.loadables(ex, LoadMode.EXTERNAL, null, params)
+        now += 60_000
+        sessions.logSet(
+            LogSetCommand(
+                sid, bench, catalog.idOf(ex), 1, "both", "working", points.first(), reps = 8, durationS = null, rir = 2.0,
+                rirLowerBound = false, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(),
+                deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+            ),
+        )
+        val dumbbells = db.sessionExercises().get(bench)!!.equipment_id!!
+        db.sessionExercises().upsert(db.sessionExercises().get(bench)!!.copy(recommendation_id = "rx-bench"))
+        sessions.replanOnEquipment(sid, dumbbells) shouldBe emptyList()
+        db.sessionExercises().get(bench)!!.recommendation_id shouldBe "rx-bench"
+    }
+
+    @Test
     fun `a challenge item or an exercise with working sets is not swapped`() = blocking {
         setUpGym()
         val sid = sessions.start(params)
