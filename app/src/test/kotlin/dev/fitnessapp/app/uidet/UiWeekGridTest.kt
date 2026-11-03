@@ -53,7 +53,7 @@ class UiWeekGridTest {
             "2026-11-05" to listOf(item(WeeklyPlanner.KIND_RECOMMENDED, "2026-11-05", "19:45", "21:15", "Legs + push", type = "PUSH+LEGS", est = 50.0)),
         )
         val chess = busy("chess", "2026-11-05", "20:00", "22:30")
-        val g = UiWeekGrid.grid(p, monday, listOf(chess), mapOf(inst(chess, "Schaken")), emptyList(), today, now, zone, canPlan = true)
+        val g = UiWeekGrid.grid(p, monday, listOf(chess), mapOf(inst(chess, "Schaken")), emptyList(), today, now, zone)
         val wed = g.days[2].blocks.single()
         wed.look shouldBe BlockLook.GYM
         wed.short shouldBe "C"
@@ -72,17 +72,33 @@ class UiWeekGridTest {
     }
 
     @Test
-    fun `no Plan it without a calendar to write to or for a past start`() {
+    fun `a suggestion that has started cannot be moved, a later one can, with or without a calendar`() {
         val p = plan("2026-11-03" to listOf(item(WeeklyPlanner.KIND_RECOMMENDED, "2026-11-03", "09:00", "10:00", "Push", type = "PUSH", est = 45.0)))
-        UiWeekGrid.grid(p, monday, emptyList(), emptyMap(), emptyList(), today, now, zone, canPlan = true).days[1].blocks.single().planIt.shouldBeNull()
+        UiWeekGrid.grid(p, monday, emptyList(), emptyMap(), emptyList(), today, now, zone).days[1].blocks.single().let { it.planIt.shouldBeNull(); it.movable shouldBe false }
         val later = plan("2026-11-05" to listOf(item(WeeklyPlanner.KIND_RECOMMENDED, "2026-11-05", "19:45", "21:00", "Push", type = "PUSH", est = 45.0)))
-        UiWeekGrid.grid(later, monday, emptyList(), emptyMap(), emptyList(), today, now, zone, canPlan = false).days[3].blocks.single().planIt.shouldBeNull()
+        UiWeekGrid.grid(later, monday, emptyList(), emptyMap(), emptyList(), today, now, zone).days[3].blocks.single().movable shouldBe true
+    }
+
+    @Test
+    fun `a moved suggestion shows on its new day and its old day reads as moved`() {
+        val p = plan(
+            "2026-11-05" to listOf(item(WeeklyPlanner.KIND_RECOMMENDED, "2026-11-05", "19:45", "21:00", "Push", type = "PUSH", est = 45.0)),
+            "2026-11-07" to emptyList(),
+        )
+        val moved = UiWeekRows.withMoved(p, mapOf("recommended_general:2026-11-05" to at("2026-11-07", "10:00")), zone)
+        moved.days.first { it.date == LocalDate.parse("2026-11-05") }.let { it.items.isEmpty() shouldBe true; it.restReason?.code shouldBe "MOVED" }
+        val sat = moved.days.first { it.date == LocalDate.parse("2026-11-07") }.items.single()
+        sat.start shouldBe at("2026-11-07", "10:00")
+        sat.end shouldBe at("2026-11-07", "11:15")
+        val g = UiWeekGrid.grid(moved, monday, emptyList(), emptyMap(), emptyList(), today, now, zone)
+        g.days[5].blocks.single().let { it.look shouldBe BlockLook.SUGGESTED; it.startMin shouldBe 600 }
+        UiWeekRows.withMoved(p, emptyMap(), zone) shouldBe p
     }
 
     @Test
     fun `a gym event the plan does not show is still gym, and a past week shows its logged sessions`() {
         val ev = busy("evC", "2026-11-04", "19:45", "21:15", AnchorKind.CHALLENGE_SESSION, slot = "C")
-        val g = UiWeekGrid.grid(null, monday, listOf(ev), mapOf(inst(ev, "Gym — sessie C")), listOf(LoggedSession(LocalDate.parse("2026-11-02"), "Legs + push", at("2026-11-02", "18:00"), at("2026-11-02", "19:10"))), today, now, zone, false)
+        val g = UiWeekGrid.grid(null, monday, listOf(ev), mapOf(inst(ev, "Gym — sessie C")), listOf(LoggedSession(LocalDate.parse("2026-11-02"), "Legs + push", at("2026-11-02", "18:00"), at("2026-11-02", "19:10"))), today, now, zone)
         g.days[2].blocks.single().look shouldBe BlockLook.GYM
         val mon = g.days[0].blocks.single()
         mon.done shouldBe true
@@ -98,11 +114,29 @@ class UiWeekGridTest {
             "night", "night", 1, 1, at("2026-11-07", "22:00"), at("2026-11-08", "02:00"), LocalDate.parse("2026-11-07"), LocalTime.of(22, 0), LocalTime.of(2, 0),
             AnchorKind.BUSY, method = MatchMethod.SCORE, classifierVersion = "1.0.0",
         )
-        val g = UiWeekGrid.grid(null, monday, listOf(early, late, night), emptyMap(), emptyList(), today, now, zone, false)
+        val g = UiWeekGrid.grid(null, monday, listOf(early, late, night), emptyMap(), emptyList(), today, now, zone)
         g.startHour shouldBe 6
         g.endHour shouldBe 24
         g.days[5].blocks.single().endMin shouldBe 24 * 60
-        UiWeekGrid.grid(null, monday, emptyList(), emptyMap(), emptyList(), today, now, zone, false).let { (it.startHour to it.endHour) shouldBe (8 to 21) }
+        UiWeekGrid.grid(null, monday, emptyList(), emptyMap(), emptyList(), today, now, zone).let { (it.startHour to it.endHour) shouldBe (8 to 21) }
+    }
+
+    @Test
+    fun `only future app gym events and plannable suggestions can be dragged`() {
+        val marker = dev.fitnessapp.algo.core.calendar.Marker("0190a1f0-0000-7000-8000-00000000e001", "oap/C/2026-W45")
+        val p = plan(
+            "2026-11-02" to listOf(item(FixedItem.KIND_DONE, "2026-11-02", "19:45", "21:15", "Session B", slot = "B")),
+            "2026-11-04" to listOf(item(FixedItem.KIND_CHALLENGE, "2026-11-04", "19:45", "21:15", "Session C", slot = "C")),
+            "2026-11-05" to listOf(item(WeeklyPlanner.KIND_RECOMMENDED, "2026-11-05", "19:45", "21:15", "Push", type = "PUSH", est = 50.0)),
+            "2026-11-06" to listOf(item(FixedItem.KIND_CHALLENGE, "2026-11-06", "19:45", "21:15", "Session A", slot = "A")),
+        )
+        val c = busy("evC", "2026-11-04", "19:45", "21:15", AnchorKind.CHALLENGE_SESSION, slot = "C").copy(marker = marker)
+        val a = busy("evA", "2026-11-06", "19:45", "21:15", AnchorKind.CHALLENGE_SESSION, slot = "A") // the user's own, unmarked
+        val g = UiWeekGrid.grid(p, monday, listOf(c, a), emptyMap(), emptyList(), today, now, zone)
+        g.days[0].blocks.single().movable shouldBe false // done
+        g.days[2].blocks.single().let { it.movable shouldBe true; it.marker shouldBe marker; it.start shouldBe at("2026-11-04", "19:45") }
+        g.days[3].blocks.single().movable shouldBe true // a future suggestion
+        g.days[4].blocks.single().movable shouldBe false // unmarked: never moved by the app (D11)
     }
 
     @Test

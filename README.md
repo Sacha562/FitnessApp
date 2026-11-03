@@ -456,9 +456,9 @@ yourself became `user_deleted` and were not re-created. The planner placed W46's
 because of the chess round at 19:30. You confirmed the deletions and the 4 November session C on calendar.google.com
 (title, time, exercise lines, human line and marker).
 
-**M4.6 (2026-11-03, D82, D83, phone checks open)**: the Week tab and Plan it. `PlanIt` in `:algo` (`planning.weekplan`, part
+**M4.6 (2026-11-03, D82, D83, D84, phone checks open)**: the Week tab and Plan it. `PlanIt` in `:algo` (`planning.weekplan`, part
 of ALGORITHMS_PLANNING 8.9, no registry module of its own): the event of an accepted recommended general session (title
-`Gym — {label}`, the planner's start, length = estimate + changeover rounded up to 5 minutes, the English exercise lines,
+`Gym — {session type}`, D84, the planner's start, length = estimate + changeover rounded up to 5 minutes, the English exercise lines,
 the human line and the C37 marker `[fitapp:v1 <recommendationId> gen/<isoYear>-W<ww>/<isoDow>]` last), and the reconciliation
 of the general links with the edit policy of ANDROID 16.7, which yields title and description updates for unedited future
 events only: no insert, delete or time change. The marker's uuid is the stored `weekplan.plan` snapshot of the plan the
@@ -468,22 +468,30 @@ item came from (a provisional next-week plan is stored when one of its items is 
 reconciles the general links and writes the updates the screens offer (the plan's session on that day built at the
 event's own budget). A Plan it event's synced row gets its `recommendation_id` and `link_method = created_from_plan`.
 Choices where the spec is open: the classifier reads a session type from the title, and "Legs + push + rear delts" (a
-full-body plan) reads as legs and push, so the app reads a Plan it event's type from its snapshot instead (D82 (4));
+full-body plan) reads as legs and push, so app-written general events are titled by their session type ("Gym — Full
+body"), which reads back as that type, and only their exercise lines follow the plan (D84 (3));
 "planned (not recommended)" means the current plan gives the planned session no sets, because the planner keeps a
 planned event in every plan; past weeks show the logged sessions and their volume, weeks after next only the
 challenge's block. The Week tab (D83, replacing D82's stacked rows after the first install) is a calendar time grid:
 gym sessions as accent blocks (done ones with a check, the add-on as a line inside its challenge session), the
-planner's suggestions outlined with a dashed accent border and a "+" for one-tap Plan it at 3 or 5 days, every other
-event muted in the background colour, overlapping blocks side by side, a current-time line, and chips for 3, 5 or 7
-days on screen (7 by default, the user's pick; fewer scroll sideways and open at today). A day header or block opens
+planner's suggestions outlined with a dashed accent border, every other event muted in the background colour,
+overlapping blocks side by side, a current-time line, always 7 days on the screen (D84 (4), after trying 3, 5 and 7).
+Like a calendar app (D84): tapping an empty spot of this or next week opens "New gym session" at that time (snapped to
+the half hour, ±30 min, the eight types ranked by what the allocator gives then, the length chips, the preview, a
+banner on a challenge rest day or a day that already has gym) and writes a general event under a new device uuid; a
+long press lifts an app gym event (challenge session, test day, planned general session) or a suggestion, which
+follows the finger in 15-minute steps and across the week's days, and the drop writes it with Undo (a moved event is
+`user_moved` with its new times, a general event moved to another day takes that day's marker; a dropped suggestion only
+moves on the phone, kept per ISO week until it is planned from the day sheet; a dropped block stays at its drop place
+while the write and the reload run). The user's own events, done sessions and past times never move. A day header or block opens
 the day sheet (the session's exercises, minutes and readiness per family, the day's events with their status and
 classification, Plan it, Adopt, Remove from calendar, Correct, Go to Today). Today's card has "Plan it in calendar" with
 Undo and its week strip opens the Week tab at the tapped day. You → Calendars' write-switch line now says where
 sessions go. Golden GF-W41-PLAN-IT-FRI, regenerated on catalog 1.0.2 from the GF-W41-TODAY-FRI state: Friday's FULL item
-(est. 74.9 min) becomes the event 19:45-21:05 with the `gen/2026-W41/5` marker last, read back as `planned_gym` by marker
-(its title alone would read as PUSH+LEGS), and Friday's card is PLANNED general with the calendar budget 75 (the spec's
+(est. 74.9 min) becomes the event "Gym — Full body" 19:45-21:05 with the `gen/2026-W41/5` marker last, read back as
+`planned_gym` by marker and as FULL from its title, and Friday's card is PLANNED general with the calendar budget 75 (the spec's
 19:45-20:40 and 50 min came from the pre-1.0.2 estimate). Also: D80's engine bump to 1.20.0 had left the 18 challenge
 persona goldens of `:sim` at 1.19.0; regenerated, only that line changed. Not fixed: `gradlew check` stops on a lint
 error in `PreferencesScreen.kt:138` (a coroutine launched during composition), older than this step. No engine,
-params or server change. Tests: `:algo` 556, `:app` 154, `:data` 104, `:sim` 60, all green; screenshots
-`week_grid_{3,5,7}.png`.
+params or server change. Tests: `:algo` 556, `:app` 153, `:data` 104, `:sim` 60, all green; screenshot
+`week_grid_7.png`.

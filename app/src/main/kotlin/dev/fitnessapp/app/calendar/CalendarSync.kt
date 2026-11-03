@@ -548,19 +548,23 @@ class CalendarSync(private val c: AppContainer) {
     }
 
     /**
-     * "Plan it" (UX 10.4, D82): writes the recommended general [item] accepted under [recommendationId] (the stored
-     * `weekplan.plan` snapshot of the plan it belongs to) as a marked event in the write target, with [label] and the
-     * exercise [lines] of its build. Returns null, or the code of the guard or failure that stopped it.
+     * "Plan it" (UX 10.4, D82) and a session placed in the Week grid (D84): writes the general [item] as a marked event
+     * in the write target under [markerUuid] (the stored `weekplan.plan` snapshot of an accepted recommendation, or a new
+     * device uuid), titled by its session type, with the exercise [lines] of its build. Returns null, or the code of the
+     * guard or failure that stopped it.
      */
-    suspend fun planIt(recommendationId: String, item: PlanItem, label: String, lines: List<String>): String? {
+    suspend fun planIt(markerUuid: String, item: PlanItem, label: String, lines: List<String>, cause: String = "plan_it"): String? {
         val s = _snapshot.value
         s.writeOff?.let { return it }
         val target = s.target ?: return "no_target"
         val date = Week.localDate(item.start, ChallengeWeek.ZONE)
-        val taken = s.links.any { it.kind == PlanIt.KIND && it.slotKey == PlanIt.slotKey(date) && it.state != CalendarLink.DELETED_BY_APP && it.state != CalendarLink.USER_DELETED }
+        val taken = s.links.any {
+            it.kind == PlanIt.KIND && it.markerUuid == markerUuid && it.slotKey == PlanIt.slotKey(date) &&
+                it.state != CalendarLink.DELETED_BY_APP && it.state != CalendarLink.USER_DELETED
+        }
         if (taken) return "already_planned"
         val changeover = (c.profiles.get()?.changeover_min ?: AppContainer.CHANGEOVER_MIN).toDouble()
-        val e = PlanIt.event(recommendationId, item.copy(label = label), ChallengeWeek.ZONE, lines, changeover, HUMAN_LINE)
+        val e = PlanIt.event(markerUuid, item.copy(label = label), ChallengeWeek.ZONE, lines, changeover, HUMAN_LINE)
         val gym = c.equipment.defaultGym()
         val r = mutex.withLock {
             val r = executor.execute(listOf(e.insert()), target, emptyMap(), c.clock.now(), ChallengeWeek.ZONE, gym?.name)
@@ -575,8 +579,51 @@ class CalendarSync(private val c: AppContainer) {
             repo.log("calendar_write_failed", mapOf("op" to "insert", "error_class" to code))
             return code
         }
-        repo.log("calendar_event_written", mapOf("op" to "insert", "kind" to PlanIt.KIND, "marker_key" to e.marker.slotKey, "cause" to "plan_it", "provider_rows" to 1))
-        refresh("plan_it")
+        repo.log("calendar_event_written", mapOf("op" to "insert", "kind" to PlanIt.KIND, "marker_key" to e.marker.slotKey, "cause" to cause, "provider_rows" to 1))
+        refresh(cause)
+        return null
+    }
+
+    /**
+     * A drag in the Week grid (D84): moves the app event carrying [marker] to [start]-[end]. A user action, so any future
+     * time of the event's own week is allowed; the marker and target guards still apply. The link becomes `user_moved`
+     * with the new times (the planner anchors on them and the app never moves the event back); a general event moved to
+     * another day takes that day's marker. Returns null, or the code that stopped it.
+     */
+    suspend fun moveEvent(marker: Marker, start: Instant, end: Instant): String? {
+        val s = _snapshot.value
+        val target = s.target ?: return "no_target"
+        val now = c.clock.now()
+        val inst = s.instances.values.firstOrNull { Marker.ofDescription(it.description) == marker } ?: return "gone"
+        if (!inst.beginUtc.isAfter(now) || !start.isAfter(now)) return "past"
+        val general = marker.parsedKey() is SlotKey.General
+        val next = if (general) Marker(marker.uuid, PlanIt.slotKey(Week.localDate(start, ChallengeWeek.ZONE))) else marker
+        val description = if (next != marker) Marker.withMarker(inst.description, next) else null
+        val op = WriteOp.Update(inst.eventId, inst.instanceKey, marker, next, start, end, null, description, inst.beginUtc)
+        val res = executor.userConfirmed(op, target, s.instances.values.associate { it.eventId to it.calendarId }, now)
+        if (res.applied.isEmpty()) {
+            val code = res.refused.firstOrNull()?.second ?: res.failure ?: "marker_missing"
+            repo.log("calendar_write_failed", mapOf("op" to "update", "error_class" to code))
+            return code
+        }
+        repo.log(
+            "calendar_event_written",
+            mapOf("op" to "update", "kind" to if (general) PlanIt.KIND else "challenge", "instance_key" to inst.instanceKey, "marker_key" to next.slotKey, "cause" to "user_move", "provider_rows" to 1),
+        )
+        mutex.withLock {
+            val links = repo.links().filter { it.markerUuid == marker.uuid }
+            val moved = links.map { l ->
+                if (l.slotKey != marker.slotKey) l
+                else l.copy(
+                    slotKey = next.slotKey, eventId = inst.eventId,
+                    state = if (l.state == CalendarLink.ACTIVE) CalendarLink.USER_MOVED else l.state,
+                    lastStart = start, lastEnd = end,
+                    lastDescSha256 = description?.let { dev.fitnessapp.algo.core.det.Sha256Hex.ofUtf8(it) } ?: l.lastDescSha256,
+                )
+            }
+            repo.saveLinks(marker.uuid, moved, target.identity)
+        }
+        refresh("user_move")
         return null
     }
 

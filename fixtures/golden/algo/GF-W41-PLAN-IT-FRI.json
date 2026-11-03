@@ -1748,7 +1748,7 @@
                 "est_min": 74.9
             },
             "event": {
-                "title": "Gym — Legs + push + rear delts",
+                "title": "Gym — Full body",
                 "start": "2026-10-09T17:45:00Z",
                 "end": "2026-10-09T19:05:00Z",
                 "minutes": 80,
@@ -1757,7 +1757,7 @@
             "classified": {
                 "kind": "planned_gym",
                 "method": "marker",
-                "type_from_title": "PUSH+LEGS"
+                "type_from_title": "FULL"
             },
             "today": {
                 "verdict": "TRAIN",
@@ -1771,6 +1771,6 @@
                 "primary_est_min": 74.9
             }
         },
-        "outputs_jcs_sha256": "2f3743fd643d52c13b4601bd4451cdde25ed94bf4062368316125154134debc2"
+        "outputs_jcs_sha256": "ab096d52142cf826d2f3b8105b5131d11350de8f34bccdd1eae4eb6ef3688f48"
     }
 }

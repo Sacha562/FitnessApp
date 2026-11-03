@@ -61,10 +61,24 @@ class LocalSettings(context: Context) {
         get() = prefs.getBoolean(KEY_CAL_REAL_WRITES, false)
         set(v) = prefs.edit().putBoolean(KEY_CAL_REAL_WRITES, v).apply()
 
-    /** How many days the Week grid shows on the screen at once: 3, 5 or 7 (D83). */
-    var weekDaysVisible: Int
-        get() = prefs.getInt(KEY_WEEK_DAYS, 7).takeIf { it in setOf(3, 5, 7) } ?: 7
-        set(v) = prefs.edit().putInt(KEY_WEEK_DAYS, v).apply()
+    /**
+     * Suggestions the user dragged in the Week grid (D84 (2)) for one ISO week: plan item key -> the new start. Display
+     * only: nothing is written to the calendar until the user plans the session.
+     */
+    fun movedSuggestions(isoWeek: String): Map<String, java.time.Instant> =
+        prefs.getString(KEY_MOVED_SUGGESTIONS + isoWeek, null).orEmpty().split(';').mapNotNull { e ->
+            val i = e.lastIndexOf('=')
+            val ms = if (i > 0) e.substring(i + 1).toLongOrNull() else null
+            if (ms == null) null else e.substring(0, i) to java.time.Instant.ofEpochMilli(ms)
+        }.toMap()
+
+    /** Moves suggestion [key] of [isoWeek] to [start]; null puts it back where the planner placed it. */
+    fun setMovedSuggestion(isoWeek: String, key: String, start: java.time.Instant?) {
+        val cur = movedSuggestions(isoWeek).toMutableMap()
+        if (start == null) cur.remove(key) else cur[key] = start
+        val text = cur.entries.sortedBy { it.key }.joinToString(";") { "${it.key}=${it.value.toEpochMilli()}" }
+        prefs.edit().putString(KEY_MOVED_SUGGESTIONS + isoWeek, text).apply()
+    }
 
     /** Series keys whose override applies to the whole series (D39 scope "the whole series"). */
     var calendarSeriesOverrides: Set<String>
@@ -103,7 +117,7 @@ class LocalSettings(context: Context) {
         const val KEY_CAL_PRIMARY = "calendar_primary_identity"
         const val KEY_CAL_EXTRA = "calendar_extra_identities"
         const val KEY_CAL_REAL_WRITES = "calendar_real_writes"
-        const val KEY_WEEK_DAYS = "week_days_visible"
+        const val KEY_MOVED_SUGGESTIONS = "week_moved_suggestions:"
         const val KEY_CAL_SERIES = "calendar_series_overrides"
         const val KEY_CAL_UNAVAILABLE = "calendar_unavailable_reason"
         const val KEY_EXPORT_REMINDER = "export_reminder_enabled"

@@ -73,6 +73,22 @@ object PlanIt {
 
     fun title(label: String): String = TITLE_PREFIX + label
 
+    /**
+     * The session type's name as a general event's title carries it (D84): "Full body", "Legs + push". The classifier
+     * reads each of these back as the same type, so the title keeps the planned type; null for an unknown code.
+     */
+    fun typeName(code: String?): String? = when (code) {
+        "LEGS" -> "Legs"
+        "PUSH" -> "Push"
+        "PULL" -> "Pull"
+        "PUSH+LEGS" -> "Legs + push"
+        "PULL+LEGS" -> "Pull + legs"
+        "UPPER" -> "Upper"
+        "FULL" -> "Full body"
+        "CORE" -> "Core"
+        else -> null
+    }
+
     /** The event length in minutes: estimate plus changeover, rounded up to the 5-minute grid. */
     fun minutes(estMinutes: Double, changeoverMin: Double): Int {
         val raw = Math.ceil((estMinutes + changeoverMin) / GRID_MIN - EPS).toInt()
@@ -82,13 +98,17 @@ object PlanIt {
     /** One exercise line of the description: "Leg press · 3 sets". */
     fun line(name: String, sets: Int): String = "$name · $sets ${if (sets == 1) "set" else "sets"}"
 
-    /** The event of a recommended general [item] accepted under [recommendationId]; [lines] are its exercise lines. */
-    fun event(recommendationId: String, item: PlanItem, zone: ZoneId, lines: List<String>, changeoverMin: Double, humanLine: String): Event {
+    /**
+     * The event of a general [item] (a recommended one, or one the user placed in the Week grid) under [markerUuid]: the
+     * recommendation id of an accepted "Plan it", or a new device uuid (D84). Titled by its session type; [lines] are
+     * its exercise lines.
+     */
+    fun event(markerUuid: String, item: PlanItem, zone: ZoneId, lines: List<String>, changeoverMin: Double, humanLine: String): Event {
         val date = Week.localDate(item.start, zone)
-        val marker = Marker(recommendationId, slotKey(date))
+        val marker = Marker(markerUuid, slotKey(date))
         val end = item.start.plusSeconds(minutes(item.estMinutes, changeoverMin) * SECONDS_PER_MIN)
         val body = lines.joinToString("\n")
-        return Event(marker, title(item.label), item.start, end, body, WritePlanner.description(body, humanLine, marker))
+        return Event(marker, title(typeName(item.type) ?: item.label), item.start, end, body, WritePlanner.description(body, humanLine, marker))
     }
 
     /** The link Plan it stores after the insert ([eventId] is the provider id). */

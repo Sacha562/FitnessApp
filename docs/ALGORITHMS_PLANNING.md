@@ -1585,14 +1585,16 @@ items are provisional (shown in the Week tab, written only on "Plan it").
 | Add-on block | not a separate event; its summary line is appended to the parent challenge event's description **only if that event carries the app's marker** | `challenge.calendar` | parent's marker |
 | Rest days, blocked days, runs | never | — | — |
 
-"Plan it" writes: title `Gym — {label}` (English, D12), location from the gym profile, start = the item's planned
+"Plan it" writes: title `Gym — {session type}` ("Gym — Full body", D84: the classifier reads the type back from it), location from the gym profile, start = the item's planned
 start, duration = estimated minutes + `changeoverMin` (5 min) rounded up to whole 5 minutes, so that the event is
 training time and its budget (duration − 5 min, C49) covers the plan; title in English (F25), description = exercise
 lines (from SEL-1 for the chosen budget) plus the marker as the last line. A general event written this way becomes a `planned_gym` anchor at the next
 classification (method `marker`); if the planner later stops recommending it, the Week tab shows "planned (not
 recommended)" with a Why and an option to remove the app's event; the app never moves it on its own. While the user
-has not edited the event, the app rewrites its title and exercise lines when the plan for that day changes (D82),
-within the ANDROID §16.7 edit policy; the planned session type stays fixed. The tap is logged
+has not edited the event, the app rewrites its exercise lines when the plan for that day changes (D82, D84),
+within the ANDROID §16.7 edit policy; the title and the planned session type stay fixed. In the Week grid the user can
+also plan a session at a tapped time and drag app gym events and suggestions to another time (D84); a moved event is
+`user_moved`. The tap is logged
 as `plan_it_tapped` and the write as `calendar_event_written` (DATA_MODEL §9.8.1). In the `sandbox` build flavour
 calendar writes are disabled (F27); the planner output is the same, and the write policies are shown but not executed.
 

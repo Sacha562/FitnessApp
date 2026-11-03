@@ -3,9 +3,11 @@ package dev.fitnessapp.app.uidet
 import dev.fitnessapp.algo.core.calendar.Anchor
 import dev.fitnessapp.algo.core.calendar.AnchorKind
 import dev.fitnessapp.algo.core.calendar.CalendarInstance
+import dev.fitnessapp.algo.core.calendar.Marker
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.planning.allocator.SessionType
 import dev.fitnessapp.algo.planning.weekplan.FixedItem
+import dev.fitnessapp.algo.planning.weekplan.PlanIt
 import dev.fitnessapp.algo.planning.weekplan.PlanItem
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
@@ -34,11 +36,19 @@ data class GridBlock(
     val done: Boolean,
     /** A second line: the add-on of a challenge session, or "not recommended". */
     val sub: String?,
-    /** The recommended item a suggested block can plan in one tap (D83 (4)); null when it cannot be planned. */
+    /** The recommended item behind a future suggested block, which a drag moves (D84 (2)); null otherwise. */
     val planIt: PlanItem?,
     val lane: Int = 0,
     val lanes: Int = 1,
-)
+    /** The marker of the app event behind a gym block, which a drag moves (D84 (2)); null for the user's own events. */
+    val marker: Marker? = null,
+    /** The block's real times (the minutes above are clamped to its day). */
+    val start: Instant? = null,
+    val end: Instant? = null,
+) {
+    /** A long press may lift it (D84 (2)): a future app gym event, or a future suggestion. */
+    val movable: Boolean get() = (look == BlockLook.GYM && !done && marker != null) || (look == BlockLook.SUGGESTED && planIt != null)
+}
 
 data class GridDay(val date: LocalDate, val today: Boolean, val blocked: Boolean, val blocks: List<GridBlock>)
 
@@ -65,34 +75,41 @@ object UiWeekGrid {
         today: LocalDate,
         now: Instant,
         zone: ZoneId,
-        canPlan: Boolean,
     ): WeekGrid {
         val days = (0L..6L).map { i ->
             val date = monday.plusDays(i)
             val day = plan?.days?.firstOrNull { it.date == date }
             val items = day?.items.orEmpty()
             val blocks = ArrayList<GridBlock>()
-            fun add(key: String, start: Instant, end: Instant, look: BlockLook, title: String, short: String, done: Boolean, sub: String? = null, planIt: PlanItem? = null) {
+            fun add(key: String, start: Instant, end: Instant, look: BlockLook, title: String, short: String, done: Boolean, sub: String? = null, planIt: PlanItem? = null, marker: Marker? = null) {
                 val s = minuteOf(start, date, zone)
                 val e = minOf(DAY_MIN, maxOf(minuteOf(end, date, zone), s + MIN_BLOCK_MIN))
                 if (s >= DAY_MIN) return
-                blocks += GridBlock(key, date, maxOf(0, s), e, look, title, short, hhmm(start, zone), done, sub, planIt)
+                val movableMarker = marker?.takeIf { start.isAfter(now) }
+                blocks += GridBlock(key, date, maxOf(0, s), e, look, title, short, hhmm(start, zone), done, sub, planIt, marker = movableMarker, start = start, end = end)
             }
+            val dayAnchors = anchors.filter { it.localDate == date }
+            fun challengeMarker(slot: String?): Marker? =
+                dayAnchors.firstOrNull { it.kind == AnchorKind.CHALLENGE_SESSION && it.slot == slot && it.marker != null }?.marker
             val addOn = items.firstOrNull { it.kind == WeeklyPlanner.KIND_ADDON }
             for (it in items) when (it.kind) {
                 FixedItem.KIND_CHALLENGE, FixedItem.KIND_TEST -> add(
                     it.key, it.start, it.end, BlockLook.GYM, it.label, slotShort(it.slot), false,
-                    sub = addOn?.let { a -> "+ ${UiWeekRows.typeLabel(a.type)} ${Math.round(a.estMinutes)} min" },
+                    sub = addOn?.let { a -> "+ ${UiWeekRows.typeLabel(a.type)} ${Math.round(a.estMinutes)} min" }, marker = challengeMarker(it.slot),
                 )
                 FixedItem.KIND_DONE -> add(it.key, it.start, it.end, BlockLook.GYM, it.label, slotShort(it.slot), true)
                 FixedItem.KIND_DONE_GENERAL -> add(it.key, it.start, it.end, BlockLook.GYM, it.label, typeShort(it.type) ?: "Gym", true)
                 FixedItem.KIND_PLANNED_GYM -> {
                     val none = it.direct.values.none { v -> v > 0.0 }
-                    add(it.key, it.start, it.end, BlockLook.GYM, if (none) "Planned gym" else it.label, typeShort(it.type) ?: "Gym", false, sub = if (none) "not recommended" else null)
+                    val m = dayAnchors.firstOrNull { a -> a.instanceKey == it.key }?.marker
+                    add(
+                        it.key, it.start, it.end, BlockLook.GYM, if (none) "Planned gym" else (PlanIt.typeName(it.type) ?: it.label), typeShort(it.type) ?: "Gym", false,
+                        sub = if (none) "not recommended" else null, marker = m,
+                    )
                 }
                 WeeklyPlanner.KIND_RECOMMENDED -> add(
                     it.key, it.start, it.start.plusSeconds(Math.round(it.estMinutes * 60.0)), BlockLook.SUGGESTED, it.label, typeShort(it.type) ?: "Gym", false,
-                    planIt = it.takeIf { canPlan && it.start.isAfter(now) },
+                    planIt = it.takeIf { it.start.isAfter(now) },
                 )
             }
             if (plan == null) {
@@ -111,7 +128,7 @@ object UiWeekGrid {
                         val s = minuteOf(a.beginUtc, date, zone)
                         val e = minuteOf(a.endUtc, date, zone)
                         if (blocks.none { it.look == BlockLook.GYM && it.startMin < e && s < it.endMin }) {
-                            add(a.instanceKey, a.beginUtc, a.endUtc, BlockLook.GYM, title ?: "Gym", a.slot ?: "Gym", false)
+                            add(a.instanceKey, a.beginUtc, a.endUtc, BlockLook.GYM, title ?: "Gym", a.slot ?: "Gym", false, marker = a.marker)
                         }
                     }
                     AnchorKind.IGNORED -> Unit

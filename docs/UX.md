@@ -1411,9 +1411,9 @@ tap ("Plan it", D11), and show weekly muscle volume against targets.
 
 As built (D83, replacing D82's stacked rows), the days are a calendar time grid: hours down, days across, gym
 sessions as accent blocks (done ones with a check), the planner's suggested sessions as outlined blocks, and every
-other event as a muted block in the background colour. Chips "3 · 5 · 7 days" set the day width; with fewer than 7
-the grid scrolls sideways. Tapping a day header or a block opens the day sheet (10.9). The sketch above shows the
-content, not the layout.
+other event as a muted block in the background colour, always 7 days on the screen (D84). Tapping a day header or a
+block opens the day sheet (10.9); tapping an empty spot plans a session there and a long press drags a gym session
+(10.4). The sketch above shows the content, not the layout.
 
 `[E]` = an event from the user's calendar without the app's marker; an app-written event shows
 `[App]` with the `edit_calendar` icon. In the real fixture week the C, A and test events were created
@@ -1473,8 +1473,13 @@ Reasons use the same template strings as reason chips (19.1), and every row has 
 * The tap writes at once (D82): to plan another time or day, the user moves the event in their calendar, and the
   moved time is kept (`user_moved`). Plan it is offered for the recommended general items of the current and the
   next week, on the row, in the day sheet (10.9) and as the Today card's "Plan it in calendar" (9.3).
-* While the user has not edited the event, the app keeps its title and exercise lines in step with the plan for
-  that day (D82); it never moves the event or changes its session type, and never deletes it on its own. When the
+* While the user has not edited the event, the app keeps its exercise lines in step with the plan for that day
+  (D82); its title names the session type ("Gym — Full body", D84). The app never moves the event or changes its
+  session type on its own, and never deletes it on its own.
+* In the Week grid (D84), tapping an empty spot opens "New gym session" at that time (type, length, preview, "Add to
+  calendar"), and a long press lifts an app gym event or a suggestion so it can be dragged to another time or day; a
+  dropped event is written with Undo and reads "Moved by you"; a dropped suggestion only moves on the phone and is
+  planned at its new time from the day sheet. When the
   planner stops recommending a session that day, the row reads "planned (not recommended)" with Remove.
 * Without WRITE_CALENDAR, Plan it opens the permission sub-step first.
 * Emits `plan_it_tapped {date, type, recommendation_id}` and `calendar_event_written {op: insert,

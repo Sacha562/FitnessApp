@@ -11,6 +11,7 @@ import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.planning.allocator.SessionType
 import dev.fitnessapp.algo.planning.weekplan.FixedItem
 import dev.fitnessapp.algo.planning.weekplan.PlanItem
+import dev.fitnessapp.algo.planning.weekplan.ReasonCode
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
 import dev.fitnessapp.app.calendar.CalendarPrompt
@@ -55,6 +56,9 @@ data class WeekRow(
     val notRecommended: Boolean,
     /** `done`, `challenge`, `test`, `planned`, `recommended`, `blocked`, `rest`, `past` (`week_day_opened.row_kind`). */
     val kind: String,
+    /** The day's challenge session or test still ahead, and its add-on, for the day sheet's exercise list. */
+    val challengeItem: PlanItem? = null,
+    val addOnItem: PlanItem? = null,
 )
 
 /**
@@ -93,7 +97,13 @@ object UiWeekRows {
         val planned = items.firstOrNull { it.kind == FixedItem.KIND_PLANNED_GYM }
         val recommended = items.firstOrNull { it.kind == WeeklyPlanner.KIND_RECOMMENDED }
         val notRecommended = planned != null && planned.direct.values.none { it > 0.0 }
-        val reason = day?.restReason?.let { r -> UiTodayCard.text(r.code, r.params, now, zone, groupLabel) ?: if (r.code == "PAST_DAY") null else r.code.lowercase().replace('_', ' ') }
+        val reason = day?.restReason?.let { r ->
+            when (r.code) {
+                "MOVED" -> "you moved its suggestion to another time"
+                "PAST_DAY" -> null
+                else -> UiTodayCard.text(r.code, r.params, now, zone, groupLabel) ?: r.code.lowercase().replace('_', ' ')
+            }
+        }
 
         val kind: String
         val symbol: String
@@ -175,7 +185,32 @@ object UiWeekRows {
             recommended != null && canPlan && !date.isBefore(today) && recommended.start.isAfter(now) -> WeekAction.PlanIt(recommended)
             else -> null
         }
-        WeekRow(date, symbol, title, detail, events, action, planned ?: recommended, notRecommended, kind)
+        WeekRow(date, symbol, title, detail, events, action, planned ?: recommended, notRecommended, kind, challenge, addOn)
+    }
+
+    /**
+     * [plan] with the suggestions the user dragged (D84 (2)) at their new start ([moved]: item key -> start), keeping each
+     * one's length; a day that loses its suggestion becomes a plain rest day for the display. Display only.
+     */
+    fun withMoved(plan: WeekPlan, moved: Map<String, Instant>, zone: ZoneId): WeekPlan {
+        val lifted = plan.days.flatMap { it.items }.filter { it.kind == WeeklyPlanner.KIND_RECOMMENDED && it.key in moved }
+        if (lifted.isEmpty()) return plan
+        val keys = lifted.map { it.key }.toSet()
+        val shifted = lifted.map { i ->
+            val s = moved.getValue(i.key)
+            i.copy(start = s, end = s.plus(java.time.Duration.between(i.start, i.end)))
+        }
+        return plan.copy(
+            days = plan.days.map { d ->
+                val keep = d.items.filter { it.key !in keys }
+                val add = shifted.filter { Week.localDate(it.start, zone) == d.date }
+                val lost = d.items.any { it.key in keys } && add.isEmpty()
+                d.copy(
+                    items = (keep + add).sortedWith(compareBy({ it.start }, { it.key })),
+                    restReason = if (add.isNotEmpty()) null else if (lost) ReasonCode("MOVED") else d.restReason,
+                )
+            },
+        )
     }
 
     fun typeLabel(code: String?): String = runCatching { SessionType.of(code ?: "") }.getOrNull()?.let {

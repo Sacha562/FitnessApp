@@ -63,12 +63,17 @@ import dev.fitnessapp.algo.challenge.calendar.CalendarLink
 import dev.fitnessapp.algo.challenge.calendar.WritePrompt
 import dev.fitnessapp.algo.common.Groups
 import dev.fitnessapp.algo.core.calendar.CalendarClassification
+import dev.fitnessapp.algo.core.calendar.AnchorKind
 import dev.fitnessapp.algo.core.calendar.SlotKey
+import dev.fitnessapp.algo.planning.weekplan.PlanIt
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.planning.weekplan.FixedItem
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.uidet.UiTrim
+import dev.fitnessapp.app.planning.SessionBuild
+import dev.fitnessapp.app.ui.challenges.ChallengeLines
 import dev.fitnessapp.app.planning.PlanItContent
 import dev.fitnessapp.app.planning.PlanningFacts
 import dev.fitnessapp.app.planning.WeekChallenge
@@ -143,18 +148,20 @@ private suspend fun load(c: AppContainer, offset: Int): WeekPage = withContext(D
     val snap = c.calendar.snapshot.value
     val degraded = snap.status != CalendarClassification.OK
     val canPlan = !degraded && snap.writeOff == null && snap.target != null
-    val labels = c.catalogModel.taxonomy.activeGroups.associate { it.id to (it.labelEn ?: it.id) }
+    val labels = c.catalogModel.taxonomy.activeGroups.associate { it.id to it.labelEn }
     fun rows(plan: WeekPlan?, done: List<LoggedSession>) =
         UiWeekRows.rows(plan, monday, snap.anchors, snap.instances, snap.links, snap.prompts, done.map { it.date to it.label }, today, now, zone, canPlan) { g -> labels[g] ?: g }
-    fun grid(plan: WeekPlan?, done: List<LoggedSession>) = UiWeekGrid.grid(plan, monday, snap.anchors, snap.instances, done, today, now, zone, canPlan)
+    fun grid(plan: WeekPlan?, done: List<LoggedSession>) = UiWeekGrid.grid(plan, monday, snap.anchors, snap.instances, done, today, now, zone)
     when {
         offset == 0 -> {
             val run = WeekPlans.thisWeek(c, now)
-            WeekPage(monday, 0, run, run.volume, rows(run.plan, emptyList()), grid(run.plan, emptyList()), run.volume.challenge, degraded)
+            val shown = UiWeekRows.withMoved(run.plan, c.settings.movedSuggestions(run.plan.isoWeek), zone)
+            WeekPage(monday, 0, run, run.volume, rows(shown, emptyList()), grid(shown, emptyList()), run.volume.challenge, degraded)
         }
         offset == 1 -> {
             val run = WeekPlans.nextWeek(c, WeekPlans.thisWeek(c, now), now)
-            WeekPage(monday, 1, run, null, rows(run.plan, emptyList()), grid(run.plan, emptyList()), runCatching { WeekPlans.blockAt(c, monday) }.getOrNull(), degraded)
+            val shown = UiWeekRows.withMoved(run.plan, c.settings.movedSuggestions(run.plan.isoWeek), zone)
+            WeekPage(monday, 1, run, null, rows(shown, emptyList()), grid(shown, emptyList()), runCatching { WeekPlans.blockAt(c, monday) }.getOrNull(), degraded)
         }
         offset < 0 -> {
             val volume = runCatching { WeekVolume.compute(c, Week.atLocal(monday.plusDays(6), LocalTime.of(23, 59), zone)) }.getOrNull()
@@ -200,15 +207,16 @@ fun WeekRoute(
     var failed by remember { mutableStateOf<String?>(null) }
     var open by remember { mutableStateOf<String?>(null) }
     var day by remember { mutableStateOf<LocalDate?>(null) }
-    var marked by remember { mutableStateOf<LocalDate?>(null) }
     var busy by remember { mutableStateOf(false) }
-    var daysVisible by remember { mutableIntStateOf(c.settings.weekDaysVisible) }
+    // A tapped empty spot waiting for its "New gym session" sheet (D84 (1)).
+    var placing by remember { mutableStateOf<java.time.Instant?>(null) }
+    // Dropped blocks held at their drop place until the reloaded week shows them there (D84 (2)).
+    var pending by remember { mutableStateOf<Map<String, Pair<LocalDate, Int>>>(emptyMap()) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
     LaunchedEffect(focus) {
         val f = focus ?: return@LaunchedEffect
         val thisMonday = Week.isoWeekStart(Week.localDate(c.clock.now(), PlanningFacts.ZONE))
         offset = ChronoUnit.WEEKS.between(thisMonday, Week.isoWeekStart(f)).toInt()
-        marked = f
         onFocusUsed()
     }
     LaunchedEffect(offset) { runCatching { c.screenViewed("week", mapOf("iso_week_offset" to offset)) } }
@@ -221,7 +229,11 @@ fun WeekRoute(
                 // D82 (4): the unedited "Plan it" events of this week and next follow the plan.
                 p.run?.let { r -> launch(Dispatchers.Default) { runCatching { PlanItContent.offer(c, r.plan) } } }
             }
-            .onFailure { failed = it.message ?: it.javaClass.simpleName }
+            .onFailure {
+                // A load cancelled because its inputs changed (a calendar refresh) is not a failure: the next one replaces it.
+                if (it is kotlinx.coroutines.CancellationException) throw it
+                failed = it.message ?: it.javaClass.simpleName
+            }
     }
 
     /** "Plan it" (UX 10.4): one tap writes the event, then "Added to calendar · Undo". */
@@ -238,9 +250,82 @@ fun WeekRoute(
                 snackbar.showSnackbar(planItError(err))
                 return@launch
             }
+            // A suggestion the user had moved is planned now; its moved place must not carry over to a new suggestion.
+            c.settings.setMovedSuggestion(run.plan.isoWeek, item.key, null)
             if (snackbar.showUndo("Added to calendar", context) == SnackbarResult.ActionPerformed) {
                 PlanItContent.undo(c, marker, t0)?.let { snackbar.showSnackbar(errorText(it)) }
                 tick++
+            }
+        }
+    }
+
+    /** The page again at once (after a drop), so the dropped block's place is never shown from stale data. */
+    suspend fun reload() {
+        runCatching { load(c, offset) }.getOrNull()?.let { page = it }
+    }
+
+    /** A tap on an empty spot (D84 (1)): the sheet opens for this and next week, from now on. */
+    fun tapSlot(p: WeekPage, date: LocalDate, minute: Int) {
+        if (p.run == null) {
+            scope.launch { snackbar.showSnackbar("Only this week and next week can be planned.") }
+            return
+        }
+        val start = Week.atLocal(date, LocalTime.of(minute / 60, minute % 60), PlanningFacts.ZONE)
+        if (!start.isAfter(c.clock.now())) {
+            scope.launch { snackbar.showSnackbar("That time has passed.") }
+            return
+        }
+        placing = start
+    }
+
+    /** A drop after a long press (D84 (2)): a suggestion is planned there, an app event moves; both with Undo. */
+    fun drop(p: WeekPage, b: dev.fitnessapp.app.uidet.GridBlock, date: LocalDate, minute: Int) {
+        if (p.run == null) return
+        val start = Week.atLocal(date, LocalTime.of(minute / 60, minute % 60), PlanningFacts.ZONE)
+        if (!start.isAfter(c.clock.now())) {
+            scope.launch { snackbar.showSnackbar("That time has passed.") }
+            return
+        }
+        val run = p.run
+        val item = b.planIt
+        if (b.look == dev.fitnessapp.app.uidet.BlockLook.SUGGESTED && item != null) {
+            // D84 (2) as amended: a suggestion only moves on the device; it is planned from the day sheet.
+            val week = run.plan.isoWeek
+            val before = c.settings.movedSuggestions(week)[item.key]
+            c.settings.setMovedSuggestion(week, item.key, start)
+            pending = pending + (b.key to (date to minute))
+            scope.launch {
+                reload()
+                pending = pending - b.key
+                if (snackbar.showUndo("Suggestion moved. Open the day to plan it.", context) == SnackbarResult.ActionPerformed) {
+                    c.settings.setMovedSuggestion(week, item.key, before)
+                    reload()
+                }
+            }
+            return
+        }
+        val marker = b.marker ?: return
+        val oldStart = b.start ?: return
+        val oldEnd = b.end ?: return
+        val end = start.plus(Duration.between(oldStart, oldEnd))
+        if (busy) return
+        busy = true
+        pending = pending + (b.key to (date to minute))
+        scope.launch {
+            val err = c.calendar.moveEvent(marker, start, end)
+            reload()
+            pending = pending - b.key
+            busy = false
+            if (err != null) {
+                snackbar.showSnackbar(if (err == "past") "That time has passed." else errorText(err))
+                return@launch
+            }
+            // A general event moved to another day carries that day's marker now.
+            val now = if (marker.parsedKey() is SlotKey.General) dev.fitnessapp.algo.core.calendar.Marker(marker.uuid, PlanIt.slotKey(date)) else marker
+            val text = "Moved to " + date.format(DateTimeFormatter.ofPattern("EEE", Locale.ENGLISH)) + " %02d:%02d".format(Locale.ROOT, minute / 60, minute % 60)
+            if (snackbar.showUndo(text, context) == SnackbarResult.ActionPerformed) {
+                c.calendar.moveEvent(now, oldStart, oldEnd)?.let { snackbar.showSnackbar(errorText(it)) }
+                reload()
             }
         }
     }
@@ -307,17 +392,14 @@ fun WeekRoute(
                     if (p.run == null && p.rows.none { it.kind == "done" }) {
                         Text("No sessions logged this week.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        listOf(3, 5, 7).forEach { n ->
-                            ChipButton("$n days", selected = daysVisible == n, onClick = { daysVisible = n; c.settings.weekDaysVisible = n })
-                        }
-                    }
                     p.grid?.let { g ->
                         val now = c.clock.now()
-                        val today = Week.localDate(now, PlanningFacts.ZONE)
                         WeekGridView(
-                            g, daysVisible, scrollTo = marked ?: today, busy = busy,
+                            g,
                             nowMin = Week.localTime(now, PlanningFacts.ZONE).let { it.hour * 60 + it.minute },
+                            onTapSlot = { date, minute -> tapSlot(p, date, minute) },
+                            onMove = { b, date, minute -> drop(p, b, date, minute) },
+                            pending = pending,
                             onOpenDay = { d ->
                                 day = d
                                 val kind = p.rows.firstOrNull { it.date == d }?.kind ?: "rest"
@@ -329,10 +411,15 @@ fun WeekRoute(
                                     }
                                 }
                             },
-                            onPlanIt = { item -> planIt(p, item) },
                         )
                     }
                     GridLegend()
+                    if (p.run != null) {
+                        Text(
+                            "Tap an empty spot to plan a session there. Long-press a gym session or a suggestion to move it.",
+                            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+                        )
+                    }
                     if (offset == 1) Text("Next week is provisional: it changes as this week goes.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
             }
@@ -365,6 +452,24 @@ fun WeekRoute(
     val w = page?.volume
     if (open != null && w != null) GroupSheet(c, w, open!!) { open = null }
     val p = page
+    val at = placing
+    val run = p?.run
+    if (p != null && at != null && run != null) {
+        PlaceSheet(c, run, p.rows.firstOrNull { it.date == Week.localDate(at, PlanningFacts.ZONE) }, at, onDismiss = { placing = null }) { type, budget ->
+            placing = null
+            scope.launch {
+                val t0 = System.currentTimeMillis()
+                val (marker, err) = PlanItContent.create(c, run.plan, type, at, budget)
+                tick++
+                if (marker == null) {
+                    snackbar.showSnackbar(planItError(err))
+                } else if (snackbar.showUndo("Added to calendar", context) == SnackbarResult.ActionPerformed) {
+                    PlanItContent.undo(c, marker, t0)?.let { snackbar.showSnackbar(errorText(it)) }
+                    tick++
+                }
+            }
+        }
+    }
     val d = day
     if (p != null && d != null) {
         p.rows.firstOrNull { it.date == d }?.let { r ->
@@ -414,9 +519,83 @@ private fun Symbol(s: String) {
     }
 }
 
+/** One session of the day sheet: what it is, when, a second line, its exercises and the calendar event behind it. */
+private class SheetSession(
+    val title: String,
+    val status: String,
+    val time: String,
+    val extra: String?,
+    val rows: List<Pair<String, String>>,
+    val event: dev.fitnessapp.app.uidet.WeekEvent?,
+    val general: Boolean,
+)
+
 /**
- * The day sheet (UX 10.9, D82 (2)): the recommended session with its exercises, minutes and reasons, the readiness of its
- * families, the day's calendar events with their marker status and classification, and the actions.
+ * The sessions of [r]'s day for the sheet: the challenge session or test with the exercises of its materialized plan,
+ * then the planned or suggested general session with the exercises of its build and the readiness of its families,
+ * or a done session.
+ */
+private suspend fun sessionsOf(c: AppContainer, p: WeekPage, r: WeekRow, snap: dev.fitnessapp.app.calendar.CalendarSnapshot): List<SheetSession> {
+    val zone = PlanningFacts.ZONE
+    fun hm(i: java.time.Instant) = Week.localTime(i, zone).let { "%02d:%02d".format(Locale.ROOT, it.hour, it.minute) }
+    fun note(e: dev.fitnessapp.app.uidet.WeekEvent?): String {
+        val m = e?.marker ?: return ""
+        val link = snap.links.firstOrNull { it.markerUuid == m.uuid && it.slotKey == m.slotKey } ?: return ""
+        return when (link.state) {
+            CalendarLink.USER_MOVED -> " · moved by you"
+            CalendarLink.USER_EDITED -> " · edited by you, no longer updated"
+            else -> ""
+        }
+    }
+    val gym = r.events.filter { it.kind == AnchorKind.CHALLENGE_SESSION || it.kind == AnchorKind.PLANNED_GYM }
+    val out = ArrayList<SheetSession>()
+    r.challengeItem?.let { ch ->
+        val ev = gym.firstOrNull { it.kind == AnchorKind.CHALLENGE_SESSION }
+        val enrollment = c.challenges.open().firstOrNull()?.id
+        val rows = if (enrollment != null && ch.slot != null) {
+            runCatching { ChallengeLines.exercises(c.challengeSessions.materialize(enrollment, ch.slot!!, r.date)).map { it.name to it.detail } }.getOrDefault(emptyList())
+        } else emptyList()
+        out += SheetSession(
+            ch.label, if (ch.kind == FixedItem.KIND_TEST) "Test day" else "Challenge", hm(ch.start) + "–" + hm(ch.end) + note(ev),
+            r.addOnItem?.let { a -> "Then a ${UiWeekRows.typeLabel(a.type)} add-on, about ${Math.round(a.estMinutes)} min" }, rows, ev, false,
+        )
+    }
+    val item = r.item
+    if (item != null) {
+        val planned = item.kind == FixedItem.KIND_PLANNED_GYM
+        val ev = if (planned) gym.firstOrNull { it.instanceKey == item.key } else null
+        val run = p.run
+        val content = if (run != null && !r.notRecommended) {
+            val budget = if (planned) java.time.Duration.between(item.start, item.end).toMinutes() - PlanItContent.changeover(c) else PlanItContent.budget(c, item)
+            runCatching { PlanItContent.build(c, run.plan, item, budget) }.getOrNull()
+        } else null
+        val time = if (planned) hm(item.start) + "–" + hm(item.end) + note(ev)
+        else hm(item.start) + (content?.let { " · about ${UiTrim.minutes(it.result.estMin)} min" } ?: "")
+        val ready = content?.let { pv ->
+            SessionBuild.families(pv.result, c).mapNotNull { f ->
+                val groups = Groups.FAMILIES.getValue(f).filter { (pv.result.allocation.direct[it] ?: 0.0) > 0.0 }
+                groups.minOfOrNull { pv.readiness[it] ?: 1.0 }?.let { v -> f.lowercase().replaceFirstChar { it.uppercase() } + " ${Math.round(v * 100)} %" }
+            }.takeIf { it.isNotEmpty() }?.joinToString(" · ", postfix = " recovered")
+        }
+        val rows = content?.result?.exercises?.map { x -> (c.catalog.bySlug(x.slug)?.nameEn ?: x.slug) to (if (x.sets == 1) "1 set" else "${x.sets} sets") }.orEmpty()
+        out += SheetSession(
+            PlanIt.typeName(item.type) ?: item.label,
+            when {
+                r.notRecommended -> "Not recommended"
+                planned -> "Planned"
+                else -> "Suggested"
+            },
+            time, if (r.notRecommended) "This week's plan gives it no sets: its groups are covered, recovering or not wanted." else ready, rows, ev, true,
+        )
+    }
+    if (out.isEmpty() && r.kind == "done") out += SheetSession(r.title.removeSuffix(" (done)"), "Done", "", null, emptyList(), null, false)
+    return out
+}
+
+/**
+ * The day sheet (UX 10.9, D82 (2), tidied after the phone check): each gym session of the day with its status, one time
+ * line, its add-on or the readiness of its families, and its exercises with their sets; the rest reason on a day
+ * without one; then the actions. Only gym events are listed (D84).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -433,103 +612,71 @@ private fun DaySheet(
 ) {
     val scope = rememberCoroutineScope()
     val snap by c.calendar.snapshot.collectAsState()
-    var preview by remember { mutableStateOf<PlanItContent.Content?>(null) }
-    var previewTried by remember { mutableStateOf(false) }
+    var sessions by remember { mutableStateOf<List<SheetSession>?>(null) }
     var correct by remember { mutableStateOf<String?>(null) }
-    val item = r.item
-    LaunchedEffect(r.date, item?.key) {
-        preview = null
-        previewTried = false
-        val run = p.run
-        if (item != null && run != null && !r.notRecommended) {
-            preview = runCatching {
-                val budget = if (item.kind == FixedItem.KIND_PLANNED_GYM) {
-                    snap.anchors.firstOrNull { it.instanceKey == item.key }?.let { a -> Duration.between(a.beginUtc, a.endUtc).toMinutes() - PlanItContent.changeover(c) }
-                        ?: PlanItContent.budget(c, item)
-                } else PlanItContent.budget(c, item)
-                PlanItContent.build(c, run.plan, item, budget)
-            }.getOrNull()
-        }
-        previewTried = true
+    LaunchedEffect(r.date, r.item?.key, r.challengeItem?.key, snap.refreshedAt) {
+        sessions = withContext(Dispatchers.Default) { runCatching { sessionsOf(c, p, r, snap) }.getOrDefault(emptyList()) }
     }
     val today = Week.localDate(c.clock.now(), PlanningFacts.ZONE)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp).navigationBarsPadding().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(r.date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH)), style = MaterialTheme.typography.titleLarge)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Symbol(r.symbol)
-                Text(r.title, style = MaterialTheme.typography.titleMedium)
-            }
-            r.detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
-            if (r.notRecommended) {
-                Text(
-                    "This week's plan gives this session no sets: the groups it would train are covered, recovering or not wanted. You can keep it or remove it.",
-                    style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-                )
-            }
-            if (item != null && !r.notRecommended) {
-                TileLabel("Recommended session")
-                val pv = preview
-                when {
-                    pv != null -> {
-                        Text("~${Math.round(pv.result.estMin)} min · " + pv.label, style = MaterialTheme.typography.bodyMedium)
-                        pv.lines.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                        val families = dev.fitnessapp.app.planning.SessionBuild.families(pv.result, c)
-                        val ready = families.mapNotNull { f ->
-                            val groups = Groups.FAMILIES.getValue(f).filter { (pv.result.allocation.direct[it] ?: 0.0) > 0.0 }
-                            groups.minOfOrNull { pv.readiness[it] ?: 1.0 }?.let { v -> f.lowercase().replaceFirstChar { it.uppercase() } + " ${Math.round(v * 100)} % recovered" }
-                        }
-                        if (ready.isNotEmpty()) Text(ready.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-                    }
-                    !previewTried -> LoadingDumbbell(PLANNER_LINES, height = 40.dp)
-                    else -> Text("The exercise list will be built when you start.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            val list = sessions
+            when {
+                list == null -> LoadingDumbbell(PLANNER_LINES, height = 40.dp)
+                list.isEmpty() -> {
+                    Text(r.title, style = MaterialTheme.typography.titleMedium)
+                    r.detail?.let { Text(it.replaceFirstChar { ch -> ch.uppercase() }, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted) }
+                    Text("Tap an empty spot in the week to plan a session.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
-            }
-            if (r.events.isNotEmpty()) TileLabel("In your calendar")
-            r.events.forEach { e ->
-                val a = snap.anchors.firstOrNull { it.instanceKey == e.instanceKey }
-                val link = e.marker?.let { m -> snap.links.firstOrNull { it.markerUuid == m.uuid && it.slotKey == m.slotKey } }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("${e.title} · ${e.time}", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        listOfNotNull(
-                            a?.let { kindText(it) },
-                            if (e.app) link?.let { linkStateText(it.state) } ?: "App event" else "Your event",
-                            e.note,
-                        ).joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-                    )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        snap.prompts.firstOrNull { (it.prompt as? WritePrompt.Adopt)?.instanceKey == e.instanceKey }?.let { pr ->
-                            LinkButton("Adopt", { onAction(WeekAction.Adopt(pr)) }, enabled = !busy)
+                else -> list.forEachIndexed { i, s ->
+                    if (i > 0) TileDivider()
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(s.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            Pill(s.status, content = if (s.status == "Suggested") Fit.Accent else Fit.Ink)
                         }
-                        val general = e.marker?.parsedKey() is SlotKey.General
-                        val removable = general && link != null && (link.state == CalendarLink.ACTIVE || link.state == CalendarLink.USER_MOVED) &&
-                            a != null && a.beginUtc.isAfter(c.clock.now())
-                        if (removable) LinkButton("Remove from calendar", {
-                            scope.launch {
-                                val inst = snap.instances[e.instanceKey]
-                                val err = c.calendar.removeGeneral(e.marker!!, "user_remove")
-                                if (err != null) onMessage(errorText(err)) else {
-                                    onChanged()
-                                    if (inst != null) onMessage("Removed from your calendar")
+                        if (s.time.isNotEmpty()) Text(s.time, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                        s.extra?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
+                        if (s.rows.isNotEmpty()) {
+                            Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                s.rows.forEach { (name, detail) ->
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                        if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                                    }
                                 }
                             }
-                        }, enabled = !busy)
-                        if (e.kind != dev.fitnessapp.algo.core.calendar.AnchorKind.BUSY || !e.app) LinkButton("Correct", { correct = e.instanceKey })
+                        }
+                        val e = s.event
+                        val link = e?.marker?.let { m -> snap.links.firstOrNull { it.markerUuid == m.uuid && it.slotKey == m.slotKey } }
+                        val anchor = e?.let { ev -> snap.anchors.firstOrNull { it.instanceKey == ev.instanceKey } }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            val plan = r.action as? WeekAction.PlanIt
+                            if (s.general && s.status == "Suggested" && plan != null) LinkButton("Plan it", { onAction(plan); onDismiss() }, enabled = !busy)
+                            if (e != null) {
+                                snap.prompts.firstOrNull { (it.prompt as? WritePrompt.Adopt)?.instanceKey == e.instanceKey }?.let { pr ->
+                                    LinkButton("Adopt", { onAction(WeekAction.Adopt(pr)) }, enabled = !busy)
+                                }
+                                val removable = s.general && e.marker?.parsedKey() is SlotKey.General && link != null &&
+                                    (link.state == CalendarLink.ACTIVE || link.state == CalendarLink.USER_MOVED) && anchor != null && anchor.beginUtc.isAfter(c.clock.now())
+                                if (removable) LinkButton("Remove from calendar", {
+                                    scope.launch {
+                                        val err = c.calendar.removeGeneral(e.marker, "user_remove")
+                                        if (err != null) onMessage(errorText(err)) else { onChanged(); onMessage("Removed from your calendar"); onDismiss() }
+                                    }
+                                }, enabled = !busy)
+                                LinkButton("Correct", { correct = e.instanceKey })
+                            }
+                        }
                     }
                 }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                r.action?.let { a ->
-                    if (a is WeekAction.PlanIt) LinkButton("Plan it", { onAction(a); onDismiss() }, enabled = !busy)
-                    if (a is WeekAction.AddToCalendar) LinkButton("Add to calendar", { onAction(a); onDismiss() }, enabled = !busy)
-                }
-                if (r.date == today && r.kind in setOf("recommended", "planned", "challenge", "test")) LinkButton("Go to Today", onOpenToday)
-            }
+            r.action?.let { a -> if (a is WeekAction.AddToCalendar) LinkButton("Add to calendar", { onAction(a); onDismiss() }, enabled = !busy) }
+            if (r.date == today && !list.isNullOrEmpty() && list.any { it.status != "Done" }) LinkButton("Go to Today", onOpenToday)
         }
     }
     correct?.let { key -> EventSheet(c, snap, key, onDismiss = { correct = null; onChanged() }, onMessage = onMessage) }

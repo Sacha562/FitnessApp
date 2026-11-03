@@ -37,7 +37,7 @@ class PlanItTest {
 
     @Test
     fun `the event is the label, the planner's start and the estimate plus changeover on the 5-minute grid`() {
-        event.title shouldBe "Gym — Legs + push + rear delts"
+        event.title shouldBe "Gym — Full body" // D84: titled by the session type, which reads back as FULL
         event.start shouldBe Instant.parse("2026-10-09T17:45:00Z")
         event.end shouldBe Instant.parse("2026-10-09T18:40:00Z") // 49.6 + 5 = 54.6 -> 55 min, budget 50 (W41_planItFri in 21.10)
         event.marker shouldBe Marker(rec, "gen/2026-W41/5")
@@ -56,6 +56,8 @@ class PlanItTest {
         PlanIt.dateOf("gen/2026-W53/7") shouldBe LocalDate.parse("2027-01-03")
         PlanIt.dateOf("oap/C/2026-W41").shouldBeNull()
         PlanIt.line("Plank", 1) shouldBe "Plank · 1 set"
+        listOf("LEGS", "PUSH", "PULL", "PUSH+LEGS", "PULL+LEGS", "UPPER", "FULL", "CORE").map { PlanIt.typeName(it) } shouldBe
+            listOf("Legs", "Push", "Pull", "Legs + push", "Pull + legs", "Upper", "Full body", "Core")
     }
 
     @Test

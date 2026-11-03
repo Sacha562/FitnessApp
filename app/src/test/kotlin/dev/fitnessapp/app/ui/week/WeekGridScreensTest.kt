@@ -35,7 +35,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
-/** D83's Week grid at 3, 5 and 7 days on a phone-wide screen, on a week shaped like W45 (challenge C, A, B and busy evenings). */
+/** D83's Week grid (7 days, D84) on a phone-wide screen, on a week shaped like W45 (challenge C, A, B and busy evenings). */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
@@ -92,12 +92,12 @@ class WeekGridScreensTest {
     }.toMap()
 
     private fun shot(days: Int) {
-        val grid = UiWeekGrid.grid(plan, monday, anchors, instances, emptyList(), today, now, zone, canPlan = true)
+        val grid = UiWeekGrid.grid(plan, monday, anchors, instances, emptyList(), today, now, zone)
         compose.setContent {
             FitnessTheme {
                 Surface(color = Fit.Ground) {
                     Column(Modifier.padding(16.dp).width(379.dp)) {
-                        WeekGridView(grid, days, scrollTo = today, nowMin = 18 * 60 + 30, busy = false, onOpenDay = {}, onPlanIt = {})
+                        WeekGridView(grid, nowMin = 18 * 60 + 30, onOpenDay = {}, onTapSlot = { _, _ -> }, onMove = { _, _, _ -> })
                     }
                 }
             }
@@ -106,11 +106,5 @@ class WeekGridScreensTest {
     }
 
     @Test
-    fun sevenDays() = shot(7)
-
-    @Test
-    fun fiveDays() = shot(5)
-
-    @Test
-    fun threeDays() = shot(3)
+    fun week() = shot(7)
 }

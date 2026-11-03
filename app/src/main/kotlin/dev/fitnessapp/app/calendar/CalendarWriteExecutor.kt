@@ -128,8 +128,8 @@ class CalendarWriteExecutor(private val gateway: CalendarProviderGateway, privat
     }
 
     /**
-     * A user-confirmed change to an app event (Rename, Remove): user actions may target any future date (guard 2), but
-     * the target, sandbox, marker and future-only guards still apply.
+     * A user-confirmed change to an app event (Rename, Remove, a move in the Week grid): user actions may target any
+     * future date (guard 2), but the target, sandbox, marker and future-only guards still apply.
      */
     fun userConfirmed(op: WriteOp, target: WriteTarget, eventCalendar: Map<Long, Long>, now: Instant): ExecResult {
         val id = when (op) {
@@ -145,6 +145,9 @@ class CalendarWriteExecutor(private val gateway: CalendarProviderGateway, privat
         val values = ContentValues()
         val built = when (op) {
             is WriteOp.Update -> {
+                // A time only from a user action: dragging the event in the Week grid (D84).
+                op.start?.let { values.put(Events.DTSTART, it.toEpochMilli()) }
+                op.end?.let { values.put(Events.DTEND, it.toEpochMilli()) }
                 op.title?.let { values.put(Events.TITLE, it) }
                 op.description?.let { values.put(Events.DESCRIPTION, it) }
                 guardedUpdate(op.eventId, op.guard).withValues(values).build()
