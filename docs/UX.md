@@ -1659,6 +1659,11 @@ working exercise appear as the first rows of that exercise's card ("Warm-up BW x
 "Warm-up +12.5 kg x 2 [Done]"), also without RIR. Add-on blocks have no second general warm-up, only
 specific warm-up sets (C34).
 
+The set card's menu switches an exercise between "Log working sets" (skips its remaining warm-ups) and
+"Log a warm-up set". The choice holds for that exercise for the rest of the session, also after leaving the
+screen or a restart: it is written as `warmup_switched` and read back when the live screen opens (D81).
+Another exercise still starts with its own warm-ups.
+
 **Challenge block.** Materialized by `challenge.materialize` for the current phase and mode
 (deload, test pending, injury). Items excluded by rules are shown, not hidden ("Calibration
 negative: skipped today, elbow trace reported").
@@ -4179,6 +4184,7 @@ sent as null.
 | `hold_interrupted` | process death during a hold | session_exercise | `ms_since_go`? |
 | `hold_count_aloud_toggled`, `hold_ecc_pacing_started` | compact timer modes (19.9) | session_exercise | `on` / `lead_in_s` |
 | `warmup_item_done` | Done on a warm-up block item or specific warm-up set | block or set | `item_key`, `block_id` |
+| `warmup_switched` | "Log working sets" / "Log a warm-up set" in the set card's menu (11.5, D81) | session_exercise | `on` |
 | `exercise_skipped` | a reason tap in the Skip sheet | session_exercise | `reason_code`, `chip_position`, `sets_done` |
 | `exercise_deferred` | Do later | session_exercise | `defer_count`, `from_position`, `to_position` |
 | `swap_sheet_shown` | Swap sheet opened | session_exercise | `from_exercise_id`, `candidates[{exercise_id, score}]`, `trigger_reason` (occupied, equipment_missing, user) |

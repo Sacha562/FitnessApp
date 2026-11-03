@@ -920,6 +920,10 @@ class SessionRepository(
     /** Events of [types], oldest first (UI-10's dismissal store reads `warning_dismissed` and `warning_use_mine_toggled`). */
     suspend fun eventsOfTypes(types: List<String>): List<SessionEventEntity> = db.events().ofTypes(types)
 
+    /** The session's events of [type], oldest first (the live warm-up switch reads `warmup_switched`, D81). */
+    suspend fun sessionEventsOfType(sessionId: String, type: String): List<SessionEventEntity> =
+        db.events().bySession(sessionId).filter { it.event_type == type }
+
     // ------------------------------------------------------------------------------------------ helpers
 
     /** `block_started` / `block_finished` (UX 20.2), inside the caller's transaction. */

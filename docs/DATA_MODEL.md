@@ -1809,6 +1809,7 @@ Event registry. This table is canonical (C39): it is the union of the event name
 | logging | `hold_interrupted` | UX 20.3 | `ms_since_go?` |
 | logging | `hold_count_aloud_toggled`, `hold_ecc_pacing_started` | UX 20.3 | `on` / `lead_in_s` |
 | logging | `warmup_item_done` | UX 20.3 (warm-ups are logged with Done, C63) | `item_key`, `block_id` |
+| logging | `warmup_switched` | UX 11.5 (the live card's warm-up switch; the live screen reads it back, D81) | `on` |
 | logging | `exercise_skipped` | UX 20.3 | `reason_code`, `chip_position`, `sets_done` |
 | logging | `exercise_deferred` | UX 20.3 | `defer_count`, `from_position`, `to_position` |
 | logging | `swap_sheet_shown` | UX 20.3 | `from_exercise_id`, `candidates`, `trigger_reason` |

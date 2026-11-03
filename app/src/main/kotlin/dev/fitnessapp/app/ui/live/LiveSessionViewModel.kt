@@ -267,7 +267,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val rxCache = java.util.concurrent.ConcurrentHashMap<String, Prescription>()
     private val rxRequested: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
 
-    /** The warm-up switch of an item as the user set it (UX 11.5); absent = the default (generated warm-ups first). */
+    /**
+     * The warm-up switch of an item as the user set it (UX 11.5); absent = the default (generated warm-ups first).
+     * Restored from the session's `warmup_switched` events before the first card (D81).
+     */
     private val warmupOverride = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
 
     /** Applied suggestions (UX 11.10): "seId|side" -> set index -> the accepted target, UI-04's first prefill source. */
@@ -297,6 +300,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             improveGroups = runCatching { c.goals.current().filterValues { it.goal == "improve" }.keys }.getOrDefault(emptySet())
         }
         viewModelScope.launch {
+            restoreWarmupSwitches()
             combine(
                 c.sessionRepository.observeSession(sessionId),
                 c.sessionRepository.observeExercises(sessionId),
@@ -710,11 +714,23 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun setWarmup(on: Boolean) {
         val card = _ui.value.card ?: return
         warmupOverride[card.item.se.id] = on
+        // D81: the event keeps the choice for the session; restoreWarmupSwitches reads it back.
+        emit("warmup_switched", card.item.se.id, mapOf("on" to JsonPrimitive(on)))
         viewModelScope.launch {
             val s = last ?: return@launch
             val (index, side) = nextSlot(card.item, on)
             val fresh = buildFresh(card.item, card.mode, index, side, on, s.sets)
             _ui.update { it.copy(card = fresh) }
+        }
+    }
+
+    /** D81: the last `warmup_switched` of each session exercise, so a new screen keeps the user's choice. */
+    private suspend fun restoreWarmupSwitches() {
+        val rows = runCatching { c.sessionRepository.sessionEventsOfType(sessionId, "warmup_switched") }.getOrDefault(emptyList())
+        for (r in rows) {
+            val seId = r.entity_id ?: continue
+            val on = runCatching { Json.parseToJsonElement(r.payload).jsonObject["on"]?.jsonPrimitive?.booleanOrNull }.getOrNull() ?: continue
+            warmupOverride[seId] = on
         }
     }
 

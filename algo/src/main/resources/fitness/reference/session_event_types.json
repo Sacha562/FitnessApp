@@ -2044,6 +2044,17 @@
       "sort": 1530
     },
     {
+      "event_type": "warmup_switched",
+      "category": "logging",
+      "payload_keys": [
+        "on"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 11.5 (the live card's warm-up switch, kept for the session, D81)",
+      "active": true,
+      "sort": 1535
+    },
+    {
       "event_type": "warning_dismissed",
       "category": "warning",
       "payload_keys": [
