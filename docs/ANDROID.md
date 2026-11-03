@@ -2014,7 +2014,8 @@ mapping after each successful batch (OI-26).
 ### 16.7 Write rules (D11) and field ownership
 
 What is written automatically: challenge sessions and test days for the **current and next ISO week**, in
-the primary calendar. General recommended sessions only when the user taps "Plan it" (one tap). Events
+the primary calendar. General recommended sessions only when the user taps "Plan it" (one tap); after that the app
+keeps an unedited general event's title and description current, never its time (D82). Events
 without a marker are never modified, except by "Adopt".
 
 Field ownership after the app created an event. This edit policy is canonical (C37) and this section is

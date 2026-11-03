@@ -1409,6 +1409,10 @@ tap ("Plan it", D11), and show weekly muscle volume against targets.
 +-------------------------------------+
 ```
 
+As built (D82), each day is one stacked row instead of two columns: the RECOMMENDED line on top, the CALENDAR
+line below it, and the row's action (Plan it, Adopt, Add to calendar) on the right, so long labels do not wrap at
+phone width. The sketch above shows the content of both parts.
+
 `[E]` = an event from the user's calendar without the app's marker; an app-written event shows
 `[App]` with the `edit_calendar` icon. In the real fixture week the C, A and test events were created
 by hand (by Claude, before the app existed), so they are unmarked and show "Adopt" (D11).
@@ -1464,6 +1468,12 @@ Reasons use the same template strings as reason chips (19.1), and every row has 
   `oap/C/2026-W42`). The slot key matches `[A-Za-z0-9_./-]{1,64}`. Parsing and the edit policy are
   owned by ANDROID sections 16.5 and 16.7 (C37).
 * Snackbar "Added to calendar · Undo" (Undo deletes the app's event while it is still unmodified).
+* The tap writes at once (D82): to plan another time or day, the user moves the event in their calendar, and the
+  moved time is kept (`user_moved`). Plan it is offered for the recommended general items of the current and the
+  next week, on the row, in the day sheet (10.9) and as the Today card's "Plan it in calendar" (9.3).
+* While the user has not edited the event, the app keeps its title and exercise lines in step with the plan for
+  that day (D82); it never moves the event or changes its session type, and never deletes it on its own. When the
+  planner stops recommending a session that day, the row reads "planned (not recommended)" with Remove.
 * Without WRITE_CALENDAR, Plan it opens the permission sub-step first.
 * Emits `plan_it_tapped {date, type, recommendation_id}` and `calendar_event_written {op: insert,
   kind: general, instance_key, marker_key: gen/2026-W41/3, cause: plan_it, provider_rows}` (a refused or

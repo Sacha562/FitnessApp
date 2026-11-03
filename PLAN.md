@@ -714,10 +714,12 @@ catalog 1.0.2 (OI-16).
    W41_testPostponed and DST_W43_windows. The Today card sits on top of the current Today screen, "Other options" and
    "Train anyway" open the New session sheet, the week plan picks the add-on family and the per-group opportunities for
    session building, and the week strip can show next week's provisional plan.
-6. **M4.6 Week tab and Plan it.** T17 and the switch to real calendar writes, required before this step, are done
-   (real writes on since 2026-10-22, T17 passed on 2026-11-03). The Week tab shows recommended versus planned per day with the reasons, the day sheet, Plan
-   it (a marked calendar event that is then read back as a planned gym session and sets the session's time budget) and
-   next week. Golden: W41_planItFri.
+6. **M4.6 Week tab and Plan it** (scope fixed by D82). T17 and the switch to real calendar writes, required before
+   this step, are done (real writes on since 2026-10-22, T17 passed on 2026-11-03). The Week tab shows recommended
+   versus planned per day as stacked rows with the reasons, week navigation (past weeks read-only, next week
+   provisional), the day sheet, and Plan it: one tap writes a marked calendar event that is then read back as a planned
+   gym session and sets the session's time budget, with Undo, also from the Today card. While unedited, the app keeps
+   that event's title and exercise lines current, never its time. Golden: W41_planItFri.
 7. **M4.7 Rotation and progress.** `rotate`: main lifts are locked for a mesocycle that follows the challenge block, and
    accessories rotate only when stalled or disliked. You → Progress with `ui.progress`: e1RM charts, personal bests and
    the gate bars.

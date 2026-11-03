@@ -1590,7 +1590,9 @@ start, duration = estimated minutes + `changeoverMin` (5 min) rounded up to whol
 training time and its budget (duration − 5 min, C49) covers the plan; title in English (F25), description = exercise
 lines (from SEL-1 for the chosen budget) plus the marker as the last line. A general event written this way becomes a `planned_gym` anchor at the next
 classification (method `marker`); if the planner later stops recommending it, the Week tab shows "planned (not
-recommended)" with a Why and an option to remove the app's event; the app never moves it on its own. The tap is logged
+recommended)" with a Why and an option to remove the app's event; the app never moves it on its own. While the user
+has not edited the event, the app rewrites its title and exercise lines when the plan for that day changes (D82),
+within the ANDROID §16.7 edit policy; the planned session type stays fixed. The tap is logged
 as `plan_it_tapped` and the write as `calendar_event_written` (DATA_MODEL §9.8.1). In the `sandbox` build flavour
 calendar writes are disabled (F27); the planner output is the same, and the write policies are shown but not executed.
 
