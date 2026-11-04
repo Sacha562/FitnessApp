@@ -1,0 +1,3078 @@
+{
+    "id": "GF-ROT-01",
+    "module": "rotate",
+    "description": "ROT-1 (16, D86): two mesocycle starts on the challenge block (block 2 and block 3, week 1). Start 1: two compound legs anchors from SEL-1; of six accessories a stalled leg curl and a disliked lunge rotate (the one-third cap), a liked and a progressing one stay. Start 2: the anchors are kept (the leg press stalled once, counted), the replacement with rising reps at the same load scores +1, a stalled calf raise rotates.",
+    "input": {
+        "module": "rotate@1.0.0",
+        "scope_key": "golden:GF-ROT-01",
+        "payload": {
+            "regions": {
+                "chest_clavicular": "chest",
+                "chest_sternal": "chest",
+                "delt_anterior": "front_delts",
+                "delt_lateral": "side_delts",
+                "delt_posterior": "rear_delts",
+                "lats": "lats",
+                "traps_mid": "upper_back",
+                "traps_lower": "upper_back",
+                "rhomboids": "upper_back",
+                "traps_upper": "upper_traps",
+                "biceps_brachii": "biceps",
+                "brachialis": "biceps",
+                "brachioradialis": "biceps",
+                "triceps_long": "triceps",
+                "triceps_lat_med": "triceps",
+                "wrist_flexors_grip": "forearms",
+                "wrist_extensors": "forearms",
+                "pronators_supinators": "forearms",
+                "rectus_abdominis": "abs",
+                "obliques": "abs",
+                "anti_rotation": "abs",
+                "erectors": "lower_back",
+                "glute_max": "glutes",
+                "glute_med_min": "abductors",
+                "adductors": "adductors",
+                "vasti": "quads",
+                "rectus_femoris": "quads",
+                "hams_biarticular": "hamstrings",
+                "bf_short_head": "hamstrings",
+                "gastrocnemius": "calves",
+                "soleus": "calves"
+            },
+            "stations": [
+                "ab_crunch_machine",
+                "adjustable_bench",
+                "assisted_pullup_machine",
+                "back_extension",
+                "cable_station",
+                "calf_machine",
+                "chest_press_machine",
+                "chest_supported_row",
+                "dip_machine",
+                "dip_station",
+                "fixed_neutral_handle",
+                "hack_squat",
+                "hip_abduction",
+                "hip_adduction",
+                "hip_thrust_machine",
+                "lat_pulldown",
+                "lateral_raise_machine",
+                "leg_curl_lying",
+                "leg_curl_seated",
+                "leg_extension",
+                "leg_press",
+                "pec_deck",
+                "preacher_curl_machine",
+                "pullup_bar",
+                "seated_cable_row",
+                "shoulder_press_machine",
+                "smith_machine",
+                "triceps_extension_machine"
+            ],
+            "exercises": [
+                {
+                    "slug": "back_extension_45",
+                    "name_en": "45° back extension",
+                    "name_nl": "Rugstrekken 45°",
+                    "aliases": [
+                        "hyperextension"
+                    ],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "back_extension"
+                    ],
+                    "load_mode": "bodyweight",
+                    "allowed_load_modes": [
+                        "bodyweight",
+                        "bodyweight_plus_external"
+                    ],
+                    "bw_fraction": 0.6,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 15,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Hyperextensions_Back_Extensions"
+                    },
+                    "evidence_note": "45-degree back extension performed with spinal flexion/extension: erectors prime mover (expert-opinion). Bodyweight with an optional held plate (D65): f_bw 0.6, the upper body above the hips is about 0.68 of bodyweight (segment tables) and the 45-degree bench shortens its lever (expert-opinion, weak).",
+                    "stimulus": {
+                        "erectors": 1,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 0.5
+                    }
+                },
+                {
+                    "slug": "back_squat_barbell",
+                    "name_en": "Back squat",
+                    "name_nl": "Squat met halter",
+                    "aliases": [
+                        "squat"
+                    ],
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 2,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Barbell_Squat"
+                    },
+                    "evidence_note": "Kubo 2019 (moderate): squat-pattern adductor and glute credit; 0.75 only for the deep barbell squat.",
+                    "stimulus": {
+                        "adductors": 0.75,
+                        "erectors": 0.25,
+                        "glute_max": 0.75,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "bulgarian_split_squat_db",
+                    "name_en": "Bulgarian split squat",
+                    "name_nl": "Bulgaarse split squat",
+                    "aliases": [],
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Split_Squat_with_Dumbbells"
+                    },
+                    "evidence_note": "Long-length glute work in split stances (expert-opinion, Plotkin 2023 context).",
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "cable_hip_abduction",
+                    "name_en": "Cable hip abduction",
+                    "name_nl": "Heupabductie aan de kabel",
+                    "aliases": [],
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "cable_hip_adduction",
+                    "name_en": "Cable hip adduction",
+                    "name_nl": "Heupadductie aan de kabel",
+                    "aliases": [],
+                    "pattern": "hip_add",
+                    "family": "hip",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Cable_Hip_Adduction"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 1
+                    }
+                },
+                {
+                    "slug": "cable_kickback",
+                    "name_en": "Cable glute kickback",
+                    "name_nl": "Kickback aan de kabel",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "One-Legged_Cable_Kickback"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 1
+                    }
+                },
+                {
+                    "slug": "cable_pull_through",
+                    "name_en": "Cable pull-through",
+                    "name_nl": "Pull-through aan de kabel",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "cable"
+                    ],
+                    "requires_station": [
+                        "cable_station"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "cable",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 45,
+                    "grip_demand": 1,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Pull_Through"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "erectors": 0.25,
+                        "glute_max": 1,
+                        "hams_biarticular": 0.5
+                    }
+                },
+                {
+                    "slug": "deadlift_barbell",
+                    "name_en": "Deadlift",
+                    "name_nl": "Deadlift",
+                    "aliases": [],
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 2,
+                    "setup_s": 150,
+                    "grip_demand": 3,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 3,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [
+                        "unstrapped_deadlift"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Barbell_Deadlift"
+                    },
+                    "evidence_note": "Conventional deadlift: glutes and erectors strong synergists (expert-opinion).",
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.75,
+                        "glute_max": 0.75,
+                        "hams_biarticular": 0.5,
+                        "traps_upper": 0.25,
+                        "vasti": 0.5,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "front_squat_barbell",
+                    "name_en": "Front squat",
+                    "name_nl": "Front squat",
+                    "aliases": [],
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 3,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 2,
+                        "lumbar": 1,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Front_Barbell_Squat"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.25,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "glute_bridge_barbell",
+                    "name_en": "Glute bridge",
+                    "name_nl": "Glute bridge",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 120,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Barbell_Glute_Bridge"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25
+                    }
+                },
+                {
+                    "slug": "glute_ham_raise",
+                    "name_en": "Glute-ham raise",
+                    "name_nl": "Glute-ham raise",
+                    "aliases": [],
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [
+                        "back_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": true,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 15,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Glute_Ham_Raise"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "glute_max": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "goblet_squat_db",
+                    "name_en": "Goblet squat",
+                    "name_nl": "Goblet squat",
+                    "aliases": [],
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 30,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Goblet_Squat"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "good_morning_smith",
+                    "name_en": "Good morning (Smith)",
+                    "name_nl": "Good morning (Smith)",
+                    "aliases": [],
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 1,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Good_Morning"
+                    },
+                    "evidence_note": "Good morning: erectors strong synergist (expert-opinion).",
+                    "stimulus": {
+                        "erectors": 0.75,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "hack_squat_machine",
+                    "name_en": "Hack squat",
+                    "name_nl": "Hack squat",
+                    "aliases": [],
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hack_squat"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Hack_Squat"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "hip_abduction_machine",
+                    "name_en": "Hip abduction machine",
+                    "name_nl": "Abductiemachine",
+                    "aliases": [],
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_abduction"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Thigh_Abductor"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 0.25,
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "hip_adduction_machine",
+                    "name_en": "Hip adduction machine",
+                    "name_nl": "Adductiemachine",
+                    "aliases": [],
+                    "pattern": "hip_add",
+                    "family": "hip",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_adduction"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Thigh_Adductor"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 1
+                    }
+                },
+                {
+                    "slug": "hip_thrust_barbell",
+                    "name_en": "Hip thrust (barbell)",
+                    "name_nl": "Hip thrust (halter)",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 150,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Barbell_Hip_Thrust"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "hip_thrust_machine",
+                    "name_en": "Hip thrust machine",
+                    "name_nl": "Hip thrust machine",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "hip_thrust_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "hip_thrust_smith",
+                    "name_en": "Hip thrust (Smith)",
+                    "name_nl": "Hip thrust (Smith)",
+                    "aliases": [],
+                    "pattern": "hip_ext",
+                    "family": "hinge",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Barbell_Hip_Thrust"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_max": 1,
+                        "hams_biarticular": 0.25,
+                        "vasti": 0.25
+                    }
+                },
+                {
+                    "slug": "leg_extension",
+                    "name_en": "Leg extension",
+                    "name_nl": "Beenstrekken",
+                    "aliases": [],
+                    "pattern": "knee_ext",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Leg_Extensions"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "rectus_femoris": 1,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_45",
+                    "name_en": "45° leg press",
+                    "name_nl": "Beenpers 45°",
+                    "aliases": [
+                        "leg press"
+                    ],
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Leg_Press"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_calf_raise",
+                    "name_en": "Calf press on the leg press",
+                    "name_nl": "Kuitpers op de beenpers",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Calf_Press_On_The_Leg_Press_Machine"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_high_wide",
+                    "name_en": "Leg press, feet high and wide",
+                    "name_nl": "Beenpers, voeten hoog en breed",
+                    "aliases": [],
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Leg_Press"
+                    },
+                    "evidence_note": "Feet high and wide shift work toward the hip extensors and adductors (expert-opinion, modest EMG evidence; user review 2026-10-08).",
+                    "stimulus": {
+                        "adductors": 0.75,
+                        "glute_max": 0.75,
+                        "hams_biarticular": 0.25,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "leg_press_seated",
+                    "name_en": "Seated leg press",
+                    "name_nl": "Zittende beenpers",
+                    "aliases": [],
+                    "pattern": "squat_machine",
+                    "family": "squat",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_press_seated"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Narrow_Stance_Leg_Press"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "lying_leg_curl",
+                    "name_en": "Lying leg curl",
+                    "name_nl": "Liggende leg curl",
+                    "aliases": [],
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_curl_lying"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Lying_Leg_Curls"
+                    },
+                    "evidence_note": "The gastrocnemius crosses the knee and works in leg curls (EMG), but no trial shows calf growth from them: gastrocnemius 0.25, fatigue only (C44, D67).",
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "gastrocnemius": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "rdl_barbell",
+                    "name_en": "Romanian deadlift",
+                    "name_nl": "Roemeense deadlift",
+                    "aliases": [
+                        "rdl"
+                    ],
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "barbell"
+                    ],
+                    "requires_station": [
+                        "barbell"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 3,
+                    "sfr": 2,
+                    "setup_s": 150,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 1
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Romanian_Deadlift"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.5,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "rdl_db",
+                    "name_en": "Dumbbell Romanian deadlift",
+                    "name_nl": "Roemeense deadlift met dumbbells",
+                    "aliases": [],
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 2,
+                    "skill": 2,
+                    "axial": 2,
+                    "systemic": 3,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 2,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 2,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Stiff-Legged_Dumbbell_Deadlift"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.5,
+                        "glute_max": 0.5,
+                        "hams_biarticular": 1,
+                        "wrist_flexors_grip": 0.5
+                    }
+                },
+                {
+                    "slug": "reverse_lunge_db",
+                    "name_en": "Reverse lunge",
+                    "name_nl": "Achterwaartse lunge",
+                    "aliases": [],
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "alternating",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Dumbbell_Rear_Lunge"
+                    },
+                    "evidence_note": "Long-length glute work in split stances (expert-opinion, Plotkin 2023 context).",
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "seated_calf_raise",
+                    "name_en": "Seated calf raise",
+                    "name_nl": "Zittende kuitheffing",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "calf_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Seated_Calf_Raise"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "gastrocnemius": 0.25,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "seated_leg_curl",
+                    "name_en": "Seated leg curl",
+                    "name_nl": "Zittende leg curl",
+                    "aliases": [],
+                    "pattern": "knee_flex",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_curl_seated"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Seated_Leg_Curl"
+                    },
+                    "evidence_note": "Maeo 2021 (moderate): seated curls train the hamstrings at long length. The gastrocnemius crosses the knee and works in leg curls (EMG), but no trial shows calf growth from them: gastrocnemius 0.25, fatigue only (C44, D67).",
+                    "stimulus": {
+                        "bf_short_head": 1,
+                        "gastrocnemius": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "side_lying_hip_abduction",
+                    "name_en": "Side-lying hip abduction",
+                    "name_nl": "Zijliggend been heffen",
+                    "aliases": [],
+                    "pattern": "hip_abd",
+                    "family": "hip",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 3,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "home"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Side_Leg_Raises"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "glute_med_min": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_calf_raise_db",
+                    "name_en": "Single-leg calf raise",
+                    "name_nl": "Eenbenige kuitheffing",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "isolation",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 20,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Calf_Raise_On_A_Dumbbell"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_extension",
+                    "name_en": "Single-leg extension",
+                    "name_nl": "Eenbenig beenstrekken",
+                    "aliases": [],
+                    "pattern": "knee_ext",
+                    "family": "legiso",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "leg_extension"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": null,
+                    "stimulus": {
+                        "rectus_femoris": 1,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "single_leg_rdl_db",
+                    "name_en": "Single-leg RDL",
+                    "name_nl": "Eenbenige RDL",
+                    "aliases": [],
+                    "pattern": "hinge",
+                    "family": "hinge",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 2,
+                    "stability": 3,
+                    "skill": 3,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 1,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Single-leg RDL: glute max strong synergist (expert-opinion).",
+                    "stimulus": {
+                        "anti_rotation": 0.25,
+                        "glute_max": 0.75,
+                        "glute_med_min": 0.25,
+                        "hams_biarticular": 1
+                    }
+                },
+                {
+                    "slug": "smith_calf_raise",
+                    "name_en": "Smith calf raise",
+                    "name_nl": "Kuitheffing in Smith",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Smith_Machine_Calf_Raise"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "smith_split_squat",
+                    "name_en": "Smith split squat",
+                    "name_nl": "Split squat in Smith",
+                    "aliases": [],
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Smith_Single-Leg_Split_Squat"
+                    },
+                    "evidence_note": "Long-length glute work in split stances (expert-opinion, Plotkin 2023 context).",
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "smith_squat",
+                    "name_en": "Smith machine squat",
+                    "name_nl": "Squat in Smith-machine",
+                    "aliases": [],
+                    "pattern": "squat",
+                    "family": "squat",
+                    "equipment": [
+                        "smith"
+                    ],
+                    "requires_station": [
+                        "smith_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": null,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_machine_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 2,
+                    "systemic": 2,
+                    "sfr": 4,
+                    "setup_s": 105,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 1,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Smith_Machine_Squat"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "erectors": 0.25,
+                        "glute_max": 0.5,
+                        "rectus_femoris": 0.25,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "standing_calf_raise_machine",
+                    "name_en": "Standing calf raise",
+                    "name_nl": "Staande kuitheffing",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "machine"
+                    ],
+                    "requires_station": [
+                        "calf_machine"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "machine",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 1,
+                    "skill": 1,
+                    "axial": 1,
+                    "systemic": 1,
+                    "sfr": 5,
+                    "setup_s": 40,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Standing_Calf_Raises"
+                    },
+                    "evidence_note": null,
+                    "stimulus": {
+                        "gastrocnemius": 1,
+                        "soleus": 1
+                    }
+                },
+                {
+                    "slug": "step_up_db",
+                    "name_en": "Dumbbell step-up",
+                    "name_nl": "Step-up met dumbbells",
+                    "aliases": [],
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells",
+                        "adjustable_bench"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "unilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 1,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": "Long-length glute work in split stances (expert-opinion, Plotkin 2023 context).",
+                    "stimulus": {
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                },
+                {
+                    "slug": "tibialis_raise",
+                    "name_en": "Tibialis raise",
+                    "name_nl": "Tibialis raise",
+                    "aliases": [],
+                    "pattern": "calf",
+                    "family": "calf",
+                    "equipment": [
+                        "bodyweight"
+                    ],
+                    "requires_station": [],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "bilateral",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "isolation",
+                    "curve_class": "lower_isolation",
+                    "rest_class": "isolation",
+                    "safety_class": "bodyweight",
+                    "grip": "none",
+                    "stretch_emphasis": 0,
+                    "stability": 2,
+                    "skill": 1,
+                    "axial": 0,
+                    "systemic": 1,
+                    "sfr": 4,
+                    "setup_s": 10,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 0,
+                        "hip": 0
+                    },
+                    "tags": [
+                        "home",
+                        "prehab"
+                    ],
+                    "flags_offered": [],
+                    "external_refs": {},
+                    "evidence_note": null,
+                    "stimulus": {
+                        "tibialis_anterior": 1
+                    }
+                },
+                {
+                    "slug": "walking_lunge_db",
+                    "name_en": "Walking lunge",
+                    "name_nl": "Lopende lunge",
+                    "aliases": [],
+                    "pattern": "lunge",
+                    "family": "squat",
+                    "equipment": [
+                        "dumbbell"
+                    ],
+                    "requires_station": [
+                        "dumbbells"
+                    ],
+                    "load_mode": "external",
+                    "allowed_load_modes": [
+                        "external"
+                    ],
+                    "bw_fraction": 0.0,
+                    "implement_base_kg": 0,
+                    "laterality": "alternating",
+                    "measure": "reps",
+                    "contraction": "dynamic",
+                    "hold_class": null,
+                    "ecc_emphasis": false,
+                    "mechanics": "compound",
+                    "curve_class": "lower_free_compound",
+                    "rest_class": "compound_lower",
+                    "safety_class": "free_compound",
+                    "grip": "none",
+                    "stretch_emphasis": 1,
+                    "stability": 3,
+                    "skill": 2,
+                    "axial": 1,
+                    "systemic": 2,
+                    "sfr": 3,
+                    "setup_s": 45,
+                    "grip_demand": 0,
+                    "joint_stress": {
+                        "elbow_medial": 0,
+                        "elbow_lateral": 0,
+                        "shoulder_ant": 0,
+                        "shoulder_overhead": 0,
+                        "wrist": 0,
+                        "lumbar": 0,
+                        "knee": 2,
+                        "hip": 0
+                    },
+                    "tags": [],
+                    "flags_offered": [],
+                    "external_refs": {
+                        "fedb_id": "Dumbbell_Lunges"
+                    },
+                    "evidence_note": "Long-length glute work in split stances (expert-opinion, Plotkin 2023 context).",
+                    "stimulus": {
+                        "adductors": 0.5,
+                        "glute_max": 0.75,
+                        "vasti": 1
+                    }
+                }
+            ],
+            "prefs": {
+                "leg_press_45": "favorite",
+                "leg_extension": "like",
+                "seated_leg_curl": "like",
+                "walking_lunge_db": "dislike"
+            },
+            "family_runs": {
+                "LEGS": {
+                    "target": {
+                        "quads": 6.0,
+                        "glutes": 5.0,
+                        "hamstrings": 6.0,
+                        "adductors": 2.0,
+                        "abductors": 2.0,
+                        "calves": 3.0
+                    },
+                    "goals": {
+                        "quads": "improve",
+                        "glutes": "improve",
+                        "hamstrings": "improve"
+                    },
+                    "budget_min": 65.0
+                }
+            },
+            "starts": [
+                {
+                    "today": "2026-11-04",
+                    "challenge": {
+                        "block_index": 2,
+                        "block_week": 1,
+                        "block_weeks": 5
+                    },
+                    "used": [
+                        "leg_extension",
+                        "lying_leg_curl",
+                        "seated_leg_curl",
+                        "seated_calf_raise",
+                        "hip_abduction_machine",
+                        "walking_lunge_db"
+                    ],
+                    "history": {
+                        "lying_leg_curl": {
+                            "g_per_week": 0.0,
+                            "exposures": [
+                                {
+                                    "date": "2026-10-08",
+                                    "session_id": "s-2026-10-08",
+                                    "e1rm_kg": 62.5,
+                                    "reps_at_load": [
+                                        [
+                                            45.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-15",
+                                    "session_id": "s-2026-10-15",
+                                    "e1rm_kg": 62.5,
+                                    "reps_at_load": [
+                                        [
+                                            45.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-22",
+                                    "session_id": "s-2026-10-22",
+                                    "e1rm_kg": 62.5,
+                                    "reps_at_load": [
+                                        [
+                                            45.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-29",
+                                    "session_id": "s-2026-10-29",
+                                    "e1rm_kg": 62.5,
+                                    "reps_at_load": [
+                                        [
+                                            45.0,
+                                            10
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "leg_extension": {
+                            "g_per_week": 0.008,
+                            "exposures": [
+                                {
+                                    "date": "2026-10-08",
+                                    "session_id": "s-2026-10-08",
+                                    "e1rm_kg": 70.0,
+                                    "reps_at_load": [
+                                        [
+                                            50.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-15",
+                                    "session_id": "s-2026-10-15",
+                                    "e1rm_kg": 71.0,
+                                    "reps_at_load": [
+                                        [
+                                            50.0,
+                                            11
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-22",
+                                    "session_id": "s-2026-10-22",
+                                    "e1rm_kg": 72.0,
+                                    "reps_at_load": [
+                                        [
+                                            50.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-29",
+                                    "session_id": "s-2026-10-29",
+                                    "e1rm_kg": 73.0,
+                                    "reps_at_load": [
+                                        [
+                                            50.0,
+                                            13
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "walking_lunge_db": {
+                            "g_per_week": 0.0,
+                            "exposures": [
+                                {
+                                    "date": "2026-10-08",
+                                    "session_id": "s-2026-10-08",
+                                    "e1rm_kg": 40.0,
+                                    "reps_at_load": [
+                                        [
+                                            16.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-10-15",
+                                    "session_id": "s-2026-10-15",
+                                    "e1rm_kg": 40.0,
+                                    "reps_at_load": [
+                                        [
+                                            16.0,
+                                            10
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "today": "2026-12-09",
+                    "challenge": {
+                        "block_index": 3,
+                        "block_week": 1,
+                        "block_weeks": 5
+                    },
+                    "used": [
+                        "leg_extension",
+                        "seated_leg_curl",
+                        "seated_calf_raise",
+                        "hip_abduction_machine",
+                        "glute_ham_raise"
+                    ],
+                    "history": {
+                        "seated_calf_raise": {
+                            "g_per_week": 0.0,
+                            "exposures": [
+                                {
+                                    "date": "2026-11-05",
+                                    "session_id": "s-2026-11-05",
+                                    "e1rm_kg": 80.0,
+                                    "reps_at_load": [
+                                        [
+                                            60.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-12",
+                                    "session_id": "s-2026-11-12",
+                                    "e1rm_kg": 80.0,
+                                    "reps_at_load": [
+                                        [
+                                            60.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-19",
+                                    "session_id": "s-2026-11-19",
+                                    "e1rm_kg": 80.0,
+                                    "reps_at_load": [
+                                        [
+                                            60.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-26",
+                                    "session_id": "s-2026-11-26",
+                                    "e1rm_kg": 80.0,
+                                    "reps_at_load": [
+                                        [
+                                            60.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-12-03",
+                                    "session_id": "s-2026-12-03",
+                                    "e1rm_kg": 80.0,
+                                    "reps_at_load": [
+                                        [
+                                            60.0,
+                                            12
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "leg_press_45": {
+                            "g_per_week": 0.0,
+                            "exposures": [
+                                {
+                                    "date": "2026-11-05",
+                                    "session_id": "s-2026-11-05",
+                                    "e1rm_kg": 200.0,
+                                    "reps_at_load": [
+                                        [
+                                            160.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-12",
+                                    "session_id": "s-2026-11-12",
+                                    "e1rm_kg": 200.0,
+                                    "reps_at_load": [
+                                        [
+                                            160.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-19",
+                                    "session_id": "s-2026-11-19",
+                                    "e1rm_kg": 200.0,
+                                    "reps_at_load": [
+                                        [
+                                            160.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-26",
+                                    "session_id": "s-2026-11-26",
+                                    "e1rm_kg": 200.0,
+                                    "reps_at_load": [
+                                        [
+                                            160.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-12-03",
+                                    "session_id": "s-2026-12-03",
+                                    "e1rm_kg": 200.0,
+                                    "reps_at_load": [
+                                        [
+                                            160.0,
+                                            10
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "leg_extension": {
+                            "g_per_week": 0.006,
+                            "exposures": [
+                                {
+                                    "date": "2026-11-05",
+                                    "session_id": "s-2026-11-05",
+                                    "e1rm_kg": 74.0,
+                                    "reps_at_load": [
+                                        [
+                                            55.0,
+                                            10
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-12",
+                                    "session_id": "s-2026-11-12",
+                                    "e1rm_kg": 75.0,
+                                    "reps_at_load": [
+                                        [
+                                            55.0,
+                                            11
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-19",
+                                    "session_id": "s-2026-11-19",
+                                    "e1rm_kg": 76.0,
+                                    "reps_at_load": [
+                                        [
+                                            55.0,
+                                            12
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-26",
+                                    "session_id": "s-2026-11-26",
+                                    "e1rm_kg": 77.0,
+                                    "reps_at_load": [
+                                        [
+                                            55.0,
+                                            13
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-12-03",
+                                    "session_id": "s-2026-12-03",
+                                    "e1rm_kg": 78.0,
+                                    "reps_at_load": [
+                                        [
+                                            55.0,
+                                            14
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "glute_ham_raise": {
+                            "g_per_week": 0.004,
+                            "exposures": [
+                                {
+                                    "date": "2026-11-05",
+                                    "session_id": "s-2026-11-05",
+                                    "reps_at_load": [
+                                        [
+                                            0.0,
+                                            6
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-12",
+                                    "session_id": "s-2026-11-12",
+                                    "reps_at_load": [
+                                        [
+                                            0.0,
+                                            7
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-19",
+                                    "session_id": "s-2026-11-19",
+                                    "reps_at_load": [
+                                        [
+                                            0.0,
+                                            8
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-11-26",
+                                    "session_id": "s-2026-11-26",
+                                    "reps_at_load": [
+                                        [
+                                            0.0,
+                                            9
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "date": "2026-12-03",
+                                    "session_id": "s-2026-12-03",
+                                    "reps_at_load": [
+                                        [
+                                            0.0,
+                                            10
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "params": "default-1.0.5",
+    "expected": {
+        "outputs": {
+            "starts": [
+                {
+                    "clock": {
+                        "n": 1,
+                        "start": "2026-11-02",
+                        "week": 1,
+                        "is_new": true
+                    },
+                    "mesocycle": {
+                        "mesocycle": 1,
+                        "start": "2026-11-02",
+                        "weeks": 5,
+                        "source": "challenge_block",
+                        "block_index": 2,
+                        "rev": 0,
+                        "anchors": [
+                            {
+                                "family": "LEGS",
+                                "exercise_id": "leg_press_45",
+                                "reason": "sel1",
+                                "stalled_mesocycles": 0
+                            },
+                            {
+                                "family": "LEGS",
+                                "exercise_id": "bulgarian_split_squat_db",
+                                "reason": "sel1",
+                                "stalled_mesocycles": 0
+                            }
+                        ],
+                        "keep_scores": {
+                            "hip_abduction_machine": 0,
+                            "leg_extension": 1.5,
+                            "lying_leg_curl": -1,
+                            "seated_calf_raise": 0,
+                            "seated_leg_curl": 0.5,
+                            "walking_lunge_db": -1
+                        },
+                        "kept": [
+                            "hip_abduction_machine",
+                            "leg_extension",
+                            "seated_calf_raise",
+                            "seated_leg_curl"
+                        ],
+                        "rotated": [
+                            {
+                                "family": "LEGS",
+                                "from_exercise_id": "lying_leg_curl",
+                                "to_exercise_id": "glute_ham_raise",
+                                "reason": "stalled",
+                                "keep": -1
+                            },
+                            {
+                                "family": "LEGS",
+                                "from_exercise_id": "walking_lunge_db",
+                                "to_exercise_id": "reverse_lunge_db",
+                                "reason": "disliked",
+                                "keep": -1
+                            }
+                        ],
+                        "dropped_anchors": []
+                    },
+                    "selection": {
+                        "anchors": [
+                            "bulgarian_split_squat_db",
+                            "leg_press_45"
+                        ],
+                        "consistency": [
+                            "bulgarian_split_squat_db",
+                            "glute_ham_raise",
+                            "hip_abduction_machine",
+                            "leg_extension",
+                            "leg_press_45",
+                            "reverse_lunge_db",
+                            "seated_calf_raise",
+                            "seated_leg_curl"
+                        ],
+                        "rotated_out": [
+                            "lying_leg_curl",
+                            "walking_lunge_db"
+                        ]
+                    }
+                },
+                {
+                    "clock": {
+                        "n": 2,
+                        "start": "2026-12-07",
+                        "week": 1,
+                        "is_new": true
+                    },
+                    "mesocycle": {
+                        "mesocycle": 2,
+                        "start": "2026-12-07",
+                        "weeks": 5,
+                        "source": "challenge_block",
+                        "block_index": 3,
+                        "rev": 0,
+                        "anchors": [
+                            {
+                                "family": "LEGS",
+                                "exercise_id": "leg_press_45",
+                                "reason": "kept",
+                                "stalled_mesocycles": 1
+                            },
+                            {
+                                "family": "LEGS",
+                                "exercise_id": "bulgarian_split_squat_db",
+                                "reason": "kept",
+                                "stalled_mesocycles": 0
+                            }
+                        ],
+                        "keep_scores": {
+                            "glute_ham_raise": 1,
+                            "hip_abduction_machine": 0,
+                            "leg_extension": 1.5,
+                            "seated_calf_raise": -1,
+                            "seated_leg_curl": 0.5
+                        },
+                        "kept": [
+                            "glute_ham_raise",
+                            "hip_abduction_machine",
+                            "leg_extension",
+                            "seated_leg_curl"
+                        ],
+                        "rotated": [
+                            {
+                                "family": "LEGS",
+                                "from_exercise_id": "seated_calf_raise",
+                                "to_exercise_id": "leg_press_calf_raise",
+                                "reason": "stalled",
+                                "keep": -1
+                            }
+                        ],
+                        "dropped_anchors": []
+                    },
+                    "selection": {
+                        "anchors": [
+                            "bulgarian_split_squat_db",
+                            "leg_press_45"
+                        ],
+                        "consistency": [
+                            "bulgarian_split_squat_db",
+                            "glute_ham_raise",
+                            "hip_abduction_machine",
+                            "leg_extension",
+                            "leg_press_45",
+                            "leg_press_calf_raise",
+                            "seated_leg_curl"
+                        ],
+                        "rotated_out": [
+                            "seated_calf_raise"
+                        ]
+                    }
+                }
+            ]
+        },
+        "outputs_jcs_sha256": "7343463f600fe0951ef59adacee072bcf9e9e3fd36e7ba25458f544609f001a3"
+    }
+}

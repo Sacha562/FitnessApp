@@ -720,9 +720,13 @@ catalog 1.0.2 (OI-16).
    provisional), the day sheet, and Plan it: one tap writes a marked calendar event that is then read back as a planned
    gym session and sets the session's time budget, with Undo, also from the Today card. While unedited, the app keeps
    that event's title and exercise lines current, never its time. Golden: W41_planItFri.
-7. **M4.7 Rotation and progress.** `rotate`: main lifts are locked for a mesocycle that follows the challenge block, and
-   accessories rotate only when stalled or disliked. You → Progress with `ui.progress`: e1RM charts, personal bests and
-   the gate bars.
+7. **M4.7 Rotation and progress** (scope fixed by D86). `rotate`: main lifts are locked for a mesocycle that follows the
+   challenge block (the first one starts in 2026-W45, the OAP's block 2), and accessories rotate only when stalled or
+   disliked. Standalone general sessions pin the main lifts, every build rewards the mesocycle's exercises through
+   SEL-1's consistency term, and rotated-out accessories stay out of automatic builds until the mesocycle ends.
+   You → Progress opens with a "This mesocycle" card (main lifts with Change, rotated pairs), then `ui.progress`: e1RM,
+   reps, hold and assistance charts with the SSE-1 band, personal bests, the challenge gate line and gate bars,
+   bodyweight and weekly volume. The Session Summary shows its new bests. Golden: GF-ROT-01. ENGINE_VERSION 1.21.0.
 
 ### M5 — Review tooling (2–3 sessions)
 

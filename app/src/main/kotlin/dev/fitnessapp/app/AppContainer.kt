@@ -175,6 +175,7 @@ class AppContainer(private val context: Context) {
     val selection: dev.fitnessapp.data.engine.SelectionFacts by lazy { dev.fitnessapp.data.engine.SelectionFacts(db, { catalog }, params) }
     /** The engine-logged estimates for display (the exercise detail's e1RM history). */
     val estimates: dev.fitnessapp.data.engine.EstimateRepository by lazy { dev.fitnessapp.data.engine.EstimateRepository(db) }
+    val progress: dev.fitnessapp.data.engine.ProgressRepository by lazy { dev.fitnessapp.data.engine.ProgressRepository(db) }
     val history: HistoryRepository by lazy { HistoryRepository(db, outbox, telemetry, writeContext, syncScheduler, sessionRepository) }
     val exports: ExportRepository by lazy {
         ExportRepository(db, outbox, telemetry, writeContext, syncScheduler, syncTables(db), { catalog.version }, { listOf(PARAMS_VERSION) })
@@ -225,6 +226,13 @@ class AppContainer(private val context: Context) {
     suspend fun fgsEventJson(type: String, payload: Map<String, kotlinx.serialization.json.JsonElement>) {
         if (writeContext.userId() == null) return
         db.withTransaction { telemetry.write(EventDraft(type = type, entityType = "none", payload = payload)) }
+        syncScheduler.request()
+    }
+
+    /** A screen event without a session (`progress_viewed`, `progress_axis_toggled`, `progress_point_opened`, UX 20.9). */
+    suspend fun uiEvent(type: String, screen: String, payload: Map<String, kotlinx.serialization.json.JsonElement>) {
+        if (writeContext.userId() == null) return
+        db.withTransaction { telemetry.write(EventDraft(type = type, entityType = "none", screen = screen.take(40), payload = payload)) }
         syncScheduler.request()
     }
 

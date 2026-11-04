@@ -17,6 +17,9 @@ sealed interface AppKey {
 
     /** You → Prompts (UX 15.8, M4.2). */
     data object Prompts : AppKey
+
+    /** You → Progress (UX 15.2, M4.7). */
+    data object Progress : AppKey
     data object History : AppKey
     data class SessionDetail(val sessionId: String) : AppKey
     data class ExerciseDetail(val exerciseId: String, val from: String) : AppKey
@@ -48,6 +51,7 @@ sealed interface AppKey {
             Calendars -> "calendars"
             Preferences -> "preferences"
             Prompts -> "prompts"
+            Progress -> "progress"
             History -> "history"
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
@@ -68,6 +72,7 @@ sealed interface AppKey {
             s == "calendars" -> Calendars
             s == "preferences" -> Preferences
             s == "prompts" -> Prompts
+            s == "progress" -> Progress
             s == "history" -> History
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
             s.startsWith("custom_exercise:") -> CustomExercise(s.removePrefix("custom_exercise:"))

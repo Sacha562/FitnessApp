@@ -495,3 +495,21 @@ persona goldens of `:sim` at 1.19.0; regenerated, only that line changed. Not fi
 error in `PreferencesScreen.kt:138` (a coroutine launched during composition), older than this step. No engine,
 params or server change. Tests: `:algo` 556, `:app` 153, `:data` 104, `:sim` 60, all green; screenshot
 `week_grid_7.png`.
+
+**M4.7 (2026-11-03, D86, installed `0.0.151+9acddd4` with the uncommitted M4.7 changes, checked on the phone 2026-11-04)**: rotation and progress. `rotate@1.0.0` in `:algo`
+(`selection.rotate`, ALGORITHMS_PLANNING 16 with the readings of 16.3): the mesocycle clock on the challenge block (the
+first mesocycle starts in 2026-W45, OAP block 2 week 1), two compound main lifts per family from SEL-1's family run (none
+for a family the challenge trains: PULL during the OAP; none for CORE, which has no compound rows), keep scores and at
+most a third of a family's accessories rotated, replacements by SUB-1 plus the region bonus, overrides as new revisions
+of the `rotate.mesocycle` snapshot. `Building` takes the anchors (standalone sessions only), the consistency set and the
+rotated-out exercises; ENGINE_VERSION 1.21.0, no migration (the `rotate` and `ui.progress` rows were seeded and their
+hashes still match). `ui.progress` in `uidet` with the C69 bests, You → Progress (the "This mesocycle" card with
+Change and Undo, Exercise / Bodyweight / Volume / Bests tabs, gate line and gate rows) and the Summary's new bests with
+`pr_detected`. The default chart is the most-trained exercise of the last 4 weeks that has an e1RM (the OAP's grip and warm-up items are trained more often but have none). On the real data the first start gave Legs: leg press feet high and wide (one compound only), Push: bench press and chest dip, and rotated back squat and leg extension (both disliked). Golden GF-ROT-01; the 18 `:sim` persona goldens moved to 1.21.0 (engine line only). The phone check over adb
+(2026-11-04) went through the card, every tab, the picker, axis, ranges, sides, point detail, table, gate rows, Change
+with Undo (revisions 1 and 2 reached the server) and the New session preview, and fixed: one SSE-1 line per side when
+both sides show, side points nudged apart so equal values stay visible, no Added / System switch for an exercise
+without a bodyweight part, tapping a lift or a best scrolls its chart into view, the bodyweight chart's label, and the
+change sheet's wording (a main lift joins a session only when its muscles have sets that day: the Push preview on
+4 November had no chest sets after the 3 November push day, so no bench or dip). Tests: `:algo`
+570, `:app` 173, `:data` 104, `:sim` 60, all green; screenshots `progress_*.png`, `summary_new_best.png`.

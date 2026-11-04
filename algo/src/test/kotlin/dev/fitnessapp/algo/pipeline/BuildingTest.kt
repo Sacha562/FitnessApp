@@ -9,7 +9,9 @@ import dev.fitnessapp.algo.selection.time.WarmupKind
 import dev.fitnessapp.algo.testing.TestCatalog
 import dev.fitnessapp.algo.testing.TestParams
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.doubles.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -68,6 +70,25 @@ class BuildingTest {
         r.empty.shouldBeNull()
         r.exercises.sumOf { it.sets }.toDouble() shouldBeLessThanOrEqual slot.maxSets!!
         r.estMin shouldBeLessThanOrEqual 24.0
+    }
+
+    @Test
+    fun `a mesocycle's anchor enters a full build when it trains a group with a target (D86)`() {
+        val req = request(SessionType.LEGS, 75.0)
+        val plain = Building.build(req, catalog, params).exercises.map { it.slug }.toSet()
+        val input = Building.selectInput(req, catalog, params).second.getOrThrow()
+        // A pool exercise the build leaves out on its own that directly trains a group this session targets.
+        val anchor = input.pool.map { it.slug }.sorted().first { s ->
+            s !in plain && catalog.taxonomy.activeGroups.any { g -> catalog.groupCoeff(TestCatalog.ex(s), g.id) >= 0.5 && (input.target[g.id] ?: 0.0) > 0.0 }
+        }
+        Building.build(req.copy(anchors = listOf(anchor)), catalog, params).exercises.map { it.slug } shouldContain anchor
+    }
+
+    @Test
+    fun `a rotated-out exercise never enters the build (D86)`() {
+        val req = request(SessionType.LEGS, 75.0)
+        val first = Building.build(req, catalog, params).exercises.first().slug
+        Building.build(req.copy(rotatedOut = setOf(first)), catalog, params).exercises.map { it.slug } shouldNotContain first
     }
 
     @Test

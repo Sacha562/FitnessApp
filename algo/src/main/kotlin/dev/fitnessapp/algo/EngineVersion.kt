@@ -5,5 +5,5 @@ package dev.fitnessapp.algo
  * module bump of a release. Params-only changes never bump it (they change params_hash).
  */
 object EngineVersion {
-    const val ENGINE_VERSION: String = "1.20.0"
+    const val ENGINE_VERSION: String = "1.21.0"
 }

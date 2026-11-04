@@ -12,6 +12,7 @@ import dev.fitnessapp.algo.planning.today.TodayOptions
 import dev.fitnessapp.algo.planning.today.TodayRecommender
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
+import dev.fitnessapp.algo.selection.rotate.Rotation
 import dev.fitnessapp.data.db.FitnessDatabase
 import dev.fitnessapp.data.db.JsonText
 import dev.fitnessapp.data.db.entity.RecommendationEntity
@@ -29,7 +30,7 @@ import java.time.LocalDate
 /**
  * The planner's snapshots (DATA_MODEL 10.1-10.2, ALGORITHMS_PLANNING 8.11 and 9.8): `weekplan.plan` scoped
  * `week:<iso_week>` and `today.options` scoped `day:<date>`, each written when its outputs change (the row id is
- * derived from the inputs and outputs, so an unchanged plan is not stored twice).
+ * derived from the inputs and outputs, so an unchanged plan is not stored twice), and ROT-1's `rotate.mesocycle`.
  */
 class PlanSnapshotRecorder(
     private val db: FitnessDatabase,
@@ -96,6 +97,17 @@ class PlanSnapshotRecorder(
         val inputs = JsonObject(mapOf("week_plan_id" to JsonPrimitive(t.weekPlanId), "date" to JsonPrimitive(t.date.toString()), "budget_min" to JsonNumbers.grid(t.budgetMin, GridKind.S)))
         return write("today.options", TodayRecommender.ref.id.value, TodayRecommender.ref.version.toString(), "day:${t.date}", t.date, inputs, outputs)
     }
+
+    /**
+     * A `rotate.mesocycle` snapshot (ALGORITHMS_PLANNING 16.2, D86 (4)) scoped `mesocycle:<n>`: a mesocycle start, or a
+     * changed main lift with the change in [inputs] (the next revision).
+     */
+    suspend fun mesocycle(n: Int, start: LocalDate, inputs: JsonObject, outputs: JsonObject): String =
+        write("rotate.mesocycle", Rotation.ref.id.value, Rotation.ref.version.toString(), "mesocycle:$n", start, inputs, outputs)
+
+    /** Every stored `rotate.mesocycle` outputs object (all revisions); the caller picks the newest. */
+    suspend fun mesocycles(): List<JsonObject> =
+        db.recommendations().ofKind("rotate.mesocycle").map { kotlinx.serialization.json.Json.parseToJsonElement(it.outputs) as JsonObject }
 
     private suspend fun write(kind: String, moduleId: String, version: String, scope: String, date: LocalDate, inputs: JsonObject, outputs: JsonObject): String {
         val user = ctx.requireUser()

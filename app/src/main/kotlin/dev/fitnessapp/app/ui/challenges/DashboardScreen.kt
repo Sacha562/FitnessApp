@@ -288,7 +288,7 @@ private fun PhaseStepper(phases: List<String>, current: Int) {
 }
 
 @Composable
-private fun GateRowView(r: GateRow) {
+internal fun GateRowView(r: GateRow) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (r.met == true) Icon(Icons.Rounded.Check, "Met", tint = Fit.Accent, modifier = Modifier.size(18.dp))

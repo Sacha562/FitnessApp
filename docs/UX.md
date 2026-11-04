@@ -2903,6 +2903,13 @@ continuous scale, show uncertainty, and mark test days and personal bests.
 | Point tooltip | date, the set that produced it, BW snapshot, values | |
 | Table view | the same data as an accessible table | |
 
+**This mesocycle card** (D86), above the tabs: "Mesocycle {n} · block {b} · week {w} of {W}" (without a challenge:
+"week {w} of 5"), one line per family with main lifts ("Legs  Leg press · Romanian deadlift"; a family the challenge
+owns reads "Pull  covered by OAP"), tapping a lift opens its chart, the rotated pairs ("Rotated: leg extension → sissy
+squat (stalled 3 sessions)"; "Rotated out: ..." without a replacement), and "Change" on a main lift, which opens a sheet
+listing the family's eligible compound exercises; picking one writes a new mesocycle revision with Undo. While a
+challenge is active, the current phase's gate rows of the dashboard (14.2) follow the Exercise tab's chart.
+
 Other charts on the same screen (tabs above the picker): **Bodyweight** (weigh-ins as points, the
 EWMA used for prescriptions as a line, C32; test-day weigh-ins as diamonds), **Weekly volume** (per
 group, the last 12 ISO weeks, bars against the target, from `setcredit` and `targets`), **Personal

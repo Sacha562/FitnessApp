@@ -86,6 +86,7 @@ fun YouRoute(
     onCalendars: () -> Unit,
     onPreferences: () -> Unit = {},
     onPrompts: () -> Unit = {},
+    onProgress: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val history by remember { c.history.observeHistory() }.collectAsState(initial = emptyList())
@@ -102,6 +103,8 @@ fun YouRoute(
         Text("You", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         val thisWeek = history.firstOrNull()?.session?.iso_week
         Tile(spacing = 0.dp, padding = PaddingValues(horizontal = 6.dp, vertical = 6.dp)) {
+            NavRow("Progress", "Strength charts, personal bests, this mesocycle", onProgress)
+            TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow(
                 "History",
                 thisWeek?.let { w -> "Week ${w.substringAfter("-W").trimStart('0')} · ${history.count { it.session.iso_week == w }} sessions" } ?: "No sessions yet",

@@ -59,6 +59,17 @@ interface RecommendationDao : SyncDao<RecommendationEntity> {
             "WHERE r.kind = 'estimation.sse' AND s.status = 'finished' AND s.deleted_at IS NULL ORDER BY s.started_at, r.id",
     )
     fun observeSseSnapshots(): Flow<List<SseSnapshotRow>>
+
+    /** The snapshots of [kind] tied to finished sessions, oldest session first (`estimation.sse`, `estimation.hold`). */
+    @Query(
+        "SELECT r.id, r.supersedes_id, r.outputs, r.session_id, s.started_at, s.bodyweight_kg FROM recommendations r " +
+            "JOIN workout_sessions s ON s.id = r.session_id " +
+            "WHERE r.kind = :kind AND s.status = 'finished' AND s.deleted_at IS NULL ORDER BY s.started_at, r.id",
+    )
+    suspend fun sessionSnapshots(kind: String): List<SseSnapshotRow>
+
+    @Query("SELECT * FROM recommendations WHERE kind = :kind ORDER BY id")
+    suspend fun ofKind(kind: String): List<RecommendationEntity>
 }
 
 /** One link of a snapshot chain (`recommendations` columns). */

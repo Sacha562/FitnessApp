@@ -91,10 +91,15 @@ object SessionBuild {
         val laterTypes: List<SessionType> = emptyList(),
         /** The add-on family the week plan chose for today's challenge session, null for none. */
         val planAddOn: SessionType? = null,
+        /** The mesocycle (ROT-1, D86): anchors, consistency set and rotated-out exercises; null before it is known. */
+        val meso: Mesocycles.Current? = null,
     )
 
-    /** The build facts at [at]; [weekPlan] is this week's current plan when the caller has one (D73), else it is planned here. */
-    suspend fun facts(c: AppContainer, at: Instant = c.clock.now(), slot: String? = null, weekPlan: WeekPlan? = null): Facts = withContext(Dispatchers.Default) {
+    /**
+     * The build facts at [at]; [weekPlan] is this week's current plan when the caller has one (D73), else it is planned here.
+     * [mesocycle] false leaves out the mesocycle (its own start reads these facts).
+     */
+    suspend fun facts(c: AppContainer, at: Instant = c.clock.now(), slot: String? = null, weekPlan: WeekPlan? = null, mesocycle: Boolean = true): Facts = withContext(Dispatchers.Default) {
         val zone = PlanningFacts.ZONE
         val date = Week.localDate(at, zone)
         val week = WeekVolume.compute(c, at)
@@ -116,6 +121,7 @@ object SessionBuild {
         Facts(
             at, week, readiness, prefs, c.equipment.types.filter { it.category == "station" }.map { it.key }.toSortedSet(),
             c.selection.busyStations(at, zone), day, elig, later, addOn,
+            if (mesocycle) runCatching { Mesocycles.current(c, at) }.getOrNull() else null,
         )
     }
 
@@ -153,7 +159,11 @@ object SessionBuild {
             forbiddenGroups = (owned + windowGroups + addOn?.forbidGroups.orEmpty()).toSet(),
             forbiddenSessionTags = d?.gapTags.orEmpty().toSet(), tagRules = d?.contract?.sessionTagRules?.let { SessionTagRule.parse(it) }.orEmpty(),
             addOn = addOn, prefM = f.prefs.mapValues { it.value.m }, stations = f.stations, busyStations = f.busy,
-        )
+        ).let { r ->
+            // The mesocycle (D86 (3)): anchors in S0 of standalone sessions only, the K set and the rotated-out exercises.
+            val m = Mesocycles.selection(f.meso, addOn = addOn != null)
+            r.copy(anchors = m.anchors, history = m.consistency, rotatedOut = m.rotatedOut)
+        }
     }
 
     /**

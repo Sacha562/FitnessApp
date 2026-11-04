@@ -10,7 +10,7 @@ class KeysTest {
         val keys = listOf(
             AppKey.Main, AppKey.LiveSession("s1"), AppKey.Summary("s2"), AppKey.DataSync, AppKey.Equipment, AppKey.Reliability,
             AppKey.History, AppKey.SessionDetail("0192f0a0-0000-7000-8000-000000000001"),
-            AppKey.ExerciseDetail("0192f0a0-0000-7000-8000-000000000002", "list"), AppKey.DataSyncExport,
+            AppKey.ExerciseDetail("0192f0a0-0000-7000-8000-000000000002", "list"), AppKey.DataSyncExport, AppKey.Progress,
         )
         keys.forEach { AppKey.decode(AppKey.encode(it)) shouldBe it }
     }

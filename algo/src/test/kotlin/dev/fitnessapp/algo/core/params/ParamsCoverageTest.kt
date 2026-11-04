@@ -47,7 +47,7 @@ class ParamsCoverageTest {
         "readiness" to dev.fitnessapp.algo.accounting.readiness.Readiness, "targets" to dev.fitnessapp.algo.targets.Targets,
         "runs" to dev.fitnessapp.algo.targets.runs.Runs, "time" to dev.fitnessapp.algo.selection.time.TimeModel,
         "allocator" to dev.fitnessapp.algo.planning.allocator.Allocator, "select" to dev.fitnessapp.algo.selection.select.Select,
-        "order" to dev.fitnessapp.algo.selection.order.Order,
+        "order" to dev.fitnessapp.algo.selection.order.Order, "rotate" to dev.fitnessapp.algo.selection.rotate.Rotation,
         "weekplan" to dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner, "today" to dev.fitnessapp.algo.planning.today.TodayRecommender,
     )
     private val all: List<DeclaresParams> = complete.values.toList()
@@ -75,6 +75,14 @@ class ParamsCoverageTest {
         complete.forEach { (module, decl) ->
             decl.paramSpecs.map { it.key }.sorted() shouldBe slices.getValue(module).keys.sorted()
         }
+    }
+
+    @Test
+    fun `the seeded rotate and ui progress rows hash the current slices`() {
+        // fitness_005 part 7 seeded `rotate@1.0.0` and `ui.progress@1.0.0`; M4.7 uses those rows unchanged (D86 (7)).
+        val slices = ParamsHashes.slices(values)
+        dev.fitnessapp.algo.core.det.Jcs.sha256Hex(slices.getValue("rotate")) shouldBe "22486e28b62cc71161261f6ff39189a5c185df4033e7b41862a93331ed5978df"
+        dev.fitnessapp.algo.core.det.Jcs.sha256Hex(slices.getValue("ui.progress")) shouldBe "3cdebd498472435aad24fed72e7a2e914a4a78256b7de72220ea9ebc38adcb24"
     }
 
     @Test

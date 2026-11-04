@@ -63,7 +63,8 @@ private val PAIN_PRESELECT = mapOf("shoulder" to "shoulder", "wrist" to "wrist",
 
 /**
  * Session summary (UX 12), as Bento tiles (D31): header, duration and set tiles, the challenge's and RX-1's "Next time" (M3.4), what
- * was logged, and the optional quick check (sRPE 0-10 and joint pain as `ui.prompts` plans them, M4.2; note). "New best" needs `ui.progress`, which arrives later.
+ * was logged, and the optional quick check (sRPE 0-10 and joint pain as `ui.prompts` plans them, M4.2; note). "New best" lists the
+ * session's personal bests of `ui.progress` (12.3, 19.7.2, M4.7), each logged once as `pr_detected`.
  */
 @Composable
 fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
@@ -81,15 +82,36 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
     var next by remember(sessionId) { mutableStateOf<List<NextLine>?>(null) }
     // The post-session prompts of `ui.prompts` (UX 19.4): session effort and joint pain, unless switched off or reduced.
     var post by remember(sessionId) { mutableStateOf<PromptPlan?>(null) }
+    // The session's new bests (UX 12.3): exercise name and best, ordered by relative gain; null while the pipeline runs.
+    var bests by remember(sessionId) { mutableStateOf<List<Pair<dev.fitnessapp.app.ui.you.ExerciseBests, dev.fitnessapp.app.uidet.PersonalBest>>?>(null) }
+    var prsLogged by rememberSaveable(sessionId) { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) {
         val t0 = System.currentTimeMillis()
         next = withContext(Dispatchers.Default) { runCatching { nextTimeLines(c, sessionId) }.getOrDefault(emptyList()) }
+        // After the pipeline: the engine-logged e1RM of this session's sets exists now (C3).
+        val byExercise = runCatching { dev.fitnessapp.app.ui.you.ProgressData.bests(c) }.getOrDefault(emptyMap())
+        val found = dev.fitnessapp.app.uidet.UiProgress.sessionBests(byExercise.mapValues { it.value.bests }, sessionId, null)
+        bests = found.map { (id, b) -> byExercise.getValue(id) to b }
+        if (!prsLogged) {
+            prsLogged = true
+            found.forEach { (id, b) ->
+                c.sessionRepository.event(
+                    EventDraft(
+                        type = "pr_detected", sessionId = sessionId, screen = "session.summary",
+                        payload = mapOf(
+                            "exercise_id" to JsonPrimitive(id), "kind" to JsonPrimitive(b.kind.code), "side" to JsonPrimitive(b.side),
+                            "value" to JsonPrimitive(b.value), "previous" to JsonPrimitive(b.previous),
+                        ),
+                    ),
+                )
+            }
+        }
         c.sessionRepository.event(
             EventDraft(
                 type = "session_summary_shown", sessionId = sessionId, screen = "session.summary",
                 payload = mapOf(
-                    "prs" to kotlinx.serialization.json.JsonArray(emptyList()), "next_changes_count" to JsonPrimitive(next?.size ?: 0),
+                    "prs" to kotlinx.serialization.json.JsonArray(found.map { JsonPrimitive(it.second.kind.code) }), "next_changes_count" to JsonPrimitive(next?.size ?: 0),
                     "pipeline_ms" to JsonPrimitive(System.currentTimeMillis() - t0),
                 ),
             ),
@@ -140,6 +162,7 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                     }
                 }
 
+                bests?.takeIf { it.isNotEmpty() }?.let { NewBestTile(it, c.params.int("ui.progress.max_prs_summary")) }
                 if (s?.enrollment_id != null) ChallengeSummaryTile(c, sessionId)
                 next?.takeIf { it.isNotEmpty() }?.let { NextTimeTile(c, sessionId, it) }
                 s?.let { PrefPromptTile(c, sessionId, it.local_date) }
@@ -224,5 +247,22 @@ private fun StatTile(label: String, value: String, unit: String, modifier: Modif
             Text(value, style = MaterialTheme.typography.headlineMedium)
             Text(unit, style = MaterialTheme.typography.bodyMedium, color = Fit.Muted, modifier = Modifier.padding(bottom = 4.dp))
         }
+    }
+}
+
+/** "New best" (UX 12.3, 19.7.2): at most [max] bests, the rest behind "Show all". */
+@Composable
+internal fun NewBestTile(bests: List<Pair<dev.fitnessapp.app.ui.you.ExerciseBests, dev.fitnessapp.app.uidet.PersonalBest>>, max: Int) {
+    var all by rememberSaveable { mutableStateOf(false) }
+    Tile(spacing = 6.dp) {
+        TileLabel(if (bests.size == 1) "New best" else "New bests")
+        (if (all) bests else bests.take(max)).forEach { (ex, b) ->
+            val side = if (b.side == "both") "" else " (${b.side})"
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("★ ${ex.name}$side · ${b.kind.label}", style = MaterialTheme.typography.titleSmall)
+                Text(dev.fitnessapp.app.ui.you.bestWhat(b, ex.signed), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+            }
+        }
+        if (bests.size > max && !all) dev.fitnessapp.app.ui.common.LinkButton("Show all ${bests.size}", { all = true })
     }
 }

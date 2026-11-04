@@ -190,7 +190,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                         Tab.YOU -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
                             onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) }, onCalendars = { push(AppKey.Calendars) },
-                            onPreferences = { push(AppKey.Preferences) }, onPrompts = { push(AppKey.Prompts) },
+                            onPreferences = { push(AppKey.Preferences) }, onPrompts = { push(AppKey.Prompts) }, onProgress = { push(AppKey.Progress) },
                         )
                     }
                 }
@@ -217,6 +217,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             entry<AppKey.Calendars> { dev.fitnessapp.app.ui.calendar.CalendarsRoute(c, onBack = { pop() }) }
             entry<AppKey.Preferences> { dev.fitnessapp.app.ui.you.PreferencesRoute(c, onBack = { pop() }) }
             entry<AppKey.Prompts> { dev.fitnessapp.app.ui.you.PromptsRoute(c, onBack = { pop() }) }
+            entry<AppKey.Progress> { dev.fitnessapp.app.ui.you.ProgressRoute(c, onBack = { pop() }) }
             entry<AppKey.History> { HistoryRoute(c, onBack = { pop() }, onOpen = { push(AppKey.SessionDetail(it)) }) }
             entry<AppKey.SessionDetail> { k ->
                 SessionDetailRoute(
@@ -278,6 +279,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Calendars -> "you.calendars"
     AppKey.Preferences -> "you.preferences"
     AppKey.Prompts -> "you.prompts"
+    AppKey.Progress -> "you.progress"
     AppKey.History -> "you.history"
     is AppKey.SessionDetail -> "you.session_detail"
     is AppKey.ExerciseDetail -> "exercises.detail"

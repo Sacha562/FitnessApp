@@ -28,7 +28,8 @@ import java.time.Instant
  * for an add-on; the warm-up of [warmup] comes off it before SEL-1. [vBefore] is the week's Vhyp so far (done plus the
  * challenge's committed coverage), [opp] the opportunities per group (1 until the week planner, M4.5, counts them),
  * [readiness] `R_g` at [start]. [elig] holds the day's ELIG-1 constraints; [forbiddenGroups] the covered and
- * hard-window groups; [addOn] the allocator's view of an add-on slot.
+ * hard-window groups; [addOn] the allocator's view of an add-on slot. [anchors], [history] and [rotatedOut] come from
+ * the mesocycle (ROT-1, D86 (3)): SEL-1's S0 anchors, its K set, and the exercises left out of automatic builds.
  */
 data class BuildRequest(
     val type: SessionType,
@@ -50,6 +51,8 @@ data class BuildRequest(
     val busyStations: Set<String> = emptySet(),
     val stalled: Set<String> = emptySet(),
     val history: Set<String> = emptySet(),
+    val anchors: List<String> = emptyList(),
+    val rotatedOut: Set<String> = emptySet(),
 )
 
 /** A built exercise in ORD-1 order: its sets after trimming and its TIME-1 seconds. */
@@ -99,33 +102,49 @@ object Building {
     /** The projected Vhyp an allocation adds (7.6): how the add-on family is preselected (D62). */
     fun value(a: Allocation): Double = Grid.ratio(a.vhyp.values.sum())
 
-    fun build(req: BuildRequest, catalog: Catalog, params: ParamView): BuildResult {
+    /**
+     * SEL-1's input for [req] after the allocation and ELIG-1 (7, 12), or the reason nothing can be built; also the
+     * family run of a mesocycle start (ROT-1, D86 (2)).
+     */
+    fun selectInput(req: BuildRequest, catalog: Catalog, params: ParamView): Pair<Allocation, Result<SelectInput>> {
         val alloc = allocate(req, catalog, params)
-        fun empty(reason: String) = BuildResult(req.type, alloc.label, alloc, null, emptyList(), 0.0, req.budgetMin, emptyList(), false, reason)
-        if (!alloc.feasible) return empty(alloc.infeasibleReason ?: "INFEASIBLE")
-        if (alloc.credit.values.none { it > 0.0 }) return empty("NOTHING_NEEDED")
+        if (!alloc.feasible) return alloc to Result.failure(Empty(alloc.infeasibleReason ?: "INFEASIBLE"))
+        if (alloc.credit.values.none { it > 0.0 }) return alloc to Result.failure(Empty("NOTHING_NEEDED"))
 
         val goals = req.targets.groups.mapValues { it.value.status }
-        val pool = Elig.pool(catalog, req.elig, params)
+        val pool = Elig.pool(catalog, req.elig, params).let { r -> r.copy(pool = r.pool.filter { it.slug !in req.rotatedOut }) }
         val gate = Elig.gate(pool, catalog, req.elig, GateInput(alloc.credit, goals), params)
-        if (gate.pool.isEmpty()) return empty("NO_ELIGIBLE")
+        if (gate.pool.isEmpty()) return alloc to Result.failure(Empty("NO_ELIGIBLE"))
         val warmMin = TimeModel.warmupSeconds(req.warmup, params) / 60.0
         val mult = alloc.setFactor.values.minOrNull() ?: 1.0
-        val input = SelectInput(
-            pool = gate.pool, target = alloc.credit, goals = goals, capS = req.targets.groups.mapValues { it.value.capS },
-            budgetMin = maxOf(0.0, req.budgetMin - warmMin), focus = req.targets.groups.filterValues { it.focus }.keys,
-            sPref = req.sPref, mult = mult, history = req.history, stalled = req.stalled, prefM = req.prefM,
-            unlocked = gate.unlocked.associate { it.slug to it.group }, jointFlags = req.elig.jointFlags,
-            forbiddenSessionTags = req.forbiddenSessionTags, tagRules = req.tagRules, maxSets = req.addOn?.maxSets?.toInt(),
-            stations = req.stations, busyStations = req.busyStations,
+        return alloc to Result.success(
+            SelectInput(
+                pool = gate.pool, target = alloc.credit, goals = goals, capS = req.targets.groups.mapValues { it.value.capS },
+                budgetMin = maxOf(0.0, req.budgetMin - warmMin), focus = req.targets.groups.filterValues { it.focus }.keys,
+                sPref = req.sPref, mult = mult, anchors = req.anchors, history = req.history, stalled = req.stalled, prefM = req.prefM,
+                unlocked = gate.unlocked.associate { it.slug to it.group }, jointFlags = req.elig.jointFlags,
+                forbiddenSessionTags = req.forbiddenSessionTags, tagRules = req.tagRules, maxSets = req.addOn?.maxSets?.toInt(),
+                stations = req.stations, busyStations = req.busyStations,
+            ),
         )
+    }
+
+    /** Why [selectInput] has nothing to select from. */
+    class Empty(val reason: String) : RuntimeException(reason, null, false, false)
+
+    fun build(req: BuildRequest, catalog: Catalog, params: ParamView): BuildResult {
+        val (alloc, prepared) = selectInput(req, catalog, params)
+        fun empty(reason: String) = BuildResult(req.type, alloc.label, alloc, null, emptyList(), 0.0, req.budgetMin, emptyList(), false, reason)
+        val input = prepared.getOrElse { return empty((it as Empty).reason) }
+        val goals = input.goals
+        val mult = input.mult
         val sel = Select.select(input, catalog, params)
         if (sel.exercises.isEmpty()) return empty("NO_ELIGIBLE")
 
         // UI-02 trimming of the whole block (17.7): tier 1 compound of an improve group, 2 primary group maintained,
         // 3 isolation or accessory of an improve group; the engine's priority is the exercise's bracket of V.
         val search = Select.Search(input, catalog, params)
-        val bySlug = gate.pool.associateBy { it.slug }
+        val bySlug = input.pool.associateBy { it.slug }
         val items = sel.exercises.map { x ->
             val e = bySlug.getValue(x.slug)
             val primary = Elig.primaryGroup(e, catalog)

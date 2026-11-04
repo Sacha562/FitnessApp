@@ -43,10 +43,11 @@ class EstimateRepository(private val db: FitnessDatabase) {
         }
     }
 
-    /** One row per session: the one no other row of the session supersedes (an edited past session has several). */
-    private fun newestPerSession(rows: List<SseSnapshotRow>): List<SseSnapshotRow> =
-        rows.groupBy { it.session_id }.values.mapNotNull { group ->
-            val superseded = group.mapNotNull { it.supersedes_id }.toSet()
-            group.filter { it.id !in superseded }.maxByOrNull { it.id }
-        }.sortedWith(compareBy<SseSnapshotRow> { it.started_at }.thenBy { it.session_id })
 }
+
+/** One row per session: the one no other row of the session supersedes (an edited past session has several). */
+internal fun newestPerSession(rows: List<SseSnapshotRow>): List<SseSnapshotRow> =
+    rows.groupBy { it.session_id }.values.mapNotNull { group ->
+        val superseded = group.mapNotNull { it.supersedes_id }.toSet()
+        group.filter { it.id !in superseded }.maxByOrNull { it.id }
+    }.sortedWith(compareBy<SseSnapshotRow> { it.started_at }.thenBy { it.session_id })

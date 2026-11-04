@@ -2536,6 +2536,24 @@ rotated pairs), progress before and after rotation, user overrides of anchors. T
 `rotateAtMostThird`, `stalledAccessoryRotated`, `deterministicHashOrder`, `challengeBlockAligned` (block 2 week 1 →
 new mesocycle).
 
+### 16.3 Readings fixed for the build (D86)
+
+The mesocycle starts on the Monday of the ISO week that holds the challenge block's week 1, or `MESOCYCLE_WEEKS` after
+the previous start without a challenge. SEL-1's family run for the anchors is a standalone session of the family's type
+at the default session length, with `vBefore` 0, `opp` 2 for every group, full readiness and the first day's ELIG-1
+context without day windows; its compound exercises are ranked by their bracket of V, then slug. A family with a group the
+challenge owns gets no anchors. Accessories are the
+non-anchor exercises logged as working sets in general blocks of the previous mesocycle (the previous 5 weeks before the
+first one), in the family of their primary group. "Stalled" in `keep` means that the last `STALL_EXPOSURES` exposures
+gave neither an e1RM best (the session's best engine-logged e1RM above every earlier one) nor a rep best at the same
+load; the slope is SSE-1's logged `g_per_week`; "reps rising" compares the last and the first exposure of the previous
+mesocycle at the same load. The "bored" term is not used (no such mark exists). A replacement's new region is one with
+stimulus at least 0.5 that none of the family's previous-mesocycle exercises reached. During the mesocycle the anchors
+enter S0 of standalone general sessions only (not add-on blocks), every build's K set is the anchors, kept accessories,
+replacements and exercises logged in general blocks since the start, and rotated-out exercises are removed from the
+automatic pool until the mesocycle ends. A changed anchor writes a new `rotate.mesocycle` revision with the change in
+its inputs. Golden: GF-ROT-01 (two starts: a kept anchor, a stalled and a disliked accessory, the one-third cap).
+
 ---
 
 ## 17. `time` — TIME-1 duration model, UI-02 trimming and add-on capacity (C19, C34, F11)

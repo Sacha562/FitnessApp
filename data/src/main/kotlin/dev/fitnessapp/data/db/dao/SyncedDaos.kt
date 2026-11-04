@@ -198,6 +198,15 @@ data class SetWithSessionStart(
     @androidx.room.Embedded val set: SetLogEntity,
 )
 
+/** A live set of a finished session with its session's start, date and kind and its block's kind (You → Progress, ROT-1). */
+data class FinishedSetRow(
+    val session_started_at: Long?,
+    val session_local_date: String,
+    val session_kind: String,
+    val block_kind: String?,
+    @androidx.room.Embedded val set: SetLogEntity,
+)
+
 @Dao
 interface SetLogDao : SyncDao<SetLogEntity> {
     @Query("SELECT * FROM set_logs WHERE id IN (:ids)")
@@ -221,6 +230,27 @@ interface SetLogDao : SyncDao<SetLogEntity> {
             "WHERE s.deleted_at IS NULL AND w.deleted_at IS NULL AND s.completed_at >= :sinceMs ORDER BY s.completed_at, s.id",
     )
     suspend fun liveSince(sinceMs: Long): List<SetLogEntity>
+
+    /** Every live set of the finished sessions, oldest session first (`ui.progress` and the mesocycle start, D86). */
+    @Query(
+        """SELECT s.started_at AS session_started_at, s.local_date AS session_local_date, s.kind AS session_kind, b.block_kind AS block_kind, l.*
+           FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
+           LEFT JOIN session_exercises e ON e.id = l.session_exercise_id
+           LEFT JOIN session_blocks b ON b.id = e.block_id
+           WHERE l.deleted_at IS NULL AND s.deleted_at IS NULL AND s.status = 'finished'
+           ORDER BY s.started_at, s.id, l.completed_at, l.id""",
+    )
+    suspend fun finishedSets(): List<FinishedSetRow>
+
+    /** The exercises with working sets in general blocks of finished sessions dated in [from, to) (ROT-1 accessories, D86). */
+    @Query(
+        """SELECT DISTINCT l.exercise_id FROM set_logs l JOIN workout_sessions s ON s.id = l.session_id
+           JOIN session_exercises e ON e.id = l.session_exercise_id JOIN session_blocks b ON b.id = e.block_id
+           WHERE l.deleted_at IS NULL AND s.deleted_at IS NULL AND s.status = 'finished' AND b.block_kind = 'general'
+             AND l.set_kind = 'working' AND s.local_date >= :from AND s.local_date < :to
+           ORDER BY l.exercise_id""",
+    )
+    suspend fun generalExercisesBetween(from: String, to: String): List<String>
 
     @Query(
         """SELECT s.started_at AS session_started_at, s.local_date AS session_local_date, l.*
