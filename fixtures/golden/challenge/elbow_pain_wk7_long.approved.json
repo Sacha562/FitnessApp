@@ -1,13 +1,13 @@
 {
     "persona": "elbow_pain_wk7_long",
     "proposals": "approved",
-    "definition": "oap@1.10.0",
-    "definition_jcs_sha256": "fc95fe8843c063a80fddaec568972071f5f398a47cc426bcceb4521dfef2ead9",
+    "definition": "oap@1.11.0",
+    "definition_jcs_sha256": "1cd15ed52eb7537dd025885115f608165eab3189062cec7f721f5b7ecec91199",
     "engine_version": "1.21.0",
     "params_hash": "6298d1217c3ba230b98acc6d40777d075b50b97f2cce6db007764e60beab6c57",
     "events": 497,
     "audit_rows": 392,
-    "final_state_hash": "2bbfb780652b8268c26d4c4223e28c62fb3ceabc686851b810e028b2848f6d8d",
+    "final_state_hash": "bd2747559aea5929d9633ea5b53c50f659901a22572724d8272233bb9e156bfb",
     "violations": [],
     "weeks": [
         {

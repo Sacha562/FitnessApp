@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -336,9 +336,9 @@
       { "key": "wu_pull", "exercise": "pullup_bw", "role": "warmup", "sets": 2, "reps": "ramp" }
     ],
     "prehab5": [
-      { "key": "pre_rwc", "exercise": "reverse_wrist_curl_db", "role": "prehab", "sets": 2, "reps": 15, "load": "light", "creditRir": 4 },
-      { "key": "pre_ps", "exercise": "db_pronation_supination", "role": "prehab", "sets": 2, "reps": 10, "perSide": true, "creditRir": 4 },
-      { "key": "pre_fp", "exercise": "face_pull_cable", "role": "prehab", "sets": 2, "reps": 15, "creditRir": 3 }
+      { "key": "pre_rwc", "exercise": "reverse_wrist_curl_db", "role": "prehab", "sets": 2, "repsRange": [12, 20], "rirTarget": 3, "creditRir": 3, "progression": "delegate:rx", "note": { "en": "Stop with about 3 reps left. The weight goes up once you reach 20." } },
+      { "key": "pre_ps", "exercise": "db_pronation_supination", "role": "prehab", "sets": 2, "repsRange": [10, 15], "perSide": true, "rirTarget": 3, "creditRir": 3, "progression": "delegate:rx", "note": { "en": "Stop with about 3 reps left. The weight goes up once you reach 15." } },
+      { "key": "pre_fp", "exercise": "face_pull_cable", "role": "prehab", "sets": 2, "repsRange": [12, 20], "rirTarget": 2, "creditRir": 2, "progression": "delegate:rx", "note": { "en": "Stop with about 2 reps left. The weight goes up once you reach 20." } }
     ],
     "attempts": [
       { "key": "att", "exercise": "oap_attempt", "role": "attempt", "sets": 3, "perSide": true, "rest_s": 180, "records": "oa_rep", "position": "first", "creditRir": 0 }
@@ -924,6 +924,7 @@
     "1.6.0": {"varMap": {}, "defaults": {}, "notes": "D47: prehab keeps its sets in deload, test_pending and extra_deload weeks (only warm-ups were exempt from the halving). No state var changes."},
     "1.7.0": {"varMap": {}, "defaults": {}, "notes": "D51: the daily two-arm hang is skipped on every gym day (A, B, C and the test day), not only on A. No state var changes."},
     "1.8.0": {"varMap": {}, "defaults": {}, "notes": "D52: the torso-rotation notice says what it means for each exercise (one in-session rule per item instead of one for every item). No state var changes."},
-    "1.9.0": {"varMap": {}, "defaults": {}, "notes": "D63: in a re-entry week the protective pin rules (prog.A.pin.gated, prog.C.pin.hard) take the logged pin minus the re-entry offset as their base, so the offset never reaches s.pinA or s.pinC. No state var changes."}
+    "1.9.0": {"varMap": {}, "defaults": {}, "notes": "D63: in a re-entry week the protective pin rules (prog.A.pin.gated, prog.C.pin.hard) take the logged pin minus the re-entry offset as their base, so the offset never reaches s.pinA or s.pinC. No state var changes."},
+    "1.10.0": {"varMap": {}, "defaults": {}, "notes": "D90: the three prehab items (reverse wrist curls, pronation-supination, face pulls) are delegated to RX-1 with rep ranges and a target RIR (3, 3, 2), so their load progresses from the exercise's own history; creditRir follows the target. No state var changes."}
   }
 }

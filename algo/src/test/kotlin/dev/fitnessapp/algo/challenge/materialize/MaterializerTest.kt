@@ -108,6 +108,17 @@ class MaterializerTest {
     }
 
     @Test
+    fun `D90 prehab is delegated to RX-1 with a rep range and target RIR`() {
+        val p = plan(normal(), "A")
+        for ((key, range, rir) in listOf(Triple("pre_rwc", 12 to 20, 3), Triple("pre_ps", 10 to 15, 3), Triple("pre_fp", 12 to 20, 2))) {
+            val item = p.item(key)
+            item.progressionMode shouldBe "delegate:rx"
+            item.rirTarget shouldBe rir
+            item.rows.map { it.targetReps to it.targetRepsMax }.distinct() shouldBe listOf(range)
+        }
+    }
+
+    @Test
     fun `GF-CE-22 typewriters need a wide bar`() {
         val s = normal().copy(phase = 2)
         val p = plan(s, "C")

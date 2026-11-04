@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.10.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.11.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63); the frozen
-1.0.0 to 1.9.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.9.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63), 1.11.0 hands the prehab loads to RX-1 with rep ranges and a target RIR (D90); the frozen
+1.0.0 to 1.10.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.10.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -812,7 +812,7 @@ C 50, 90-degree hold 35 lb (unchanged); C hang target floor(0.67 x 16) = 10 s; d
 | Block | Content |
 |---|---|
 | Warm-up (never skipped) | 20 face pulls (cable); 10 scapular pulls on the bar; 2 ramp-up sets of pull-ups. |
-| Prevention (5 min, every session) | Reverse wrist curls 2 x 15 light; dumbbell pronation/supination 2 x 10 per side; face pulls 2 x 15. Doubled in the elbow protocol. |
+| Prevention (5 min, every session) | Reverse wrist curls 2 x 12-20 at RIR 3; dumbbell pronation/supination 2 x 10-15 per side at RIR 3; face pulls 2 x 12-20 at RIR 2. The loads come from RX-1 and go up from each exercise's own history (from 1.11.0, D90; until then 2 x 15 light, 2 x 10 and 2 x 15 at a load copied from last time). Doubled in the elbow protocol. |
 
 ### 9.2 Phase-1 templates (A, with today's imported values)
 
