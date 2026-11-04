@@ -221,11 +221,8 @@ object SessionBuild {
         if (!plan.addOnOffered) return null
         val cap = plan.addOnCapacityMin ?: return null
         val f = facts(c, c.clock.now(), plan.slot)
-        // D70 (4): the family picked on the Today card, else the week plan's, else the best by remaining volume (D62).
-        val pick = c.settings.addOnPick(f.at.atZone(PlanningFacts.ZONE).toLocalDate().toString(), plan.slot)
-        if (pick == "none") return null
-        val type = pick?.let { runCatching { SessionType.of(it) }.getOrNull() } ?: f.planAddOn
-            ?: addOnChoices(c, f, cap.toDouble()).firstOrNull()?.first ?: return null
+        // D70 (4), D87: the week plan's family, else the best by remaining volume (D62); the session's chips change it.
+        val type = f.planAddOn ?: addOnChoices(c, f, cap.toDouble()).firstOrNull()?.first ?: return null
         val req = addOnRequest(c, f, type, cap.toDouble()) ?: return null
         val r = build(c, req)
         if (r.exercises.isEmpty()) return null

@@ -269,16 +269,12 @@ fun TodayRoute(
 
             StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)
 
-            // The Today card (UX 9.3, D70): the verdict, options, chips and time chips; on a challenge day the add-on choice.
+            // The Today card (UX 9.3, D70): the verdict, options, chips and time chips; none on a challenge day (D87).
             plan?.let { p ->
                 TodayCardTile(
                     p, picked,
                     onPick = { o ->
                         picked = o.optionId
-                        // The add-on chosen on a challenge day is built at the session's start (D70 (4)).
-                        if (p.options.planned != null && p.options.planned?.kind != "general") {
-                            c.settings.setAddOnPick(p.options.date.toString(), p.options.planned?.slot ?: "", o.addon ?: "none")
-                        }
                         scope.launch { runCatching { TodayPlans.action(c, "select_alt", p.options.options.indexOf(o)) } }
                     },
                     onChip = { ch -> chipMin = ch.minutes; scope.launch { runCatching { TodayPlans.action(c, "budget", ch.minutes) } } },

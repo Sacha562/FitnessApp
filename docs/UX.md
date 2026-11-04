@@ -1156,6 +1156,10 @@ deload transform). "85 cal" is the calendar budget: the 19:45-21:15 event is tra
 happens before it; the user's events say "leave 19:35"), so its 90 min minus the 5 min changeover
 (F11, C49). Because 85 is not a standard chip, it is shown first and preselected (19.1.2).
 
+As built (D70, D87), a challenge day shows no Today card: the challenge tile holds the session, its Start and the
+habits, and the add-on after C and A is not asked for on Today. It is built at Start with the week plan's family and
+chosen or skipped only on the session's add-on header ("ADD-ON · LEGS · ~15 min", 11.4).
+
 **Wireframe: OPTIONAL, close call (Wednesday with the synthetic inputs of GF-UX-01).**
 
 ```

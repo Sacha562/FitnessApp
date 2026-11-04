@@ -103,8 +103,8 @@ object TodayPlans {
 }
 
 /**
- * The Today card (UX 9.3, D70) for a day without a challenge session, or the add-on choice of today's challenge
- * session. The challenge session itself, its Start and the habits stay on the challenge tile below the card.
+ * The Today card (UX 9.3, D70) for a day without a challenge session. On a challenge day the card is not shown: the
+ * challenge session, its Start and the habits stay on the challenge tile, and the add-on is chosen in the session (D87).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -125,18 +125,8 @@ fun TodayCardTile(
     fun time(i: Instant) = Week.localTime(i, zone).let { t -> (if (t.hour < 10) "0" else "") + t.hour + ":" + (if (t.minute < 10) "0" else "") + t.minute }
     when (card.state) {
         CardState.IN_PROGRESS, CardState.SETUP_NEEDED -> return
-        CardState.PLANNED -> if (card.variant != "GENERAL") {
-            // A challenge session today: only its add-on choice lives here (C34, D62, D70).
-            val choices = o.options.filter { it.addon != null || o.options.size > 1 }
-            if (choices.size < 2 || card.variant == "TEST") return
-            Tile(spacing = 4.dp) {
-                Text("After the session", style = MaterialTheme.typography.titleMedium)
-                OptionRows(choices, picked ?: o.primaryOptionId) { onPick(it) }
-                ChipRow(card)
-                LinkButton("Other options", onOtherOptions)
-            }
-            return
-        }
+        // A challenge session today: the challenge tile below has it, and its add-on is chosen in the session (D87).
+        CardState.PLANNED -> if (card.variant != "GENERAL") return
         else -> Unit
     }
     Tile(spacing = 6.dp) {
