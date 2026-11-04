@@ -721,10 +721,11 @@ private fun SetCard(
                 }
             }
 
-            // Flags offered by the exercise (C74, UX 11.9).
-            if (item.ex.flagsOffered.isNotEmpty()) MoreSection("Flag something", initiallyOpen = card.flags.isNotEmpty()) {
+            // Flags offered by the exercise (C74, UX 11.9), without the one the chosen reason already sets (D89).
+            val flagsShown = item.ex.flagsOffered.filter { it != card.impliedFlag }
+            if (flagsShown.isNotEmpty()) MoreSection("Flag something", initiallyOpen = flagsShown.any { it in card.flags }) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item.ex.flagsOffered.forEach { f ->
+                    flagsShown.forEach { f ->
                         ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox)
                     }
                 }

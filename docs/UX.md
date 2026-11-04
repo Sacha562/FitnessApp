@@ -1931,6 +1931,9 @@ Flags offered depend on the exercise (catalog `flags` or challenge exercise `fla
 | Hips rotated | `hip_rotation` | one-arm plank | challenge (`prog.plank`; `ins.plank.hipStop` info line) |
 | Hand shifted | `hand_shift` | one-arm negative | challenge (the negative is not controlled, for example on test day: `oa_neg5_unassisted` = no) |
 
+A flag implied by the chosen reason chip (11.8, `implies_flag`) is not shown as its own chip while that
+reason is chosen; it is stored with the set anyway (D89).
+
 When grip slip is flagged, the rest card shows an info line: "Grip slip noted: no load increase from
 this session (rule prog.gripSlip.lock)". Rule ids are rendered from the definition, never hardcoded.
 
@@ -3665,7 +3668,8 @@ C16); the codes and labels are the DATA_MODEL `reason_codes` vocabulary (`code`,
 * At most `max_visible` chips are visible (two rows of three 48 dp chips); the rest sit behind "More".
   Sheets (Skip, Finish) show all chips.
 * Labels are the English `reason_codes.label`. Choosing `torso_rotation` or `technique_breakdown` also
-  sets the matching set flag (DATA_MODEL `implies_flag`).
+  sets the matching set flag (DATA_MODEL `implies_flag`). While such a reason is chosen, that flag's own chip is hidden
+  under "Flag something" (D89).
 * Follow-ups: `pain` opens the Pain sheet (safety path, C33); `occupied` in the Skip sheet switches the
   sheet to the Do k now / Swap content (11.12, D88); `other` offers optional free text that stays on the set
   row and never reaches telemetry.

@@ -164,9 +164,12 @@ fun SetEditSheet(
                 val reasons = c.reasons.rows.filter { r -> r.active && r.uiContexts.any { it == "easier" || it == "harder" } }
                 ChoiceChips(reasons.map { it.code }, reason, { code -> reasons.first { it.code == code }.labelEn }) { reason = if (reason == it) null else it }
             }
-            if (ex.flagsOffered.isNotEmpty()) MoreSection("Flag something", initiallyOpen = !set?.flags.isNullOrEmpty()) {
+            // The flag the chosen reason implies is stored with it, so its chip is hidden (D89).
+            val implied = c.reasons.rows.firstOrNull { it.code == reason }?.impliesFlag
+            val flagsShown = ex.flagsOffered.filter { it != implied }
+            if (flagsShown.isNotEmpty()) MoreSection("Flag something", initiallyOpen = flagsShown.any { it in set?.flags.orEmpty() }) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ex.flagsOffered.forEach { f ->
+                    flagsShown.forEach { f ->
                         ChipButton(flagLabel(f), selected = f in flags, onClick = { flags = if (f in flags) flags - f else flags + f }, role = Role.Checkbox)
                     }
                 }

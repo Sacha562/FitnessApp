@@ -161,6 +161,9 @@ data class Card(
     val point: LoadPoint? get() = loadIndex?.let { points.getOrNull(it) }
     val setNumber: Int get() = item.workingDone + 1
     val slotKey: String get() = listOf(item.se.id, setIndex.toString(), side, mode.code, warmup.toString()).joinToString("|")
+
+    /** The set flag the chosen reason implies (`implies_flag`): logged with the set, so its own chip is hidden (D89). */
+    val impliedFlag: String? get() = chips?.let { (it.visible + it.more).firstOrNull { c -> c.code == reason }?.impliesFlag }
 }
 
 /** What the attempt card of a phase-3 attempts block needs (UX 14.9 attempt card). */
@@ -826,7 +829,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             feltReserveS?.let { telemetry["chip_value"] = JsonPrimitive(feltCode(it)) }
             card.firstTouchAt?.let { telemetry["first_touch_at"] = JsonPrimitive(it) }
             u.rest?.let { r -> if (r.state != "running") telemetry["ms_from_rest_end"] = JsonPrimitive(now - r.end_wall_ms) }
-            val flags = card.flags + listOfNotNull(card.reason?.takeIf { it == "torso_rotation" || it == "technique_breakdown" })
+            val flags = card.flags + listOfNotNull(card.impliedFlag)
             val ordinal = card.mode == LoadMode.ASSISTED_ORDINAL
             val cmd = LogSetCommand(
                 sessionId = sessionId, sessionExerciseId = card.item.se.id, exerciseId = card.item.se.exercise_id,
