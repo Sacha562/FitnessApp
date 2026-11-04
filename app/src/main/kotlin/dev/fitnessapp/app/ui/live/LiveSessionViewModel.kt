@@ -1532,7 +1532,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     /**
      * SUB-1's reorder first (D62): the first remaining exercise in ORD-1 order that is not pinned and on another station,
-     * when it is not simply the next one. Challenge items keep their program position as ORD-1's pinned rank.
+     * also when it is simply the next one (D88: the occupied sheet has no Do later). Challenge items keep their program
+     * position as ORD-1's pinned rank.
      */
     fun doNowTarget(seId: String): ExerciseItem? {
         val items = _ui.value.items
@@ -1545,19 +1546,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             )
         }
         val k = Substitute.doNow(order, seId, improveGroups, stations, c.catalogModel, params) ?: return null
-        val i = items.indexOfFirst { it.se.id == seId }
-        val next = items.drop(i + 1).firstOrNull { it.open }
-        return if (next?.se?.id == k.id) null else items.firstOrNull { it.se.id == k.id }
+        return items.firstOrNull { it.se.id == k.id }
     }
 
-    /** "Do {k} now, come back after": moves [seId] right after k and counts as a defer. */
+    /**
+     * "Do {k} now, come back after" (D88): k takes [seId]'s place with [seId] right after it, so exercises on the occupied
+     * station that came next wait behind both; k takes the focus and the move counts as a defer.
+     */
     fun doNow(seId: String) = viewModelScope.launch {
         val k = doNowTarget(seId) ?: return@launch
-        val ids = _ui.value.items.map { it.se.id }.toMutableList()
-        ids.remove(seId)
-        ids.add(ids.indexOf(k.se.id) + 1, seId)
-        focusOverride = null
-        focusVia = "deferred_return"
+        val ids = doNowOrder(_ui.value.items.map { it.se.id }, seId, k.se.id)
+        focusOverride = k.se.id
+        focusVia = "reorder"
         c.sessionRepository.reorder(sessionId, ids, seId, deferred = true, via = "do_later")
     }
 
@@ -1784,6 +1784,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
         /** The most extra reps a RIR check takes (B4.3). */
         private const val MAX_CALIB_EXTRA = 30
+
+        /** "Do {k} now" (D88): [kId] moves to [fromId]'s place and [fromId] follows it; the rest keep their order. */
+        fun doNowOrder(ids: List<String>, fromId: String, kId: String): List<String> {
+            val out = ids.filter { it != kId }.toMutableList()
+            out.add(out.indexOf(fromId), kId)
+            return out
+        }
 
         /** See [completesPlannedWork]; [setNumber] is the working set just logged on item [seId]. */
         fun completesPlannedWork(items: List<ExerciseItem>, seId: String, setNumber: Int, planned: Int, warmup: Boolean, side: String): Boolean {

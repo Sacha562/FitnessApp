@@ -2036,15 +2036,18 @@ a reason completes the skip. Reasons and order come from `ui.reasonchips` (skip 
 
 ```
 | Leg press is occupied               |
-| [===== Do later (after leg curl) ==]|
+| [= Do leg curl now, come back after]|
 | [ Swap ]                            |
-| Do leg curl now, come back after  > |
 | Skip anyway                         |
 ```
 
-* "Do later" moves the exercise after the next not-done exercise (UI-05) and increments its defer
-  count. After 2 defers (`ui.reasonchips.max_defers`), Swap becomes the primary choice.
-* The reorder suggestion comes from `substitute` (SUB-1: "Do k now, then come back").
+* "Do k now, come back after" (D88) comes from `substitute` (SUB-1: k is the first remaining exercise in
+  ORD-1 order that is not pinned and on another station, also when it is the next one). k takes the
+  occupied exercise's place and the occupied exercise follows it, so exercises on the same station that
+  came next wait behind both; k gets the focus and the occupied exercise's defer count rises. After 2
+  defers (`substitute.max_defers`), or when there is no k, Swap becomes the primary choice.
+* There is no "Do later" here (D88): the next exercise is often on the same station. The exercise
+  menu's Do later (UI-05) stays.
 * "Swap" opens the Swap sheet (16.5) with the top 3 substitutes from `substitute`.
 * An occupied event is logged with station, weekday and hour so SUB-1 can learn busy times.
 
@@ -3664,12 +3667,12 @@ C16); the codes and labels are the DATA_MODEL `reason_codes` vocabulary (`code`,
 * Labels are the English `reason_codes.label`. Choosing `torso_rotation` or `technique_breakdown` also
   sets the matching set flag (DATA_MODEL `implies_flag`).
 * Follow-ups: `pain` opens the Pain sheet (safety path, C33); `occupied` in the Skip sheet switches the
-  sheet to the Do later / Swap content (11.12); `other` offers optional free text that stays on the set
+  sheet to the Do k now / Swap content (11.12, D88); `other` offers optional free text that stays on the set
   row and never reaches telemetry.
-* Do later moves the exercise after the next not-done exercise and raises its defer count; from
-  `max_defers` defers on, Swap is the primary action. With no not-done exercise after it, Do later is
-  disabled and Swap is primary. The "Do k now, come back after" suggestion and the swap candidates come
-  from `substitute` (SUB-1).
+* Do later (exercise menu) moves the exercise after the next not-done exercise and raises its defer
+  count; with no not-done exercise after it, Do later is disabled. The Occupied sheet offers "Do k now,
+  come back after" instead (D88); from `max_defers` defers on, or with no k, Swap is the primary action.
+  The k suggestion and the swap candidates come from `substitute` (SUB-1).
 * The order is static (not adaptive), so the same deviation always shows the same chips; reordering
   happens only through a reviewed params or module version change.
 

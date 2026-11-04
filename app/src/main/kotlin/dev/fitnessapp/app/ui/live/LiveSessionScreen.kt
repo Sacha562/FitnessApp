@@ -257,9 +257,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             }
         }
         is Sheet.Occupied -> OccupiedSheet(
-            nameOf(ui, s.seId), laterAfter = laterAfter(ui, s.seId).takeIf { vm.canDoLater(s.seId) }, canSwap = vm.canSwap(s.seId),
-            swapPrimary = vm.swapPrimary(s.seId), doNow = vm.doNowTarget(s.seId)?.ex?.nameEn, onDismiss = { sheet = null },
-            onDoLater = { vm.doLater(s.seId); sheet = null }, onDoNow = { vm.doNow(s.seId); sheet = null },
+            nameOf(ui, s.seId), canSwap = vm.canSwap(s.seId), swapPrimary = vm.swapPrimary(s.seId),
+            doNow = vm.doNowTarget(s.seId)?.ex?.nameEn, onDismiss = { sheet = null }, onDoNow = { vm.doNow(s.seId); sheet = null },
             onSwap = { sheet = Sheet.Swap(s.seId, "occupied", "occupied") }, onSkip = { vm.skip(s.seId, "occupied", 1); sheet = null },
         )
         is Sheet.Swap -> SwapSheet(
@@ -1053,26 +1052,20 @@ private fun ReasonSheet(c: AppContainer, context: ChipContext, title: String, on
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OccupiedSheet(
-    name: String, laterAfter: String?, canSwap: Boolean, swapPrimary: Boolean, doNow: String?, onDismiss: () -> Unit,
-    onDoLater: () -> Unit, onDoNow: () -> Unit, onSwap: () -> Unit, onSkip: () -> Unit,
+    name: String, canSwap: Boolean, swapPrimary: Boolean, doNow: String?, onDismiss: () -> Unit,
+    onDoNow: () -> Unit, onSwap: () -> Unit, onSkip: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(SheetPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("$name is occupied", style = MaterialTheme.typography.titleLarge)
-            val later = laterAfter?.let { "Do later (after $it)" }
-            // UX 11.12: Do later first; Swap becomes primary after `max_defers` defers or with nothing left to move behind.
-            if (canSwap && (swapPrimary || later == null)) {
+            val now = doNow?.let { "Do $it now, come back after" }
+            // UX 11.12, D88: Do k now first; Swap becomes primary after `max_defers` defers or with nothing to do instead.
+            if (canSwap && (swapPrimary || now == null)) {
                 PrimaryButton("Swap", onSwap, Modifier.fillMaxWidth())
-                later?.let { TonalButton(it, onDoLater, Modifier.fillMaxWidth()) }
+                now?.let { TonalButton(it, onDoNow, Modifier.fillMaxWidth()) }
             } else {
-                later?.let { PrimaryButton(it, onDoLater, Modifier.fillMaxWidth()) }
+                now?.let { PrimaryButton(it, onDoNow, Modifier.fillMaxWidth()) }
                 if (canSwap) TonalButton("Swap", onSwap, Modifier.fillMaxWidth())
-            }
-            doNow?.let { k ->
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick = onDoNow).padding(horizontal = 8.dp, vertical = 14.dp)) {
-                    Text("Do $k now, come back after", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Text(">", color = Fit.Muted)
-                }
             }
             LinkButton("Skip anyway", onSkip)
         }
@@ -1123,12 +1116,6 @@ private fun SwapSheet(
             LinkButton("Skip instead", { onSkip(why) })
         }
     }
-}
-
-/** The exercise Do later moves behind: the next not-done one after [seId]. */
-private fun laterAfter(ui: LiveUi, seId: String): String? {
-    val i = ui.items.indexOfFirst { it.se.id == seId }
-    return ui.items.drop(i + 1).firstOrNull { it.open }?.ex?.nameEn?.replaceFirstChar { it.lowercase() }
 }
 
 /** UX 16.13: the remaining exercises and a reason (no time preselected). */

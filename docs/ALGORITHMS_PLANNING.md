@@ -2473,6 +2473,7 @@ between the members, the after-pair rest from REST-1's formula, and `t_pair` use
 substitute(e, reason, session):
   if reason == occupied and ∃ k not done, not pinned, station(k) ≠ station(e):
       offer "Do {k} now, then come back to {e}" (k = first of the remaining exercises in ORD-1 order, D62);
+      k takes e's place and e follows it, so later exercises on e's station wait behind both (D88);
       defer_count(e) += 1
       after MAX_DEFERS deferrals (UI-05) go straight to the candidates below
   v(x) = [groupCoeff(x, g) for the 18 groups] ⊕ [REGION_WEIGHT · coeff(x, r) for the 34 regions]
