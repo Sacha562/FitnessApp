@@ -654,6 +654,51 @@ class CalendarSync(private val c: AppContainer) {
         return null
     }
 
+    /** The app's general event carrying [marker] as it is now (D92): what Undo of a change writes back. */
+    class GeneralState(val marker: Marker, val title: String, val description: String, val end: Instant, val link: CalendarLink)
+
+    fun generalState(marker: Marker): GeneralState? {
+        val s = _snapshot.value
+        val inst = s.instances.values.firstOrNull { Marker.ofDescription(it.description) == marker } ?: return null
+        val link = s.links.firstOrNull { it.markerUuid == marker.uuid && it.slotKey == marker.slotKey } ?: return null
+        return GeneralState(marker, inst.title.orEmpty(), inst.description.orEmpty(), inst.endUtc, link)
+    }
+
+    /**
+     * D92: rewrites the app's general event carrying [from] in place as [to] (title, description with its marker, end;
+     * the start stays), so the provider event and its reminders are kept. A user action: allowed on an event the user
+     * edited too. [to]'s link is stored with the event id; when the marker uuid changes, the old marker's link becomes
+     * `deleted_by_app` (not `released`: two links on one provider event would fight over its synced row). Returns null,
+     * or the code that stopped it.
+     */
+    suspend fun rewriteGeneral(from: Marker, to: GeneralState, cause: String): String? {
+        val s = _snapshot.value
+        val target = s.target ?: return "no_target"
+        val now = c.clock.now()
+        val inst = s.instances.values.firstOrNull { Marker.ofDescription(it.description) == from } ?: return "gone"
+        if (!inst.beginUtc.isAfter(now)) return "past"
+        val op = WriteOp.Update(inst.eventId, inst.instanceKey, from, to.marker, null, to.end, to.title, to.description, inst.beginUtc)
+        val res = executor.userConfirmed(op, target, s.instances.values.associate { it.eventId to it.calendarId }, now)
+        if (res.applied.isEmpty()) {
+            val code = res.refused.firstOrNull()?.second ?: res.failure ?: "marker_missing"
+            repo.log("calendar_write_failed", mapOf("op" to "update", "error_class" to code))
+            return code
+        }
+        repo.log(
+            "calendar_event_written",
+            mapOf("op" to "update", "kind" to PlanIt.KIND, "instance_key" to inst.instanceKey, "marker_key" to to.marker.slotKey, "cause" to cause, "provider_rows" to 1),
+        )
+        mutex.withLock {
+            if (from.uuid != to.marker.uuid) {
+                val old = repo.links().filter { it.markerUuid == from.uuid }
+                repo.saveLinks(from.uuid, old.map { if (it.slotKey == from.slotKey) it.copy(state = CalendarLink.DELETED_BY_APP) else it }, target.identity)
+            }
+            repo.saveLinks(to.marker.uuid, listOf(to.link.copy(eventId = inst.eventId)), target.identity)
+        }
+        refresh(cause)
+        return null
+    }
+
     /**
      * What the plan wants the unedited "Plan it" events of [weeks] to show (D82 (4)), by marker line; entries of other
      * weeks are kept. A change asks for a refresh, which writes the updates under the edit policy.
@@ -696,7 +741,7 @@ class CalendarSync(private val c: AppContainer) {
         private const val ACCESS_OWNER = 700
         private const val GOOGLE = "com.google"
         private const val TEST_SLOT = "TEST"
-        private const val HUMAN_LINE = "Planned by FitnessApp. If you move this event, the app keeps your new time."
+        const val HUMAN_LINE ="Planned by FitnessApp. If you move this event, the app keeps your new time."
         private val TODOIST = Regex("(?i)todoist")
         private val DAYS = listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun")
         private val DEFAULT_GYM_KEYWORDS = listOf("basic-fit", "basicfit", "basic fit", "ierse pond")

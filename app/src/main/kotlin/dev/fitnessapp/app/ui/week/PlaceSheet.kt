@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.fitnessapp.algo.core.calendar.Marker
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.planning.allocator.Allocation
 import dev.fitnessapp.algo.planning.allocator.SessionType
@@ -52,11 +53,20 @@ import java.util.Locale
 /** The length chips of a placed session (UX 9.4's time chips without the calendar one). */
 private val LENGTHS = listOf(45, 60, 75, 90)
 
+private fun nearestLength(min: Double): Int = LENGTHS.minByOrNull { kotlin.math.abs(it - min) } ?: LENGTHS[2]
+
+/**
+ * A planned general session the day sheet's "Change" opens (D92): the app event's [marker], its [start] (fixed), its
+ * planned [type] and its budget (the event's length minus the changeover).
+ */
+internal class Changing(val marker: Marker, val start: Instant, val type: SessionType?, val budgetMin: Double)
+
 /**
  * "New gym session" for a tapped spot of the Week grid (D84 (1)): the day and start (±30 min), the eight types ranked by
  * what the allocator gives at that time (the ones it cannot fill disabled), the length, the exercise preview, and a
  * banner when the day is a challenge rest day or already has a gym session. [onAdd] writes it with the chosen type and
- * budget.
+ * budget. With [change] it is "Change gym session" (D92): the start fixed, the session's type and length preselected, no
+ * banner, and "Save" once the type or the length differs.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -66,18 +76,20 @@ internal fun PlaceSheet(
     row: WeekRow?,
     at: Instant,
     onDismiss: () -> Unit,
+    change: Changing? = null,
     onAdd: (SessionType, Double) -> Unit,
 ) {
     val zone = PlanningFacts.ZONE
     var start by remember { mutableStateOf(at) }
-    var budget by remember { mutableIntStateOf(LENGTHS[2]) }
+    val initialBudget = remember { change?.let { nearestLength(it.budgetMin) } ?: LENGTHS[2] }
+    var budget by remember { mutableIntStateOf(initialBudget) }
     var ranked by remember { mutableStateOf<List<Pair<SessionType, Allocation>>?>(null) }
     var type by remember { mutableStateOf<SessionType?>(null) }
     var preview by remember { mutableStateOf<PlanItContent.Content?>(null) }
     var building by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        val d = c.profiles.get()?.default_session_min ?: LENGTHS[2]
-        budget = LENGTHS.minByOrNull { kotlin.math.abs(it - d) } ?: LENGTHS[2]
+        if (change != null) return@LaunchedEffect
+        budget = nearestLength((c.profiles.get()?.default_session_min ?: LENGTHS[2]).toDouble())
     }
     LaunchedEffect(start, budget) {
         val r = runCatching { PlanItContent.rank(c, run.plan, start, budget.toDouble()) }.getOrNull().orEmpty()
@@ -85,7 +97,7 @@ internal fun PlaceSheet(
         val usable = r.filter { UiTrim.usable(it.second) }.map { it.first }
         // The plan's suggestion for that day first, then the best the allocator finds at that time.
         val suggested = row?.item?.takeIf { it.kind == WeeklyPlanner.KIND_RECOMMENDED }?.type?.let { runCatching { SessionType.of(it) }.getOrNull() }
-        type = type?.takeIf { it in usable } ?: suggested?.takeIf { it in usable } ?: usable.firstOrNull()
+        type = type?.takeIf { it in usable } ?: change?.type?.takeIf { it in usable } ?: suggested?.takeIf { it in usable } ?: usable.firstOrNull()
     }
     LaunchedEffect(type, start, budget) {
         val t = type ?: return@LaunchedEffect
@@ -100,16 +112,19 @@ internal fun PlaceSheet(
             Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp).navigationBarsPadding().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("New gym session", style = MaterialTheme.typography.titleLarge)
+            Text(if (change != null) "Change gym session" else "New gym session", style = MaterialTheme.typography.titleLarge)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH)) + " · " + "%02d:%02d".format(Locale.ROOT, local.hour, local.minute),
                     style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
                 )
-                LinkButton("−30", { start = start.minusSeconds(1800).takeIf { it.isAfter(c.clock.now()) && Week.localDate(it, zone) == date } ?: start })
-                LinkButton("+30", { start = start.plusSeconds(1800).takeIf { Week.localDate(it, zone) == date } ?: start })
+                // D92: a change keeps the start; moving stays a drag in the grid.
+                if (change == null) {
+                    LinkButton("−30", { start = start.minusSeconds(1800).takeIf { it.isAfter(c.clock.now()) && Week.localDate(it, zone) == date } ?: start })
+                    LinkButton("+30", { start = start.plusSeconds(1800).takeIf { Week.localDate(it, zone) == date } ?: start })
+                }
             }
-            when (row?.kind) {
+            if (change == null) when (row?.kind) {
                 "blocked" -> Banner(
                     "Rest day" + (row.detail?.let { ": $it" } ?: "") + ". Your challenge asks for no gym that day; the session would still be planned.",
                     BannerKind.SAFETY,
@@ -145,8 +160,9 @@ internal fun PlaceSheet(
                 }
                 else -> Unit
             }
+            val changed = change == null || type != change.type || budget != initialBudget
             PrimaryButton(
-                "Add to calendar", onClick = { type?.let { onAdd(it, budget.toDouble()) } }, enabled = type != null && pv != null,
+                if (change != null) "Save" else "Add to calendar", onClick = { type?.let { onAdd(it, budget.toDouble()) } }, enabled = type != null && pv != null && changed,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
         }

@@ -210,6 +210,8 @@ fun WeekRoute(
     var busy by remember { mutableStateOf(false) }
     // A tapped empty spot waiting for its "New gym session" sheet (D84 (1)).
     var placing by remember { mutableStateOf<java.time.Instant?>(null) }
+    // A planned session waiting for its "Change gym session" sheet (D92).
+    var changing by remember { mutableStateOf<Changing?>(null) }
     // Dropped blocks held at their drop place until the reloaded week shows them there (D84 (2)).
     var pending by remember { mutableStateOf<Map<String, Pair<LocalDate, Int>>>(emptyMap()) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
@@ -470,12 +472,32 @@ fun WeekRoute(
             }
         }
     }
+    val ch = changing
+    if (p != null && ch != null && run != null) {
+        PlaceSheet(c, run, null, ch.start, onDismiss = { changing = null }, change = ch) { type, budget ->
+            changing = null
+            if (!busy) {
+                busy = true
+                scope.launch {
+                    val (done, err) = PlanItContent.change(c, run.plan, ch.marker, type, ch.start, budget)
+                    busy = false
+                    tick++
+                    if (done == null) {
+                        snackbar.showSnackbar(changeError(err))
+                    } else if (snackbar.showUndo("Session changed", context) == SnackbarResult.ActionPerformed) {
+                        PlanItContent.undoChange(c, done)?.let { snackbar.showSnackbar(changeError(it)) }
+                        tick++
+                    }
+                }
+            }
+        }
+    }
     val d = day
     if (p != null && d != null) {
         p.rows.firstOrNull { it.date == d }?.let { r ->
             DaySheet(c, p, r, busy, onDismiss = { day = null }, onAction = { a -> act(p, a) }, onOpenToday = { day = null; onOpenToday() }, onMessage = { m ->
                 scope.launch { snackbar.showSnackbar(m) }
-            }, onChanged = { tick++ })
+            }, onChanged = { tick++ }, onChange = { day = null; changing = it })
         }
     }
 }
@@ -486,6 +508,14 @@ private fun planItError(code: String?): String = when (code) {
     "no_snapshot" -> "Couldn't store the plan; try again."
     null -> "Couldn't add to calendar."
     else -> "Couldn't add to calendar: " + errorText(code).replaceFirstChar { it.lowercase() }
+}
+
+private fun changeError(code: String?): String = when (code) {
+    "past" -> "That session has started; it can't be changed now."
+    "gone" -> "The event is no longer in your calendar."
+    "nothing_to_train" -> "Nothing fits that type and length."
+    null -> "Couldn't change the session."
+    else -> "Couldn't change the session: " + errorText(code).replaceFirstChar { it.lowercase() }
 }
 
 /** What the three block looks mean (D83 (2)). */
@@ -528,6 +558,9 @@ private class SheetSession(
     val rows: List<Pair<String, String>>,
     val event: dev.fitnessapp.app.uidet.WeekEvent?,
     val general: Boolean,
+    /** A planned general session's type code and budget (event length minus changeover), for "Change" (D92). */
+    val type: String? = null,
+    val budgetMin: Double? = null,
 )
 
 /**
@@ -565,8 +598,9 @@ private suspend fun sessionsOf(c: AppContainer, p: WeekPage, r: WeekRow, snap: d
         val planned = item.kind == FixedItem.KIND_PLANNED_GYM
         val ev = if (planned) gym.firstOrNull { it.instanceKey == item.key } else null
         val run = p.run
+        val plannedBudget = if (planned) java.time.Duration.between(item.start, item.end).toMinutes() - PlanItContent.changeover(c) else null
         val content = if (run != null && !r.notRecommended) {
-            val budget = if (planned) java.time.Duration.between(item.start, item.end).toMinutes() - PlanItContent.changeover(c) else PlanItContent.budget(c, item)
+            val budget = plannedBudget ?: PlanItContent.budget(c, item)
             runCatching { PlanItContent.build(c, run.plan, item, budget) }.getOrNull()
         } else null
         val time = if (planned) hm(item.start) + "–" + hm(item.end) + note(ev)
@@ -586,6 +620,7 @@ private suspend fun sessionsOf(c: AppContainer, p: WeekPage, r: WeekRow, snap: d
                 else -> "Suggested"
             },
             time, if (r.notRecommended) "This week's plan gives it no sets: its groups are covered, recovering or not wanted." else ready, rows, ev, true,
+            type = item.type, budgetMin = plannedBudget,
         )
     }
     if (out.isEmpty() && r.kind == "done") out += SheetSession(r.title.removeSuffix(" (done)"), "Done", "", null, emptyList(), null, false)
@@ -609,6 +644,7 @@ private fun DaySheet(
     onOpenToday: () -> Unit,
     onMessage: (String) -> Unit,
     onChanged: () -> Unit,
+    onChange: (Changing) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val snap by c.calendar.snapshot.collectAsState()
@@ -668,6 +704,14 @@ private fun DaySheet(
                                         val err = c.calendar.removeGeneral(e.marker, "user_remove")
                                         if (err != null) onMessage(errorText(err)) else { onChanged(); onMessage("Removed from your calendar"); onDismiss() }
                                     }
+                                }, enabled = !busy)
+                                // D92: change type and length of an app general session ahead, also one the user edited.
+                                val changeable = s.general && p.run != null && e.marker?.parsedKey() is SlotKey.General && link != null && anchor != null &&
+                                    (link.state == CalendarLink.ACTIVE || link.state == CalendarLink.USER_MOVED || link.state == CalendarLink.USER_EDITED) &&
+                                    anchor.beginUtc.isAfter(c.clock.now()) && s.budgetMin != null
+                                if (changeable) LinkButton("Change", {
+                                    val t = s.type?.let { runCatching { dev.fitnessapp.algo.planning.allocator.SessionType.of(it) }.getOrNull() }
+                                    onChange(Changing(e.marker!!, anchor!!.beginUtc, t, s.budgetMin!!))
                                 }, enabled = !busy)
                                 LinkButton("Correct", { correct = e.instanceKey })
                             }

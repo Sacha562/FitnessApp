@@ -1544,7 +1544,13 @@ row opens a sheet with the per-exercise contributions this week and the Why for 
 Opens from any day row: the date, the recommended session (exercise list preview, est. minutes,
 reasons), the calendar event (title, time, marker status, classification and "Correct"), a readiness
 preview for the families involved ("legs 100 % recovered"), and actions: Start (today only), Plan
-it, Adopt, Remove app event (with undo), Correct classification.
+it, Adopt, Remove app event (with undo), Change (D92), Correct classification.
+
+Change appears on a planned general session the app wrote that still lies ahead (link `active`, `user_moved` or
+`user_edited`; not on challenge sessions, test days or the user's own events). It opens the New gym session sheet as
+"Change gym session" with the session's type and length preselected and the start fixed (no ±30; moving is a drag);
+"Save" is enabled once the type or the length differs. Saving rewrites the same calendar event (title, exercise lines,
+end) and shows "Session changed · Undo".
 
 ### 10.10 Empty, error and offline
 
@@ -4297,7 +4303,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 | `calendar_classified` | `calendar.classify` classifies an instance (C20) | calendar_event | `instance_key`, `kind` (challenge_session, planned_gym, run, busy, ignored), `slot`?, `type`?, `score`, `features{title_pattern, gym_word, location, duration, all_day, marker, override}`, `classifier_version`, `method` (E23) |
 | `calendar_selection_saved` | calendar selection saved (8.10, 15.6) | none | `count_selected`, `primary_selected` |
 | `calendar_correction` | the user corrects a classification (16.11) | calendar_event | `instance_key`, `from`, `to`, `scope` (event, title_fingerprint) |
-| `calendar_event_written` | the app executed an insert, update or delete of one of its own events (D11; written by ANDROID sections 16.7-16.8) | calendar_event | `op` (insert, update, delete), `kind` (challenge, general), `instance_key`?, `marker_key` (the C37 slot key, for example `oap/A/2026-W42` or `gen/2026-W41/3`), `cause` (auto, plan_it, undo, postpone, pause, abandon), `provider_rows` |
+| `calendar_event_written` | the app executed an insert, update or delete of one of its own events (D11; written by ANDROID sections 16.7-16.8) | calendar_event | `op` (insert, update, delete), `kind` (challenge, general), `instance_key`?, `marker_key` (the C37 slot key, for example `oap/A/2026-W42` or `gen/2026-W41/3`), `cause` (auto, plan_it, undo, postpone, pause, abandon, user_create, user_move, user_remove, user_change), `provider_rows` |
 | `calendar_event_adopted` | Adopt (10.5, 16.11) | calendar_event | `slot`, `instance_key` |
 | `calendar_conflict_resolved` | the user chooses Rename or Keep on an unmarked conflicting event (C36, 10.3) | calendar_event | `instance_key`, `choice` (rename, keep) |
 | `calendar_link_changed` | the post-hoc link of a session to an event is set or changed (C35, 12.3) | session | `from_instance_key`?, `to_instance_key`?, `method` (auto, manual) |

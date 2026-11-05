@@ -14,6 +14,7 @@ import dev.fitnessapp.algo.planning.weekplan.PlanItem
 import dev.fitnessapp.algo.planning.weekplan.WeekPlan
 import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.calendar.CalendarSync
 import dev.fitnessapp.app.uidet.UiTrim
 import java.time.Instant
 import dev.fitnessapp.data.telemetry.EventDraft
@@ -106,6 +107,29 @@ object PlanItContent {
         val err = c.calendar.planIt(uuid, item, content.label, content.lines, cause = "user_create")
         return (if (err == null) Marker(uuid, PlanIt.slotKey(date)) else null) to err
     }
+
+    /** A changed planned session (D92): the event as it was, for Undo, and the marker it carries now. */
+    class Changed(val before: CalendarSync.GeneralState, val marker: Marker)
+
+    /**
+     * "Change" on a planned general session (D92): the app's event carrying [marker] becomes a session of [type] at
+     * [budgetMin] with its start [start] kept: titled by the type, the exercise lines built for its day, the end at the
+     * budget plus the changeover, under a new device uuid on the same day (so its type is read from the title, D82 (4)).
+     * A `user_edited` link becomes `user_moved`. Returns the change for Undo, or the code that stopped it.
+     */
+    suspend fun change(c: AppContainer, plan: WeekPlan, marker: Marker, type: SessionType, start: Instant, budgetMin: Double): Pair<Changed?, String?> {
+        val before = c.calendar.generalState(marker) ?: return null to "gone"
+        val item = placed(type, start, budgetMin)
+        val content = runCatching { build(c, plan, item, budgetMin) }.getOrNull() ?: return null to "nothing_to_train"
+        val e = PlanIt.event(java.util.UUID.randomUUID().toString(), item.copy(label = content.label), PlanningFacts.ZONE, content.lines, changeover(c), CalendarSync.HUMAN_LINE)
+        val state = if (before.link.state == CalendarLink.USER_EDITED) CalendarLink.USER_MOVED else before.link.state
+        val to = CalendarSync.GeneralState(e.marker, e.title, e.description, e.end, PlanIt.link(e, before.link.eventId).copy(state = state))
+        val err = c.calendar.rewriteGeneral(marker, to, "user_change")
+        return (if (err == null) Changed(before, e.marker) else null) to err
+    }
+
+    /** Undo of a change (D92): writes the event back as it was, under its old marker and link. */
+    suspend fun undoChange(c: AppContainer, changed: Changed): String? = c.calendar.rewriteGeneral(changed.marker, changed.before, "undo")
 
     /** Undo of "Plan it" (UX 10.4): deletes the still unmodified event and logs `action_undone`. */
     suspend fun undo(c: AppContainer, marker: Marker, tappedAtMs: Long): String? {
