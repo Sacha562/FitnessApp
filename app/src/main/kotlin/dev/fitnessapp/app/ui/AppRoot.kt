@@ -67,7 +67,7 @@ fun AppRoot(c: AppContainer, route: MutableStateFlow<Routes.Target?>) {
     val state by vm.state.collectAsState()
     when (state.gate) {
         Gate.STARTING, Gate.CHECKING -> LoadingScreen(if (state.gate == Gate.CHECKING) "Checking your account…" else "")
-        Gate.SIGNED_OUT -> SignInScreen(state.busy, state.error, vm::signIn)
+        Gate.SIGNED_OUT -> SignInScreen(state.busy, state.error, vm::signIn, vm::captchaFailed)
         Gate.NOT_ALLOWED -> GateMessageScreen(
             "This account can't use the app yet",
             "The app is invite-only. Ask the owner to add this email.",
@@ -221,7 +221,8 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             entry<AppKey.SignIn> {
                 val s by appVm.state.collectAsState()
                 SignInScreen(
-                    s.busy, s.error, { email, password -> appVm.reauth(email, password) { pop() } },
+                    s.busy, s.error, { email, password, token -> appVm.reauth(email, password, token) { pop() } },
+                    appVm::captchaFailed,
                     initialEmail = c.account.email() ?: "", subtitle = "Your sign-in expired. Sign in again to upload your data.",
                 )
             }

@@ -5,7 +5,8 @@ plugins {
     id("fitness.android.application")
 }
 
-// local.properties (git-ignored): sdk.dir, supabase.url, supabase.publishableKey (ANDROID.md 5.3, 10.1).
+// local.properties (git-ignored): sdk.dir, supabase.url, supabase.publishableKey, turnstile.siteKey,
+// turnstile.baseUrl (ANDROID.md 5.3, 10.1).
 val localProps = Properties().apply {
     val text = providers.fileContents(rootProject.layout.projectDirectory.file("local.properties")).asText.orNull
     if (text != null) load(text.reader())
@@ -39,6 +40,9 @@ android {
         versionName = "0.$milestone.$gitCount+$gitSha"
         buildConfigField("String", "SUPABASE_URL", "\"${localProp("supabase.url")}\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProp("supabase.publishableKey")}\"")
+        // Turnstile CAPTCHA for password sign-in (D95): public site key; empty builds without the check.
+        buildConfigField("String", "TURNSTILE_SITE_KEY", "\"${localProp("turnstile.siteKey")}\"")
+        buildConfigField("String", "TURNSTILE_BASE_URL", "\"${localProp("turnstile.baseUrl").ifEmpty { "https://chessanvil.com/" }}\"")
         buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
         buildConfigField("boolean", "SYNC_ENABLED", "true")
         buildConfigField("boolean", "USER_CALENDAR_WRITES_ENABLED", "true")

@@ -745,7 +745,12 @@ and access to the fitness schemas is controlled by an allowlist (D3, F1).
 * States: idle, submitting (button shows a progress indicator, fields disabled), error.
 * Errors (inline under the field, never a dialog): "Email or password is wrong." / "No internet. The
   first sign-in needs a connection." / "Too many attempts. Wait a minute and try again." / "Server
-  unreachable (it may be paused). Try again later."
+  unreachable (it may be paused). Try again later." / "Security check failed. Try again." / "Security
+  check could not load. Check your connection and try again."
+* **Security check (D95).** "Sign in" first opens a sheet "Checking that you're not a bot…" with Cancel,
+  where a Cloudflare Turnstile widget (WebView) gets a fresh token for this attempt; the widget is shown
+  only when Cloudflare asks for a click. The token goes with the password sign-in. Builds without a
+  Turnstile site key skip the sheet.
 * No "forgot password" link in v1 (Open issue OI-10).
 * Emits: `onboarding_step_completed {step: signin, duration_ms}`, `signin_failed {error_class}` (no
   email in any payload).
@@ -4338,7 +4343,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 |---|---|---|---|
 | `app_opened` | process start or return to foreground | none | `cold_start` |
 | `screen_viewed` | navigation to a screen or sheet (not on recomposition; at most once per `SCREEN_VIEW_MIN_GAP_MS`) | none | `iso_week_offset`? (Week), `tab_reselected`? |
-| `signin_failed` | sign-in error (8.2) | none | `error_class` (credentials, offline, rate_limited, server) |
+| `signin_failed` | sign-in error (8.2) | none | `error_class` (credentials, offline, rate_limited, captcha, captcha_widget, server) |
 | `allowlist_rejected` | the account is not allowlisted (8.3) | none | (empty; the user id is in the envelope) |
 | `permission_requested` | a runtime permission or settings page is requested | none | `permission` (notifications, exact_alarm, activity_recognition, calendar_read, calendar_write, battery_optimization, promoted_notifications) |
 | `permission_result` | the result returns (8.6) | none | `permission`, `granted`, `can_ask_again` |

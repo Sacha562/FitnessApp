@@ -6,3 +6,8 @@
     *** Companion;
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# The Turnstile WebView bridge (D95) is called from JavaScript by method name.
+-keepclassmembers class dev.fitnessapp.app.ui.auth.TurnstileBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}

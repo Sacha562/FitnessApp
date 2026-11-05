@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.fitnessapp.app.BuildConfig
 import dev.fitnessapp.app.ui.common.FitTextField
 import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.PrimaryButton
@@ -39,15 +41,29 @@ import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.theme.Fit
 
-/** UX 8.2: sign in with the existing account; no sign-up, no stored password. */
+/**
+ * UX 8.2: sign in with the existing account; no sign-up, no stored password. With a Turnstile site key (D95)
+ * "Sign in" first gets a fresh CAPTCHA token, which [onSignIn] receives; without one the token is null.
+ */
 @Composable
 fun SignInScreen(
-    busy: Boolean, error: String?, onSignIn: (String, String) -> Unit,
+    busy: Boolean, error: String?, onSignIn: (email: String, password: String, captchaToken: String?) -> Unit,
+    onCaptchaError: (code: String) -> Unit,
     initialEmail: String = "", subtitle: String = "Sign in with your existing account",
+    siteKey: String = BuildConfig.TURNSTILE_SITE_KEY, captchaBaseUrl: String = BuildConfig.TURNSTILE_BASE_URL,
 ) {
     var email by rememberSaveable { mutableStateOf(initialEmail) }
     var password by rememberSaveable { mutableStateOf("") }
     var show by rememberSaveable { mutableStateOf(false) }
+    var checking by remember { mutableStateOf(false) }
+    if (checking) {
+        TurnstileDialog(
+            siteKey, captchaBaseUrl,
+            onToken = { t -> checking = false; onSignIn(email, password, t) },
+            onError = { c -> checking = false; onCaptchaError(c) },
+            onCancel = { checking = false },
+        )
+    }
     Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
         Column(
             Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 32.dp),
@@ -73,7 +89,10 @@ fun SignInScreen(
             if (busy) {
                 Box(Modifier.fillMaxWidth().height(58.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp) }
             } else {
-                PrimaryButton("Sign in", { onSignIn(email, password) }, Modifier.fillMaxWidth(), enabled = email.isNotBlank() && password.isNotEmpty())
+                PrimaryButton(
+                    "Sign in", { if (siteKey.isEmpty()) onSignIn(email, password, null) else checking = true },
+                    Modifier.fillMaxWidth(), enabled = email.isNotBlank() && password.isNotEmpty() && !checking,
+                )
             }
         }
     }

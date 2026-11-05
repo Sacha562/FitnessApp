@@ -1206,6 +1206,11 @@ object SupabaseFactory {
   by design (RLS protects the data); it is still kept out of git for hygiene and so the repository can be
   made public later without key rotation questions. Claude reads it once through the Supabase MCP
   `get_publishable_keys` tool and writes it to `local.properties` without printing it in chat.
+- CAPTCHA (D95): the shared project has Turnstile CAPTCHA protection on, so password sign-ins carry a
+  `captchaToken`. `local.properties` `turnstile.siteKey` (the chess app's public widget key) and
+  `turnstile.baseUrl` (a hostname in that widget's list, default `https://chessanvil.com/`) reach
+  `BuildConfig.TURNSTILE_SITE_KEY` / `TURNSTILE_BASE_URL`; an empty key builds without the check. The
+  secret key lives only in the Supabase dashboard. Token refreshes need no CAPTCHA.
 - DTOs: hand-written `@Serializable` classes in `:data/remote/dto`. Supabase has no Kotlin type
   generator; `DtoSchemaDriftTest` parses `supabase/snapshots/fitness.types.ts` (generated through the
   Supabase MCP `generate_typescript_types` after each migration) and fails if a DTO's serial names differ
