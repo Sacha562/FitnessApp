@@ -185,7 +185,7 @@ private fun SubScreen(title: String, onBack: () -> Unit, bottom: (@Composable ()
 
 /** You > Data and sync (UX 15.11, ANDROID.md 9.7 and 20.4, D17). [autoExport]: opened from N-EXPORT, starts the monthly export. */
 @Composable
-fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = false) {
+fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = false, onSignIn: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val lastExport by remember { c.exports.observeLastFull() }.collectAsState(initial = null)
@@ -228,7 +228,8 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
                 listOfNotNull(pendingLine(pending), failedLine(dead).takeIf { dead > 0 }).joinToString(" · ").ifEmpty { "All changes uploaded" },
                 style = MaterialTheme.typography.bodyMedium,
             )
-            PrimaryButton("Sync now", {
+            if (state is SyncState.NeedsSignIn) PrimaryButton("Sign in again", onSignIn, Modifier.fillMaxWidth().padding(top = 4.dp))
+            else PrimaryButton("Sync now", {
                 scope.launch {
                     c.fgsEvent("sync_now_tapped", mapOf("outbox_depth" to outbox.first))
                     c.sync.syncNow()

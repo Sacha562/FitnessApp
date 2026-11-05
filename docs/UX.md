@@ -750,6 +750,11 @@ and access to the fitness schemas is controlled by an allowlist (D3, F1).
 * Emits: `onboarding_step_completed {step: signin, duration_ms}`, `signin_failed {error_class}` (no
   email in any payload).
 * Fed by: Supabase auth (`:data`).
+* **Sign in again (D94).** When sync stops in `needs_signin`, the Today banner "Sign in again to upload
+  your data" and the "Sign in again" button on Data and sync (15.11) open this form over the app, with the
+  remembered email filled in and the subtitle "Your sign-in expired. Sign in again to upload your data."
+  Only the remembered account is accepted ("This phone holds the data of y***@e***.com. Sign in with that
+  account."); success closes the form and syncs at once, without the allowlist check or onboarding.
 
 ### 8.3 Allowlist rejection (`onboarding.rejected`)
 

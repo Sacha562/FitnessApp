@@ -39,6 +39,9 @@ sealed interface AppKey {
     /** The test-day wizard (UX 14.9): its overview before Start ([sessionId] null), then the test session. */
     data class TestDay(val enrollmentId: String, val sessionId: String?) : AppKey
 
+    /** Sign in again after the session expired (D94): the sign-in form over the app, the remembered account only. */
+    data object SignIn : AppKey
+
     companion object {
         /** Saved-state form of a key, so the back stack survives recreation and process death. */
         fun encode(k: AppKey): String = when (k) {
@@ -60,6 +63,7 @@ sealed interface AppKey {
             is ChallengeDashboard -> "challenge:" + k.enrollmentId
             is ChallengeSetup -> "challenge_setup:" + k.definitionId
             is TestDay -> "test_day:" + k.enrollmentId + ":" + (k.sessionId ?: "")
+            SignIn -> "sign_in"
         }
 
         fun decode(s: String): AppKey? = when {
@@ -78,6 +82,7 @@ sealed interface AppKey {
             s.startsWith("custom_exercise:") -> CustomExercise(s.removePrefix("custom_exercise:"))
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
             s == "data_sync_export" -> DataSyncExport
+            s == "sign_in" -> SignIn
             s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))
             s.startsWith("challenge_setup:") -> ChallengeSetup(s.removePrefix("challenge_setup:"))
             s.startsWith("test_day:") -> s.removePrefix("test_day:").split(':', limit = 2).takeIf { it.size == 2 }?.let { TestDay(it[0], it[1].ifEmpty { null }) }

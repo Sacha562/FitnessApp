@@ -147,6 +147,11 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         }
     }
 
+    fun openSignIn() {
+        appVm.clearError()
+        push(AppKey.SignIn)
+    }
+
     fun openSession(id: String, via: String) {
         scope.launch {
             // A test session (UX 14.9) resumes in its wizard, any other in the live session.
@@ -180,6 +185,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
                             onSetGoals = { push(AppKey.Preferences) },
                             onOpenWeek = { d -> weekFocus = d; tab = Tab.WEEK },
+                            onSignIn = { openSignIn() },
                         )
                         Tab.WEEK -> dev.fitnessapp.app.ui.week.WeekRoute(
                             c, m, onSetGoals = { push(AppKey.Preferences) }, onOpenCalendars = { push(AppKey.Calendars) },
@@ -210,8 +216,15 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 )
             }
             entry<AppKey.Summary> { k -> SummaryRoute(c, k.sessionId, onDone = { pop() }) }
-            entry<AppKey.DataSync> { DataSyncRoute(c, onBack = { pop() }) }
-            entry<AppKey.DataSyncExport> { DataSyncRoute(c, onBack = { pop() }, autoExport = true) }
+            entry<AppKey.DataSync> { DataSyncRoute(c, onBack = { pop() }, onSignIn = { openSignIn() }) }
+            entry<AppKey.DataSyncExport> { DataSyncRoute(c, onBack = { pop() }, autoExport = true, onSignIn = { openSignIn() }) }
+            entry<AppKey.SignIn> {
+                val s by appVm.state.collectAsState()
+                SignInScreen(
+                    s.busy, s.error, { email, password -> appVm.reauth(email, password) { pop() } },
+                    initialEmail = c.account.email() ?: "", subtitle = "Your sign-in expired. Sign in again to upload your data.",
+                )
+            }
             entry<AppKey.Equipment> { EquipmentRoute(c, onBack = { pop() }) }
             entry<AppKey.Reliability> { ReliabilityRoute(c, onBack = { pop() }) }
             entry<AppKey.Calendars> { dev.fitnessapp.app.ui.calendar.CalendarsRoute(c, onBack = { pop() }) }
@@ -287,6 +300,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     is AppKey.ChallengeDashboard -> "challenges.dashboard"
     is AppKey.ChallengeSetup -> "challenge.setup"
     is AppKey.TestDay -> "test.wizard"
+    AppKey.SignIn -> "onboarding.signin"
 }
 
 /** The screen of an open session: the test-day wizard for a `kind = test` challenge session (UX 14.9), else the live session. */

@@ -3,6 +3,7 @@ package dev.fitnessapp.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.fitnessapp.app.AppContainer
+import dev.fitnessapp.app.ui.auth.mask
 import dev.fitnessapp.data.remote.AccessCheck
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -47,7 +48,34 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
         }
     }
 
-    fun signIn(email: String, password: String) {
+    fun signIn(email: String, password: String) = authenticate(email, password) {
+        c.supabase.auth.currentUserOrNull()?.let { u -> c.account.remember(u.id, u.email) }
+        _state.update { it.copy(email = email.trim()) }
+        check()
+    }
+
+    /**
+     * Sign in again after the session expired (D94): only the remembered account is accepted, so one account's
+     * rows are never uploaded under another; then the upload resumes. No allowlist check, no onboarding.
+     */
+    fun reauth(email: String, password: String, onDone: () -> Unit) = authenticate(email, password) {
+        val u = c.supabase.auth.currentUserOrNull()
+        val remembered = c.account.userId()
+        if (u == null || (remembered != null && u.id != remembered)) {
+            runCatching { c.supabase.auth.signOut() }
+            val who = c.account.email()?.let(::mask) ?: "another account"
+            _state.update { it.copy(error = "This phone holds the data of $who. Sign in with that account.") }
+            return@authenticate
+        }
+        c.account.remember(u.id, u.email)
+        _state.update { it.copy(email = u.email ?: email.trim()) }
+        c.sync.syncNow()
+        onDone()
+    }
+
+    fun clearError() = _state.update { it.copy(error = null) }
+
+    private fun authenticate(email: String, password: String, then: suspend () -> Unit) {
         if (_state.value.busy) return
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
@@ -56,9 +84,7 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
                     this.email = email.trim()
                     this.password = password
                 }
-                c.supabase.auth.currentUserOrNull()?.let { u -> c.account.remember(u.id, u.email) }
-                _state.update { it.copy(email = email.trim()) }
-                check()
+                then()
             } catch (e: Exception) {
                 val (cls, msg) = when {
                     e is java.io.IOException || e::class.simpleName == "HttpRequestException" -> "offline" to "No internet. The first sign-in needs a connection."

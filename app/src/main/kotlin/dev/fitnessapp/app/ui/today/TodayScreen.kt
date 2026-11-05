@@ -94,7 +94,7 @@ fun TodayRoute(
     c: AppContainer, modifier: Modifier, onOpenSession: (id: String, resumed: Boolean) -> Unit, onOpenSync: () -> Unit, onOpenPast: (String) -> Unit = {},
     onHistory: () -> Unit = {}, onOpenTest: (enrollmentId: String) -> Unit = {},
     onOpenReliability: () -> Unit = {}, onOpenEquipment: () -> Unit = {}, onSetGoals: () -> Unit = {},
-    onOpenWeek: (LocalDate) -> Unit = {},
+    onOpenWeek: (LocalDate) -> Unit = {}, onSignIn: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -267,7 +267,7 @@ fun TodayRoute(
                 scope.launch { c.profiles.set(Setting.AVAILABILITY, json) }
             }
 
-            StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment)
+            StatusRow(c, PendingStatus.of(sync, outbox.first, outbox.second, System.currentTimeMillis(), c.platformConfig.sync), dead, sync, onOpenSync, onOpenReliability, onOpenEquipment, onSignIn)
 
             // The Today card (UX 9.3, D70): the verdict, options, chips and time chips; none on a challenge day (D87).
             plan?.let { p ->
@@ -542,6 +542,7 @@ private fun RecentRow(s: WorkoutSessionEntity, onClick: () -> Unit) {
 @Composable
 private fun StatusRow(
     c: AppContainer, pending: PendingStatus, dead: Int, sync: SyncState, onOpenSync: () -> Unit, onOpenReliability: () -> Unit, onOpenEquipment: () -> Unit,
+    onSignIn: () -> Unit,
 ) {
     val context = LocalContext.current
     // Each problem opens the screen that fixes it: the permissions on Rest timer reliability, the gym on Equipment.
@@ -560,7 +561,9 @@ private fun StatusRow(
         sync is SyncState.Unreachable -> "Can't reach the server; changes are kept on this phone."
         else -> pendingLine(pending)
     }
-    val (line, onClick) = problems.firstOrNull() ?: (syncText ?: return) to onOpenSync
+    // An expired sign-in opens the sign-in form (D94); every other sync line opens Data and sync.
+    val syncAction = if (dead == 0 && sync is SyncState.NeedsSignIn) onSignIn else onOpenSync
+    val (line, onClick) = problems.firstOrNull() ?: (syncText ?: return) to syncAction
     Banner(
         line, BannerKind.ADVISORY, icon = if (problems.isNotEmpty() || dead > 0) Icons.Rounded.Warning else Icons.Rounded.CloudOff,
         onClick = onClick,

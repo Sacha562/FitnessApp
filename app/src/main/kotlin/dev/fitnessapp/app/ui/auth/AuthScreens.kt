@@ -41,8 +41,11 @@ import dev.fitnessapp.app.ui.theme.Fit
 
 /** UX 8.2: sign in with the existing account; no sign-up, no stored password. */
 @Composable
-fun SignInScreen(busy: Boolean, error: String?, onSignIn: (String, String) -> Unit) {
-    var email by rememberSaveable { mutableStateOf("") }
+fun SignInScreen(
+    busy: Boolean, error: String?, onSignIn: (String, String) -> Unit,
+    initialEmail: String = "", subtitle: String = "Sign in with your existing account",
+) {
+    var email by rememberSaveable { mutableStateOf(initialEmail) }
     var password by rememberSaveable { mutableStateOf("") }
     var show by rememberSaveable { mutableStateOf(false) }
     Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
@@ -51,7 +54,7 @@ fun SignInScreen(busy: Boolean, error: String?, onSignIn: (String, String) -> Un
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Fitness", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 44.sp, lineHeight = 48.sp), color = Fit.Accent)
-            Text("Sign in with your existing account", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted)
+            Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = Fit.Muted)
             FitTextField(
                 value = email, onValueChange = { email = it }, label = "Email", singleLine = true, enabled = !busy,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
