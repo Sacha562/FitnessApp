@@ -145,6 +145,14 @@ object PlanIt {
                     val same = l.eventId?.let { instByEvent[it] }.orEmpty()
                     s = if (same.isNotEmpty() && same.none { Marker.ofDescription(it.description) == l.marker }) CalendarLink.RELEASED else CalendarLink.USER_DELETED
                 }
+            } else if ((s == CalendarLink.DELETED_BY_APP || s == CalendarLink.USER_DELETED) && live != null) {
+                // The marked event is in the calendar again (restored, or a delete the calendar's sync undid): the
+                // app's own again, judged against what the app last wrote (ANDROID 16.6).
+                val inst = live.first
+                eventId = inst.eventId
+                val edited = inst.title.orEmpty() != l.lastTitle || Sha256Hex.ofUtf8(inst.description.orEmpty()) != l.lastDescSha256
+                val moved = inst.beginUtc != l.lastStart || inst.endUtc != l.lastEnd
+                s = if (edited) CalendarLink.USER_EDITED else if (moved) CalendarLink.USER_MOVED else CalendarLink.ACTIVE
             }
             val now = l.copy(state = s, eventId = eventId)
             if (now != l) changes += LinkChange(now)

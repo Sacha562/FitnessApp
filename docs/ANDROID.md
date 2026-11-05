@@ -2004,7 +2004,10 @@ definition's `writeBack`:
 | `created_at_ms`, `updated_at_ms` | |
 
 After a reinstall the table is rebuilt by scanning the read window for markers; the found values become
-`last_written_*` (treated as "unchanged"). The synced `calendar_events` row of an app-written event
+`last_written_*` (treated as "unchanged"). A general link in `deleted_by_app` or `user_deleted` whose
+marked event is in the read window again (restored by the user, or a delete the calendar's sync undid,
+seen 2026-11-05) is the app's again: `user_edited` when the title or description differ from
+`last_written_*`, else `user_moved` when the times differ, else `active`. The synced `calendar_events` row of an app-written event
 carries `app_written = true` and the full marker line (DATA_MODEL §9.7.3). The link `state` is mapped
 onto that row's `write_state` (E24) and `attention` columns by the mapping table in DATA_MODEL §9.7.3
 (for example `user_moved` → `attention = moved_externally`, `released` → `edited_externally` with the last

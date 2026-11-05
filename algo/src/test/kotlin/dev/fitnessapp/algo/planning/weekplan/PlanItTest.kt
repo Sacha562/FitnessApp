@@ -110,6 +110,25 @@ class PlanItTest {
     }
 
     @Test
+    fun `a deleted link whose marked event is back is the app's again`() {
+        val gone = PlanIt.link(event, 7).copy(state = CalendarLink.DELETED_BY_APP)
+        val want = mapOf(event.marker.render() to PlanIt.Desired("Gym — Push", ""))
+        // Back unchanged: active, and the plan's updates apply again.
+        val back = PlanIt.updates(input(listOf(instance(event, id = 9)), listOf(gone), want))
+        back.linkChanges.single().link.state shouldBe CalendarLink.ACTIVE
+        back.linkChanges.single().link.eventId shouldBe 9L
+        back.ops.single().shouldBeInstanceOf<WriteOp.Update>().eventId shouldBe 9L
+        // Back at another time: user_moved; with another title: user_edited and left alone.
+        val moved = instance(event, start = event.start.plusSeconds(1800), end = event.end.plusSeconds(1800))
+        PlanIt.updates(input(listOf(moved), listOf(gone.copy(state = CalendarLink.USER_DELETED)))).linkChanges.single().link.state shouldBe CalendarLink.USER_MOVED
+        val edited = PlanIt.updates(input(listOf(instance(event, title = "Gym with Sam")), listOf(gone), want))
+        edited.linkChanges.single().link.state shouldBe CalendarLink.USER_EDITED
+        edited.ops.shouldBeEmpty()
+        // Still gone: unchanged.
+        PlanIt.updates(input(emptyList(), listOf(gone))).linkChanges.shouldBeEmpty()
+    }
+
+    @Test
     fun `a past event and one without a wish are left alone, and a lost link is rebuilt`() {
         val link = PlanIt.link(event, 7)
         val late = PlanIt.UpdateInput(event.start.plusSeconds(60), windowStart, windowEnd, listOf(link), listOf(instance(event)), mapOf(event.marker.render() to PlanIt.Desired("Gym — Push", "")), human)
