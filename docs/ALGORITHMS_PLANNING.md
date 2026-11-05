@@ -2580,7 +2580,7 @@ work(set):  reps · TEMPO_S + PER_SET_S                       // dynamic
             hold_s + HOLD_OVERHEAD_S                          // timed hold (a range uses its midpoint)
             attempts · (hold_s + ATTEMPT_RESET_S)             // OAP top-hold rounds
 unilateral pair (L then R): 2 · work + SIDE_SWITCH_S
-t(e, s) = setup_e + s · (work + rest_e) − rest_e + TRANSITION_S
+t(e, s) = setup_e + s · (work + REST_RATIO · rest_e) − REST_RATIO · rest_e + TRANSITION_S   // REST_RATIO, TRANSITION_S calibrated (17.4, D93)
 warm-up:  challenge block with its own warm-up (OAP warmup10 = 600 s)  → that block's duration
           standalone general session  → GENERAL_WARMUP_S + specific warm-up sets of the first compound
           add-on block                 → specific warm-up sets only (no second general warm-up, C34)
@@ -2596,18 +2596,31 @@ isolation class. Superset members use REST-1's between-member and after-pair res
 performance trade-off, not a hypertrophy requirement (C18, ACSM 2026). During a live session the remaining estimate of
 TIME-1 also feeds the Live Session overrun line, which UX shows when the session is more than 10 min over budget (C63).
 
-### 17.4 Calibration (C19)
+### 17.4 Calibration (C19, D93)
 
-After at least `CALIB_MIN_EXPOSURES` (3) exposures of an exercise, EWMA with α = `EWMA_ALPHA` (0.3), stored in
-`exercise_model_state` (model `time`):
+Two user-level values are calibrated from the finished sessions (D93) and overlay the params, so every TIME-1 caller
+(the minutes shown, UI-02 trimming, the dose estimator, the add-on capacity and the Live Session overrun line) uses the
+user's pace and the effective `params_hash` records it:
 
-* `setup_e` ← first set start − previous exercise's last set end (per exercise);
-* `tempo_user` ← set duration / reps (per user and rest class);
-* `rest_ratio_user` ← actual rest / prescribed rest, read from the canonical `set_logs` columns `rest_before_s` and
-  `rest_timer_planned_s` (C55) (used for predictions only; the timer still uses REST-1);
-* `transition_user` ← gaps between exercises not explained by setup.
+```
+per finished session S (sets ordered by completed_at, id):
+  restObs(S)   = median over consecutive sets a → b of the same session exercise with b.rest_before_s and
+                 b.rest_timer_planned_s > 0 of  b.rest_before_s / b.rest_timer_planned_s
+                 counted when there are ≥ CALIB_MIN_RESTS (3) pairs
+  switchObs(S) = median over switches a → b (b the first set of another session exercise) of
+                 (b.completed_at − a.completed_at) − work(b) − setup(b)
+                 counted when there are ≥ CALIB_MIN_SWITCHES (2) switches
+over the counted sessions in start order (separately for each value):
+  v = calibrate(default, observations)        // EWMA α = EWMA_ALPHA (0.3), default until CALIB_MIN_EXPOSURES (3)
+  v = snap(clamp(v, key range), step)         // rest ratio 0.5-3.0 step 0.05; transition 20-300 s step 5 s
+time.rest_ratio ← rest ratio; time.transition_s ← transition
+```
 
-The `time.calibration` snapshot (scope `user`) is written after each session (DATA_MODEL 10.1).
+`work(b)` is 17.3's work of the logged set (reps, hold seconds or eccentric reps; a logged L/R pair as one set) and
+`setup(b)` the exercise's setup seconds. The median keeps a rare long changeover (a long search for a replacement, a
+chat) from moving the estimate. The rest timer keeps REST-1's value; only predictions use the ratio. The calibration
+is a pure function of the facts and is rebuilt at app start and after each finished session. Still open (C19): a
+per-exercise `setup_e`, `tempo_user` per rest class and the general warm-up.
 
 ### 17.5 Dose estimator for the allocator
 
@@ -2616,7 +2629,8 @@ Before exercises are chosen, the allocator estimates minutes from group-level FS
 
 ```
 estDose(direct, warm) = (warm ? GENERAL_WARMUP_S : 0) + SPECIFIC_WARMUP_SETS · (8 · TEMPO_S + PER_SET_S + 60)
-                        + Σ_g [ x_g · (reps_g · TEMPO_S + PER_SET_S + rest_g) − n_g · rest_g + n_g · (setup_g + TRANSITION_S) ]
+                        + Σ_g [ x_g · (reps_g · TEMPO_S + PER_SET_S + r_g) − n_g · r_g + n_g · (setup_g + TRANSITION_S) ]
+  with r_g = REST_RATIO · rest_g (17.4)
   with n_g = ceil(x_g / 3) exercises assumed per group (about 3 sets each)
 ```
 
@@ -2686,7 +2700,8 @@ if coreDoesNotFit: offer "Short version" (tier-0 sets = ceil(sets / 2), loads un
 
 Constants (§23.17): `TEMPO_S 3`, `PER_SET_S 5`, `ECC_EXTRA_S 2`, `HOLD_OVERHEAD_S 15`, `ATTEMPT_RESET_S 15`,
 `SIDE_SWITCH_S 10`, `TRANSITION_S 60`, `GENERAL_WARMUP_S 600`, `SPECIFIC_WARMUP_SETS 2`, `EWMA_ALPHA 0.3`,
-`CALIB_MIN_EXPOSURES 3`, `MIN_ADDON_MIN 8`, `MIN_SETS_IMPROVE 2`, `MIN_SETS_MAINTAIN 1`, the group profile. All are
+`CALIB_MIN_EXPOSURES 3`, `REST_RATIO 1.0`, `CALIB_MIN_RESTS 3`, `CALIB_MIN_SWITCHES 2`, `CALIB_REST_RATIO_STEP 0.05`,
+`CALIB_TRANSITION_STEP_S 5`, `MIN_ADDON_MIN 8`, `MIN_SETS_IMPROVE 2`, `MIN_SETS_MAINTAIN 1`, the group profile. All are
 starting guesses (exercise-selection lens TIME-1; the UX lens's 4 s/rep, 20 s setup and 90 s transition are replaced
 by these, C19), fitted from timestamps. Logged: session, exercise and set start/end timestamps; predicted versus actual
 minutes per exercise and per session; trimmed items (`session_trimmed`); chosen chip (`time_budget_selected`). Tests:
@@ -2695,7 +2710,8 @@ minutes per exercise and per session; trimmed items (`session_trimmed`); chosen 
 event → budget 85 min, labelled as the calendar budget; no event → 75 min), `trimOrder` (accessory before
 maintain before improve compound), `coreDoesNotFit` (45-min chip on session A → short version offered),
 `ewmaCalibration` (three exposures with 60 s actual setup and 30 s prior → 30 + 0.3·30 = 39, 39 + 0.3·21 = 45.3, 45.3 +
-0.3·14.7 = 49.7 s).
+0.3·14.7 = 49.7 s), `restRatioScalesRest`, `calibrationFromSessions` (per-session medians, EWMA, snap, clamp, the
+default below three sessions) and `calibratedOverlay` (the overlay changes only the two keys and the hash).
 
 ---
 
@@ -3774,11 +3790,16 @@ Superset rests are REST-1's keys (`rest.superset_between_s` 60 s, `rest.min_s`; 
 | `time.hold_overhead_s` | 15 | 5-30 | expert-opinion | UX lens UI-02 | T-TIME |
 | `time.attempt_reset_s` | 15 | 5-30 | expert-opinion | challenge lens | T-TIME |
 | `time.side_switch_s` | 10 | 0-30 | expert-opinion | exercise-selection lens | T-TIME |
-| `time.transition_s` | 60 | 20-180 | expert-opinion | C19 | T-TIME |
+| `time.transition_s` | 60 | 20-300 | expert-opinion | C19; max 300 (D93) | calibrated per user (17.4, D93) |
+| `time.rest_ratio` | 1.0 | 0.5-3.0 | engineering-fact | D93 | calibrated per user (17.4) |
 | `time.general_warmup_s` | 600 | 0-1200 | engineering-fact | C19 (OAP warm-up 10 min) | T-TIME |
 | `time.specific_warmup_sets` | 2 | 0-4 | expert-opinion | WARMUP-1 default | T-TIME |
 | `time.ewma_alpha` | 0.3 | 0.1-0.6 | engineering-fact | C19 | — |
 | `time.calib_min_exposures` | 3 | 1-6 | engineering-fact | exercise-selection lens | — |
+| `time.calib_min_rests` | 3 | 1-10 | engineering-fact | D93 | — |
+| `time.calib_min_switches` | 2 | 1-10 | engineering-fact | D93 | — |
+| `time.calib_rest_ratio_step` | 0.05 | 0.01-0.2 | engineering-fact | D93 | — |
+| `time.calib_transition_step_s` | 5 | 1-30 | engineering-fact | D93 | — |
 | `time.min_addon_min` | 8 | 5-15 | expert-opinion | [this doc] | add-on acceptance |
 | `time.min_sets` | {"improve": 2, "maintain": 1, "accessory": 0} | — | expert-opinion | UX lens UI-02 | trimming acceptance |
 | `time.group_profile` | table §17.5 | — | expert-opinion | [this doc] | T-TIME |

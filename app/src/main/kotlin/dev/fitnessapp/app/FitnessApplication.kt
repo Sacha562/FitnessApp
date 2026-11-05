@@ -61,6 +61,8 @@ class FitnessApplication : Application(), Configuration.Provider {
             suspend fun stepS(name: String, block: suspend () -> Unit) = runCatching { block() }.onFailure { failed += name to it }
             // M3.6: custom exercises join the catalog before anything resolves an exercise id.
             stepS("custom_exercises") { container.customExercises.attach(container.appScope) }
+            // D93: TIME-1's estimates use the user's calibrated rest ratio and changeover from the first plan on.
+            stepS("time_calibration") { container.recalibrateTime() }
             stepS("rest_timer_recovery") { container.restTimer.reconcile() }
             stepS("crash_report") { reportCrashes() }
             stepS("equipment_upgrade") { EquipmentUpgrade.addMissingTypes(container.equipment) }
@@ -80,6 +82,8 @@ class FitnessApplication : Application(), Configuration.Provider {
                     container.db.modelStates().observeFactsKey().distinctUntilChanged().debounce(ESTIMATION_DEBOUNCE_MS).collect {
                         // run() returns at once when nobody is signed in.
                         runCatching { container.estimation.run() }.onFailure { Log.w("Estimation", "L8 run failed", it) }
+                        // D93: a finished (or edited) session moves TIME-1's calibration.
+                        runCatching { container.recalibrateTime() }.onFailure { Log.w("TimeCalibration", "calibration failed", it) }
                     }
                 }
             }

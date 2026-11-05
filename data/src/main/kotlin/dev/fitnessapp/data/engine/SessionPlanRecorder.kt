@@ -37,9 +37,12 @@ class SessionPlanRecorder(
     private val ctx: WriteContext,
     private val scheduler: SyncScheduler,
     private val catalog: CatalogRepository,
-    private val params: ParamView,
+    private val paramsOf: () -> ParamView,
     private val paramsVersion: String,
 ) {
+    /** The effective params now: the bundled defaults with the user's TIME-1 calibration (D93). */
+    private val params: ParamView get() = paramsOf()
+
     suspend fun record(sessionId: String, blockId: String, r: BuildResult, budgetMin: Int): String? {
         val user = ctx.requireUser()
         val session = db.sessions().get(sessionId) ?: return null

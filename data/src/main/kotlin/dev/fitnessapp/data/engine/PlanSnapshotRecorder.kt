@@ -38,9 +38,12 @@ class PlanSnapshotRecorder(
     private val ctx: WriteContext,
     private val scheduler: SyncScheduler,
     private val catalog: CatalogRepository,
-    private val params: ParamView,
+    private val paramsOf: () -> ParamView,
     private val paramsVersion: String,
 ) {
+    /** The effective params now: the bundled defaults with the user's TIME-1 calibration (D93). */
+    private val params: ParamView get() = paramsOf()
+
     /**
      * The `weekplan.plan` snapshot of [plan]. Next week's provisional plan is stored only when [accepted]: a "Plan it"
      * on one of its items makes it the recommendation that event's marker names (D82).

@@ -64,10 +64,11 @@ data class TrimResult(
 )
 
 /**
- * `time@1.0.0` TIME-1 (ALGORITHMS_PLANNING 17, C19, C34, C49, F11): the only duration model of the app. It predicts
+ * `time@1.1.0` TIME-1 (ALGORITHMS_PLANNING 17, C19, C34, C49, F11, D93): the only duration model of the app. It predicts
  * how long a block takes, the allocator's minutes from group-level FS before exercises exist (17.5), the add-on
  * capacity after a challenge session (17.6), the UI-02 trimming for a shorter time chip (17.7), and the EWMA that
- * moves the setup, tempo and rest assumptions towards the user's real pace (17.4). Seconds are on the 0.1 grid.
+ * moves the rest and changeover assumptions towards the user's real pace (17.4, [TimeCalibration]). Seconds are on the
+ * 0.1 grid.
  */
 object TimeModel : DeclaresParams {
     val ref: ModuleRef = ModuleRegistry.ref("time")
@@ -75,6 +76,10 @@ object TimeModel : DeclaresParams {
     override val paramSpecs: List<ParamSpec> = listOf(
         ParamSpec.integer("time.attempt_reset_s", "s per attempt", 5.0, 30.0),
         ParamSpec.integer("time.calib_min_exposures", "exposures", 1.0, 6.0),
+        ParamSpec.integer("time.calib_min_rests", "rest pairs per session", 1.0, 10.0),
+        ParamSpec.integer("time.calib_min_switches", "switches per session", 1.0, 10.0),
+        ParamSpec.number("time.calib_rest_ratio_step", "dimensionless", 0.01, 0.2),
+        ParamSpec.integer("time.calib_transition_step_s", "s", 1.0, 30.0),
         ParamSpec.integer("time.ecc_extra_s", "s per rep", 0.0, 5.0),
         ParamSpec.number("time.ewma_alpha", "dimensionless", 0.1, 0.6),
         ParamSpec.integer("time.general_warmup_s", "s", 0.0, 1200.0),
@@ -83,10 +88,11 @@ object TimeModel : DeclaresParams {
         ParamSpec.integer("time.min_addon_min", "min", 5.0, 15.0),
         ParamSpec.table("time.min_sets", "sets (by trim tier)", 0.0, 5.0),
         ParamSpec.integer("time.per_set_s", "s per set", 0.0, 20.0),
+        ParamSpec.number("time.rest_ratio", "dimensionless", 0.5, 3.0),
         ParamSpec.integer("time.side_switch_s", "s", 0.0, 30.0),
         ParamSpec.integer("time.specific_warmup_sets", "sets", 0.0, 4.0),
         ParamSpec.integer("time.tempo_s", "s per rep", 2.0, 6.0),
-        ParamSpec.integer("time.transition_s", "s", 20.0, 180.0),
+        ParamSpec.integer("time.transition_s", "s", 20.0, 300.0),
     )
 
     /** `work(set)` (17.3): one set, or one L-then-R pair. */
@@ -102,10 +108,14 @@ object TimeModel : DeclaresParams {
         return if (item.unilateralPair) 2.0 * one + params.double("time.side_switch_s") else one
     }
 
-    /** `t(e, s) = setup + s · (work + rest) − rest + TRANSITION_S` (17.3); 0 for an exercise without sets. */
+    /**
+     * `t(e, s) = setup + s · (work + REST_RATIO · rest) − REST_RATIO · rest + TRANSITION_S` (17.3); 0 for an exercise
+     * without sets. REST_RATIO and TRANSITION_S carry the user's calibrated pace (17.4, D93).
+     */
     fun exerciseSeconds(item: TimeItem, params: ParamView): Double {
         if (item.sets <= 0) return 0.0
-        return Grid.s(item.setupS + item.sets * (work(item, params) + item.restS) - item.restS + params.double("time.transition_s"))
+        val rest = item.restS * params.double("time.rest_ratio")
+        return Grid.s(item.setupS + item.sets * (work(item, params) + rest) - rest + params.double("time.transition_s"))
     }
 
     /** The specific warm-up sets of the first compound (17.3): `SPECIFIC_WARMUP_SETS × (8 · TEMPO_S + PER_SET_S + 60)`. */
@@ -138,19 +148,22 @@ object TimeModel : DeclaresParams {
     }
 
     /**
-     * The allocator's dose estimator (17.5), in seconds: warm-up, then per group `x · (reps · TEMPO_S + PER_SET_S + rest)
-     * − n · rest + n · (setup + TRANSITION_S)` with `n = ceil(x / 3)` exercises of about three sets. Groups in canonical order.
+     * The allocator's dose estimator (17.5), in seconds: warm-up, then per group `x · (reps · TEMPO_S + PER_SET_S + r)
+     * − n · r + n · (setup + TRANSITION_S)` with `r = REST_RATIO · rest` and `n = ceil(x / 3)` exercises of about three
+     * sets. Groups in canonical order.
      */
     fun estDose(direct: Map<String, Double>, warm: Boolean, params: ParamView): Double {
         val profile = params.tableArrays("time.group_profile")
         val tempo = params.double("time.tempo_s")
         val perSet = params.double("time.per_set_s")
         val transition = params.double("time.transition_s")
+        val ratio = params.double("time.rest_ratio")
         var s = (if (warm) params.double("time.general_warmup_s") else 0.0) + specificWarmupSeconds(params)
         for (g in Groups.CANONICAL) {
             val x = direct[g] ?: 0.0
             if (x <= 0.0) continue
-            val (reps, rest, setup) = profile.getValue(g)
+            val (reps, restBase, setup) = profile.getValue(g)
+            val rest = restBase * ratio
             val n = kotlin.math.ceil(x / 3.0 - 1e-9)
             s += x * (reps * tempo + perSet + rest) - n * rest + n * (setup + transition)
         }
@@ -166,6 +179,7 @@ object TimeModel : DeclaresParams {
         private val tempo = params.double("time.tempo_s")
         private val perSet = params.double("time.per_set_s")
         private val transition = params.double("time.transition_s")
+        private val ratio = params.double("time.rest_ratio")
         private val generalWarmup = params.double("time.general_warmup_s")
         private val specific = specificWarmupSeconds(params)
 
@@ -174,7 +188,8 @@ object TimeModel : DeclaresParams {
             for (i in direct.indices) {
                 val x = direct[i]
                 if (x <= 0.0) continue
-                val (reps, rest, setup) = requireNotNull(rows[i]) { "time.group_profile lacks ${Groups.CANONICAL[i]}" }
+                val (reps, restBase, setup) = requireNotNull(rows[i]) { "time.group_profile lacks ${Groups.CANONICAL[i]}" }
+                val rest = restBase * ratio
                 val n = kotlin.math.ceil(x / 3.0 - 1e-9)
                 s += x * (reps * tempo + perSet + rest) - n * rest + n * (setup + transition)
             }

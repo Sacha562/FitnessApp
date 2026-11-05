@@ -79,7 +79,7 @@ class ChallengeSessionRepositoryTest {
         challenges = ChallengeRepository(db, outbox, telemetry, ctx, scheduler, params, ChallengeLibrary(params, 5, ::resource), facts)
         sessions = SessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles)
         history = HistoryRepository(db, outbox, telemetry, ctx, scheduler, sessions)
-        live = ChallengeSessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles, challenges, facts, params, 5)
+        live = ChallengeSessionRepository(db, outbox, telemetry, ctx, scheduler, catalog, equipment, bodyweight, profiles, challenges, facts, { params }, 5)
     }
 
     @After

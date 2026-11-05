@@ -13,7 +13,7 @@ import java.time.LocalDate
  */
 class UiProgressTest {
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.5.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.6.json")).readText(Charsets.UTF_8),
     )
     private val day0 = LocalDate.parse("2026-10-05")
     private val bodyweight = ProgressExercise(fBw = 1.0, implementBaseKg = 0.0)

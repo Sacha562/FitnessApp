@@ -77,9 +77,27 @@ class AppContainer(private val context: Context) {
     }
     val telemetry: TelemetryWriter by lazy { TelemetryWriter(db, outbox, writeContext, EventRegistry.bundled()) }
 
-    /** The bundled params 1.0.2 (A8.4); server params and user overrides arrive with later milestones. */
-    val params: ParamView by lazy {
+    /** The bundled params (A8.4); server params and user overrides arrive with later milestones. */
+    val defaultParams: ParamView by lazy {
         ParamView.fromParamsFile(resource("/fitness/params/default-params-$PARAMS_VERSION.json"))
+    }
+
+    @Volatile private var calibratedParams: ParamView? = null
+
+    /**
+     * The effective params: [defaultParams] with the user's TIME-1 calibration (D93) once [recalibrateTime] has run.
+     * Read it per use (it changes after a finished session); `params_hash` records which values a snapshot used.
+     */
+    val params: ParamView get() = calibratedParams ?: defaultParams
+
+    /** TIME-1's calibration inputs (D93). */
+    val timeCalibration: dev.fitnessapp.data.engine.TimeCalibrationFacts by lazy { dev.fitnessapp.data.engine.TimeCalibrationFacts(db, catalog) }
+
+    /** Rebuilds the TIME-1 calibration from the finished sessions (D93); returns the fit for logging. */
+    suspend fun recalibrateTime(): dev.fitnessapp.algo.selection.time.TimeCalibrationResult {
+        val fit = timeCalibration.fit(defaultParams)
+        calibratedParams = dev.fitnessapp.algo.selection.time.TimeCalibration.apply(defaultParams, fit)
+        return fit
     }
     val reasons: ReasonVocabulary by lazy { ReasonVocabulary.parse(resource("/fitness/reference/reason_codes.json")) }
 
@@ -141,17 +159,17 @@ class AppContainer(private val context: Context) {
     val reminders: dev.fitnessapp.app.reminders.ReminderScheduler by lazy { dev.fitnessapp.app.reminders.ReminderScheduler(this, context) }
     val challengeSessions: ChallengeSessionRepository by lazy {
         ChallengeSessionRepository(
-            db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, params, CHANGEOVER_MIN,
+            db, outbox, telemetry, writeContext, syncScheduler, catalog, equipment, bodyweight, profiles, challenges, challengeFacts, { params }, CHANGEOVER_MIN,
             { catalogModel },
         )
     }
     /** The `session.plan` snapshots of built general blocks (D62). */
     val sessionPlans: dev.fitnessapp.data.engine.SessionPlanRecorder by lazy {
-        dev.fitnessapp.data.engine.SessionPlanRecorder(db, outbox, writeContext, syncScheduler, catalog, params, PARAMS_VERSION)
+        dev.fitnessapp.data.engine.SessionPlanRecorder(db, outbox, writeContext, syncScheduler, catalog, { params }, PARAMS_VERSION)
     }
     /** The planner's `weekplan.plan` and `today.options` snapshots (M4.5, D70). */
     val planSnapshots: dev.fitnessapp.data.engine.PlanSnapshotRecorder by lazy {
-        dev.fitnessapp.data.engine.PlanSnapshotRecorder(db, outbox, writeContext, syncScheduler, catalog, params, PARAMS_VERSION)
+        dev.fitnessapp.data.engine.PlanSnapshotRecorder(db, outbox, writeContext, syncScheduler, catalog, { params }, PARAMS_VERSION)
     }
     /** The test-day wizard's storage (UX 14.9). */
     val testDays: dev.fitnessapp.data.challenge.TestDayRepository by lazy {
@@ -286,7 +304,7 @@ class AppContainer(private val context: Context) {
 
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
-        const val PARAMS_VERSION = "1.0.5"
+        const val PARAMS_VERSION = "1.0.6"
 
         /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
         const val CHANGEOVER_MIN = 5

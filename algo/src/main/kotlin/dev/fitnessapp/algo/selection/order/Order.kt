@@ -197,7 +197,8 @@ object Order : DeclaresParams {
     /**
      * One pair (14.2): `between` is REST-1's member rest, `after` REST-1's after-pair rest, `t_pair = setup_a + setup_b
      * + n · (work_a + between + work_b + after) − after + TRANSITION_S` with `n = max(s_a, s_b)`, and the saving
-     * `t(a) + t(b) − t_pair`.
+     * `t(a) + t(b) − t_pair`. The duration takes the rests at TIME-1's calibrated `time.rest_ratio` (17.4, D93); the
+     * returned rests are REST-1's timer values.
      */
     fun pair(a: TimeItem, b: TimeItem, baseA: Double, baseB: Double, params: ParamView): Superset {
         val workA = TimeModel.work(a, params)
@@ -205,7 +206,10 @@ object Order : DeclaresParams {
         val between = RestPolicy.supersetBetween(params)
         val after = RestPolicy.supersetAfterPair(baseA, baseB, workA, workB, params)
         val n = maxOf(a.sets, b.sets)
-        val tPair = Grid.s(a.setupS + b.setupS + n * (workA + between + workB + after) - after + params.double("time.transition_s"))
+        val ratio = params.double("time.rest_ratio")
+        val tPair = Grid.s(
+            a.setupS + b.setupS + n * (workA + ratio * between + workB + ratio * after) - ratio * after + params.double("time.transition_s"),
+        )
         val saved = Grid.s(TimeModel.exerciseSeconds(a, params) + TimeModel.exerciseSeconds(b, params) - tPair)
         return Superset(a.key, b.key, between, after, tPair, saved)
     }

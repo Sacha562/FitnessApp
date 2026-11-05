@@ -90,11 +90,14 @@ class ChallengeSessionRepository(
     private val profiles: ProfileRepository,
     private val challenges: ChallengeRepository,
     private val facts: ChallengeFactsProvider,
-    private val params: ParamView,
+    private val paramsOf: () -> ParamView,
     private val changeoverMin: Int,
     /** The catalog model, for TIME-1's setup times in the block estimate (D62); null leaves the add-on capacity unknown. */
     private val catalogModel: (() -> dev.fitnessapp.algo.selection.catalog.Catalog)? = null,
 ) {
+    /** The effective params now: the bundled defaults with the user's TIME-1 calibration (D93). */
+    private val params: ParamView get() = paramsOf()
+
     /**
      * The plan of [slot] on [date] for the enrollment's current state (Today preview and Start). The block is
      * materialized twice: the second pass carries TIME-1's estimate of the first, so the plan knows its add-on capacity

@@ -28,6 +28,21 @@ class ParamView(private val values: JsonObject) {
 
     fun fork(): ParamView = ParamView(values)
 
+    /**
+     * A view with the numeric values of [numbers] in place of the existing ones (a per-user calibration, D93). Every
+     * key must exist already; the values are written as canonical numbers on the ratio grid (1e-4), so the [hash] is
+     * reproducible.
+     */
+    fun withNumbers(numbers: Map<String, Double>): ParamView {
+        if (numbers.isEmpty()) return fork()
+        val out = java.util.LinkedHashMap(values)
+        for ((k, v) in numbers.toSortedMap()) {
+            require(values.containsKey(k)) { "params key $k is missing" }
+            out[k] = dev.fitnessapp.algo.core.det.JsonNumbers.grid(v, dev.fitnessapp.algo.core.det.GridKind.RATIO)
+        }
+        return ParamView(JsonObject(out))
+    }
+
     /** The resolved `{key: value}` object behind [hash] (stored in `params_snapshots.params`). Not read-tracked. */
     fun values(): JsonObject = values
 
