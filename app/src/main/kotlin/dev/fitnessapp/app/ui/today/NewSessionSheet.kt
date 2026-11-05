@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.today
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -151,7 +152,7 @@ fun NewSessionSheet(
                         )
                     }
                     TileLabel("Time")
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         chips.forEach { ch -> ChipButton(ch.label, selected = ch == chip, onClick = { chip = ch }) }
                     }
                     TileDivider()

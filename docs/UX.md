@@ -1261,6 +1261,7 @@ push (D15, C50): "Train anyway" lists those options.
 
 * Chips: an optional calendar chip, then `45 min`, `60 min`, `75 min`, `90+ min`. "90+ min" means no trimming.
   Every chip is labelled "<minutes> min", the calendar chip too: no "cal" suffix, no icon (D91).
+  The chips stay on one line; the row scrolls horizontally when they do not fit.
 * If today's planned event has a length, the calendar budget is `event duration - 5 min changeover`
   (F11, C49: calendar gym events are training time; travel happens before them). When that equals a
   standard value, the standard chip is preselected (an 80-min event preselects `75 min`);

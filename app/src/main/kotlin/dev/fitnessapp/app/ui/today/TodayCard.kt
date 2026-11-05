@@ -1,5 +1,7 @@
 package dev.fitnessapp.app.ui.today
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -152,7 +154,7 @@ fun TodayCardTile(
         }
         card.notToday.forEach { Text("Not today: $it", style = MaterialTheme.typography.bodySmall, color = Fit.Muted) }
         if (card.state == CardState.OPTIONAL || card.state == CardState.PLANNED || (card.state == CardState.PLANNED_BUT_REST && card.variant == "SOFT")) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 p.chips.forEach { ch -> ChipButton(ch.label, selected = ch == p.chip, onClick = { onChip(ch) }) }
             }
         }

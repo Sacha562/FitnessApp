@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -1308,7 +1309,7 @@ private fun TimeBudgetSheet(c: AppContainer, current: Int?, onDismiss: () -> Uni
         Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Time budget", style = MaterialTheme.typography.titleLarge)
             Text("The rest of the session is trimmed to fit; challenge exercises stay.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 chips.forEach { ch -> ChipButton(ch.label, selected = ch.minutes == current, onClick = { onPick(ch.minutes) }) }
             }
         }
