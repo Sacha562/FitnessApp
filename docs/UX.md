@@ -1136,7 +1136,7 @@ and P10 (logging is never blocked).
 | | ~55 min                         | |
 | | [Planned 19:45] [C 48 h ago]    | |
 | | [Test Sun 13:00]          Why > | |
-| | Time: (85 cal) 45 60 75 90+     | |
+| | Time: (85 min) 45 60 75 90+     | |
 | | Other options >                 | |
 | +---------------------------------+ |
 | HOME                                |
@@ -1152,7 +1152,7 @@ and P10 (logging is never blocked).
 
 The item preview lists at most 3 exercise lines plus "...". Exact sets, loads and the remaining
 items come from `challenge.materialize` in the current mode (`test_pending`, which inherits the
-deload transform). "85 cal" is the calendar budget: the 19:45-21:15 event is training time (travel
+deload transform). The "85 min" chip is the calendar budget: the 19:45-21:15 event is training time (travel
 happens before it; the user's events say "leave 19:35"), so its 90 min minus the 5 min changeover
 (F11, C49). Because 85 is not a standard chip, it is shown first and preselected (19.1.2).
 
@@ -1259,11 +1259,12 @@ push (D15, C50): "Train anyway" lists those options.
 
 ### 9.4 Time-budget chips (F11)
 
-* Chips: an optional calendar chip, then `45 60 75 90+` minutes. "90+" means no trimming.
+* Chips: an optional calendar chip, then `45 min`, `60 min`, `75 min`, `90+ min`. "90+ min" means no trimming.
+  Every chip is labelled "<minutes> min", the calendar chip too: no "cal" suffix, no icon (D91).
 * If today's planned event has a length, the calendar budget is `event duration - 5 min changeover`
   (F11, C49: calendar gym events are training time; travel happens before them). When that equals a
-  standard value, the standard chip is preselected and labelled (an 80-min event gives `75 cal`);
-  otherwise an extra chip is shown first and preselected (the usual 19:45-21:15 events give `85 cal`).
+  standard value, the standard chip is preselected (an 80-min event preselects `75 min`);
+  otherwise an extra chip is shown first and preselected (the usual 19:45-21:15 events give `85 min`).
 * Without a calendar event, the user's default (75 min) is preselected.
 * Selecting a chip re-runs session build for the selected option (L6: `select` with the budget, then
   `time` trimming in the UI-02 tier order, C19). The card updates its est. minutes and shows what
@@ -3526,9 +3527,9 @@ fun budgetChips(e: ClassifiedEvent?, b: BudgetContext): BudgetChips
   if e != null and e.durationMin != null:
       cal = floorTo(e.durationMin - b.changeoverMin, budget_round_min)   # changeover 5 min (F11, C49)
       cal = max(cal, budget_min_chip)
-      if cal >= 90:            chips = standard;       calChip = NO_LIMIT   # labelled "90+ cal"
-      elif cal in standard:    chips = standard;       calChip = cal        # an 80-min event: "75 cal"
-      else:                    chips = [cal] + standard; calChip = cal      # a 90-min event: "85 cal", shown first
+      if cal >= 90:            chips = standard;       calChip = NO_LIMIT   # the "90+ min" chip preselected
+      elif cal in standard:    chips = standard;       calChip = cal        # an 80-min event: "75 min" preselected
+      else:                    chips = [cal] + standard; calChip = cal      # a 90-min event: "85 min", shown first
       selected = b.userSelected ?: calChip; source = if b.userSelected != null then chip else calendar
   else:
       chips = standard
@@ -5154,7 +5155,7 @@ alternatives.
 
 **GF-UX-02 Thursday 8 October 12:00 (`1791453600000`): PLANNED CHALLENGE (Session A).** The option set
 is synthetic (Session A without an add-on); in the owner's real week the primary option is "Session A +
-legs add-on (~14 min)" with the same budget chip "85 cal" (ALGORITHMS_PLANNING section 21.10).
+legs add-on (~14 min)" with the same budget chip "85 min" (ALGORITHMS_PLANNING section 21.10).
 
 Inputs: A event 19:45-21:15 (90 min), matched slot A; `today.verdict = TRAIN`; option `challenge_A`
 reasons `PLANNED_CAL {at: 19:45}` 1.00 (USER), `NEXT_FIXED {slot: test, at: Sun 13:00}` 0.50,
@@ -5169,7 +5170,7 @@ at pin 40 lb; weighted pull-up 2 x 4 at BW + 22.5 kg; top hold 2 rounds x 4 atte
 | title, mode line | "Gym today 19:45 · OAP Session A"; "Deload week: sets halved, loads kept" |
 | chips | "Test Sun 13:00", "A due (1/3 this week)", "Planned 19:45" |
 | preview | "Assisted one-arm pull-up 3 × 3/arm · Pin 40 lb", "Weighted pull-up 2 × 4 · BW + 22.5 kg", "Top hold 2 rounds × 4/arm", more = true |
-| budget chips | 85, 45, 60, 75, 90+; selected 85 labelled "85 cal" (90 - 5, F11, C49), shown first because it is not a standard value; source `calendar` |
+| budget chips | 85, 45, 60, 75, 90+; selected 85 labelled "85 min" (90 - 5, F11, C49), shown first because it is not a standard value; source `calendar` |
 | start label | "Start Session A" |
 | week strip | `- v - * - x T` |
 
@@ -5290,7 +5291,7 @@ change and has no Undo action.
 **GF-UX-09 Sunday 25 October 2026 (DST end): Today and Week 43.** Inputs (synthetic weekplan, block 2
 week 2 after a valid test on 11 October): an app-written (marked) B event Sun 25 Oct 11:00-12:30 CET
 (`1792922400000`-`1792927800000`), slot B; `today.verdict = TRAIN`. At 09:00 CET (`1792915200000`):
-state `PLANNED`, variant `CHALLENGE`, title "Gym today 11:00 · OAP Session B", budget chip "85 cal"
+state `PLANNED`, variant `CHALLENGE`, title "Gym today 11:00 · OAP Session B", budget chip "85 min"
 (90 - 5), block line "OAP block 2 · week 2", week label "Week 43", strip cells Monday 19 to Sunday 25
 October, `today_card_shown.tz_offset_min` = 60. N-HABIT for the daily hang fires at 17:15 CET =
 `1792944900000` (ANDROID.md G8). Two `session_events` rows written at 02:30 local before the change

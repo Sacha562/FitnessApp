@@ -12,14 +12,15 @@ data class TimeChip(val minutes: Int, val label: String, val source: String)
  */
 object UiTrim {
     /**
-     * A calendar budget equal to a standard chip relabels that chip ("75 cal"); any other is an extra chip shown first
-     * ("85 cal"). Then the [standard] chips and "90+" ([maxMin]).
+     * Every chip reads "<minutes> min" (D91). A calendar budget equal to a standard chip makes that chip its source
+     * ("75 min", `calendar`); any other is an extra chip shown first ("85 min"). Then the [standard] chips and
+     * "90+ min" ([maxMin]).
      */
     fun chips(calendarMin: Int?, standard: List<Int>, maxMin: Int): List<TimeChip> {
         val out = ArrayList<TimeChip>()
-        if (calendarMin != null && calendarMin !in standard) out += TimeChip(calendarMin, "$calendarMin cal", "calendar")
-        standard.forEach { m -> out += if (m == calendarMin) TimeChip(m, "$m cal", "calendar") else TimeChip(m, "$m", "chip") }
-        out += TimeChip(maxMin, "90+", "chip")
+        if (calendarMin != null && calendarMin !in standard) out += TimeChip(calendarMin, "$calendarMin min", "calendar")
+        standard.forEach { m -> out += TimeChip(m, "$m min", if (m == calendarMin) "calendar" else "chip") }
+        out += TimeChip(maxMin, "90+ min", "chip")
         return out
     }
 

@@ -151,7 +151,7 @@ fun NewSessionSheet(
                         )
                     }
                     TileLabel("Time")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         chips.forEach { ch -> ChipButton(ch.label, selected = ch == chip, onClick = { chip = ch }) }
                     }
                     TileDivider()

@@ -3338,8 +3338,8 @@ The days after Wednesday assume that the user rested on Wednesday and did Thursd
 
 | Day | Card | Content |
 |---|---|---|
-| Thu 8 | PLANNED (challenge), verdict `TRAIN` | "Gym today 19:45 · OAP Session A", "Deload week: sets halved, loads kept", primary "Session A + legs add-on (~14 min)" (score 0.839); alternatives "Session A + push add-on" (0.703), "Session A only" (0.500); budget chip "85 cal" (90 − 5, C49) |
-| Fri 9 | OPTIONAL **clear**, verdict `TRAIN` (PLANNED general if "Plan it" was tapped; then the budget chip is "50 cal", 55 − 5) | primary "Legs + push + rear delts ~50 min" (1.840); alternatives "Push + rear delts" (1.599), "Push" (1.469); clear because 1.599 < 1.840 × 0.90; chips [Deload week] [Gap day next to A: light pull only] [Chest 0 → 3.6 / 6]; not today: legs-heavy types (`HEAVY_LOWER_GAP`, the Thursday add-on 23 h earlier) |
+| Thu 8 | PLANNED (challenge), verdict `TRAIN` | "Gym today 19:45 · OAP Session A", "Deload week: sets halved, loads kept", primary "Session A + legs add-on (~14 min)" (score 0.839); alternatives "Session A + push add-on" (0.703), "Session A only" (0.500); budget chip "85 min" (90 − 5, C49) |
+| Fri 9 | OPTIONAL **clear**, verdict `TRAIN` (PLANNED general if "Plan it" was tapped; then the budget chip is "50 min", 55 − 5) | primary "Legs + push + rear delts ~50 min" (1.840); alternatives "Push + rear delts" (1.599), "Push" (1.469); clear because 1.599 < 1.840 × 0.90; chips [Deload week] [Gap day next to A: light pull only] [Chest 0 → 3.6 / 6]; not today: legs-heavy types (`HEAVY_LOWER_GAP`, the Thursday add-on 23 h earlier) |
 | Sat 10 | REST (hard), verdict `REST_HARD` | "Test day tomorrow 13:00. OAP rule: no gym the day before a test." |
 | Sun 11 | PLANNED (test), verdict `TRAIN` | "Test day today 13:00", weigh in before the warm-up; no budget chips (fixed protocol) |
 

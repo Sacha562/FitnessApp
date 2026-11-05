@@ -13,12 +13,13 @@ class UiTrimTest {
     @Test
     fun `an 85-minute calendar budget is an extra chip shown first`() {
         UiTrim.chips(85, listOf(45, 60, 75), 180).map { it.label to it.source } shouldBe
-            listOf("85 cal" to "calendar", "45" to "chip", "60" to "chip", "75" to "chip", "90+" to "chip")
+            listOf("85 min" to "calendar", "45 min" to "chip", "60 min" to "chip", "75 min" to "chip", "90+ min" to "chip")
     }
 
     @Test
-    fun `a calendar budget equal to a standard chip relabels it`() {
-        UiTrim.chips(75, listOf(45, 60, 75), 180).map { it.label } shouldBe listOf("45", "60", "75 cal", "90+")
+    fun `a calendar budget equal to a standard chip takes that chip`() {
+        UiTrim.chips(75, listOf(45, 60, 75), 180).map { it.label to it.source } shouldBe
+            listOf("45 min" to "chip", "60 min" to "chip", "75 min" to "calendar", "90+ min" to "chip")
         UiTrim.chips(null, listOf(45, 60, 75), 180).last().minutes shouldBe 180
     }
 

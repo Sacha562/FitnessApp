@@ -1299,7 +1299,7 @@ private fun AddOnHeader(a: AddOnUi, onSkip: () -> Unit, onFamily: (dev.fitnessap
 }
 
 /** The time chips again (UX 11.3): 45 / 60 / 75 / 90+, the current budget selected; a pick trims the rest of the session. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun TimeBudgetSheet(c: AppContainer, current: Int?, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
     val max = c.params.fork().int("today.max_budget_min")
@@ -1308,8 +1308,8 @@ private fun TimeBudgetSheet(c: AppContainer, current: Int?, onDismiss: () -> Uni
         Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Time budget", style = MaterialTheme.typography.titleLarge)
             Text("The rest of the session is trimmed to fit; challenge exercises stay.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                chips.forEach { ch -> ChipButton(ch.label.replace(" cal", " now"), selected = ch.minutes == current, onClick = { onPick(ch.minutes) }) }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                chips.forEach { ch -> ChipButton(ch.label, selected = ch.minutes == current, onClick = { onPick(ch.minutes) }) }
             }
         }
     }
