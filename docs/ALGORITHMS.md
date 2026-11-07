@@ -2080,7 +2080,8 @@ Why sheet) is UI-10 (`ui.warndisplay`, specified in ALGORITHMS_PLANNING 19.5 per
 
 M3.5 build note: the rules that read weekly targets, the time model or the week plan's volume (WE-V2, WE-V4 to V7,
 WE-P8, WE-L1) arrive with M4; WE-V1 and WE-V3 are implemented for their fixtures but not fed yet. WE-S3's repeat-pain
-advice waits for the wellness history read. WE-S4 on the phone covers the rest day before B or TEST, the hard
+advice waits for the wellness history read. WE-S4 on the phone covers the rest day before B or TEST (once per session, entity `session:<id>`, and not at all after
+"Log a session anyway" that day, D103), the hard
 protected windows, the add-on block's forbidden groups and tags, and the gap-day tags with the C50 light-pull filter
 (a pull-family exercise outside that filter is WARN, a session tag the gap day keeps out is SAFETY). An enforced SAFETY
 (the engine clamped its own output) is shown in the notes with a dot, not in the safety slot, because there is

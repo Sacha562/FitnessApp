@@ -136,7 +136,8 @@ object ChallengeConstraints {
             val regions = item.ex.jointStress.filterValues { it >= 2 }.keys.toList()
             val own = tags.filter { contributes(c, item, contract.sessionTagRules[it]) }.toSet()
             val facts = ConstraintFacts(
-                restDayBefore = d.restDay, hardWindows = windows,
+                // D103: the rest day is about the session, not each exercise; it is raised once below.
+                restDayBefore = false, hardWindows = windows,
                 gapDay = !d.challengeDay, gapForbiddenTags = d.gapTags, sessionTags = own, groups = groups, regions = regions,
                 pullFamily = PULL_FAMILY.any { (groups[it] ?: 0.0) >= CREDIT_COEFF },
                 lightPull = item.ex.gripDemand <= maxGrip && (groups["biceps"] ?: 0.0) < bicepsBelow,
@@ -148,8 +149,24 @@ object ChallengeConstraints {
                 windowText(c, item.ex.nameEn, hit, d.windowSpecs[id], groups, regions, own)?.let { texts[textKey(w)] = it }
             }
         }
+        // D103: one rest-day notice per session (entity `session:<id>`), none when the user already chose "Log a session
+        // anyway" on the Today screen that day before starting it (UX 9.3): that choice is the acknowledgement.
+        if (d.restDay && !loggedAnyway(c, session)) out += Warnings.constraint("session:${session.id}", ConstraintFacts(restDayBefore = true))
         return Checked(out, texts)
     }
+
+    /** "Log a session anyway" (`today_action` `log_anyway`) on [session]'s local date, at most a few minutes after it started. */
+    private suspend fun loggedAnyway(c: AppContainer, session: WorkoutSessionEntity): Boolean {
+        val start = session.started_at ?: return false
+        return c.sessionRepository.eventsOfTypes(listOf("today_action")).any { ev ->
+            val action = runCatching { kotlinx.serialization.json.Json.parseToJsonElement(ev.payload).jsonObject["action"]?.jsonPrimitive?.contentOrNull }.getOrNull()
+            action == "log_anyway" && ev.occurred_at <= start + LOG_ANYWAY_SLACK_MS &&
+                java.time.Instant.ofEpochMilli(ev.occurred_at).atZone(dev.fitnessapp.app.planning.PlanningFacts.ZONE).toLocalDate().toString() == session.local_date
+        }
+    }
+
+    /** The `log_anyway` event is written from a coroutine as the session starts, so it may land just after `started_at`. */
+    private const val LOG_ANYWAY_SLACK_MS = 5 * 60_000L
 
     /** D59: [item] is a due habit's exercise and the session's sets of it stay within the habit's dose. */
     private fun habitDose(item: ExerciseItem, items: List<ExerciseItem>, habits: List<HabitExercise>): Boolean {
