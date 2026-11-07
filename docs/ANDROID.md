@@ -1112,7 +1112,7 @@ new event that requires another sync.
 | PostgREST `PGRST106` (schema not exposed) | config | Stop sync; status "fitness schema not exposed (M0 step, F2)"; retry at each app start. |
 | PostgREST `PGRST204`/`42703` (unknown column), `PGRST205` (unknown table) | schema drift | Stop sync for that table and every later table that depends on it; status "server schema older than app"; retry every `sync.schemaDriftRetryMin` (60 min). |
 | `42501` permission denied, and the access check says the user is not allowed | access | Stop all sync; state `not_allowed` (10.4). |
-| `42501` while the user is allowed | grant/RLS bug | Dead-letter the rows of that table, continue with other tables, surface in Sync status. |
+| `42501` while the user is allowed | grant/RLS bug | Dead-letter the rows of that table, continue with other tables, surface in Sync status. A dead-lettered `session_events` row gets no `sync_dead_letter` event (that event would fail the same way, one more per pass). |
 | `23503` foreign-key violation | ordering | Keep the row, `attempts += 1`, `next_attempt_at = now + 2^attempts min`; dead-letter after `sync.fkRetryAttempts` (5). |
 | `23505`, `23514`, `23502`, `22xxx` (unique, check, not-null, data exceptions such as `22P02`, `22003`) | permanent row error | Bisect, dead-letter the failing rows, push the rest. |
 | `25006` (`read_only_sql_transaction`: the Free-plan database is above 500 MB and read-only) | server read-only | Behaviour owned by DATA_MODEL §15.2: keep every outbox row, stop pushing, keep pulling, status "Server storage is full (read-only). Your data is safe on this phone.", retry pushes every `sync.periodicH` (6 h). Nothing is dead-lettered. |
@@ -1256,7 +1256,10 @@ means not allowlisted, because RLS returns `200 []` for every table to a non-all
 | network error | Retry with backoff; the user stays on the sign-in screen with an offline message. |
 
 A `42501` during sync after a successful sign-in triggers the access check again before anything is
-dead-lettered (the allowlist row may have been removed).
+dead-lettered (the allowlist row may have been removed, or the owner has not added a new account yet): not
+allowed stops the run with `not_allowed` and keeps the outbox, so the rows upload once the account is added; a
+failing check ends the run for a retry. Until 2026-11-07 the engine skipped this check for every table but
+`profiles`, and a new, not-yet-allowlisted account dead-lettered thousands of its own telemetry rows.
 
 ### 10.5 Sign-out and account switching
 

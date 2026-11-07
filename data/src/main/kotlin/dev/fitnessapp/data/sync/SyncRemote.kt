@@ -66,6 +66,13 @@ interface SyncRemote {
      * ordered by `(server_updated_at, id)`, at most [limit] rows (a definition table stays small).
      */
     suspend fun pullGlobal(table: String, since: String?, limit: Int): List<JsonObject> = emptyList()
+
+    /**
+     * The access check of ANDROID 10.4 (DATA_MODEL 5.4 read probe), asked after a push was refused with `42501`
+     * before anything is dead-lettered: false means the account is not (or no longer) allowlisted. Throws
+     * [SyncRemoteException] when the probe itself fails.
+     */
+    suspend fun accountAllowed(): Boolean = true
 }
 
 class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
@@ -105,6 +112,10 @@ class PostgrestSyncRemote(private val client: SupabaseClient) : SyncRemote {
                 ignoreDuplicates = true
             }
         }
+    }
+
+    override suspend fun accountAllowed(): Boolean = call {
+        client.from("muscle_groups").select(Columns.list("id")) { limit(1) }.decodeAs<JsonArray>().isNotEmpty()
     }
 
     override suspend fun selectByIds(table: String, ids: List<String>): List<JsonObject> = call {

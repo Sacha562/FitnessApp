@@ -222,7 +222,9 @@ class SyncEngine(
                 }
                 SyncErrorClass.SERVER_READ_ONLY -> throw Stop(RunOutcome.STOPPED, SyncState.ServerReadOnly, pushOnly = true)
                 SyncErrorClass.ACCESS -> {
-                    if (t.name == "profiles") throw Stop(RunOutcome.STOPPED, SyncState.NotAllowed)
+                    // ANDROID 9.5 / 10.4: the access check runs before anything is dead-lettered. An account that is
+                    // not (yet) allowlisted keeps its outbox and stops; its rows upload once the owner adds it.
+                    if (t.name == "profiles" || !accountAllowed()) throw Stop(RunOutcome.STOPPED, SyncState.NotAllowed)
                     for ((e, row) in pairs) deadLetter(t, e, row, ex.failure.httpStatus, ex.failure.code, ex.failure.message, stats)
                     return false
                 }
@@ -426,6 +428,13 @@ class SyncEngine(
         db.openHelper.writableDatabase.execSQL(sql, args)
     }
 
+    /** The access check after a `42501`; a failing probe ends the run for a retry (nothing is dead-lettered). */
+    private suspend fun accountAllowed(): Boolean = try {
+        remote.accountAllowed()
+    } catch (p: SyncRemoteException) {
+        throw Stop(RunOutcome.RETRY, SyncState.Offline)
+    }
+
     private suspend fun deadLetter(
         t: SyncTable<SyncedRow>,
         e: OutboxEntity,
@@ -444,7 +453,9 @@ class SyncEngine(
                 ),
             )
             db.outbox().deleteRow(t.name, row.id)
-            telemetry.write(
+            // A dead-lettered telemetry row gets no telemetry event of its own: that event would be a new
+            // `session_events` row failing the same way, one more per pass.
+            if (t.name != TELEMETRY_TABLE) telemetry.write(
                 EventDraft(
                     type = "sync_dead_letter",
                     entityType = "none",
@@ -522,6 +533,7 @@ class SyncEngine(
 
         /** Guard of [drain]; not a tunable (a pass only finds rows written during the run). */
         private const val MAX_DRAIN_PASSES = 5
+        private const val TELEMETRY_TABLE = "session_events"
 
         /** `server_updated_at` minus the overlap, kept at microsecond precision (ANDROID.md 8.2). */
         fun minusSeconds(serverTs: String, seconds: Long): String =

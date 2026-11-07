@@ -13,6 +13,7 @@ import dev.fitnessapp.data.ids.UuidV7Generator
 import dev.fitnessapp.data.outbox.OutboxWriter
 import dev.fitnessapp.data.repo.WriteContext
 import dev.fitnessapp.data.telemetry.EventRegistry
+import dev.fitnessapp.data.telemetry.EventDraft
 import dev.fitnessapp.data.telemetry.TelemetryWriter
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -42,6 +43,7 @@ class SyncEngineTest {
     private lateinit var engine: SyncEngine
     private lateinit var ctx: WriteContext
     private lateinit var outbox: OutboxWriter
+    private lateinit var telemetry: TelemetryWriter
     private var now = 1_791_482_280_000L
     private val uid = "11111111-1111-4111-8111-111111111111"
 
@@ -53,8 +55,9 @@ class SyncEngineTest {
         ctx = WriteContext(device, "0.1.0-test", Clock { Instant.ofEpochMilli(now) }, { ZoneId.of("Europe/Amsterdam") }, UuidV7Generator({ now }), { uid })
         outbox = OutboxWriter(db)
         remote = FakeRemote(uid)
+        telemetry = TelemetryWriter(db, outbox, ctx, EventRegistry.bundled())
         engine = SyncEngine(
-            db, remote, syncTables(db), outbox, TelemetryWriter(db, outbox, ctx, EventRegistry.bundled()),
+            db, remote, syncTables(db), outbox, telemetry,
             { device.deviceId() }, SyncConfig(pushBatchRows = 50), { now }, "0".repeat(64),
         )
     }
@@ -233,6 +236,50 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `an account that is not allowlisted yet keeps its outbox instead of dead-lettering`() = blocking {
+        writeSession(session("s1"))
+        telemetry.write(EventDraft(type = "app_opened", payload = mapOf("cold_start" to JsonPrimitive(true))))
+        remote.failTable["workout_sessions"] = SyncFailure(403, "42501")
+        remote.failTable["session_events"] = SyncFailure(403, "42501")
+        remote.allowed = false
+        repeat(3) { engine.run("test") shouldBe RunOutcome.STOPPED }
+        engine.state.value shouldBe SyncState.NotAllowed
+        db.deadLetters().all() shouldBe emptyList()
+        db.outbox().pendingCount("workout_sessions", "s1") shouldBe 1
+        // Once the owner adds the account, everything uploads.
+        remote.failTable.clear()
+        remote.allowed = true
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        remote.rows("workout_sessions").keys shouldBe setOf("s1")
+        remote.rows("session_events").values.any { it["event_type"]?.jsonPrimitive?.content == "app_opened" } shouldBe true
+    }
+
+    @Test
+    fun `a failing access check retries later and dead-letters nothing`() = blocking {
+        writeSession(session("s1"))
+        remote.failTable["workout_sessions"] = SyncFailure(403, "42501")
+        remote.probeFails = true
+        engine.run("test") shouldBe RunOutcome.RETRY
+        db.deadLetters().all() shouldBe emptyList()
+        db.outbox().pendingCount("workout_sessions", "s1") shouldBe 1
+    }
+
+    @Test
+    fun `an RLS error of an allowed account dead-letters, and a failed telemetry row adds no event`() = blocking {
+        telemetry.write(EventDraft(type = "app_opened", payload = mapOf("cold_start" to JsonPrimitive(true))))
+        remote.failTable["session_events"] = SyncFailure(403, "42501")
+        engine.run("test")
+        db.deadLetters().all().map { it.table_name } shouldBe listOf("session_events")
+        // Later runs dead-letter at most the run's own sync event: no cascade of sync_dead_letter events.
+        repeat(3) {
+            val before = db.deadLetters().all().size
+            engine.run("test")
+            (db.deadLetters().all().size - before <= 1) shouldBe true
+        }
+        db.events().exportAll().count { it.event_type == "sync_dead_letter" } shouldBe 0
+    }
+
+    @Test
     fun `pull inserts rows of other devices and keeps newer local rows`() = blocking {
         val other = "22222222-2222-4222-8222-222222222222"
         val g = GymEntity(id = "g1", user_id = uid, client_updated_at = now, device_id = other, app_version = "x", name = "Basic-Fit")
@@ -264,6 +311,15 @@ class SyncEngineTest {
         }
 
         override fun authRefreshPending() = refreshPending
+
+        /** The allowlist answer of the access check; [probeFails] makes the probe itself fail. */
+        var allowed = true
+        var probeFails = false
+
+        override suspend fun accountAllowed(): Boolean {
+            if (probeFails) throw SyncRemoteException(SyncFailure(null, null, network = true))
+            return allowed
+        }
 
         /** Whether a refresh after a 401 succeeds; [refreshes] counts the attempts. */
         var refreshOk = true
