@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 /** UX 13.3 / 16.5 tags and the start line of a SUB-1 candidate. */
 class UiSwapTest {
-    private val doc = CatalogDoc.parse(resource("/fitness/catalog/catalog-1.0.4.json"))
+    private val doc = CatalogDoc.parse(resource("/fitness/catalog/catalog-1.0.5.json"))
     private fun ex(slug: String) = doc.exercises.first { it.slug == slug }
     private fun cand(slug: String, sim: Double, tier: PrefTier) = SubCandidate(slug, 0.9, sim, 1.0, 0.5, 1.0, 0.0, tier)
 

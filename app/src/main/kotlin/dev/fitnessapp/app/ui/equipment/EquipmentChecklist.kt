@@ -29,6 +29,9 @@ data class Checklist(
     val barKg: Double = 20.0,
     /** The plate-loaded 45° leg press's sled mass (D64, D68), stored as its `base_kg`: counted, not shown; null = unknown (F7). */
     val sledKg: Double? = null,
+    /** The plate-loaded calf machines' own moving mass (D101), stored as `base_kg` like the sled; null = unknown. */
+    val calfStandingBaseKg: Double? = null,
+    val calfSeatedBaseKg: Double? = null,
     val dumbbells: List<Double> = defaultDumbbells(),
     /** `kg` or `lb`: most stacks are marked in lb (F7). */
     val stackUnit: String = "lb",
@@ -48,7 +51,7 @@ data class Checklist(
     companion object {
         /** Stations that are not common at Basic-Fit start unticked. */
         private val OPTIONAL = setOf("wide_bar", "rings", "home_bar", "chalk", "dip_belt", "barbell", "dumbbells")
-        val HEAVY_STACKS = setOf("leg_press_seated", "hack_squat", "calf_machine", "hip_thrust_machine")
+        val HEAVY_STACKS = setOf("leg_press_seated", "hack_squat", "hip_thrust_machine")
 
         /** Gym plates are unlimited (F7): 20 per size is the top of the count range and never binds. */
         const val GYM_PLATE_COUNT = 20
@@ -84,6 +87,10 @@ data class Checklist(
                 val o = Json.parseToJsonElement(r.load_scheme).jsonObject
                 c = c.copy(sledKg = (o["base_kg"] ?: o["bar_kg"])?.jsonPrimitive?.doubleOrNull)
             }
+            fun base(t: String) = byType[t]?.takeIf { it.scheme_type == "plates" }?.let { r ->
+                Json.parseToJsonElement(r.load_scheme).jsonObject["base_kg"]?.jsonPrimitive?.doubleOrNull
+            }
+            c = c.copy(calfStandingBaseKg = base("calf_machine_standing"), calfSeatedBaseKg = base("calf_machine"))
             byType["dumbbells"]?.let { r ->
                 val v = Json.parseToJsonElement(r.load_scheme).jsonObject["values"]?.jsonArray?.mapNotNull { it.jsonPrimitive.doubleOrNull }
                 if (!v.isNullOrEmpty()) c = c.copy(dumbbells = v)
@@ -147,6 +154,8 @@ data class Checklist(
                 "barbell" -> platesScheme(barKg)
                 "smith_machine" -> platesScheme(null)
                 "leg_press" -> platesScheme(null, base = sledKg)
+                "calf_machine_standing" -> platesScheme(null, base = calfStandingBaseKg)
+                "calf_machine" -> platesScheme(null, base = calfSeatedBaseKg)
                 "landmine" -> ownStacks[t.key] ?: landmineScheme()
                 "dumbbells" -> buildJsonObject {
                     put("type", "dumbbells"); put("unit", "kg"); put("per", "hand")
@@ -176,6 +185,8 @@ data class Checklist(
                 calibrationSource = when {
                     t.key == "assisted_pullup_machine" -> "user_estimate"
                     t.key == "leg_press" && sledKg != null -> "measured"
+                    t.key == "calf_machine_standing" && calfStandingBaseKg != null -> "measured"
+                    t.key == "calf_machine" && calfSeatedBaseKg != null -> "measured"
                     t.key in ownStacks -> "measured"
                     else -> "default"
                 },

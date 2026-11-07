@@ -622,21 +622,38 @@
     {
       "key": "calf_machine",
       "category": "station",
-      "default_scheme_type": "stack",
+      "default_scheme_type": "plates",
       "default_load_scheme": {
-        "type": "stack",
+        "type": "plates",
         "unit": "kg",
-        "start": null,
-        "step": null,
-        "max": null,
-        "add_on_steps": [],
-        "ratio": 1.0
+        "bar_kg": null,
+        "plates": [
+          {"kg": 25, "count": 4}, {"kg": 20, "count": 4}, {"kg": 15, "count": 4}, {"kg": 10, "count": 4}, {"kg": 5, "count": 4}, {"kg": 2.5, "count": 4}, {"kg": 1.25, "count": 4}
+        ]
       },
       "portable": false,
-      "label_en": "Calf machine",
-      "label_nl": "Kuitmachine",
+      "label_en": "Seated calf machine",
+      "label_nl": "Zittende kuitmachine",
       "active": true,
       "sort": 260
+    },
+    {
+      "key": "calf_machine_standing",
+      "category": "station",
+      "default_scheme_type": "plates",
+      "default_load_scheme": {
+        "type": "plates",
+        "unit": "kg",
+        "bar_kg": null,
+        "plates": [
+          {"kg": 25, "count": 4}, {"kg": 20, "count": 4}, {"kg": 15, "count": 4}, {"kg": 10, "count": 4}, {"kg": 5, "count": 4}, {"kg": 2.5, "count": 4}, {"kg": 1.25, "count": 4}
+        ]
+      },
+      "portable": false,
+      "label_en": "Standing calf machine",
+      "label_nl": "Staande kuitmachine",
+      "active": true,
+      "sort": 262
     },
     {
       "key": "ab_crunch_machine",

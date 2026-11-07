@@ -42,6 +42,7 @@ import dev.fitnessapp.app.uidet.SnapResult
 import dev.fitnessapp.app.uidet.UiPrefill
 import dev.fitnessapp.app.uidet.UiReasonChips
 import dev.fitnessapp.data.db.Scaled
+import dev.fitnessapp.data.db.entity.GymEquipmentEntity
 import dev.fitnessapp.data.engine.Prescription
 import dev.fitnessapp.data.engine.RxSlot
 import dev.fitnessapp.data.engine.RxTarget
@@ -444,7 +445,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private suspend fun buildFresh(item: ExerciseItem, mode: LoadMode, setIndex: Int, side: String, warmup: Boolean, allSets: List<SetLogEntity>): Card {
         val bw = _ui.value.session?.bodyweight_kg?.let { Scaled.toDouble(it, 2) } ?: last?.s?.bodyweight_kg?.let { Scaled.toDouble(it, 2) }
         val (resolved, points) = c.equipment.loadables(item.ex, mode, bw, params)
-        val history = history(item)
+        val history = history(item, resolved.row, points, mode)
         val todayWorking = item.sets.filter { it.side == side && (it.set_kind == "warmup") == warmup }
         val todayPrev = todayWorking.maxByOrNull { it.set_index }?.let { valuesOf(it) }
         val default = SetValues(mode, defaultNative(points, mode), if (item.ex.measure == "duration") null else DEFAULT_REPS, null)
@@ -521,17 +522,41 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         return withDeviation(base)
     }
 
-    private suspend fun history(item: ExerciseItem): List<HistorySet> {
-        val key = item.se.exercise_id
+    /**
+     * Earlier sessions' working sets of [item] for "last time" and the prefill. A set logged on another equipment row or
+     * calibration (the machine was set up again, or moved from lb to kg) keeps its load, not its typed number: its value
+     * becomes the loadable point nearest to the load it really was (D101), so 130 lb never comes back as 130 kg.
+     */
+    private suspend fun history(item: ExerciseItem, row: GymEquipmentEntity?, points: List<LoadPoint>, mode: LoadMode): List<HistorySet> {
+        val key = item.se.exercise_id + "|" + (row?.id ?: "-") + "|" + (row?.calibration_rev ?: 0)
         historyCache[key]?.let { return it }
-        val rows = c.sessionRepository.history(key, sessionId).filter { it.set.set_kind != "warmup" }
+        val rows = c.sessionRepository.history(item.se.exercise_id, sessionId).filter { it.set.set_kind != "warmup" }
         val h = rows.map { r ->
-            HistorySet(r.set.session_id, java.time.Instant.ofEpochMilli(r.session_started_at ?: r.set.completed_at), r.set.set_index, r.set.side, valuesOf(r.set))
+            val v = valuesOf(r.set)
+            val same = r.set.equipment_id == row?.id && r.set.equipment_calibration_rev == row?.calibration_rev
+            val values = if (same || row == null) v else v.copy(native = convertedNative(r.set, points, mode) ?: v.native)
+            HistorySet(r.set.session_id, java.time.Instant.ofEpochMilli(r.session_started_at ?: r.set.completed_at), r.set.set_index, r.set.side, values)
         }
         // Working-set numbering: history set indexes include warm-ups; renumber working sets 1..n per session and side.
         val renum = h.groupBy { it.sessionId to it.side }.flatMap { (_, l) -> l.sortedBy { it.setIndex }.mapIndexed { i, x -> x.copy(setIndex = i + 1) } }
         historyCache[key] = renum
         return renum
+    }
+
+    /**
+     * The native value on today's equipment of a set logged on other equipment (D101): the point nearest its effective
+     * load (external) or its added load (bodyweight plus external); null when the mode differs or nothing is loadable.
+     */
+    private fun convertedNative(s: SetLogEntity, points: List<LoadPoint>, mode: LoadMode): Double? {
+        if (LoadMode.of(s.load_mode) != mode) return null
+        val p = when (mode) {
+            LoadMode.EXTERNAL -> s.effective_load_kg?.let { Scaled.toDouble(it, 2) }?.let { w ->
+                points.filter { it.wSys != null }.minByOrNull { kotlin.math.abs(it.wSys!! - w) }
+            }
+            LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> Scaled.toDouble(s.added_kg, 2).let { a -> points.minByOrNull { kotlin.math.abs(it.addedKg - a) } }
+            else -> null
+        }
+        return p?.let { nativeOf(it, mode) }
     }
 
     private fun valuesOf(s: SetLogEntity): SetValues {
@@ -550,11 +575,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         else -> p.nativeValue
     }
 
-    /** The native value of the loadable point whose system load is [wSys] (RX-1 and WARMUP-1 plan in `w_sys`). */
+    /**
+     * The native value of the loadable point whose system load is [wSys] (RX-1 and WARMUP-1 plan in `w_sys`). A target
+     * between two points (the equipment changed since RX-1's last load, D101) takes the heaviest point at or below it,
+     * else the lightest point, so the engine's target is never dropped for a stale typed value.
+     */
     private fun nativeAt(points: List<LoadPoint>, mode: LoadMode, wSys: Double): Double? {
         if (mode == LoadMode.BODYWEIGHT) return null
-        return points.filter { it.wSys != null }.minByOrNull { kotlin.math.abs(it.wSys!! - wSys) }
-            ?.takeIf { kotlin.math.abs(it.wSys!! - wSys) < LOAD_EPS_KG }?.let { nativeOf(it, mode) }
+        val loadable = points.filter { it.wSys != null }
+        val exact = loadable.minByOrNull { kotlin.math.abs(it.wSys!! - wSys) }?.takeIf { kotlin.math.abs(it.wSys!! - wSys) < LOAD_EPS_KG }
+        val p = exact ?: loadable.filter { it.wSys!! <= wSys + LOAD_EPS_KG }.maxByOrNull { it.wSys!! } ?: loadable.minByOrNull { it.wSys!! }
+        return p?.let { nativeOf(it, mode) }
     }
 
     /** No history: a light, safe start (most assistance, empty bar, lightest dumbbell or stack step). */
@@ -861,7 +892,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             } ?: listOf(cmd)
             val ids = c.sessionRepository.logSets(cmds)
             val setId = ids.first()
-            historyCache.remove(card.item.se.exercise_id)
+            historyCache.keys.removeIf { it.startsWith(card.item.se.exercise_id + "|") }
             // B9.8: once the probe is logged on every side, RX-1 plans the remaining sets from it.
             if (!card.warmup && card.workIndex == 1 && card.item.rx?.probe == true && card.side != "L") {
                 rxSlot(card.item)?.let { slot -> runCatching { c.prescriptions.followUp(slot) } }

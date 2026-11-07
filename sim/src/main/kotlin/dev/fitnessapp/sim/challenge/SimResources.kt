@@ -12,7 +12,7 @@ import dev.fitnessapp.algo.selection.catalog.CatalogDoc
 /** The bundled `fitness/` resources of `:algo` (catalog, reference data, params, definitions) for the CLI and tests. */
 object SimResources {
     const val PARAMS_FILE: String = "params/default-params-1.0.2.json"
-    const val CATALOG_FILE: String = "catalog/catalog-1.0.4.json"
+    const val CATALOG_FILE: String = "catalog/catalog-1.0.5.json"
 
     /** C49: the profile default changeover. */
     const val CHANGEOVER_MIN: Int = 5

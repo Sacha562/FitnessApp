@@ -119,6 +119,29 @@ class ChecklistSchemeTest {
     }
 
     @Test
+    fun `both calf machines are plate-loaded with their own starting resistance (D101)`() {
+        val c = Checklist.defaults(types).copy(calfStandingBaseKg = 30.4)
+        val rows = c.drafts(types).mapIndexed { i, d ->
+            GymEquipmentEntity(
+                id = "e$i", user_id = "u", client_updated_at = 0L, device_id = "d", app_version = "t",
+                equipment_type = d.equipmentType, label = d.label, available = d.available,
+                scheme_type = d.loadScheme.getValue("type").jsonPrimitive.content,
+                load_scheme = d.loadScheme.toString(), calibration_source = d.calibrationSource,
+            )
+        }
+        val back = Checklist.fromRows(types, c.gymName, rows)
+        back.calfStandingBaseKg shouldBe 30.4
+        back.calfSeatedBaseKg shouldBe null
+        val drafts = back.drafts(types)
+        val standing = drafts.first { it.equipmentType == "calf_machine_standing" }
+        (LoadScheme.parse(standing.loadScheme) as LoadScheme.Plates).baseKg shouldBe 30.4
+        standing.calibrationSource shouldBe "measured"
+        (LoadScheme.parse(drafts.first { it.equipmentType == "calf_machine" }.loadScheme) as LoadScheme.Plates).baseKg shouldBe null
+        val w = Loadables.enumerate(LoadScheme.parse(standing.loadScheme), Loadables.Context(external, null), params)
+        w.first { it.nativeValue == 70.0 }.wSys shouldBe 100.4 // 70 kg of plates on the 30.4 kg machine
+    }
+
+    @Test
     fun `the 45 degree leg press is plate-loaded, shows the plates and counts its sled (D64, D68)`() {
         val c = Checklist.defaults(types)
         LoadScheme.parse(c.drafts(types).first { it.equipmentType == "leg_press" }.loadScheme) shouldBe

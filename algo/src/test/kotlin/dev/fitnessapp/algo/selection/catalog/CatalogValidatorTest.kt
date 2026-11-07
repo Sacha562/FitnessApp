@@ -21,7 +21,7 @@ class CatalogValidatorTest {
         requireNotNull(javaClass.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     private val taxonomy = Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json"))
-    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.4.json"))
+    private val doc = CatalogDoc.parse(resource("catalog/catalog-1.0.5.json"))
     private val catalog = Catalog(doc, taxonomy)
     private val stations: Set<String> = Json.parseToJsonElement(resource("reference/equipment_types.json"))
         .jsonObject.getValue("rows").jsonArray.map { it.jsonObject.getValue("key").jsonPrimitive.content }.toSet()
@@ -51,7 +51,7 @@ class CatalogValidatorTest {
         refs.size shouldBe 15
         val report = CatalogValidator.validate(catalog, stations, challengeLocalSlugs = local, requiredSlugs = local + refs)
         report.issues.map { it.toString() }.shouldBeEmpty()
-        doc.catalogVersion shouldBe "1.0.4"
+        doc.catalogVersion shouldBe "1.0.5"
     }
 
     @Test

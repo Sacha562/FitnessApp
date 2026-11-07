@@ -15,7 +15,7 @@ object TestCatalog {
         requireNotNull(TestCatalog::class.java.getResource("/fitness/$path")) { "missing resource $path" }.readText(Charsets.UTF_8)
 
     val taxonomy: Taxonomy by lazy { Taxonomy.parse(resource("reference/muscle_groups.json"), resource("reference/muscle_regions.json")) }
-    val doc: CatalogDoc by lazy { CatalogDoc.parse(resource("catalog/catalog-1.0.4.json")) }
+    val doc: CatalogDoc by lazy { CatalogDoc.parse(resource("catalog/catalog-1.0.5.json")) }
     val catalog: Catalog by lazy { Catalog(doc, taxonomy) }
 
     /** `body_regions.joint_keys` (code -> joint keys). */

@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.4",
+  "catalog_version": "1.0.5",
   "exercises": [
     {
       "slug": "ab_wheel_rollout",
@@ -8760,7 +8760,7 @@
         "machine"
       ],
       "requires_station": [
-        "calf_machine"
+        "calf_machine_standing"
       ],
       "load_mode": "external",
       "allowed_load_modes": [

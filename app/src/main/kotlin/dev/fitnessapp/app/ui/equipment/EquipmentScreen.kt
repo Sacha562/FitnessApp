@@ -93,6 +93,9 @@ fun EquipmentContent(state: Checklist, vm: EquipmentViewModel) {
                     NumberField("Barbell (kg)", state.barKg) { v -> vm.edit { it.copy(barKg = v) } }
                     NumberField("45° leg press sled (kg), optional", state.sledKg, allowEmpty = true) { v -> vm.edit { it.copy(sledKg = v.takeIf { x -> x > 0 }) } }
                     Hint("The sled's own weight. The leg press shows only the plates; the sled is added in the background.")
+                    NumberField("Standing calf machine start (kg), optional", state.calfStandingBaseKg, allowEmpty = true) { v -> vm.edit { it.copy(calfStandingBaseKg = v.takeIf { x -> x > 0 }) } }
+                    NumberField("Seated calf machine start (kg), optional", state.calfSeatedBaseKg, allowEmpty = true) { v -> vm.edit { it.copy(calfSeatedBaseKg = v.takeIf { x -> x > 0 }) } }
+                    Hint("The resistance with no plates on. Calf machines show only the plates; this is added in the background.")
                 }
             }
 
