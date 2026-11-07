@@ -116,7 +116,7 @@ Supabase stops auto-granting new `public` tables to API roles on 2026-10-30 for 
 
 ### 5.1 Requirements
 
-- Only allowlisted users can read or write any fitness row, including global reference data. Today the allowlist holds only the owner. Adding a friend later is one row (D3).
+- Only allowlisted users can read or write any fitness row, including global reference data. The allowlist holds the owner and, since migration 062 (2026-11-07), one member. Adding a friend is one row (D3): resolve their `auth.users.id` with a read-only lookup of their exact email and insert only the UUID with role `member`.
 - The 5 other chess accounts can authenticate against the shared `auth.users`, but every fitness policy denies them. They see empty results and every write fails with `42501`.
 - The allowlist itself is invisible and unmodifiable from the app.
 - The helper must be cheap: it runs once per statement, not once per row.
@@ -2446,7 +2446,7 @@ The `fitness_review` schema holds the read-only views that Claude Code queries t
 
 ### 14.2 Owner resolution and the review query pattern
 
-Reviews analyse only the data of the person who asked for the review, identified by **their own email address** (D3; the allowlist currently holds only the owner).
+Reviews analyse only the data of the person who asked for the review, identified by **their own email address** (D3; the allowlist holds the owner and one member, 5.1).
 
 1. The email comes from the review session's context (the signed-in user's own address). It is typed into the query at run time and never written into the repository, a migration, a review document or a view definition.
 2. The lookup selects only `auth.users.id`, must return exactly one row, and that row must be in `fitness_private.allowed_users`. Zero or several rows: stop the review and ask the user.
