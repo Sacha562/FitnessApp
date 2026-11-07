@@ -6,6 +6,8 @@ import dev.fitnessapp.algo.estimation.EstimationFixtures.FACTS
 import dev.fitnessapp.algo.estimation.EstimationFixtures.LEG_PRESS
 import dev.fitnessapp.algo.estimation.EstimationFixtures.WPU
 import dev.fitnessapp.algo.estimation.EstimationFixtures.set
+import dev.fitnessapp.algo.estimation.CurveClass
+import dev.fitnessapp.algo.estimation.ExerciseFacts
 import dev.fitnessapp.algo.estimation.LoggedSet
 import dev.fitnessapp.algo.estimation.rircal.RirCal
 import dev.fitnessapp.algo.estimation.sse.Sse
@@ -165,6 +167,52 @@ class AutoregTest {
         Autoreg.deltaToday(listOf(0.02, -0.04), feelingGood = false, params) shouldBe 0.0
         Autoreg.deltaToday(listOf(0.02), feelingGood = false, params) shouldBe 0.0
         Autoreg.deltaToday(listOf(0.02), feelingGood = true, params) shouldBe 0.01
+    }
+
+    /** Lateral raise of 2026-11-06 (D97): DOUBLE 20 kg x 10 / 10 / 9, 8-10 at q* 1, SSE L 3.3548, k 25.71, rest 108 s. */
+    private val lateral = ExerciseFacts("lateral_raise", CurveClass.UPPER_ISOLATION, 0.0, 0.0, sortedMapOf("side_delts" to 1.0))
+    private val latInput = RxInput(
+        exerciseId = lateral.exerciseId, side = "both", isolation = true, highRisk = false, bodyweightOnly = false,
+        scheme = scheme(SchemeKind.RANGE, 8, 10, 1.0), sets = 3, restsS = listOf(108.0),
+        loadables = (1..10).map { it * 2.0 } + (6..25).map { it * 4.0 }, k = 25.7109222021,
+        estimate = RxEstimate(3.3547712188, 0.00122581126247),
+    )
+    private val latPlan = Rx.modelMode(latInput, params.fork()).let { m ->
+        m.copy(mode = RxMode.DOUBLE, sets = m.sets.mapIndexed { n, s -> s.copy(wSys = 20.0, targetReps = listOf(10, 10, 9)[n]) })
+    }
+
+    private fun latSet(n: Int, reps: Int, rir: Double, restS: Double?) =
+        set("r$n", "2026-11-06T20:5$n:00Z", 20.0, reps, rir, exercise = lateral.exerciseId, loadMode = LoadMode.EXTERNAL, restBeforeS = restS)
+
+    private fun latRun(vararg sets: LoggedSet) = Autoreg.evaluate(
+        AutoregInput(latInput, latPlan, Sse.prepare(sets.toList(), FACTS + (lateral.exerciseId to lateral), RirCal.initial(params), params)),
+        params.fork(),
+    )
+
+    @Test
+    fun `sets easier than predicted never lower the load, even when the model predicts failure next (D97)`() {
+        val r = latRun(latSet(1, 10, 3.0, null), latSet(2, 9, 3.0, 54.7))
+        r.trigger shouldBe "consecutive"
+        r.deltas.last()!! shouldBe (3.82 plusOrMinus 0.01)
+        r.rirNextCur!! shouldBe (-0.63 plusOrMinus 0.01) // the model still says the next set at 20 kg fails
+        r.hysteresis!!.rirNextObs!! shouldBe (2.55 plusOrMinus 0.01) // the last set's own capacity says it does not
+        r.hysteresis!!.safetyDrop shouldBe false
+        r.kind.shouldBeNull()
+        r.card shouldBe false
+        ("autoreg.against_evidence" in r.trace) shouldBe true
+    }
+
+    @Test
+    fun `a safety drop after an easier set needs the last set's own capacity to predict failure too (D97)`() {
+        // Set 2: 9 reps with 1 left after 55 s. Still easier than the model (Delta +1.82), but by its own capacity the
+        // next 9 at 20 kg leave about 0 in reserve, below q* - 1: the safety drop stands.
+        val r = latRun(latSet(1, 10, 3.0, null), latSet(2, 9, 1.0, 54.7))
+        r.trigger shouldBe "consecutive"
+        (r.deltas.last()!! > 1.0) shouldBe true
+        r.hysteresis!!.safetyDrop shouldBe true
+        (r.hysteresis!!.rirNextObs!! < 0.0) shouldBe true
+        r.kind shouldBe SuggestionKind.LOAD
+        (r.wNew!! < 20.0) shouldBe true
     }
 
     private fun prepared(sets: List<LoggedSet>) = Sse.prepare(sets, FACTS, RirCal.initial(params), params).filter { it.set.setKind != "warmup" }

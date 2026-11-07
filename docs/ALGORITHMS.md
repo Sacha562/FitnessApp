@@ -1935,7 +1935,12 @@ The long-term update happens only in SSE-1 at session finish; `delta_ex` is a sa
 ```
 re-run RX-1 (B9.5 or B9.6) for the remaining sets with M_use * exp(delta_ex) and the actual F state
 rir_next(w) = predicted RIR of set j+1 at load w
-if rir_next(w_cur) < q* - autoreg.safety_drop_margin (1.0):    load change allowed (safety drop, no -8 % floor)
+evidence    = sign(Delta_j) for triggers (a), (b); -1 for (c); (d) +1 too_easy, -1 too_hard            (D97)
+rir_obs     = rir_next(w_cur) with M_obs = w_last * (1 + (n_fresh_last - 1) / k) (B13.7), same F and targets
+if rir_next(w_cur) < q* - autoreg.safety_drop_margin (1.0)
+   and (evidence < 0 or rir_obs is null or rir_obs < q* - margin): load change allowed (safety drop, no -8 % floor)
+                                                               (an easier set whose own capacity is fine: no safety
+                                                               drop, trace autoreg.safety.observed_ok)
 elif |rir_next(w_cur) - q*| >= autoreg.hysteresis_rir (1.5):   load change allowed
 else:                                                          no load change; RANGE: each remaining set, in order,
                                                                takes the reps inside the range whose predicted RIR is
@@ -1945,6 +1950,8 @@ bounds for a load change (relative to the planned load w_plan of the exercise):
    w_new <= w_plan * (1 + autoreg.delta_max)                          // +6 %
    w_new >= w_plan * (1 + autoreg.delta_min)                          // -8 %, except a safety drop
    raise per suggestion: FIXED / strength goal at most nextHarder(W, w_cur); otherwise w_new <= w_cur * (1 + autoreg.raise_max_rel (0.05))
+direction (D97, except a safety drop): evidence > 0 -> w_new >= w_cur and RANGE reps >= the current target;
+   evidence < 0 -> w_new <= w_cur and reps <= the current target (trace autoreg.against_evidence)
 if w_new == w_cur and no reps change: no card (a Keep outcome never renders)
 ```
 
@@ -1979,10 +1986,11 @@ this item is RULE mode; the challenge rule decides next week's load.)
 **Outputs, logging, tests.** Snapshot `autoreg.suggestion` (scope `session_exercise:<uuid>`):
 `trigger_rule`, `deltas[]` (the `Delta_j` values), `delta_ex`, `kind` (`load`, `reps` or `stop`),
 `proposed {load_point, reps[]}`, `rir_next_cur`, `rir_next_new` (predicted RIR of the next set at the
-current and the proposed load; review keys, D5) and the hysteresis numbers; user response in
+current and the proposed load; review keys, D5) and the hysteresis numbers (with `rir_next_obs`, D97); user response in
 `session_events` (`suggestion_shown`, `suggestion_applied`, `suggestion_kept`, implicit Keep). Review: hit
 rate of post-change predictions, acceptance rate. `AutoregTest` (triggers a-d, limit 1 for general items,
-no card for RULE items, hysteresis, bounds, safety drop, transfer, example, rest refit).
+no card for RULE items, hysteresis, bounds, safety drop, transfer, example, rest refit, the D97 direction and
+observed-capacity safety drop from the lateral raise of 2026-11-06).
 
 ### B13.7 Rest refit of the next set (D69)
 

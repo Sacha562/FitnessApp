@@ -89,7 +89,8 @@
                         "rir_next_cur": 3.16,
                         "deviation": 1.16,
                         "safety_drop": false,
-                        "load_change_allowed": false
+                        "load_change_allowed": false,
+                        "rir_next_obs": 4.81
                     },
                     "card": true,
                     "trace": [
@@ -100,6 +101,6 @@
                 }
             ]
         },
-        "outputs_jcs_sha256": "854c90b803278108e7c11d016cbe65db51793585327bffeae130bde18fd27fe4"
+        "outputs_jcs_sha256": "63a13ca0451c86f5736d091bcacdd5804b0b163861c056d4b98781e997f1b324"
     }
 }

@@ -985,13 +985,22 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val item = card.item
         val mode = card.mode
         val sets = r.proposed.map { RxTarget(it.setIndex, it.side, it.targetReps, it.rir, it.wSys, it.rirPred, it.restS) }
-        val load = r.wNew?.let { w -> card.points.firstOrNull { p -> p.wSys != null && kotlin.math.abs(p.wSys!! - w) < LOAD_EPS_KG }?.let { Numbers.loadMain(it, mode) } ?: (Numbers.num(w, 2) + " kg") }
+        val loadText = { w: Double -> card.points.firstOrNull { p -> p.wSys != null && kotlin.math.abs(p.wSys!! - w) < LOAD_EPS_KG }?.let { Numbers.loadMain(it, mode) } ?: (Numbers.num(w, 2) + " kg") }
+        val load = r.wNew?.let(loadText)
         val title = when (r.kind) {
             SuggestionKind.STOP -> "End ${item.ex.nameEn} here"
             else -> "Next sets: " + (load?.let { "$it × " } ?: "") + sets.joinToString(" ") { it.targetReps?.toString() ?: "?" }
         }
         val d = r.deltas.lastOrNull()
+        val h = r.hysteresis
         val reason = when {
+            // A safety drop is decided by the next set's prediction, not by the trigger: say so (D97).
+            r.kind == SuggestionKind.LOAD && h?.safetyDrop == true && r.wCur != null -> {
+                val at = "At ${loadText(r.wCur!!)} the next set"
+                val aim = "aim is ${Numbers.num(h.qStar, 1)} in reserve"
+                if (h.rirNextCur <= 0.0) "$at is predicted to reach failure; $aim."
+                else "$at is predicted at ${Numbers.num(h.rirNextCur, 1)} in reserve; $aim."
+            }
             r.kind == SuggestionKind.STOP -> when (r.stopReason) {
                 "fatigue" -> "Fatigue: no load near the plan still reaches the rep range."
                 "short_at_failure" -> "Two sets short of the range at 0 in reserve."
@@ -1007,7 +1016,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             title = "Why this suggestion?", summary = reason,
             numbers = buildList {
                 add("Readiness today  " + Numbers.num(r.deltaEx * 100, 1) + " %")
+                d?.let { add("Last set vs prediction  " + (if (it > 0) "+" else "") + Numbers.num(it, 1) + " in reserve") }
                 r.rirNextCur?.let { add("Next set at the current load  " + Numbers.num(it, 1) + " in reserve") }
+                h?.rirNextObs?.let { add("Same, from your last set  " + Numbers.num(it, 1) + " in reserve") }
                 r.rirNextNew?.let { add("Next set as suggested  " + Numbers.num(it, 1) + " in reserve") }
                 r.hysteresis?.let { add("Aim  " + Numbers.num(it.qStar, 1) + " in reserve") }
             },

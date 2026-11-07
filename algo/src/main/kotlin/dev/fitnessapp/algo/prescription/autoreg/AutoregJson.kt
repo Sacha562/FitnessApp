@@ -44,6 +44,7 @@ object AutoregJson {
                 put("deviation", rep(h.deviation))
                 put("safety_drop", h.safetyDrop)
                 put("load_change_allowed", h.loadChangeAllowed)
+                put("rir_next_obs", h.rirNextObs?.let { rep(it) } ?: JsonNull)
             }
         } ?: JsonNull)
         put("card", r.card)

@@ -1977,6 +1977,10 @@ per session, general items only, C46). The UI renders it inside the rest card:
 |      [ Apply ]        [ Keep ]      |
 ```
 
+* The second line gives the reason that set the proposal (D97): the trigger ("About 3.5 more in reserve
+  than predicted.", "8 reps, short of the target.", "You marked the set too easy.") or, for a safety drop,
+  the predicted next set ("At 20 kg the next set is predicted to reach failure; aim is 1 in reserve.").
+  A proposal never goes against its trigger: after easier sets no lighter load and no fewer reps.
 * Never auto-applied (D10, C16). "Keep" is the default: if the user logs the next set without
   tapping either button, that counts as Keep (`suggestion_kept {implicit: true}`).
 * Apply sets the accepted adjustment that `ui.prefill` uses for the remaining sets of that exercise;

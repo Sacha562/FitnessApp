@@ -40,8 +40,18 @@ data class AutoregInput(
     val ruleItem: Boolean = false,
 )
 
-/** The numbers behind a load decision (B13.3): the next set's predicted RIR at the current load against `q*`. */
-data class Hysteresis(val qStar: Double, val rirNextCur: Double, val deviation: Double, val safetyDrop: Boolean, val loadChangeAllowed: Boolean)
+/**
+ * The numbers behind a load decision (B13.3): the next set's predicted RIR at the current load against `q*`.
+ * [rirNextObs] is the same prediction from the last logged set's own capacity (D97), null without one.
+ */
+data class Hysteresis(
+    val qStar: Double,
+    val rirNextCur: Double,
+    val deviation: Double,
+    val safetyDrop: Boolean,
+    val loadChangeAllowed: Boolean,
+    val rirNextObs: Double? = null,
+)
 
 /**
  * `autoreg.suggestion` (B13.6 outputs). [deltas] are `Delta_j` per logged set (null without a RIR); [trigger] the UI-06
@@ -205,10 +215,26 @@ object Autoreg : DeclaresParams {
             flags = RxFlags(), restsS = remaining.map { it.restS ?: i.rx.restsS.last() },
         )
         val rerun = Rx.modelMode(rerunInput, params)
+        // D97: the direction the trigger's evidence points (+1 the sets were easier than the model, -1 harder). A
+        // proposal never moves against it; a safety drop after easier sets also needs the last set's own capacity
+        // (B13.7's fresh-equivalent reps at its load) to predict the next set below q* - margin.
+        val evidence = when (trigger) {
+            "first_set", "consecutive" -> kotlin.math.sign(dj!!)
+            "reps_short" -> -1.0
+            else -> if (last.set.reasonCode == "too_easy") 1.0 else -1.0
+        }
+        val margin = params.double("autoreg.safety_drop_margin")
+        val wLast = last.set.wSys
+        val nFreshLast = last.nFresh
+        val rirObs = if (wLast != null && nFreshLast != null && nFreshLast > 0.0) {
+            predicted(wCur, wLast * (1.0 + (nFreshLast - 1.0) / k), k, targets, fNext, remaining, kc).first()
+        } else null
         val dev = rirCur.first() - s.qStar
-        val safety = rirCur.first() < s.qStar - params.double("autoreg.safety_drop_margin")
+        val modelDanger = rirCur.first() < s.qStar - margin
+        val safety = modelDanger && (evidence < 0.0 || rirObs == null || rirObs < s.qStar - margin)
+        if (modelDanger && !safety) trace += "autoreg.safety.observed_ok"
         val allowed = safety || kotlin.math.abs(dev) >= params.double("autoreg.hysteresis_rir")
-        val hyst = Hysteresis(s.qStar, Grid.rep(rirCur.first()), Grid.rep(dev), safety, allowed)
+        val hyst = Hysteresis(s.qStar, Grid.rep(rirCur.first()), Grid.rep(dev), safety, allowed, rirObs?.let { Grid.rep(it) })
         val strength = s.kind == SchemeKind.FIXED || s.strength
         var wNew = wCur
         if (allowed) {
@@ -221,7 +247,12 @@ object Autoreg : DeclaresParams {
                 wRerun < wCur - EPS -> i.rx.loadables.filter { it < wCur - EPS && it >= maxOf(wRerun, lo) - EPS }.minOrNull() ?: wCur
                 else -> wCur
             }
-            if (wNew == wCur) trace += "autoreg.load.bounded"
+            if (!safety && evidence * (wNew - wCur) < -EPS) {
+                wNew = wCur
+                trace += "autoreg.against_evidence"
+            } else if (wNew == wCur) {
+                trace += "autoreg.load.bounded"
+            }
         } else {
             trace += "autoreg.hysteresis.keep_load"
         }
@@ -236,17 +267,23 @@ object Autoreg : DeclaresParams {
         if (s.kind != SchemeKind.RANGE) return keep.copy(trigger = trigger, rirNextCur = Grid.rep(rirCur.first()), hysteresis = hyst, trace = trace + "autoreg.keep")
 
         // RANGE without a load change (D69): each remaining set takes the reps inside the range whose predicted RIR is
-        // closest to q*, set by set (a set's reps change the fatigue of the next), when that gains at least MIN_GAIN.
+        // closest to q*, set by set (a set's reps change the fatigue of the next), when that gains at least MIN_GAIN;
+        // never fewer reps after easier sets, never more after harder ones (D97).
         val reps = targets.toMutableList()
         var changed = false
+        var held = false
         for (n in reps.indices) {
             val rir = { r: Int -> predicted(wCur, mNew, k, reps.toMutableList().also { it[n] = r }, fNext, remaining, kc)[n] }
-            val best = bestReps(reps[n], s.rLo, s.rHi, s.qStar, rir)
+            val lo = if (evidence > 0.0) maxOf(s.rLo, reps[n]) else s.rLo
+            val hi = if (evidence < 0.0) minOf(s.rHi, reps[n]) else s.rHi
+            if (bestReps(reps[n], s.rLo, s.rHi, s.qStar, rir).let { it < lo || it > hi }) held = true
+            val best = bestReps(reps[n], lo, hi, s.qStar, rir)
             if (best != reps[n]) {
                 reps[n] = best
                 changed = true
             }
         }
+        if (held && "autoreg.against_evidence" !in trace) trace += "autoreg.against_evidence"
         if (!changed) return keep.copy(trigger = trigger, rirNextCur = Grid.rep(rirCur.first()), hysteresis = hyst, trace = trace + "autoreg.keep")
         val rirNew = predicted(wCur, mNew, k, reps, fNext, remaining, kc)
         trace += "autoreg.reps"
