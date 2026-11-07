@@ -219,7 +219,6 @@ internal object PrescriptionGolden {
                 ), params)
                 "constraint" -> out += Warnings.constraint(entity, ConstraintFacts(restDayBefore = bool(c, "rest_day_before")))
                 "load_above_cap" -> Warnings.loadAboveCap(entity, dbl(c, "w"), dbl(c, "w_cap"), bool(c, "rule_item"), bool(c, "hold"))?.let { out += it }
-                "logged_set" -> Warnings.loggedSet(entity, bool(c, "high_risk"), str(c, "set_kind"), "dynamic", opt(c, "rir"), bool(c, "failed_rep"))?.let { out += it }
                 else -> throw IllegalArgumentException("unknown warnings op")
             }
         }

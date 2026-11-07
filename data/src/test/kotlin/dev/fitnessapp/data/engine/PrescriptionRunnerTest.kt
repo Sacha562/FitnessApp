@@ -303,14 +303,14 @@ class PrescriptionRunnerTest {
     }
 
     @Test
-    fun `RIR 0 on a high-risk working set is a WE-S1 notice in the session evaluation`() = blocking {
+    fun `RIR 0 on a high-risk working set raises no WE-S1 notice (D96)`() = blocking {
         history()
         val sid = sessions.start(params)
         val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
         runner.ensure(RxSlot(seId))
         log(sid, seId, 1, 20.0, 9, 0.0)
         val ws = warnings.session(sid)
-        ws.single { it.ruleId == "WE-S1" }.enforced shouldBe false
+        ws.none { it.ruleId == "WE-S1" && !it.enforced } shouldBe true
         warnings.store(sid, ws).shouldNotBeNull()
         warnings.store(sid, ws) shouldBe warnings.store(sid, ws)
         db.recommendations().bySession(WarningRunner.KIND, sid).size shouldBe 1

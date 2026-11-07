@@ -76,14 +76,6 @@ class WarningsTest {
     }
 
     @Test
-    fun `GF-WE-06 a recorded 3RM at RIR 0 gives no WE-S1, a working set does`() {
-        Warnings.loggedSet("ex:wpu", highRisk = true, setKind = "test", contraction = "dynamic", rir = 0.0, failedRep = false).shouldBeNull()
-        Warnings.loggedSet("ex:wpu", highRisk = true, setKind = "working", contraction = "dynamic", rir = 0.0, failedRep = false)!!.severity shouldBe Severity.SAFETY
-        Warnings.loggedSet("ex:wpu", highRisk = true, setKind = "working", contraction = "eccentric", rir = null, failedRep = true).shouldBeNull()
-        Warnings.loggedSet("ex:lp", highRisk = false, setKind = "working", contraction = "dynamic", rir = 0.0, failedRep = false).shouldBeNull()
-    }
-
-    @Test
     fun `GF-WE-07 a HOLD-1 load jump is not evaluated`() {
         Warnings.loadAboveCap("ex:plank", 20.0, 10.5, ruleItem = false, hold = true).shouldBeNull()
     }

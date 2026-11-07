@@ -17,8 +17,7 @@ object WarnTexts {
         val n = w.numbers
         fun num(k: String, d: Int = 0) = n[k]?.let { Numbers.num(it, d) } ?: "?"
         return when (w.ruleId) {
-            "WE-S1" -> if (w.enforced) "$name: target raised to 1 rep in reserve. Safety rule: no sets to failure on this exercise."
-            else "$name: 0 reps in reserve logged. Safety rule: stop at least 1 rep before failure on this exercise."
+            "WE-S1" -> "$name: target raised to 1 rep in reserve. Safety rule: no sets to failure on this exercise."
             "WE-S2" -> when {
                 w.enforced -> "$name: the load was capped at ${num("w_cap", 2)} kg, the largest safe jump from last time."
                 w.severity == Severity.WARN -> "$name: a bigger jump than the general cap; your program rule applies."

@@ -35,7 +35,8 @@ import java.time.LocalDate
 /**
  * WE-1 on the phone for a live session (B15, M3.5): the scheme rules of every engine prescription (D10: only fields
  * the user owns get evidence warnings; WE-S1 binds every source), the cap clamps RX-1 enforced, the SAFETY notices of
- * logged sets (WE-S1, WE-S2 for a manual load above the cap, WE-S5 from AUTO-1's next-set prediction), and the
+ * logged sets (WE-S2 for a manual load above the cap, WE-S5 from AUTO-1's next-set prediction; a logged RIR 0 gives
+ * none, D96), and the
  * history rules WE-P10 and WE-T2. Challenge constraints (WE-S4) need the week plan and are added by the caller.
  * [store] keeps the evaluation as a `warnings.evaluation` snapshot (scope `session:<id>`).
  */
@@ -88,11 +89,6 @@ class WarningRunner(
                 }
             }
             val mine = sets.filter { it.session_exercise_id == se.id && it.set_kind != "warmup" }
-            for (s in mine) {
-                Warnings.loggedSet(
-                    entity, highRisk, s.set_kind, ex.contraction, s.rir_reported?.let { Scaled.toDouble(it, 1) }, "failed_rep" in s.flags,
-                )?.let { out += it }
-            }
             // WE-S2 notice: a manual load above the cap of the last exposure (general items; RULE loads follow the challenge).
             if (se.challenge_item_key == null && rx != null) {
                 val cap = capFor(se.exercise_id, sessionId, highRisk, ex.mechanics == "isolation")

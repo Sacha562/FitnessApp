@@ -90,7 +90,7 @@ data class WindowHit(val id: String, val groups: List<String>, val regions: List
 /**
  * WE-1, the one WarningEngine (ALGORITHMS.md B15, C14, D10): evaluates evidence and safety rules into ranked,
  * de-duplicated violations. Only WE-S1 to WE-S5 are SAFETY; for engine outputs they are `enforced` (the prescription
- * was clamped), for user actions they are notices that never block logging. Display is UI-10's (`ui.warndisplay`).
+ * was clamped), for user actions they are notices that never block logging (a logged RIR 0 raises none, D96). Display is UI-10's (`ui.warndisplay`).
  * Rules that read weekly targets, the time model or the week plan (WE-V2, V4-V7, WE-P8, WE-L1) arrive with M4.
  */
 object Warnings : DeclaresParams {
@@ -183,16 +183,6 @@ object Warnings : DeclaresParams {
     }
 
     // ------------------------------------------------------------------------------------------------ in session
-
-    /**
-     * WE-S1 notice: a logged RIR 0 or failed rep on a `high_risk` working set. Test attempts recorded with "Record"
-     * (`set_kind` `test` or `attempt`, OI-A22) and eccentric-only sets (no RIR, C66) give none.
-     */
-    fun loggedSet(entity: String, highRisk: Boolean, setKind: String, contraction: String, rir: Double?, failedRep: Boolean): Warning? {
-        if (!highRisk || setKind in RECORDED || setKind == "warmup" || contraction == "eccentric") return null
-        if (rir != 0.0 && !failedRep) return null
-        return Warning("WE-S1", Severity.SAFETY, entity, 1.0, "expert-opinion", false, nums("rir" to (rir ?: 0.0)), "keep_q_star", listOf("D10"))
-    }
 
     /**
      * WE-S2: a load above the generic load-jump cap [wCap]. A manual load on a general item is a SAFETY notice; a RULE
@@ -338,7 +328,6 @@ object Warnings : DeclaresParams {
     private fun mag(x: Double) = Grid.ratio(x.coerceIn(0.0, 1.0))
     private fun num(x: Double): String = Grid.decimal(x, GridKind.REP).stripTrailingZeros().toPlainString()
 
-    private val RECORDED = setOf("test", "attempt")
     private val ENFORCED_CAPS = setOf("up", "fast")
 
     /** A group coefficient that counts as training the group in a protected window (a hard set's credit, C44). */
