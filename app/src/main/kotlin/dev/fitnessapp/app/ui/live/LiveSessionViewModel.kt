@@ -53,6 +53,7 @@ import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.db.local.RestTimerEntity
 import dev.fitnessapp.data.repo.LogSetCommand
 import dev.fitnessapp.data.repo.PlannedValues
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import dev.fitnessapp.data.sync.SyncState
@@ -393,8 +394,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             }
         }
         if (snap.s?.status == "in_progress") requestPrescriptions(items)
-        val focus = focusOverride?.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
-            ?: items.firstOrNull { it.open }?.se?.id
+        val focus = focusOf(items, focusOverride)
         if (focus != focusOverride) focusOverride = null
         val item = items.firstOrNull { it.se.id == focus }
         if (focus != null && focus != lastFocus) {
@@ -1316,9 +1316,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
     }
 
-    fun skip(seId: String, reason: String, position: Int) = viewModelScope.launch { c.sessionRepository.skip(seId, reason, position) }
+    // Skip and End release a list-tap focus on the item before the write, so the rebuild it triggers moves on.
+    fun skip(seId: String, reason: String, position: Int): Job {
+        focusOverride = releaseFocus(focusOverride, seId)
+        return viewModelScope.launch { c.sessionRepository.skip(seId, reason, position) }
+    }
 
-    fun endExercise(seId: String, reason: String) = viewModelScope.launch { c.sessionRepository.end(seId, reason) }
+    fun endExercise(seId: String, reason: String): Job {
+        focusOverride = releaseFocus(focusOverride, seId)
+        return viewModelScope.launch { c.sessionRepository.end(seId, reason) }
+    }
 
     fun remove(seId: String) = viewModelScope.launch { c.sessionRepository.remove(seId) }
 
@@ -1787,6 +1794,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
         /** The most extra reps a RIR check takes (B4.3). */
         private const val MAX_CALIB_EXTRA = 30
+
+        /**
+         * The focused item: a list-tap [override] holds while its item is open or still has planned sets left (a
+         * finished or skipped item can be reopened from the list); otherwise the first open item.
+         */
+        fun focusOf(items: List<ExerciseItem>, override: String?): String? =
+            override?.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
+                ?: items.firstOrNull { it.open }?.se?.id
+
+        /** An item that is skipped or ended drops a list-tap focus on it, even with planned sets left. */
+        fun releaseFocus(override: String?, endedId: String): String? = override?.takeIf { it != endedId }
 
         /** "Do {k} now" (D88): [kId] moves to [fromId]'s place and [fromId] follows it; the rest keep their order. */
         fun doNowOrder(ids: List<String>, fromId: String, kId: String): List<String> {
