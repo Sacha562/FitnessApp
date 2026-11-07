@@ -180,18 +180,34 @@ class EquipmentRepository(
         fun byType(t: String) = rows.firstOrNull { it.equipment_type == t }
         val row = when (mode) {
             LoadMode.ASSISTED_MACHINE -> byType("assisted_pullup_machine")
-            LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> byType("dip_belt")
+            LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> if (held(e)) null else byType("dip_belt")
             LoadMode.BODYWEIGHT, LoadMode.ASSISTED_ORDINAL -> null
             LoadMode.EXTERNAL -> e.requiresStation.mapNotNull { byType(it) }.firstOrNull { it.scheme_type != "bodyweight" }
                 ?: CLASS_STATIONS.entries.firstOrNull { it.key in e.equipment }?.let { byType(it.value) }
         }
         val scheme = when {
+            mode == LoadMode.BODYWEIGHT_PLUS_EXTERNAL && held(e) -> heldPlates(byType("barbell"))
             row != null -> parseScheme(row.load_scheme) ?: LoadScheme.Bodyweight
             mode == LoadMode.BODYWEIGHT || mode == LoadMode.ASSISTED_ORDINAL -> LoadScheme.Bodyweight
             mode == LoadMode.ASSISTED_MACHINE -> parseScheme(JsonText.canonical(types.first { it.key == "assisted_pullup_machine" }.defaultLoadScheme!!))!!
             else -> LoadScheme.Bodyweight // no loadable set known: the card falls back to free entry
         }
         return ResolvedEquipment(row, scheme)
+    }
+
+    private fun held(e: CatalogExercise): Boolean = dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in e.tags
+
+    /**
+     * D102: plates held in the hands (the weighted back extension): the gym's plate sizes from the barbell row (the
+     * checklist's default sizes without one), at most [HELD_MAX_PLATES] stacked, no dumbbells and no dip belt.
+     */
+    private fun heldPlates(barbell: GymEquipmentEntity?): LoadScheme {
+        val sizes = (barbell?.let { parseScheme(it.load_scheme) as? LoadScheme.Plates }?.plates?.map { it.kg } ?: DEFAULT_PLATES_KG)
+            .filter { it > 0.0 }.distinct().sortedDescending()
+        return LoadScheme.Belt(
+            plates = sizes.map { dev.fitnessapp.algo.core.load.PlateCount(it, HELD_MAX_PLATES) },
+            maxKg = HELD_MAX_PLATES * (sizes.maxOrNull() ?: 0.0), maxItems = HELD_MAX_PLATES, dumbbellsOnBelt = false,
+        )
     }
 
     /** Loadable options of [e] in [mode] at bodyweight [bwKg] (empty for free-entry equipment). */
@@ -211,6 +227,10 @@ class EquipmentRepository(
     }
 
     companion object {
+        /** D102: plates one person holds at once on a back extension. */
+        const val HELD_MAX_PLATES = 2
+        private val DEFAULT_PLATES_KG = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25)
+
         /** Equipment class (E45) -> the station that loads it when the catalog names none. */
         private val CLASS_STATIONS = linkedMapOf(
             "barbell" to "barbell", "dumbbell" to "dumbbells", "cable" to "cable_station", "smith" to "smith_machine",

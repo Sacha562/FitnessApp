@@ -142,7 +142,7 @@ fun SetEditSheet(
                         ?: logged?.let { "$it (as logged)" }
                         ?: if (set != null) "No weight logged" else "—"
                     StepperRow(
-                        value = label, secondary = index?.let { Numbers.loadSecondary(p[it], mode, unilateral, session.bodyweight_kg?.let { b -> Scaled.toDouble(b, 2) }) },
+                        value = label, secondary = index?.let { Numbers.loadSecondary(p[it], mode, unilateral, session.bodyweight_kg?.let { b -> Scaled.toDouble(b, 2) }, held = dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in ex.tags) },
                         onMinus = { step(harder = assisted) }, onPlus = { step(harder = !assisted) },
                         minusLabel = if (assisted) "harder" else null, plusLabel = if (assisted) "easier" else null,
                     )

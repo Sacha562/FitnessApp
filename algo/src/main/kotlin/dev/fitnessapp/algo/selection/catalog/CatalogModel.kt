@@ -134,8 +134,11 @@ object CatalogDomains {
     val RESERVED_TAGS = listOf(
         "challenge", "prehab", "skill", "core", "hang", "home", "pull_heavy", "grip_heavy", "elbow_flexor_heavy",
         "supinated_curl", "unilateral", "unilateral_pull", "heavy_unilateral", "eccentric", "elbow_stress_high",
-        "axial_heavy", "overhead_press_heavy", "unstrapped_deadlift", "no_grip",
+        "axial_heavy", "overhead_press_heavy", "unstrapped_deadlift", "no_grip", HELD_LOAD,
     )
+
+    /** D102: the added load of a bodyweight-plus-external exercise is held plates (a back extension), not the dip belt. */
+    const val HELD_LOAD: String = "held_load"
     val COEFF_LEVELS = listOf(0.25, 0.5, 0.75, 1.0)
 
     /** CAT-1 V3: a non-exempt exercise needs one region at this coefficient or above (C10). */

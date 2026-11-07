@@ -853,7 +853,8 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, be
         card.item.ex.allowedLoadModes.map(LoadMode::of).filter { it != card.mode && it != LoadMode.ASSISTED_ORDINAL }.forEach { m ->
             val label = when (m) {
                 LoadMode.BODYWEIGHT -> "Bodyweight only"
-                LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> "Add weight (belt)"
+                LoadMode.BODYWEIGHT_PLUS_EXTERNAL ->
+                    if (dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in card.item.ex.tags) "Add weight (held plates)" else "Add weight (belt)"
                 LoadMode.ASSISTED_MACHINE -> "Use the assisted machine"
                 else -> "External load"
             }

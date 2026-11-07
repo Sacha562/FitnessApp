@@ -32,7 +32,7 @@ object Numbers {
     }
 
     /** The secondary line: plates, per hand, assist kg and one-arm / effective load (UX 11.7, C54). */
-    fun loadSecondary(p: LoadPoint?, mode: LoadMode, unilateral: Boolean, bwKg: Double?): String? {
+    fun loadSecondary(p: LoadPoint?, mode: LoadMode, unilateral: Boolean, bwKg: Double?, held: Boolean = false): String? {
         if (p == null) return null
         return when (mode) {
             LoadMode.ASSISTED_MACHINE -> {
@@ -42,7 +42,8 @@ object Numbers {
                 assist + " · " + (if (unilateral) "one-arm load " else "effective ") + oneDecimal(w) + " kg" + pct
             }
             LoadMode.BODYWEIGHT_PLUS_EXTERNAL ->
-                if (p.plateBreakdown.isEmpty()) null else p.plateBreakdown.joinToString(" + ") { num(it) } + " on belt"
+                // D102: plates held in the hands (back extension) are not on a belt.
+                if (p.plateBreakdown.isEmpty()) null else p.plateBreakdown.joinToString(" + ") { num(it) } + if (held) " held" else " on belt"
             LoadMode.EXTERNAL -> when {
                 // A unilateral dumbbell row holds one dumbbell; "per hand" would read as a pair.
                 p.implementCount == 1 -> "one dumbbell"

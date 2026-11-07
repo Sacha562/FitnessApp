@@ -256,13 +256,16 @@ private fun loadingLine(e: CatalogExercise, station: (String) -> String): String
     val mode = LoadMode.of(e.loadMode)
     val base = when (mode) {
         LoadMode.BODYWEIGHT -> "Bodyweight, counts ${Numbers.num(e.bwFraction * 100, 0)} % of bodyweight"
-        LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> "Bodyweight (${Numbers.num(e.bwFraction * 100, 0)} %) plus the dip belt"
+        LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> "Bodyweight (${Numbers.num(e.bwFraction * 100, 0)} %) plus " +
+            if (dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in e.tags) "held plates" else "the dip belt"
         LoadMode.ASSISTED_MACHINE -> "Assisted machine pin; less help is harder"
         LoadMode.ASSISTED_ORDINAL -> "Assistance level"
         LoadMode.EXTERNAL -> "Weight" + (e.implementBaseKg?.takeIf { it > 0 }?.let { " plus ${Numbers.kg(it)} bar or carriage" } ?: "")
     }
     val extra = buildList {
-        if ("bodyweight_plus_external" in e.allowedLoadModes && mode != LoadMode.BODYWEIGHT_PLUS_EXTERNAL) add("can be loaded with the dip belt")
+        if ("bodyweight_plus_external" in e.allowedLoadModes && mode != LoadMode.BODYWEIGHT_PLUS_EXTERNAL) {
+            add(if (dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in e.tags) "can be loaded with held plates (at most 2)" else "can be loaded with the dip belt")
+        }
         if ("assisted_machine" in e.allowedLoadModes && mode != LoadMode.ASSISTED_MACHINE) add("can be assisted")
         if (e.requiresStation.isNotEmpty()) add("needs " + e.requiresStation.joinToString(", ", transform = station))
     }

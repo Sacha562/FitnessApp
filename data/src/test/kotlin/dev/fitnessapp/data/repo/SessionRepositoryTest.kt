@@ -302,7 +302,8 @@ class SessionRepositoryTest {
         val next = sessions.start(params)
         db.sessionExercises().get(sessions.addExercise(next, back))!!.let {
             it.load_mode shouldBe "bodyweight_plus_external"
-            (it.equipment_id != null) shouldBe true
+            // D102: the back extension's plates are held, so no dip belt row is attached.
+            it.equipment_id shouldBe null
         }
         db.sessionExercises().get(sessions.addExercise(next, catalog.bySlug("dip_chest")!!))!!.load_mode shouldBe "bodyweight"
     }

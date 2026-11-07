@@ -1,4 +1,5 @@
--- fitness_065_calf_machines_plates (data): standing and seated calf machines as plate-loaded stations - DECISIONS D101;
+-- fitness_065_calf_machines_plates (data): standing and seated calf machines as plate-loaded stations, held plates on the
+-- back extension - DECISIONS D101, D102;
 -- DATA_MODEL 9.1.7; catalog 1.0.5
 --
 -- No DDL, grant, policy, function, trigger, role or extension. Idempotent.
@@ -6,7 +7,8 @@
 -- stack, rev 5) changed the standing one too, and the standing machine's 30.4 kg starting resistance was nowhere.
 -- - equipment_types: `calf_machine` is the seated calf machine, `plates` in kg (as the 45° leg press); the new
 --   `calf_machine_standing` station is the standing one, also `plates` in kg.
--- - catalog 1.0.5: `standing_calf_raise_machine` requires `calf_machine_standing`. jcs_sha256 = Jcs.sha256Hex of
+-- - catalog 1.0.5: `standing_calf_raise_machine` requires `calf_machine_standing`; `back_extension_45` gets the reserved
+--   tag `held_load` (D102: its added weight is held plates, at most 2, not the dip belt). jcs_sha256 = Jcs.sha256Hex of
 --   algo/src/main/resources/fitness/catalog/catalog-1.0.5.json (159 exercises, 541 stimulus rows), as printed by
 --   `gradlew :sim:run --args="seedgen-catalog 1.0.5"`.
 -- - gym_equipment: each user's `calf_machine` row becomes plates (the plates of their leg press row) with no base
@@ -42,13 +44,17 @@ select 'calf_machine_standing', 'station', 'plates', default_load_scheme, false,
 on conflict (key) do nothing;
 
 insert into fitness.catalog_releases (version, exercise_count, stimulus_count, jcs_sha256, notes)
-values ('1.0.5', 159, 541, '6dfda6c979d06021126b0447d3c8ae02c467e7ab061c9871f536a6d235b7ea1b',
-        'Delta on 1.0.4: standing_calf_raise_machine moves to its own plate-loaded station calf_machine_standing; calf_machine is the seated calf machine (D101).')
+values ('1.0.5', 159, 541, '5cf53c502fb7507b7c72bb4392c42c34857cdcf541158dae05d031191e5dea49',
+        'Delta on 1.0.4: standing_calf_raise_machine moves to its own plate-loaded station calf_machine_standing; calf_machine is the seated calf machine (D101); back_extension_45 is tagged held_load (D102).')
 on conflict (version) do nothing;
 
 update fitness.exercises
 set requires_station = array['calf_machine_standing']::text[], catalog_version = '1.0.5', client_updated_at = now(), app_version = 'migration'
 where user_id is null and slug = 'standing_calf_raise_machine' and requires_station = array['calf_machine']::text[];
+
+update fitness.exercises
+set tags = array['held_load']::text[], catalog_version = '1.0.5', client_updated_at = now(), app_version = 'migration'
+where user_id is null and slug = 'back_extension_45' and tags = array[]::text[];
 
 -- The standing rows first (they copy the plates from the leg press row, as the seated rows do below).
 insert into fitness.gym_equipment (id, user_id, client_updated_at, device_id, app_version, gym_id, equipment_type, label, available,
@@ -89,6 +95,10 @@ begin
   if (select count(*) from fitness.exercises where user_id is null and slug = 'standing_calf_raise_machine'
       and requires_station = array['calf_machine_standing']::text[] and catalog_version = '1.0.5') <> 1 then
     raise exception '065: standing_calf_raise_machine not on calf_machine_standing at 1.0.5';
+  end if;
+  if (select count(*) from fitness.exercises where user_id is null and slug = 'back_extension_45'
+      and tags = array['held_load']::text[] and catalog_version = '1.0.5') <> 1 then
+    raise exception '065: back_extension_45 not tagged held_load at 1.0.5';
   end if;
   if (select count(*) from fitness.exercises where user_id is null and retired_at is null) <> 159 then
     raise exception '065: expected 159 active global exercises';

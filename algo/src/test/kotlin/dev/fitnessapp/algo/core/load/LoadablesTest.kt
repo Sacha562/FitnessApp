@@ -60,6 +60,18 @@ class LoadablesTest {
     }
 
     @Test
+    fun `held plates are at most two plates of the gym sizes, never 21 kg (D102)`() {
+        // The scheme EquipmentRepository builds for a `held_load` exercise: plate sizes x2, 2 items, no dumbbells.
+        val sizes = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25)
+        val held = LoadScheme.Belt(sizes.map { PlateCount(it, 2) }, maxKg = 50.0, maxItems = 2, dumbbellsOnBelt = false)
+        val w = Loadables.enumerate(held, ctx.copy(beltDumbbellsKg = listOf(1.0, 2.0)), params).map { it.addedKg }
+        (21.0 in w) shouldBe false
+        (20.0 in w) shouldBe true
+        (21.25 in w) shouldBe true
+        w.max() shouldBe 50.0
+    }
+
+    @Test
     fun `belt with a dumbbell uses one item for the dumbbell`() {
         val belt = LoadScheme.Belt(listOf(PlateCount(20.0, 1)), maxKg = 60.0, maxItems = 2, dumbbellsOnBelt = true)
         val w = Loadables.enumerate(belt, ctx.copy(beltDumbbellsKg = listOf(12.5)), params)

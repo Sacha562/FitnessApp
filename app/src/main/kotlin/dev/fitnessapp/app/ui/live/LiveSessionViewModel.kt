@@ -1711,7 +1711,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun loadLabel(card: Card): String = if (card.points.isEmpty() && card.mode != LoadMode.BODYWEIGHT) "No loads known" else Numbers.loadMain(card.point, card.mode)
 
     fun loadSecondary(card: Card): String? =
-        Numbers.loadSecondary(card.point, card.mode, card.item.unilateral, _ui.value.session?.bodyweight_kg?.let { Scaled.toDouble(it, 2) })
+        Numbers.loadSecondary(
+            card.point, card.mode, card.item.unilateral, _ui.value.session?.bodyweight_kg?.let { Scaled.toDouble(it, 2) },
+            held = dev.fitnessapp.algo.selection.catalog.CatalogDomains.HELD_LOAD in card.item.ex.tags,
+        )
 
     /** The target line under the title (UX 11.6 item 2): RX-1's plan for this set, or the probe's instruction. */
     fun targetLine(card: Card): String? {

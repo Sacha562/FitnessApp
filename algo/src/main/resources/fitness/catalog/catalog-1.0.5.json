@@ -368,7 +368,9 @@
         "knee": 0,
         "hip": 0
       },
-      "tags": [],
+      "tags": [
+        "held_load"
+      ],
       "flags_offered": [],
       "external_refs": {
         "fedb_id": "Hyperextensions_Back_Extensions"
