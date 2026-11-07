@@ -2939,7 +2939,11 @@ continuous scale, show uncertainty, and mark test days and personal bests.
 "week {w} of 5"), one line per family with main lifts ("Legs  Leg press · Romanian deadlift"; a family the challenge
 owns reads "Pull  covered by OAP"), tapping a lift opens its chart, the rotated pairs ("Rotated: leg extension → sissy
 squat (stalled 3 sessions)"; "Rotated out: ..." without a replacement), and "Change" on a main lift, which opens a sheet
-listing the family's eligible compound exercises; picking one writes a new mesocycle revision with Undo. While a
+listing the family's eligible compound exercises; picking one writes a new mesocycle revision with Undo, and "Turn
+off" (D100). Mesocycles are opt-in (D100, device-local, default off): while off the card reads "This mesocycle · Off"
+with "Pick main lifts for each family and keep them for a block of weeks, so their progress is easy to track. Main lifts
+come first in every session that trains their muscles." and a "Turn on" button, which starts a fresh mesocycle from
+today's preferences and goals (`settings_changed`, `key: mesocycles_enabled`). While a
 challenge is active, the current phase's gate rows of the dashboard (14.2) follow the Exercise tab's chart.
 
 Other charts on the same screen (tabs above the picker): **Bodyweight** (weigh-ins as points, the

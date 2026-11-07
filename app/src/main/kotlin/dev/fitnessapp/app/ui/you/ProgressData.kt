@@ -66,6 +66,8 @@ data class ProgressUi(
     val gates: GateRows?,
     val bodyweight: List<BwPoint>,
     val bests: List<BestRow>,
+    /** Mesocycles are turned off (D100): the card offers "Turn on" instead of the main lifts. */
+    val mesoOff: Boolean = false,
 )
 
 /** Builds You → Progress from the stored facts (D86 (5), (6)); nothing here computes an estimate (C3). */
@@ -93,6 +95,7 @@ object ProgressData {
             bodyweight = bodyweight(c, facts),
             bests = exercises.flatMap { e -> e.bests.map { BestRow(e.exerciseId, e.name, it, e.exercise.fBw > 0.0) } }
                 .sortedWith(compareByDescending<BestRow> { it.best.date }.thenBy { it.name }.thenBy { it.best.kind.ordinal }.thenBy { it.best.side }),
+            mesoOff = !Mesocycles.enabled(c),
         )
     }
 

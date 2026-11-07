@@ -39,7 +39,7 @@ class ProgressScreensTest {
     val compose = createComposeRule()
 
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.6.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.7.json")).readText(Charsets.UTF_8),
     )
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val first = LocalDate.parse("2026-08-17")

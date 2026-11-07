@@ -119,10 +119,21 @@ object Elig : DeclaresParams {
             ctx.hardWindows.any { w -> w.groups.any { g(it) >= forbid } || w.regions.any { (e.stimulus[it] ?: 0.0) >= forbid } } ->
                 EligReason.HARD_WINDOW
             ctx.gapDay && pullFamily(e, catalog, forbid) && !light(e, catalog, ctx, forbid) -> EligReason.GAP_DAY_PULL
-            ctx.skipGroups.any { g(it) >= params.double("elig.skip_coeff") } -> EligReason.SKIP_GOAL
+            skipOnly(e, catalog, ctx.skipGroups, params) -> EligReason.SKIP_GOAL
             ctx.addOn != null && !addOnFits(e, catalog, ctx.addOn, forbid) -> EligReason.ADDON_SLOT
             else -> null
         }
+    }
+
+    /**
+     * D99: `skip` is not a priority, so only an exercise for skip groups alone is removed: the groups it trains at
+     * `elig.skip_coeff` or more are not empty and all have goal skip. One that also trains a wanted group stays.
+     */
+    fun skipOnly(e: CatalogExercise, catalog: Catalog, skipGroups: Set<String>, params: ParamView): Boolean {
+        if (skipGroups.isEmpty()) return false
+        val min = params.double("elig.skip_coeff")
+        val trains = catalog.taxonomy.activeGroups.map { it.id }.filter { catalog.groupCoeff(e, it) >= min }
+        return trains.isNotEmpty() && trains.all { it in skipGroups }
     }
 
     private fun pullFamily(e: CatalogExercise, catalog: Catalog, forbid: Double): Boolean =

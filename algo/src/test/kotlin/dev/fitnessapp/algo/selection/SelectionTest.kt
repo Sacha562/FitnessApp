@@ -129,11 +129,39 @@ class SelectionTest {
     }
 
     @Test
-    fun `skip goal removes a glute 0_5 exercise and keeps the leg extension`() {
+    fun `skip goal removes only an exercise for skip groups alone (D99)`() {
         val ctx = EligContext(skipGroups = setOf("glutes"))
         (catalog.groupCoeff(ex("leg_press_45"), "glutes") >= 0.5) shouldBe true
-        Elig.reason(ex("leg_press_45"), catalog, ctx, params) shouldBe EligReason.SKIP_GOAL
+        // Leg press also trains quads, so a glute skip no longer removes it; the glute-only kickback goes.
+        Elig.reason(ex("leg_press_45"), catalog, ctx, params) shouldBe null
         Elig.reason(ex("leg_extension"), catalog, ctx, params) shouldBe null
+        Elig.reason(ex("cable_kickback"), catalog, ctx, params) shouldBe EligReason.SKIP_GOAL
+        // Adductors and forearms on skip leave the RDL and the barbell row eligible (they train hamstrings and upper back).
+        val wide = EligContext(skipGroups = setOf("adductors", "forearms", "rear_delts", "chest", "upper_traps", "calves", "abductors"))
+        Elig.reason(ex("rdl_db"), catalog, wide, params) shouldBe null
+        Elig.reason(ex("back_squat_barbell"), catalog, wide, params) shouldBe null
+        Elig.reason(ex("barbell_row_pronated"), catalog, wide, params) shouldBe null
+        Elig.reason(ex("cable_fly_low_high"), catalog, wide, params) shouldBe EligReason.SKIP_GOAL
+    }
+
+    @Test
+    fun `SEL-1 charges only direct work on a skip group, lightly (D99)`() {
+        val goals = catalog.taxonomy.activeGroups.associate { it.id to "maintain" } + mapOf("adductors" to "skip")
+        fun o(slug: String, p: dev.fitnessapp.algo.core.params.ParamView): Double {
+            val e = ex(slug)
+            val input = dev.fitnessapp.algo.selection.select.SelectInput(pool = listOf(e), target = emptyMap(), goals = goals, capS = emptyMap(), budgetMin = 60.0)
+            return dev.fitnessapp.algo.selection.select.Select.Search(input, catalog, p).evaluate(listOf(dev.fitnessapp.algo.selection.select.Select.Pick(e, 3))).first.o
+        }
+        val free = params.withNumbers(mapOf("select.lam_skip" to 0.0))
+        // RDL: adductors 0.5 is indirect work, so the skip goal costs nothing.
+        (catalog.groupCoeff(ex("rdl_db"), "adductors") < params.double("select.skip_direct_coeff")) shouldBe true
+        o("rdl_db", params) shouldBe o("rdl_db", free)
+        // Back squat: adductors 0.75 is direct, charged LAM_SKIP per FS (O is in LAM_OVER units).
+        val c = catalog.groupCoeff(ex("back_squat_barbell"), "adductors")
+        (c >= params.double("select.skip_direct_coeff")) shouldBe true
+        val expected = params.double("select.lam_skip") / params.double("select.lam_over") * c * 3
+        (kotlin.math.abs(o("back_squat_barbell", params) - o("back_squat_barbell", free) - expected) < 1e-5) shouldBe true
+        params.double("select.lam_skip") shouldBe 0.25
     }
 
     @Test

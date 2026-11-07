@@ -23,6 +23,16 @@ fun main(args: Array<String>) {
         "version" -> println("engine ${EngineVersion.ENGINE_VERSION}")
         "golden" -> exitProcess(golden(File(args.getOrElse(1) { "fixtures/golden/algo" })))
         "challenge" -> exitProcess(ChallengeCli.run(args.drop(1)))
+        "sessions" -> exitProcess(dev.fitnessapp.sim.sessions.SessionsCli.run(args.drop(1)))
+        "params-hash" -> {
+            // params_hash and each module's constants_hash of a params file (ALGORITHMS.md A8.3), for publishing migrations.
+            val file = Json.parseToJsonElement(File(args[1]).readText(Charsets.UTF_8)).jsonObject
+            val values = dev.fitnessapp.algo.core.params.ParamsHashes.values(file.getValue("params").jsonObject)
+            println("params_hash ${dev.fitnessapp.algo.core.params.ParamsHashes.hash(values)} (${values.size} keys)")
+            dev.fitnessapp.algo.core.params.ParamsHashes.slices(values).toSortedMap().forEach { (m, slice) ->
+                if (args.size <= 2 || m in args.drop(2)) println("constants_hash $m ${dev.fitnessapp.algo.core.params.ParamsHashes.hash(slice)}")
+            }
+        }
         "seedgen" -> {
             val parts = SeedGen.generate(File("algo/src/main/resources/fitness"), args.getOrElse(1) { "1.0.1" })
             for ((name, sql) in parts) {

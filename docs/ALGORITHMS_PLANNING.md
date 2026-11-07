@@ -977,7 +977,7 @@ for g in GROUPS (canonical order):
              intensityCheck = exists hard set (q ≤ HARD_RIR_MAX) in the current ISO week (C14: ≥ 1 hard set per week
                               at normal load) on an exercise with c(e, g) ≥ 0.75 at ≥ MAINTAIN_LOAD_FRAC of its
                               8-week working load
-   skip:     T = 0; W = 0                                           // ELIG-1 removes c ≥ 0.5 exercises (§12)
+   skip:     T = 0; W = 0                                           // not a priority (D99): ELIG-1 removes only exercises that train skip groups alone (§12)
   if goal == improve: T = applyRamp(g, T, previousTargets, signals)     // §5.4.1
   metByChallenge = (status ∈ {improve, maintain}) and account.done[g] + contract.coverageCommitted[g] ≥ T
 deload  = deloadPolicy(contract, settings, signals)                 // §5.4.2
@@ -2253,7 +2253,8 @@ remove e if
         groupCoeff(e, biceps) < lightPull.groupCoefficientBelow.biceps (0.5; strict, so 0.5 is removed),
         every PULL-family group that e credits at ≥ FORBID_COEFF has goal improve or maintain and is not covered
                                                                           // onlyIfGoalsAsk: reverse pec deck kept; rows, pulldowns, shrugs removed
-  ∃ g with goal skip and groupCoeff(e, g) ≥ SKIP_COEFF                    // incidental 0.25 allowed
+  trains(e) ≠ ∅ and trains(e) ⊆ skipGroups, with                          // D99: skip = not a priority; only an exercise
+     trains(e) = {g : groupCoeff(e, g) ≥ SKIP_COEFF}                       // for skip groups alone is removed
   addon block: e.pattern ∉ slot.allowPatterns, or e.grip_demand > slot.maxGripDemand,
                or ∃ g ∈ slot.forbidGroups with groupCoeff(e, g) ≥ FORBID_COEFF,          // C34
                or primaryGroup(e) ∉ groups(F) of the add-on family F                   // a legs add-on holds legs exercises
@@ -2290,8 +2291,8 @@ Constants (§23.12): `GATE_IMPROVE 0.75`, `GATE_MAINTAIN 0.5` (C26), `FORBID_COE
 `UNLOCK_REPEAT_FRAC 0.5`, `AVAIL_COEFF 0.75`. Logged: unlock events (exercise, group, residual), whether used, the user's
 reaction (done, skipped, swapped), coverage gaps, filtered counts by reason. Tests: `neverNeverUnlocked`;
 `dislikedUnlockedOnlyWhenNeeded` (adduction machine disliked and adductors improve with no other direct option →
-unlocked; when the cable adduction exists and is neutral → not unlocked); `skipGroupIncidentalAllowed` (glutes skip:
-leg press with glute 0.5 removed, leg extension kept); `gapDayGripHeavy` (Wed fixture: shrugs, RDL (grip 2) and hanging
+unlocked; when the cable adduction exists and is neutral → not unlocked); `skipGroupOnlyRemoved` (D99; glutes skip:
+leg press with glute 0.5 kept because it trains quads, a cable kickback that trains only glutes removed); `gapDayGripHeavy` (Wed fixture: shrugs, RDL (grip 2) and hanging
 knee raise removed; captains-chair knee raise kept); `gapDayLightPull` (C50, Wed and Fri fixture: seated cable row,
 chest-supported row and lat pulldowns removed for their biceps coefficient 0.5; reverse pec deck and face pull kept;
 with rear delts and upper back set to skip, the reverse pec deck is removed too); `hardWindowBrachialis` (hammer curl
@@ -2330,13 +2331,13 @@ SEL-1).
 
 ```
 cov_g  = Σ_{e ∈ S, c_eg ≥ MIN_HYP_COEFF} c_eg · s_e · hf_e        // the planned-set FS of §3 (unilateral pair = 1 set; holds hf)
-raw_g  = Σ_{e ∈ S} c_eg · s_e                                     // all coefficients, for the skip penalty
+dir_g  = Σ_{e ∈ S, c_eg ≥ SKIP_DIRECT_COEFF} c_eg · s_e           // direct work only, for the skip penalty (D99)
 for g with cov_g > 0:
    if goal_g == skip or target_g == 0: share_g = 0; if goal_g != skip: O += max(0, cov_g − 1)     // e.g. covered groups
    else: useful_g = min(cov_g, T_g) + OVER_CREDIT · max(0, min(cov_g, OVER_TOL · T_g) − T_g)
          share_g = useful_g / cov_g
          O += max(0, cov_g − max(OVER_TOL · T_g, T_g + 1)) + (LAM_CAP / LAM_OVER) · max(0, cov_g − capS_g)
-for g with goal skip: O += (LAM_SKIP / LAM_OVER) · raw_g
+for g with goal skip: O += (LAM_SKIP / LAM_OVER) · dir_g          // light: LAM_SKIP 0.25 J per direct FS (D99)
 V  = Σ_e [Σ_g w(goal_g) · c_eg · s_e · share_g] · m_e · (1 + B_STRETCH · stretch_e + B_SFR · (sfr_e − 3))
      w: improve 1.0 (focus 1.5), maintain 0.6
 RB = REGION_BONUS · #{r ∈ regionNeeds : ∃ e ∈ S with coeff(e, r) ≥ 0.5}
@@ -2402,7 +2403,7 @@ used versus predicted, and weekly group progress (tuner rules T-ALLOC, T-PREF, T
 
 ### 13.6 Constants and tests
 
-Constants (§23.13): `OVER_CREDIT 0.10`, `OVER_TOL 1.25`, `LAM_OVER 0.5`, `LAM_CAP 1.0`, `LAM_SKIP 3.0`,
+Constants (§23.13): `OVER_CREDIT 0.10`, `OVER_TOL 1.25`, `LAM_OVER 0.5`, `LAM_CAP 1.0`, `LAM_SKIP 0.25` (D99), `SKIP_DIRECT_COEFF 0.75` (D99),
 `B_STRETCH 0.05`, `B_SFR 0.04`, `REGION_BONUS 0.3`, `CONSISTENCY 0.5`, `STALL_PEN 0.5`, `AXIAL_CAP 4`, `LAM_AXIAL 0.3`,
 `LAM_TIME 0.05`, `LAM_TIME_OVER 0.5`, `OVERRUN_CAP 1.10`, `BEAM_WIDTH 12`, `TOP_K 25`, `PER_GROUP_K 2` (D56), `MAX_EX 8`,
 `SMAX {compound 5, isolation 4}`, `DEDUP_COS 0.95`, `MAX_PER_PATTERN 2`, `TUNE_PASSES 20`, `TUNE_EPS 0.05`. All are
@@ -2505,6 +2506,11 @@ prediction, station occupancy by weekday and hour (REASON-1 also deprioritises s
 ---
 
 ## 16. `rotate` — ROT-1 mesocycle anchors and systematic rotation (F12, C31)
+
+**Opt-in (D100).** The app runs ROT-1 only after the user turns mesocycles on from the "This mesocycle" card (UX 15.2). While
+off, no mesocycle is started or stored and every build takes an empty selection (no S0 anchors, empty K set, nothing
+rotated out). Turning on starts a fresh mesocycle with no previous one (16.1 with `previous` = none), numbered after the
+newest stored one. The module itself is unchanged.
 
 ### 16.1 Algorithm
 
@@ -3710,7 +3716,7 @@ whose source is [this doc], is an assumption and carries `tunable: true` in the 
 | `elig.gate_improve` | 0.75 | 0.5-1.0 | expert-opinion | C26 | T-PREF |
 | `elig.gate_maintain` | 0.5 | 0.25-0.75 | expert-opinion | C26 | T-PREF |
 | `elig.forbid_coeff` | 0.5 | 0.25-0.75 | expert-opinion | [this doc] (C12 windows, add-on forbid groups) | review |
-| `elig.skip_coeff` | 0.5 | 0.25-0.75 | expert-opinion | exercise-selection lens (incidental 0.25 allowed) | review |
+| `elig.skip_coeff` | 0.5 | 0.25-0.75 | expert-opinion | exercise-selection lens; D99: an exercise whose groups at this coefficient are all skip is removed | review |
 | `elig.unlock_repeat_frac` | 0.5 | 0-1 | expert-opinion | exercise-selection lens | T-PREF |
 | `elig.avail_coeff` | 0.75 | 0.5-1.0 | expert-opinion | [this doc] | review |
 
@@ -3722,7 +3728,8 @@ whose source is [this doc], is an assumption and carries `tunable: true` in the 
 | `select.over_tol` | 1.25 | 1.0-1.5 | expert-opinion | exercise-selection lens | T-ALLOC |
 | `select.lam_over` | 0.5 | 0-2 | expert-opinion | exercise-selection lens | T-ALLOC |
 | `select.lam_cap` | 1.0 | 0-3 | expert-opinion | [this doc] (per-session cap, C14) | review |
-| `select.lam_skip` | 3.0 | 0-10 | expert-opinion | exercise-selection lens | review |
+| `select.lam_skip` | 0.25 | 0-10 | expert-opinion | exercise-selection lens; D99 (skip = not a priority, light penalty on direct work) | review |
+| `select.skip_direct_coeff` | 0.75 | 0.5-1.0 | expert-opinion | D99 (only direct work on a skip group is charged) | review |
 | `select.b_stretch` | 0.05 | 0-0.2 | moderate (long-length direction), value expert | Maeo 2021/2023; Wolf 2023/2025 | review |
 | `select.b_sfr` | 0.04 | 0-0.1 | expert-opinion | exercise-selection lens | review |
 | `select.region_bonus` | 0.3 | 0-1 | moderate (regional hypertrophy), value expert | Chaves 2020; Larsen 2024; Fonseca 2014 | review |

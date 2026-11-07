@@ -3,7 +3,7 @@
     "proposals": "declined",
     "definition": "oap@1.11.0",
     "definition_jcs_sha256": "1cd15ed52eb7537dd025885115f608165eab3189062cec7f721f5b7ecec91199",
-    "engine_version": "1.23.0",
+    "engine_version": "1.25.0",
     "params_hash": "6298d1217c3ba230b98acc6d40777d075b50b97f2cce6db007764e60beab6c57",
     "events": 482,
     "audit_rows": 340,

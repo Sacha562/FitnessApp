@@ -41,7 +41,8 @@ import java.util.TreeMap
 /**
  * The mesocycle in the app (ROT-1, D86): reads the stored `rotate.mesocycle` state, runs the start the first time the
  * app needs a new mesocycle (writing its snapshot), and hands each build its anchors, consistency set and rotated-out
- * exercises. The user's change of a main lift writes the next revision.
+ * exercises. The user's change of a main lift writes the next revision. Opt-in (D100): while
+ * [dev.fitnessapp.app.LocalSettings.mesocyclesEnabled] is off there is no mesocycle and nothing is started or stored.
  */
 object Mesocycles {
     /** The mesocycle of today: its state, where today falls, and the exercises logged in general blocks since it began. */
@@ -49,7 +50,11 @@ object Mesocycles {
 
     private val startLock = Mutex()
 
+    /** Whether the user turned mesocycles on (D100). */
+    fun enabled(c: AppContainer): Boolean = c.settings.mesocyclesEnabled
+
     suspend fun current(c: AppContainer, at: Instant = c.clock.now()): Current? = withContext(Dispatchers.Default) {
+        if (!enabled(c)) return@withContext null
         val today = Week.localDate(at, PlanningFacts.ZONE)
         val (block, name) = challengeBlock(c, today)
         startLock.withLock {
@@ -59,6 +64,26 @@ object Mesocycles {
             val used = c.db.setLogs().generalExercisesBetween(m.start.toString(), "9999-12-31").mapNotNull { slug(c, it) }.toSet()
             Current(m, if (clock.isNew) clock.copy(isNew = false) else clock, used, name)
         }
+    }
+
+    /**
+     * Turns mesocycles on (D100 (3)): a fresh mesocycle starts now, numbered after the newest stored one, with no
+     * previous anchors carried over, so its main lifts follow today's preferences and goals.
+     */
+    suspend fun activate(c: AppContainer, at: Instant = c.clock.now()): Unit = withContext(Dispatchers.Default) {
+        val today = Week.localDate(at, PlanningFacts.ZONE)
+        val (block, _) = challengeBlock(c, today)
+        startLock.withLock {
+            val stored = stored(c)
+            val clock = Rotation.clock(today, block, null, c.params.fork()).copy(n = (stored?.n ?: 0) + 1)
+            start(c, at, clock, null, activation = true)
+            c.settings.mesocyclesEnabled = true
+        }
+    }
+
+    /** Turns mesocycles off (D100 (3)): builds stop taking the mesocycle; stored ones stay and are ignored. */
+    fun deactivate(c: AppContainer) {
+        c.settings.mesocyclesEnabled = false
     }
 
     /** What a build takes from [cur] (D86 (3)); no mesocycle gives an empty selection. */
@@ -99,7 +124,7 @@ object Mesocycles {
         return ChallengeBlock(f.state.block.index, f.state.block.week, weeks) to dev.fitnessapp.app.ui.challenges.ChallengeTexts.title(f.def)
     }
 
-    private suspend fun start(c: AppContainer, at: Instant, clock: MesocycleClock, previous: Mesocycle?): Mesocycle {
+    private suspend fun start(c: AppContainer, at: Instant, clock: MesocycleClock, previous: Mesocycle?, activation: Boolean = false): Mesocycle {
         val params = c.params.fork()
         val f = SessionBuild.facts(c, at, mesocycle = false)
         val elig = plain(f.elig)
@@ -139,6 +164,7 @@ object Mesocycles {
             put("previous_from", previousFrom.toString())
             put("used", buildJsonArray { used.sorted().forEach { add(JsonPrimitive(id(c, it))) } })
             put("family_runs", buildJsonArray { runs.keys.forEach { add(JsonPrimitive(it)) } })
+            if (activation) put("activation", "user")
         }
         c.planSnapshots.mesocycle(m.n, m.start, inputs, Rotation.json(m) { id(c, it) })
         return m

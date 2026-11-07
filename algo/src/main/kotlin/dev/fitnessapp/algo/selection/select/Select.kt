@@ -128,6 +128,7 @@ object Select : DeclaresParams {
         ParamSpec.number("select.overrun_cap", "ratio of budget", 1.0, 1.3),
         ParamSpec.integer("select.per_group_k", "exercises per group", 0.0, 5.0),
         ParamSpec.number("select.region_bonus", "J per region", 0.0, 1.0),
+        ParamSpec.number("select.skip_direct_coeff", "coeff", 0.5, 1.0),
         ParamSpec.table("select.smax", "sets (by mechanics)", 2.0, 8.0),
         ParamSpec.number("select.stall_pen", "J per exercise", 0.0, 2.0),
         ParamSpec.integer("select.top_k", "exercises", 10.0, 60.0),
@@ -153,6 +154,7 @@ object Select : DeclaresParams {
         private val lamOver = params.double("select.lam_over")
         private val lamCap = params.double("select.lam_cap")
         private val lamSkip = params.double("select.lam_skip")
+        private val skipDirect = params.double("select.skip_direct_coeff")
         private val bStretch = params.double("select.b_stretch")
         private val bSfr = params.double("select.b_sfr")
         private val regionBonus = params.double("select.region_bonus")
@@ -249,10 +251,11 @@ object Select : DeclaresParams {
         /** `J(S)` of 13.3 with its terms and each exercise's bracket `B_e`. */
         fun evaluate(plan: List<Pick>): Pair<JTerms, Map<String, Double>> {
             val cov = cov(plan)
-            val raw = DoubleArray(groups.size)
+            // D99: a skip group is not a priority, so only direct work on it (c >= SKIP_DIRECT_COEFF) is charged, lightly.
+            val direct = DoubleArray(groups.size)
             for (p in plan) {
                 val c = coeff.getValue(p.e.slug)
-                for (i in groups.indices) raw[i] += c[i] * p.s
+                for (i in groups.indices) if (c[i] >= skipDirect) direct[i] += c[i] * p.s
             }
             val share = DoubleArray(groups.size)
             var o = 0.0
@@ -260,7 +263,7 @@ object Select : DeclaresParams {
                 val g = groups[i]
                 val goal = input.goals[g] ?: "skip"
                 val t = input.target[g] ?: 0.0
-                if (goal == "skip") { o += (lamSkip / lamOver) * raw[i]; continue }
+                if (goal == "skip") { o += (lamSkip / lamOver) * direct[i]; continue }
                 if (cov[i] <= 0.0) continue
                 if (t <= 0.0) { o += maxOf(0.0, cov[i] - 1.0); continue }
                 val useful = minOf(cov[i], t) + overCredit * maxOf(0.0, minOf(cov[i], overTol * t) - t)

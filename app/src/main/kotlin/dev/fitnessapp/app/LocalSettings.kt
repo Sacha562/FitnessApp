@@ -34,6 +34,14 @@ class LocalSettings(context: Context) {
         get() = prefs.getBoolean(KEY_HABIT_REMINDERS, false)
         set(v) = prefs.edit().putBoolean(KEY_HABIT_REMINDERS, v).apply()
 
+    /**
+     * Mesocycles (D100): off until the user turns them on from the "This mesocycle" card; while off no mesocycle is
+     * started or used, so builds take no main lifts, consistency set or rotated-out exercises.
+     */
+    var mesocyclesEnabled: Boolean
+        get() = prefs.getBoolean(KEY_MESOCYCLES, false)
+        set(v) = prefs.edit().putBoolean(KEY_MESOCYCLES, v).apply()
+
     /** "Skip today" on N-HABIT: no further reminder of that habit on that date (kept for a week). */
     fun habitSkipped(habitId: String, date: java.time.LocalDate): Boolean = "$habitId|$date" in prefs.getStringSet(KEY_HABIT_SKIPS, emptySet()).orEmpty()
 
@@ -133,6 +141,7 @@ class LocalSettings(context: Context) {
         const val KEY_SYNC_NOTICE_DATE = "sync_notice_date"
         const val KEY_WEEK_PLAN_KEYS = "week_plan_keys"
         const val KEY_HABIT_REMINDERS = "habit_reminders_enabled"
+        const val KEY_MESOCYCLES = "mesocycles_enabled"
         const val KEY_HABIT_SKIPS = "habit_skips"
     }
 }

@@ -118,6 +118,7 @@ fun ProgressRoute(c: AppContainer, onBack: () -> Unit) {
     var pick by remember { mutableStateOf(ProgressPick()) }
     var reload by remember { mutableIntStateOf(0) }
     var change by remember { mutableStateOf<MesoFamily?>(null) }
+    var mesoBusy by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(reload) { ui = runCatching { ProgressData.load(c) }.getOrNull() ?: ProgressUi(null, emptyList(), null, null, emptyList(), emptyList()) }
     LaunchedEffect(pick.tab) { if (pick.tab == ProgressTab.VOLUME && volume == null) volume = runCatching { ProgressData.volume(c) }.getOrDefault(emptyList()) }
@@ -144,6 +145,17 @@ fun ProgressRoute(c: AppContainer, onBack: () -> Unit) {
                     pick = p
                 },
                 onChange = { change = it },
+                mesoBusy = mesoBusy,
+                onMeso = { on ->
+                    // D100: mesocycles are opt-in; turning on starts a fresh one from today's preferences.
+                    mesoBusy = true
+                    scope.launch {
+                        runCatching { if (on) Mesocycles.activate(c) else Mesocycles.deactivate(c) }
+                        c.fgsEvent("settings_changed", mapOf("key" to "mesocycles_enabled", "from" to !on, "to" to on))
+                        mesoBusy = false
+                        reload++
+                    }
+                },
             )
         }
     }
@@ -184,6 +196,8 @@ fun ProgressScreen(
     pad: PaddingValues,
     onPick: (ProgressPick) -> Unit,
     onChange: (MesoFamily) -> Unit,
+    mesoBusy: Boolean = false,
+    onMeso: (Boolean) -> Unit = {},
 ) {
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -198,7 +212,7 @@ fun ProgressScreen(
         Modifier.padding(pad).fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        u.meso?.let { MesoTile(it, onLift = open, onChange) }
+        if (u.mesoOff) MesoOffTile(mesoBusy) { onMeso(true) } else u.meso?.let { MesoTile(it, onLift = open, onChange, mesoBusy) { onMeso(false) } }
         Segmented(
             ProgressTab.entries, pick.tab, { it.label }, { onPick(pick.copy(tab = it)) },
             Modifier.onGloballyPositioned { tabsY = it.positionInParent().y.toInt() },
@@ -214,9 +228,28 @@ fun ProgressScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MesoTile(m: MesoCard, onLift: (String) -> Unit, onChange: (MesoFamily) -> Unit) {
+private fun MesoOffTile(busy: Boolean, onTurnOn: () -> Unit) {
     Tile(spacing = 6.dp) {
         TileLabel("This mesocycle")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Off", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            LinkButton(if (busy) "Starting…" else "Turn on", onTurnOn, enabled = !busy)
+        }
+        Text(
+            "Pick main lifts for each family and keep them for a block of weeks, so their progress is easy to track. Main lifts come first in every session that trains their muscles.",
+            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MesoTile(m: MesoCard, onLift: (String) -> Unit, onChange: (MesoFamily) -> Unit, busy: Boolean, onTurnOff: () -> Unit) {
+    Tile(spacing = 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TileLabel("This mesocycle", Modifier.weight(1f))
+            LinkButton("Turn off", onTurnOff, color = Fit.Muted, enabled = !busy)
+        }
         Text(m.title, style = MaterialTheme.typography.titleMedium)
         m.families.forEach { f ->
             Row(verticalAlignment = Alignment.CenterVertically) {

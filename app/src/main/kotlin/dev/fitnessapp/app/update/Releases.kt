@@ -27,7 +27,7 @@ data class Release(
 object Releases {
     private val TAG = Regex("""^v(\d+)\.(\d+)\.(\d+)$""")
     private val HEX64 = Regex("^[0-9a-f]{64}$")
-    private val LINK = Regex("""\[([^\]]+)]\([^)]*\)""")
+    private val LINK = Regex("""\[([^\]]+)\]\([^)]*\)""")
     private val json = Json { ignoreUnknownKeys = true }
 
     /** The version code a tag `v0.<milestone>.<versionCode>` stands for, null for any other tag. */
