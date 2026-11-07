@@ -625,7 +625,8 @@ private fun SetCard(
                 // An L+R pair is one set (C7), so the count of a sided item says it is per side.
                 val each = if (item.unilateral) " each side" else ""
                 val count = when {
-                    card.warmup && card.warmupTarget != null -> "Warm-up ${item.sets.count { it.set_kind == "warmup" && it.side == card.side } + 1} of ${item.rx?.warmup?.size ?: 1}"
+                    // D104 (4): the warm-ups done plus those still planned after them.
+                    card.warmup && card.warmupTarget != null -> "Warm-up ${item.warmupsDone.size + 1} of ${item.warmupsDone.size + item.generatedWarmupsLeft}"
                     card.warmup -> "Warm-up set"
                     card.isRound -> "Round ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
                     else -> "Set ${card.setNumber} of ${maxOf(item.planned, card.setNumber)}$each"
@@ -752,7 +753,15 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
     }
     Tile(radius = 28.dp, padding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp), spacing = 8.dp) {
         when {
-            card.warmup -> PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
+            card.warmup -> {
+                PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
+                // D104 (5): one tap to the working sets (the menu's "Log working sets"); a challenge warm-up item is the work.
+                if (!card.item.warmupItem) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        LinkButton(if (card.item.generatedWarmupsLeft > 1) "Skip warm-ups" else "Skip warm-up", { guarded { vm.setWarmup(false) } })
+                    }
+                }
+            }
             // F14 (UX 15.4, B4.3): at the target reps tap the reserve you predict, keep going to failure, enter the extra reps.
             card.calibration && card.calibRir == null -> {
                 Text("RIR check: at ${card.reps ?: 0} reps, how many are left?", style = MaterialTheme.typography.labelMedium, color = Fit.Muted,

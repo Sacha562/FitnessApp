@@ -80,6 +80,7 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
     val ex = c.catalog.byId(exerciseId) ?: run { onBack(); return }
     val prefs by remember { c.preferences.observe() }.collectAsState(initial = emptyMap())
     val pref = prefs[exerciseId] ?: PreferenceRepository.NEUTRAL
+    val warmupCounts by remember { c.preferences.observeWarmupSets() }.collectAsState(initial = emptyMap())
     val history by remember(exerciseId) { c.sessionRepository.observeExerciseHistory(exerciseId, 200) }.collectAsState(initial = emptyList())
     val e1rm by remember(exerciseId) { c.estimates.observeE1rm(exerciseId) }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
@@ -164,6 +165,25 @@ fun ExerciseDetailRoute(c: AppContainer, exerciseId: String, from: String, onBac
                         LinkButton("No", { similarOffer = null }, color = Fit.Muted)
                     }
                 }
+            }
+
+            // D107: how many warm-up sets WARMUP-1 may plan (Auto = its own tiers).
+            if (c.prescriptions.eligible(ex)) Tile(spacing = 10.dp) {
+                TileLabel("Warm-up sets")
+                val current = warmupCounts[exerciseId]?.toString() ?: WARMUP_AUTO
+                Segmented(WARMUP_OPTIONS, current, { if (it == "0") "None" else it }, onSelect = { o ->
+                    if (o != current) scope.launch {
+                        c.preferences.setWarmupSets(exerciseId, o.toIntOrNull(), if (from == "session") "session" else "detail")
+                    }
+                })
+                Text(
+                    when (current) {
+                        WARMUP_AUTO -> "Warm-ups follow the load: none for light work, up to three before heavy sets."
+                        "0" -> "No warm-up sets are planned for this exercise."
+                        else -> "At most $current warm-up set${if (current == "1") "" else "s"}, from the middle of the ramp."
+                    },
+                    style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                )
             }
 
             Tile(spacing = 0.dp, padding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
@@ -290,3 +310,6 @@ private fun flagText(f: String) = when (f) {
     "used_straps" -> "Flag: used straps"
     else -> "Flag: " + f.replace('_', ' ')
 }
+
+private const val WARMUP_AUTO = "Auto"
+private val WARMUP_OPTIONS = listOf(WARMUP_AUTO, "0", "1", "2", "3")

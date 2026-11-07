@@ -171,7 +171,7 @@ class DtoSchemaDriftTest {
     )
 
     @Test
-    fun userExercisePrefs() = check(UserExercisePrefEntity.serializer(), "exercise_id, preference, unavailable_until, note")
+    fun userExercisePrefs() = check(UserExercisePrefEntity.serializer(), "exercise_id, preference, unavailable_until, note, warmup_sets")
 
     @Test
     fun exports() = check(

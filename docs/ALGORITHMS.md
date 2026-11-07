@@ -1691,17 +1691,30 @@ else:                              list = warmup.tier_high (+ warmup.tier_single
 tiers (fraction of w_work, reps):  low [(0.50, 10)]; mid [(0.50, 8), (0.75, 3)];
                                    high [(0.45, 6), (0.65, 3), (0.85, 1)]; singles [(0.92, 1)]
 for each (frac, reps):
-   w = easierOrEqual(W, frac * w_work)
+   w = easierOrEqual(W_grid, frac * w_work), else easierOrEqual(W, frac * w_work)      // D106 warm-up grid
    bodyweight family: if frac * w_work < f_bw * BW: use the assisted mode when the exercise allows it and the
-        machine exists (w = easierOrEqual over pins), else plain bodyweight (w = f_bw * BW)
+        machine exists (w = easierOrEqual over pins), else plain bodyweight (w = f_bw * BW); with a grid and no
+        grid option at or below the target, plain bodyweight as well (never BW + 1.25)
    reps = min(reps, floor(warmup.max_cap_frac * cap(w; M, k)))      // at most half of capacity
 de-duplicate equal loads, keeping the higher reps; drop a set whose w >= w_work
+max_sets (the user's warm-up count, D107; not in a test session): 0 -> no sets; k < n -> k consecutive sets centred
+      in the ramp, the heavier side when it cannot be centred
 rest: warmup.rest_light_s (45) after sets with frac < 0.65, warmup.rest_heavy_s (60) otherwise,
       warmup.rest_to_work_s (90) after the last warm-up set
 ```
 
 Without an SSE-1 state `p_w` is unknown: a compound gets the mid tier, an isolation exercise the low tier when it is
 the first of its group today (M3.3 build note).
+
+**Warm-up grid (D106, `warmup@1.1.0`).** `W_grid` is the caller's `warmup_loadables`: on plate-loaded equipment (a
+barbell, a plate-loaded machine, the Smith machine) the options whose shown load (bar and plates, without a machine's
+own mass) is a multiple of `warmup.grid_plates_kg` (10 kg); with held plates or the belt multiples of
+`warmup.grid_belt_kg` (5 kg); none for dumbbells, stacks and pins (`WarmupGrid`). Bench press at 70 kg: 35 and 52.5
+become 30 and 50; leg press at 218.2 kg (base 75.7): 95.7, 140.7 and 183.2 become 95.7, 135.7 and 175.7. Both
+`warmup_loadables` and `warmup_max_sets` are in the `rx.prescription` inputs when present.
+
+**On the card (D104, D105).** A warm-up done heavier than planned drops the planned warm-ups at or below it, and the
+card's warm-up prefill is last time's warm-up at the same position (UI-04), never lighter than today's last warm-up.
 
 **Example (weighted pull-up at +27.5 kg, OAP B load, outside a challenge session).** `w_work` = 98.20,
 `M` = 109.94, `p_w` = 0.893 (high tier). 0.45 -> 44.2 kg < BW -> bodyweight, `cap(70.7)` = 18.0 -> 6 reps;
@@ -1714,7 +1727,7 @@ the first of its group today (M3.3 build note).
 `sets[]: {load_point, reps, rest_s}` (review keys, D5). Warm-up sets are logged with "Done" and no RIR (C63;
 D9's RIR chip applies to working sets), as `set_kind = warmup`. Logged: suggested versus done, time spent,
 first working set residual with and without warm-up (review). `WarmupTest` (tiers, de-dup, bodyweight path,
-assisted path, challenge override).
+assisted path, challenge override), `WarmupGridTest` (grid per scheme, bodyweight below the first held step, count).
 
 <a id="rest-1"></a>
 ## B11. `rest` (REST-1): rest-timer duration policy (C18)

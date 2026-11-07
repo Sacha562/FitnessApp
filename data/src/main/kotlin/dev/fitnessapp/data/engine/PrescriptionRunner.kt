@@ -402,8 +402,11 @@ class PrescriptionRunner(
         val p = params.fork()
         val mode = runCatching { LoadMode.of(se.load_mode) }.getOrNull() ?: return null
         val bw = session.bodyweight_kg?.let { Scaled.toDouble(it, 2) }
-        val (_, points) = equipment.loadables(ex, mode, bw, p)
+        val (resolved, points) = equipment.loadables(ex, mode, bw, p)
         val loadables = points.mapNotNull { it.wSys }.map { Grid.kg(it) }.distinct().sorted()
+        // D106 (1): the warm-up grid; D107: the user's warm-up count for the exercise (null = automatic).
+        val warmupLoadables = dev.fitnessapp.algo.prescription.warmup.WarmupGrid.options(resolved.scheme, points, p)
+        val warmupMaxSets = db.exercisePrefs().forExercise(se.exercise_id)?.warmup_sets
         val bodyweightW = bw?.takeIf { mode == LoadMode.BODYWEIGHT || mode == LoadMode.BODYWEIGHT_PLUS_EXTERNAL }?.let { Grid.kg(it * ex.bwFraction) }
         val model = catalogModel()
         val facts = EngineFacts.facts(catalog, model, ex)
@@ -441,6 +444,7 @@ class PrescriptionRunner(
                 sse = (sse[side] ?: sse["both"])?.let(::sseState), rcmK = rcmK, rircal = rircal, transferM = transferM,
                 exposures = exposures, at = Instant.ofEpochMilli(session.started_at ?: ctx.nowMs()),
                 today = LocalDate.parse(session.local_date), deload = slot.deload, warm = warm, firstForGroup = first,
+                warmupLoadables = warmupLoadables, warmupMaxSets = warmupMaxSets,
             )
         }
     }

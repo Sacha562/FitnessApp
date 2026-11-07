@@ -32,7 +32,7 @@ class BuiltSessionTest {
     private lateinit var prompts: PromptRepository
     private val catalog = CatalogRepository.bundled()
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.7.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.8.json")).readText(Charsets.UTF_8),
     )
     private var now = 1_791_482_280_000L
 

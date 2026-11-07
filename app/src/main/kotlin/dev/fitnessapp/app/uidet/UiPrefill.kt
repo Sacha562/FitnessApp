@@ -60,6 +60,11 @@ data class PrefillContext(
     /** The item has the side rule "right <= left" (C69); [leftLoggedReps] is today's left set of the pair. */
     val sideRule: Boolean = false,
     val leftLoggedReps: Int? = null,
+    /**
+     * D105: a warm-up's value from last time at the same warm-up position, already checked against today's warm-ups and
+     * first working target by the caller; it goes before the engine's warm-up target.
+     */
+    val warmupLastTime: SetValues? = null,
 )
 
 data class Prefill(
@@ -139,6 +144,7 @@ object UiPrefill {
 
         val chain: List<Pair<PrefillSource, SetValues?>> = listOf(
             PrefillSource.ACCEPTED_ADJUSTMENT to ctx.acceptedAdjustment?.takeIf { it.loadMode == slot.loadMode },
+            PrefillSource.LAST_SAME_INDEX to ctx.warmupLastTime?.takeIf { it.loadMode == slot.loadMode },
             PrefillSource.ENGINE_TARGET to ctx.target?.takeIf { it.loadMode == slot.loadMode },
             PrefillSource.LAST_PREV_INDEX to todayChanged,
             PrefillSource.LAST_SAME_INDEX to same,
@@ -182,6 +188,7 @@ object UiPrefill {
             put("default", json(ctx.default))
             put("side_rule", ctx.sideRule)
             put("left_logged_reps", ctx.leftLoggedReps?.let { JsonNumbers.int(it.toLong()) } ?: JsonNull)
+            ctx.warmupLastTime?.let { put("warmup_last_time", json(it)) }
         }
         return UiResult.of(value, MODULE_ID, input)
     }

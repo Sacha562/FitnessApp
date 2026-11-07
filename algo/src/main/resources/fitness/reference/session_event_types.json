@@ -1127,7 +1127,8 @@
         "exercise_id",
         "from",
         "to",
-        "surface"
+        "surface",
+        "field"
       ],
       "introduced_in": "1.0.0",
       "description": "Emitted by UX 20.8 (C26)",
@@ -2044,13 +2045,25 @@
       "sort": 1530
     },
     {
+      "event_type": "warmup_load_mode",
+      "category": "logging",
+      "payload_keys": [
+        "to"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by UX 11.5 (a load-mode change on a warm-up card, for that set only, D104)",
+      "active": true,
+      "sort": 1533
+    },
+    {
       "event_type": "warmup_switched",
       "category": "logging",
       "payload_keys": [
-        "on"
+        "on",
+        "auto"
       ],
       "introduced_in": "1.0.0",
-      "description": "Emitted by UX 11.5 (the live card's warm-up switch, kept for the session, D81)",
+      "description": "Emitted by UX 11.5 (the live card's warm-up switch, kept for the session, D81; auto after a manual warm-up, D104)",
       "active": true,
       "sort": 1535
     },

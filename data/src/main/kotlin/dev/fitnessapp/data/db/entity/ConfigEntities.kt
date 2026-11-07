@@ -123,6 +123,8 @@ data class UserExercisePrefEntity(
     val preference: String = "neutral",
     val unavailable_until: String? = null,
     val note: String? = null,
+    /** D107: the warm-up sets WARMUP-1 may plan for the exercise (0-5); null = automatic. */
+    val warmup_sets: Int? = null,
 ) : MutableRow
 
 /**

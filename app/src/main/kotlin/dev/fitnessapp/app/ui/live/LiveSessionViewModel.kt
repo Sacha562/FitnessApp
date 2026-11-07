@@ -88,9 +88,27 @@ data class ExerciseItem(
     val planned: Int get() = se.planned_sets ?: 0
     val open: Boolean get() = se.status in setOf("pending", "active", "deferred")
 
-    /** WARMUP-1's generated warm-up sets still to do: only before the first working set (UX 11.5). */
-    val generatedWarmupsLeft: Int
-        get() = if (warmupItem || rx == null || working.isNotEmpty()) 0 else maxOf(0, rx.warmup.size - sets.count { it.set_kind == "warmup" })
+    /** Today's warm-up sets of the item. */
+    val warmupsDone: List<SetLogEntity> get() = sets.filter { it.set_kind == "warmup" }
+
+    /**
+     * D104 (4): the index in WARMUP-1's list of the next generated warm-up, only before the first working set (UX 11.5):
+     * after the warm-ups done and heavier than the heaviest of them, so a warm-up done heavier than planned drops the
+     * planned ones at or below it. [extraDone] and [extraW] count one more warm-up not yet in [sets] (the one being logged).
+     */
+    fun nextWarmupIndex(extraDone: Int = 0, extraW: Double? = null): Int? {
+        if (warmupItem || rx == null || working.isNotEmpty()) return null
+        val top = (warmupsDone.mapNotNull { s -> s.effective_load_kg?.let { Scaled.toDouble(it, 2) } } + listOfNotNull(extraW)).maxOrNull()
+        return (warmupsDone.size + extraDone until rx.warmup.size).firstOrNull { i -> top == null || rx.warmup[i].wSys > top + WARMUP_EPS_KG }
+    }
+
+    /** WARMUP-1's generated warm-up sets still to do (D104 (4)). */
+    val generatedWarmupsLeft: Int get() = nextWarmupIndex()?.let { (rx?.warmup?.size ?: 0) - it } ?: 0
+
+    companion object {
+        /** `load.epsilon_kg`'s scale for comparing logged loads (0.01 kg grid). */
+        const val WARMUP_EPS_KG = 0.005
+    }
 }
 
 enum class HoldPhase { READY, LEAD_IN, HOLDING, RESULT }
@@ -251,6 +269,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val params get() = c.params.fork()
     private var focusOverride: String? = null
     private val historyCache = java.util.concurrent.ConcurrentHashMap<String, List<HistorySet>>()
+    private val warmupHistoryCache = java.util.concurrent.ConcurrentHashMap<String, List<PastWarmup>>()
 
     /** The slot being written (double-tap guard): no card is shown until Room emits that set. */
     private data class PendingLog(val seId: String, val setIndex: Int, val side: String)
@@ -277,6 +296,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
      * Restored from the session's `warmup_switched` events before the first card (D81).
      */
     private val warmupOverride = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    /**
+     * D104 (2): the load mode the user chose on the current warm-up card ("Bodyweight only", "+ Add weight"), for that
+     * warm-up only; cleared once a warm-up of the item is logged. The exercise's own load mode is not changed.
+     */
+    private val warmupMode = java.util.concurrent.ConcurrentHashMap<String, LoadMode>()
 
     /** Applied suggestions (UX 11.10): "seId|side" -> set index -> the accepted target, UI-04's first prefill source. */
     private val accepted = java.util.concurrent.ConcurrentHashMap<String, Map<Int, RxTarget>>()
@@ -424,8 +449,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     /** Keeps the draft while the slot is the same; otherwise builds a fresh prefilled card. */
     private suspend fun buildCard(item: ExerciseItem, allSets: List<SetLogEntity>, old: Card?): Card {
-        val mode = LoadMode.of(item.se.load_mode)
         val warmup = warmupOverride[item.se.id] ?: (planItem(item)?.plan?.role == "warmup" || item.generatedWarmupsLeft > 0)
+        val mode = cardMode(item, warmup)
         val (setIndex, side) = nextSlot(item, warmup)
         val fresh = buildFresh(item, mode, setIndex, side, warmup, allSets)
         // An untouched card takes a target that arrived after it was shown (the prescription or the probe's follow-up).
@@ -433,6 +458,23 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             (old.taps > 0 || (old.target == fresh.target && old.rxTarget == fresh.rxTarget && old.warmupTarget == fresh.warmupTarget))
         equipmentChanged = false
         return if (keep) old!!.copy(item = item) else fresh
+    }
+
+    /** WARMUP-1's next generated warm-up of [item] (D104 (4)), when the card is a warm-up and one is left. */
+    private fun nextWarmupTarget(item: ExerciseItem, warmup: Boolean): WarmupTarget? =
+        if (warmup) item.nextWarmupIndex()?.let { item.rx?.warmup?.getOrNull(it) } else null
+
+    /**
+     * The card's load mode: the exercise's, except on a warm-up card the mode the user picked for it (D104 (2)), or
+     * bodyweight for a generated bodyweight warm-up of a bodyweight-plus-external exercise (D104 (1)): its options have
+     * no 0 kg point, so the lightest added load would show instead.
+     */
+    private fun cardMode(item: ExerciseItem, warmup: Boolean): LoadMode {
+        val own = LoadMode.of(item.se.load_mode)
+        if (!warmup || item.warmupItem) return own
+        warmupMode[item.se.id]?.let { return it }
+        val bw = nextWarmupTarget(item, true)?.bodyweight == true
+        return if (bw && own == LoadMode.BODYWEIGHT_PLUS_EXTERNAL) LoadMode.BODYWEIGHT else own
     }
 
     private fun nextSlot(item: ExerciseItem, warmup: Boolean): Pair<Int, String> {
@@ -457,11 +499,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         // B13.7 (D69): the reps refitted to the last set and the rest so far, at the same load.
         val fit = planTarget?.let { t -> restFit["${item.se.id}|$side|$workIndex"]?.takeIf { it.first.wSys == t.wSys } }
         val rxTarget = fit?.let { (f, _) -> planTarget.copy(targetReps = f.targetReps, rirPred = f.rirPred) } ?: planTarget
-        val warmupTarget = if (warmup && warmupOverride[item.se.id] == null) {
-            item.rx?.warmup?.getOrNull(item.sets.count { it.set_kind == "warmup" && it.side == side })
-        } else null
+        // D104 (3), (4): the next generated warm-up keeps its target also with the switch on.
+        val warmupTarget = nextWarmupTarget(item, warmup)
         val engine = (rxTarget?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) }
             ?: warmupTarget?.let { t -> SetValues(mode, nativeAt(points, mode, t.wSys), t.reps, null) })
+        // D104 (4), D105: today's heaviest warm-up, and last time's warm-up at this position when it fits between it and work.
+        val todayTopW = item.warmupsDone.mapNotNull { s -> s.effective_load_kg?.let { Scaled.toDouble(it, 2) } }.maxOrNull()
+        val warmupLast = if (!warmup) null else {
+            val workW = item.rx?.target(1, side)?.wSys
+            lastWarmups(item, resolved.row, points, mode).filter { it.side == side }.getOrNull(item.warmupsDone.count { it.side == side })
+                ?.takeIf { h -> h.wSys == null || ((todayTopW == null || h.wSys >= todayTopW - ExerciseItem.WARMUP_EPS_KG) && (workW == null || h.wSys < workW - ExerciseItem.WARMUP_EPS_KG)) }
+                ?.values
+        }
         val pf = UiPrefill.prefill(
             SetSlot(if (warmup) setIndex else workIndex, side, mode),
             PrefillContext(
@@ -469,9 +518,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 target = engine,
                 history = if (warmup) emptyList() else history, todayPrevious = todayPrev, default = default,
                 // Right side reps never prefill above the left side's (UX 11.7.2); the program rule arrives with M2.
-                sideRule = side == "R", leftLoggedReps = leftReps,
+                sideRule = side == "R", leftLoggedReps = leftReps, warmupLastTime = warmupLast,
             ),
-        ).value
+        ).value.let { p ->
+            // D104 (4): a warm-up never prefills lighter than the heaviest warm-up logged today.
+            val prevTop = item.warmupsDone.filter { LoadMode.of(it.load_mode) == mode }
+                .maxByOrNull { s -> s.effective_load_kg ?: Long.MIN_VALUE }
+            val pfW = p.values.native?.let { n -> points.firstOrNull { nativeOf(it, mode) == n }?.wSys }
+            if (warmup && prevTop != null && todayTopW != null && pfW != null && pfW < todayTopW - ExerciseItem.WARMUP_EPS_KG) {
+                p.copy(values = p.values.copy(native = valuesOf(prevTop).native ?: p.values.native), source = PrefillSource.LAST_PREV_INDEX)
+            } else p
+        }
         // A challenge item's targets come from its plan (CHALLENGE_ENGINE 6.1), as in-session rules left them; a
         // `delegate:rx` item's come from RX-1 once its prescription exists.
         val row = plannedRow(item, setIndex, side, warmup)
@@ -541,6 +598,29 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val renum = h.groupBy { it.sessionId to it.side }.flatMap { (_, l) -> l.sortedBy { it.setIndex }.mapIndexed { i, x -> x.copy(setIndex = i + 1) } }
         historyCache[key] = renum
         return renum
+    }
+
+    /** One warm-up of an earlier session (D105): its side, system load and values on today's equipment. */
+    private data class PastWarmup(val side: String, val wSys: Double?, val values: SetValues)
+
+    /**
+     * D105: the warm-ups of the latest earlier session of [item] that has any, in the order done, in today's load mode.
+     * A set on other equipment or calibration takes its load as in [history] (D101).
+     */
+    private suspend fun lastWarmups(item: ExerciseItem, row: GymEquipmentEntity?, points: List<LoadPoint>, mode: LoadMode): List<PastWarmup> {
+        val key = item.se.exercise_id + "|" + (row?.id ?: "-") + "|" + (row?.calibration_rev ?: 0) + "|" + mode.code
+        warmupHistoryCache[key]?.let { return it }
+        val rows = c.sessionRepository.history(item.se.exercise_id, sessionId)
+            .filter { it.set.set_kind == "warmup" && LoadMode.of(it.set.load_mode) == mode }
+        val lastSession = rows.maxWithOrNull(compareBy<dev.fitnessapp.data.db.dao.SetWithSessionStart> { it.session_started_at ?: it.set.completed_at }.thenBy { it.set.session_id })
+            ?.set?.session_id
+        val out = rows.filter { it.set.session_id == lastSession }.sortedWith(compareBy({ it.set.set_index }, { it.set.completed_at })).map { r ->
+            val v = valuesOf(r.set)
+            val same = r.set.equipment_id == row?.id && r.set.equipment_calibration_rev == row?.calibration_rev
+            PastWarmup(r.set.side, r.set.effective_load_kg?.let { Scaled.toDouble(it, 2) }, if (same || row == null) v else v.copy(native = convertedNative(r.set, points, mode) ?: v.native))
+        }
+        warmupHistoryCache[key] = out
+        return out
     }
 
     /**
@@ -748,12 +828,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun setWarmup(on: Boolean) {
         val card = _ui.value.card ?: return
         warmupOverride[card.item.se.id] = on
+        warmupMode.remove(card.item.se.id)
         // D81: the event keeps the choice for the session; restoreWarmupSwitches reads it back.
         emit("warmup_switched", card.item.se.id, mapOf("on" to JsonPrimitive(on)))
         viewModelScope.launch {
             val s = last ?: return@launch
             val (index, side) = nextSlot(card.item, on)
-            val fresh = buildFresh(card.item, card.mode, index, side, on, s.sets)
+            val fresh = buildFresh(card.item, cardMode(card.item, on), index, side, on, s.sets)
             _ui.update { it.copy(card = fresh) }
         }
     }
@@ -892,7 +973,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             } ?: listOf(cmd)
             val ids = c.sessionRepository.logSets(cmds)
             val setId = ids.first()
+            if (card.warmup && !card.item.warmupItem) {
+                warmupMode.remove(card.item.se.id) // D104 (2): the mode chosen on a warm-up card is for that set only
+                // D104 (3): a manual warm-up is one set; with no generated warm-up left the card goes to the working sets.
+                if (warmupOverride[card.item.se.id] == true && card.item.nextWarmupIndex(1, p?.wSys) == null) {
+                    warmupOverride[card.item.se.id] = false
+                    emit("warmup_switched", card.item.se.id, mapOf("on" to JsonPrimitive(false), "auto" to JsonPrimitive(true)))
+                }
+            }
             historyCache.keys.removeIf { it.startsWith(card.item.se.exercise_id + "|") }
+            warmupHistoryCache.keys.removeIf { it.startsWith(card.item.se.exercise_id + "|") }
             // B9.8: once the probe is logged on every side, RX-1 plans the remaining sets from it.
             if (!card.warmup && card.workIndex == 1 && card.item.rx?.probe == true && card.side != "L") {
                 rxSlot(card.item)?.let { slot -> runCatching { c.prescriptions.followUp(slot) } }
@@ -960,7 +1050,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             _ui.update { it.copy(switchHint = false) }
             return
         }
-        val generatedRest = card.warmupTarget?.restS
+        // D104 (4): when the warm-up just done leaves no generated warm-up, the next set is the first working set.
+        val generatedRest = card.warmupTarget?.let { t ->
+            if (card.item.nextWarmupIndex(1, card.point?.wSys) == null) WarmupRest.afterWarmup(null, true, p) else t.restS
+        }
         val decision = if (card.warmup && generatedRest != null) {
             RestPolicy.decide(RestInput(RestClass.of(card.item.ex.restClass), prevWasWarmup = true, warmupRestS = generatedRest), p)
         } else if (card.warmup) {
@@ -1201,6 +1294,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             c.restTimer.cancelForUndo(sessionId, l.at)
             (listOf(l.setId) + l.extraIds).forEach { c.sessionRepository.undoSet(it) }
             historyCache.clear()
+            warmupHistoryCache.clear()
         }
     }
 
@@ -1341,6 +1435,18 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun setLoadMode(mode: LoadMode) {
         val card = _ui.value.card ?: return
+        val perSet = setOf(LoadMode.BODYWEIGHT, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        if (card.warmup && !card.item.warmupItem && mode in perSet && card.mode in perSet) {
+            // D104 (2): on a warm-up card the mode is for this set only; the exercise and its prescription stay.
+            warmupMode[card.item.se.id] = mode
+            emit("warmup_load_mode", card.item.se.id, mapOf("to" to JsonPrimitive(mode.code)))
+            viewModelScope.launch {
+                val s = last ?: return@launch
+                val fresh = buildFresh(card.item, mode, card.setIndex, card.side, true, s.sets)
+                _ui.update { it.copy(card = fresh) }
+            }
+            return
+        }
         viewModelScope.launch {
             c.sessionRepository.setLoadMode(card.item.se.id, mode)
             rxRequested.remove(card.item.se.id) // the row may have lost its prescription: RX-1 plans the new mode (D80)

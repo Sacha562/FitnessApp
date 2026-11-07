@@ -60,7 +60,8 @@ data class Exposure(val sessionId: String, val date: LocalDate, val sets: List<L
  * Everything the prescription of one session exercise and side reads (B9.2), gathered from the stored facts by the
  * caller. [exposures] are the valid and invalid earlier exposures, newest first; [sse] is the stored SSE-1 state
  * (predicted to [at] here); [loadables] the equipment's system loads; [item] the scheme of a `delegate:rx` challenge
- * item (D49). [warm] and [firstForGroup] are WARMUP-1's group context in today's session.
+ * item (D49). [warm] and [firstForGroup] are WARMUP-1's group context in today's session; [warmupLoadables] the
+ * loadables on the warm-up grid (D106, null = no grid) and [warmupMaxSets] the user's warm-up count (D107, null = auto).
  */
 data class RxRequest(
     val exerciseId: String,
@@ -85,6 +86,8 @@ data class RxRequest(
     val deload: Boolean = false,
     val warm: Boolean = false,
     val firstForGroup: Boolean = true,
+    val warmupLoadables: List<Double>? = null,
+    val warmupMaxSets: Int? = null,
 )
 
 /** One prescription: RX-1's input and output and WARMUP-1's sets (null when nothing gets a warm-up). */
@@ -194,6 +197,7 @@ object Prescribing {
             WarmupInput(
                 wWork = w, m = m, k = input.k, isolation = req.isolation, loadables = input.loadables, bodyweightW = req.bodyweightW,
                 warm = req.warm, firstForGroup = req.firstForGroup,
+                gridLoadables = req.warmupLoadables?.sorted()?.distinct(), maxSets = req.warmupMaxSets,
                 rStar = if (input.scheme.kind == SchemeKind.FIXED) input.scheme.rStar else null,
             ),
             params,
@@ -274,6 +278,9 @@ object Prescribing {
         put("deload", req.deload)
         put("warm", req.warm)
         put("first_for_group", req.firstForGroup)
+        // D106: only when present, so the inputs of exercises without a grid or a count keep their hash.
+        req.warmupLoadables?.let { w -> put("warmup_loadables", JsonArray(w.sorted().distinct().map { kg(it) })) }
+        req.warmupMaxSets?.let { put("warmup_max_sets", JsonNumbers.int(it.toLong())) }
     }
 
     fun inputsHash(req: RxRequest): String = Jcs.sha256Hex(inputs(req))

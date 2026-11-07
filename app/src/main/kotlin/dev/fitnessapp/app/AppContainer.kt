@@ -185,6 +185,8 @@ class AppContainer(private val context: Context) {
     val prescriptions: dev.fitnessapp.data.engine.PrescriptionRunner by lazy {
         dev.fitnessapp.data.engine.PrescriptionRunner(db, outbox, writeContext, syncScheduler, catalog, { catalogModel }, equipment, params, PARAMS_VERSION, repPreferences)
     }
+    /** D107: the "plan fewer warm-ups?" offer of the Session Summary. */
+    val warmupHabits: dev.fitnessapp.data.engine.WarmupHabits by lazy { dev.fitnessapp.data.engine.WarmupHabits(db, prescriptions) }
     /** WE-1 for a live session (M3.5): evidence and safety warnings, stored as `warnings.evaluation`. */
     val warnings: dev.fitnessapp.data.engine.WarningRunner by lazy {
         dev.fitnessapp.data.engine.WarningRunner(db, outbox, writeContext, syncScheduler, catalog, prescriptions, params, PARAMS_VERSION)
@@ -306,7 +308,7 @@ class AppContainer(private val context: Context) {
 
     companion object {
         /** The bundled params version (ALGORITHMS A8.1); the export lists it in `params_versions`. */
-        const val PARAMS_VERSION = "1.0.7"
+        const val PARAMS_VERSION = "1.0.8"
 
         /** C49: the profile default changeover (minutes) that add-on capacity and validation V13 use. */
         const val CHANGEOVER_MIN = 5

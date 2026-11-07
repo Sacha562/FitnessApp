@@ -1186,6 +1186,7 @@ Check: at least one of `sets_pref`, `rep_min`, `rir_target`, `rep_scheme`, `rest
 | `preference` | text | not null | `'neutral'` | E15 | C26 5-state enum. Multipliers 0 / 0.6 / 1.0 / 1.15 / 1.495 live in `pref.*` params. |
 | `unavailable_until` | date | null | | | PREF-1: hidden until this date; not a preference. |
 | `note` | text | null | | length <= 200 | |
+| `warmup_sets` | smallint | null | | 0-5 (`user_exercise_prefs_warmup_sets_check`) | D107: the warm-up sets WARMUP-1 may plan for the exercise (`max_sets`, D106); null = automatic. Migration 066. |
 
 Index: `(exercise_id)`.
 
@@ -1809,7 +1810,8 @@ Event registry. This table is canonical (C39): it is the union of the event name
 | logging | `hold_interrupted` | UX 20.3 | `ms_since_go?` |
 | logging | `hold_count_aloud_toggled`, `hold_ecc_pacing_started` | UX 20.3 | `on` / `lead_in_s` |
 | logging | `warmup_item_done` | UX 20.3 (warm-ups are logged with Done, C63) | `item_key`, `block_id` |
-| logging | `warmup_switched` | UX 11.5 (the live card's warm-up switch; the live screen reads it back, D81) | `on` |
+| logging | `warmup_load_mode` | UX 11.5 (a load-mode change on a warm-up card, for that set only, D104) | `to` |
+| logging | `warmup_switched` | UX 11.5 (the live card's warm-up switch; the live screen reads it back, D81; `auto` after a manual warm-up, D104) | `on`, `auto` |
 | logging | `exercise_skipped` | UX 20.3 | `reason_code`, `chip_position`, `sets_done` |
 | logging | `exercise_deferred` | UX 20.3 | `defer_count`, `from_position`, `to_position` |
 | logging | `swap_sheet_shown` | UX 20.3 | `from_exercise_id`, `candidates`, `trigger_reason` |
@@ -1881,7 +1883,7 @@ Event registry. This table is canonical (C39): it is the union of the event name
 | config | `equipment_calibration_changed` | UX 20.8, 9.3.3 | `gym_equipment_id`, `from_scheme`, `to_scheme`, `from_rev`, `to_rev` |
 | config | `rep_preference_changed` | UX 20.8 | `scope`, `exercise_id?`, `field`, `from`, `to`, `warning_rule_ids` |
 | config | `goal_changed` | UX 20.8 | `group`, `from`, `to`, `focus_from`, `focus_to`, `via`, `preset_id?` |
-| config | `preference_changed` | UX 20.8 (C26) | `exercise_id`, `from`, `to`, `surface` |
+| config | `preference_changed` | UX 20.8 (C26); `field: warmup_sets` for the warm-up count (D107) | `exercise_id`, `from`, `to`, `surface`, `field` |
 | config | `exercise_custom_created` | UX 20.8 | `exercise_id`, `pattern`, `equipment`, `coefficients_edited` |
 | config | `settings_changed` | UX 20.8 | `key`, `from`, `to` |
 | config | `params_activated` | UX 20.8 | `params_hash`, `params_version`, `session_id?` |
@@ -2419,6 +2421,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 059 | `fitness_059_time_calibration` (data; applied 2026-11-05, version 20261105161903) | D93 | `algo_params` 1.0.6 = 1.0.5 plus `time.rest_ratio` 1.0, `time.calib_min_rests` 3, `time.calib_min_switches` 2, `time.calib_rest_ratio_step` 0.05, `time.calib_transition_step_s` 5 and `time.transition_s` max 300 (629 keys, hash `c479105f…7389`; 1.0.5 superseded); registers `time@1.1.0` (TIME-1 calibration, new constants_hash) and `order@1.1.0` (superset time takes the rest ratio, same constants_hash), ENGINE_VERSION 1.22.0. No user rows. | Checks inside the migration (key count, unchanged other keys, hash, one active version, two module versions for 1.22.0); advisors. |
 | 064 | `fitness_064_skip_not_a_priority` (data; applied 2026-11-07, version 20261107155633) | D99 | `algo_params` 1.0.7 = 1.0.6 with `select.lam_skip` 0.25 (was 3.0), the new `select.skip_direct_coeff` 0.75 and `elig.skip_coeff` source text (630 keys, params_hash edf79d9d...2003); 1.0.6 superseded; registers `elig@1.1.0` and `select@1.1.0`, ENGINE_VERSION 1.25.0. No DDL. |
 | 065 | `fitness_065_calf_machines_plates` (data; applied 2026-11-07, version 20261107163247) | D101, D102 | `equipment_types.calf_machine` becomes the seated calf machine (plates, kg), new station `calf_machine_standing` (plates, kg); catalog release 1.0.5 (159 exercises, 541 stimulus rows, jcs_sha256 `5cf53c50…ea49`) moves `standing_calf_raise_machine` to it and tags `back_extension_45` `held_load`; both users' `calf_machine` rows become plates without a base, and each gets a `calf_machine_standing` row with `base_kg` 30.4; the owner's standing calf sets (24 Oct, 7 Nov) move to it with the 30.4 kg base (effective 89.37, 100.4, warm-up 50.4). | Guard: no session in progress; assertions afterwards. Manual rollback in the file header. |
+| 066 | `fitness_066_warmup_grid_count` (DDL and data; applied 2026-11-07, version 20261107193739) | D104-D107 | `user_exercise_prefs.warmup_sets` smallint 0-5 (null = automatic); `algo_params` 1.0.8 = 1.0.7 with `warmup.grid_plates_kg` 10 and `warmup.grid_belt_kg` 5 (632 keys); `warmup@1.1.0` and `ui.prefill@1.1.0` for engine 1.26.0; the registry gains `warmup_load_mode`, `warmup_switched.auto` and `preference_changed.field`. Applied before the APK that writes the column is installed (9.1.9 release rule). | Checks inside the migration (column, params hash and keys, two modules for 1.26.0, the registry rows); advisors. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 

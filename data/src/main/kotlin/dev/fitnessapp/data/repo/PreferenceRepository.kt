@@ -47,6 +47,39 @@ class PreferenceRepository(
         return eventId
     }
 
+    /** D107: exercise id -> the stored warm-up count (exercises without one are automatic). */
+    fun observeWarmupSets(): Flow<Map<String, Int>> =
+        db.exercisePrefs().observeAll().map { rows -> rows.mapNotNull { r -> r.warmup_sets?.let { r.exercise_id to it } }.toMap() }
+
+    /** D107: the warm-up count WARMUP-1 may plan for [exerciseId] (0-5, null = automatic); false when nothing changed. */
+    suspend fun setWarmupSets(exerciseId: String, to: Int?, surface: String): Boolean {
+        require(to == null || to in 0..MAX_WARMUP_SETS) { "warm-up sets out of range: $to" }
+        var changed = false
+        db.withTransaction {
+            val uid = ctx.requireUser()
+            val id = idOf(uid, exerciseId)
+            val old = db.exercisePrefs().get(id)?.takeIf { it.deleted_at == null }
+            if (old?.warmup_sets == to && (old != null || to == null)) return@withTransaction
+            val row = (old ?: UserExercisePrefEntity(id = id, user_id = uid, client_updated_at = 0, device_id = "", app_version = "", exercise_id = exerciseId))
+                .copy(warmup_sets = to, deleted_at = null, client_updated_at = ctx.nextClientMs(), device_id = ctx.device.deviceId(), app_version = ctx.appVersion)
+            db.exercisePrefs().upsert(row)
+            outbox.enqueue("user_exercise_prefs", id, ctx.nowMs())
+            telemetry.write(
+                EventDraft(
+                    type = "preference_changed", entityType = "exercise", entityId = exerciseId,
+                    payload = mapOf(
+                        "exercise_id" to JsonPrimitive(exerciseId), "field" to JsonPrimitive("warmup_sets"),
+                        "from" to JsonPrimitive(old?.warmup_sets?.toString() ?: "auto"), "to" to JsonPrimitive(to?.toString() ?: "auto"),
+                        "surface" to JsonPrimitive(surface),
+                    ),
+                ),
+            )
+            changed = true
+        }
+        if (changed) scheduler.request()
+        return changed
+    }
+
     /** Writes the row; returns the previous preference, or null when it already had [to]. */
     private suspend fun write(exerciseId: String, to: String): String? {
         val uid = ctx.requireUser()
@@ -66,6 +99,9 @@ class PreferenceRepository(
 
     companion object {
         const val NEUTRAL = "neutral"
+
+        /** D107: the largest stored warm-up count (the column's check). */
+        const val MAX_WARMUP_SETS = 5
 
         /** C26 order, as the segmented control shows it. */
         val STATES = listOf("favorite", "like", NEUTRAL, "dislike", "never")

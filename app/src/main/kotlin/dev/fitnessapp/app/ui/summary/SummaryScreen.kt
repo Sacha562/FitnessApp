@@ -166,6 +166,7 @@ fun SummaryRoute(c: AppContainer, sessionId: String, onDone: () -> Unit) {
                 if (s?.enrollment_id != null) ChallengeSummaryTile(c, sessionId)
                 next?.takeIf { it.isNotEmpty() }?.let { NextTimeTile(c, sessionId, it) }
                 s?.let { PrefPromptTile(c, sessionId, it.local_date) }
+                WarmupPromptTile(c, sessionId)
 
                 val done = exercises.filter { it.deleted_at == null }.sortedWith(compareBy({ it.position }, { it.id }))
                 if (done.isNotEmpty()) {

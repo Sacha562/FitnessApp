@@ -48,7 +48,7 @@ object SessionsCli {
         return 0
     }
 
-    const val LATEST_PARAMS: String = "params/default-params-1.0.7.json"
+    const val LATEST_PARAMS: String = "params/default-params-1.0.8.json"
 
     fun render(persona: JsonObject, params: ParamView): String {
         val taxonomy = Taxonomy.parse(SimResources.text("reference/muscle_groups.json"), SimResources.text("reference/muscle_regions.json"))

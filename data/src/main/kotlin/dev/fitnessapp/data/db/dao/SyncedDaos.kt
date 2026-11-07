@@ -418,6 +418,10 @@ interface UserExercisePrefDao : SyncDao<UserExercisePrefEntity> {
 
     @Query("SELECT * FROM user_exercise_prefs WHERE id = :id")
     suspend fun get(id: String): UserExercisePrefEntity?
+
+    /** The live row of [exerciseId] (one user per device). */
+    @Query("SELECT * FROM user_exercise_prefs WHERE exercise_id = :exerciseId AND deleted_at IS NULL ORDER BY id LIMIT 1")
+    suspend fun forExercise(exerciseId: String): UserExercisePrefEntity?
 }
 
 @Dao

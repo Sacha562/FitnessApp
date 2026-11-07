@@ -13,7 +13,9 @@ import dev.fitnessapp.algo.estimation.rcm.RepCurve
  * without a state); [loadables] the system loads of the equipment (any order); [bodyweightW] `f_bw * BW` for the
  * bodyweight family (null otherwise) and [assisted] the assisted machine's system loads when the exercise allows
  * that mode and the machine exists. [warm]: the primary group already got `warmup.warm_min_sets` working sets today;
- * [firstForGroup]: the first exercise of today for its primary group.
+ * [firstForGroup]: the first exercise of today for its primary group. [gridLoadables] are the loadables on the warm-up
+ * grid (D106 (1), see [WarmupGrid]; null = every loadable), [maxSets] the user's warm-up count for the exercise (D106 (2),
+ * D107; null = automatic).
  */
 data class WarmupInput(
     val wWork: Double,
@@ -27,6 +29,8 @@ data class WarmupInput(
     val firstForGroup: Boolean = true,
     val rStar: Int? = null,
     val testSession: Boolean = false,
+    val gridLoadables: List<Double>? = null,
+    val maxSets: Int? = null,
 )
 
 enum class WarmupTier(val code: String) { NONE("none"), LOW("low"), MID("mid"), HIGH("high") }
@@ -45,6 +49,8 @@ object Warmup : DeclaresParams {
     val ref: ModuleRef = ModuleRegistry.ref("warmup")
 
     override val paramSpecs: List<ParamSpec> = WarmupRest.paramSpecs + listOf(
+        ParamSpec.number("warmup.grid_belt_kg", "kg", 1.25, 10.0),
+        ParamSpec.number("warmup.grid_plates_kg", "kg", 2.5, 20.0),
         ParamSpec.number("warmup.max_cap_frac", "of capacity", 0.3, 0.7),
         ParamSpec.number("warmup.p_high", "ratio of M", 0.6, 0.95),
         ParamSpec.number("warmup.p_mid", "ratio of M", 0.4, 0.8),
@@ -81,7 +87,15 @@ object Warmup : DeclaresParams {
                     val a = easierOrEqual(input.assisted, target, eps)
                     if (a != null) a to false else bw to true
                 }
-                else -> (easierOrEqual(input.loadables, target, eps) ?: continue) to false
+                // D106 (1): the warm-up grid first (bodyweight counts as on it), else every loadable as before.
+                else -> {
+                    val g = input.gridLoadables?.let { easierOrEqual(it, target, eps) }
+                    when {
+                        g != null && (bw == null || g >= bw - eps) -> g to false
+                        bw != null && input.gridLoadables != null -> bw to true
+                        else -> (easierOrEqual(input.loadables, target, eps) ?: continue) to false
+                    }
+                }
             }
             // At most half of the capacity at that load (B10); without a model the tier's reps stand.
             val capReps = input.m?.let { kotlin.math.floor(maxCap * RepCurve.cap(w, it, input.k)).toInt() } ?: reps
@@ -94,10 +108,22 @@ object Warmup : DeclaresParams {
             val i = merged.indexOfFirst { kotlin.math.abs(it.wSys - s.wSys) < eps }
             if (i < 0) merged += s else if (s.reps > merged[i].reps) merged[i] = merged[i].copy(reps = s.reps)
         }
-        val withRest = merged.mapIndexed { i, s ->
-            s.copy(restS = WarmupRest.afterWarmup(s.frac, i == merged.size - 1, params))
+        val kept = capped(merged, input.maxSets?.takeUnless { input.testSession })
+        val withRest = kept.mapIndexed { i, s ->
+            s.copy(restS = WarmupRest.afterWarmup(s.frac, i == kept.size - 1, params))
         }
         return WarmupPlan(tier, pW?.let { Grid.ratio(it) }, withRest)
+    }
+
+    /**
+     * D106 (2): at most [max] sets, consecutive and centred in the ramp; the heavier side when it cannot be centred
+     * (3 -> 1 keeps the middle set, 2 -> 1 the heavier one, 3 -> 2 the two heavier ones).
+     */
+    private fun capped(sets: List<WarmupSet>, max: Int?): List<WarmupSet> {
+        if (max == null || sets.size <= max) return sets
+        if (max <= 0) return emptyList()
+        val start = (sets.size - max + 1) / 2
+        return sets.subList(start, start + max)
     }
 
     private fun tier(params: ParamView, key: String): List<Pair<Double, Int>> {

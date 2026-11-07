@@ -83,7 +83,7 @@ import java.io.File
  * `rest_timer` (the warm-up row countdown, D33), version 6 (M2b.5) `calendar_events` with the local
  * `calendar_instance` cache and `calendar_link` table, version 7 (M3.2) the estimation layer's `params_snapshots`,
  * `recommendations` and `exercise_model_state`, version 8 (M3.5) `rep_preferences`, version 9 (D50) its `rest_pref_mult`,
- * version 10 (M3.6) the custom `exercises` and `exercise_stimulus`, version 11 (M4.2) `muscle_goals`. Later milestones add tables through
+ * version 10 (M3.6) the custom `exercises` and `exercise_stimulus`, version 11 (M4.2) `muscle_goals`, version 12 (D107) `user_exercise_prefs.warmup_sets`. Later milestones add tables through
  * numbered migrations, never through a destructive fallback (8.5).
  */
 @Database(
@@ -116,7 +116,7 @@ import java.io.File
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8),
-        AutoMigration(from = 8, to = 9), AutoMigration(from = 9, to = 10), AutoMigration(from = 10, to = 11),
+        AutoMigration(from = 8, to = 9), AutoMigration(from = 9, to = 10), AutoMigration(from = 10, to = 11), AutoMigration(from = 11, to = 12),
     ],
 )
 @TypeConverters(Converters::class)
@@ -156,7 +156,7 @@ abstract class FitnessDatabase : RoomDatabase() {
     abstract fun modelStates(): ExerciseModelStateDao
 
     companion object {
-        const val VERSION = 11
+        const val VERSION = 12
         const val FILE = "fitness.db"
         private const val BACKUPS_KEPT = 3
 
