@@ -46,6 +46,9 @@ android {
         buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
         buildConfigField("boolean", "SYNC_ENABLED", "true")
         buildConfigField("boolean", "USER_CALENDAR_WRITES_ENABLED", "true")
+        // In-app update check (D98): GitHub repository of the releases; automatic checks in the release build only.
+        buildConfigField("String", "UPDATE_REPO", "\"Sacha562/FitnessApp\"")
+        buildConfigField("boolean", "UPDATE_CHECK_ENABLED", "true")
     }
 
     signingConfigs {
@@ -63,6 +66,8 @@ android {
         // debug and release share the application id and the release key (F17, F27, ANDROID.md 5.3).
         getByName("debug") {
             signingConfig = signingConfigs.getByName("release")
+            // The developer's daily install: never offered a release build without asking (D98 (2)).
+            buildConfigField("boolean", "UPDATE_CHECK_ENABLED", "false")
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
@@ -78,6 +83,7 @@ android {
             matchingFallbacks += "debug"
             buildConfigField("boolean", "SYNC_ENABLED", "false")
             buildConfigField("boolean", "USER_CALENDAR_WRITES_ENABLED", "false")
+            buildConfigField("boolean", "UPDATE_CHECK_ENABLED", "false")
         }
     }
 

@@ -107,7 +107,19 @@ class LocalSettings(context: Context) {
         return true
     }
 
+    /** Wall-clock ms of the last update check (D98 (2)); 0 before the first. */
+    var lastUpdateCheckMs: Long
+        get() = prefs.getLong(KEY_UPDATE_CHECK, 0L)
+        set(v) = prefs.edit().putLong(KEY_UPDATE_CHECK, v).apply()
+
+    /** The highest release version code already notified (N-UPDATE) or shown in the app (D98 (2)). */
+    var lastNotifiedUpdateCode: Int
+        get() = prefs.getInt(KEY_UPDATE_NOTIFIED, 0)
+        set(v) = prefs.edit().putInt(KEY_UPDATE_NOTIFIED, v).apply()
+
     private companion object {
+        const val KEY_UPDATE_CHECK = "update_check_ms"
+        const val KEY_UPDATE_NOTIFIED = "update_notified_code"
         const val KEY_ONCE = "once."
         const val KEY_CAL_PRIMARY = "calendar_primary_identity"
         const val KEY_CAL_EXTRA = "calendar_extra_identities"

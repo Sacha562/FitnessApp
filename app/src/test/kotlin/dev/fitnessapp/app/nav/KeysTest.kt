@@ -19,6 +19,7 @@ class KeysTest {
     fun `notification routes`() {
         Routes.parse("fitapp://you/data/export") shouldBe Routes.Target.DataSyncExport
         Routes.parse("fitapp://you/data") shouldBe Routes.Target.DataSync
+        Routes.parse("fitapp://update") shouldBe Routes.Target.Update
         Routes.parse("fitapp://session/current") shouldBe Routes.Target.CurrentSession
         Routes.parse("https://example.org") shouldBe Routes.Target.Today
     }

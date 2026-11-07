@@ -143,6 +143,7 @@ fun YouRoute(
             Text("This app does not give medical advice.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
             MoreSection("About") {
                 Text("App ${BuildConfig.VERSION_NAME} · engine ${EngineVersion.ENGINE_VERSION} · catalog ${c.catalog.version}", style = MaterialTheme.typography.bodySmall)
+                dev.fitnessapp.app.update.UpdateCheckRow(c.updates)
             }
         }
     }

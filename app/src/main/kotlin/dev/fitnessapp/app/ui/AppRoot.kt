@@ -130,6 +130,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 }.getOrNull()
                 id?.let { push(AppKey.LiveSession(it)) }
             }
+            Routes.Target.Update -> c.updates.checkNow()
             Routes.Target.Today -> {}
         }
         route.value = null
@@ -267,6 +268,8 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             }
         },
     )
+    // D98 (3): the update prompt, on the main tabs only (never over a session, test day or summary).
+    if (top == AppKey.Main) dev.fitnessapp.app.update.UpdatePrompt(c.updates)
 }
 
 /** UX 20.2 `session_restored`: the app came back with a session in progress. */

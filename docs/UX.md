@@ -3072,6 +3072,27 @@ version, build, licences including Manrope OFL and free-exercise-db Unlicense), 
 
 ---
 
+### 15.13 App updates (D98)
+
+The release build checks the repository's GitHub releases (`/releases/latest`) when the app comes to
+the foreground, at most once per 24 h, and once a day in the background (N-UPDATE). Debug and sandbox
+builds check only when asked.
+
+* **Prompt.** A release whose version code (the last number of its tag `v0.<m>.<versionCode>`) is
+  above the installed one opens the dialog "Update available": "Version 0.0.170 is out. You have
+  0.0.163. Download: 4.8 MB.", the release notes as plain text in a scrollable block, and the buttons
+  "Update" and "Later". It appears only on the main tabs, never over a live session, test day or
+  summary. "Later" closes it until a check finds the release again (the next day at the earliest).
+* **Download.** "Update" shows "Downloading… 45%" with a progress bar and Cancel. The APK is checked
+  against the SHA-256 GitHub lists for it, then Android's installer opens; Android asks once to allow
+  installs from FitnessApp. A failed or mismatched download shows "The download failed. Try again."
+  If the installer is closed without installing, the dialog reads "Update downloaded" with "Install".
+* **Manual check.** You > About has "Check for updates" in every build: "Checking…", then "Up to
+  date", the prompt, or "Couldn't check for updates. Check your connection." After "Later" the line
+  reads "Version 0.0.170 is available"; checking again reopens the prompt.
+
+No telemetry event of its own: N-UPDATE uses `notification_posted` and `notification_opened`.
+
 ## 16. Bottom sheets
 
 ### 16.1 Why sheet (`sheet.why`, F19 layer 2)
@@ -3364,6 +3385,7 @@ do not create it.
 | `N-CELEBRATE` | `challenge` (DEFAULT) | phase gate passed | "Phase 2 unlocked: less help" | Open | Challenges dashboard (`fitapp://challenge/<enrollment_id>`) |
 | `N-EXPORT` | `app_status` (LOW) | monthly, if no export in 30 days (`export.reminderDays`, F4) | "Monthly backup: export your data" | Export | You > Data and sync (`fitapp://you/data`) |
 | `N-SYNC` | `app_status` (LOW) | dead-letter rows, or no sync for 7 days | "3 changes could not be uploaded" | Open | You > Data and sync (`fitapp://you/data`) |
+| `N-UPDATE` | `app_status` (LOW) | release build, daily background check finds a newer GitHub release not yet notified or shown (D98, 15.13) | "Update available" · "FitnessApp 0.0.170 is ready to install" | none | update prompt (`fitapp://update`) |
 
 * Habit reminders use `setExactAndAllowWhileIdle` with a `setWindow` 10 min fallback, scheduled 48 h
   ahead (ANDROID section 17); the weigh-in and test-day notifications use the same reminder path. Only
@@ -4350,7 +4372,7 @@ Payload details of `rest_alarm_fired` are owned by ANDROID.md 12.7; they are rep
 | `exact_alarm_status`, `battery_optimization_status` | checked on onboarding and on each app start | none | `allowed` / `ignoring` |
 | `oem_settings_opened`, `oem_settings_confirmed` | phone-maker settings step (8.6) | none | `maker`, `intent_ok?` (only on opened) |
 | `timer_selftest` | the 20 s self-test completes (8.6) | none | `latency_ms`, `felt`, `screen_off`, `alarm_mode`, `passed`, `platform_config_hash` |
-| `notification_posted` | a notification of section 18 is posted (for scheduled reminders, when it is delivered) | none | `notification_id` (N-SESSION, N-IDLE, N-HABIT, N-WEIGH, N-TEST-DAY, N-PROGRAM, N-SAFETY, N-CELEBRATE, N-EXPORT, N-SYNC), `channel` (ANDROID 13.1 channel id), `latency_ms?` (scheduled reminders), `platform_config_hash?` (reminder deliveries) |
+| `notification_posted` | a notification of section 18 is posted (for scheduled reminders, when it is delivered) | none | `notification_id` (N-SESSION, N-IDLE, N-HABIT, N-WEIGH, N-TEST-DAY, N-PROGRAM, N-SAFETY, N-CELEBRATE, N-EXPORT, N-SYNC, N-UPDATE), `channel` (ANDROID 13.1 channel id), `latency_ms?` (scheduled reminders), `platform_config_hash?` (reminder deliveries) |
 | `notification_action` | a notification action is tapped | none | `notification_id`, `channel`, `action` (minus_15, plus_15, skip, start, snooze, skip_today, finish, keep_open, weigh_in, export, open) |
 | `notification_opened` | a notification body is tapped | none | `notification_id`, `channel` |
 | `engine_error` | an engine module throws (7.5) | recommendation | `module_id`, `module_version`, `inputs_hash`, `error_class` |
@@ -4533,6 +4555,7 @@ screen sections and in section 20.
 | N-TEST-DAY | `challenge.plan` |
 | N-PROGRAM, N-SAFETY, N-CELEBRATE | `challenge.eca` rule notifications (deduplicated per message per day, C21), `safety` |
 | N-EXPORT, N-SYNC | `:data` (export dates, outbox, dead letters) |
+| N-UPDATE | `:app` UpdateManager / UpdateWorker (GitHub releases, D98) |
 
 ---
 

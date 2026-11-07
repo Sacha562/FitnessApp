@@ -204,6 +204,8 @@ class AppContainer(private val context: Context) {
     val idle: dev.fitnessapp.app.session.IdleWatcher by lazy { dev.fitnessapp.app.session.IdleWatcher(this) }
 
     val notifications: NotificationPresenter by lazy { NotificationPresenter(context) }
+    /** The in-app update check (D98). */
+    val updates: dev.fitnessapp.app.update.UpdateManager by lazy { dev.fitnessapp.app.update.UpdateManager(context, settings, appScope) }
     val haptics: Haptics by lazy { Haptics(context) }
     val selfTests: SelfTestStore by lazy { SelfTestStore(context) }
     val restTimer: RestTimerController by lazy {

@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import android.os.Build
 import dev.fitnessapp.app.maintenance.MaintenanceWorker
 import dev.fitnessapp.app.notify.Channels
+import dev.fitnessapp.app.update.UpdateWorker
 import kotlinx.serialization.json.JsonPrimitive
 import dev.fitnessapp.app.ui.equipment.EquipmentUpgrade
 import dev.fitnessapp.data.db.local.CrashLogEntity
@@ -57,6 +58,8 @@ class FitnessApplication : Application(), Configuration.Provider {
         step("channels") { Channels.create(this) }
         step("periodic_sync") { container.syncScheduler.ensurePeriodic() }
         step("maintenance") { MaintenanceWorker.ensureScheduled(this) }
+        // D98 (2): the daily background update check, release build only.
+        step("update_check") { if (container.updates.automatic) UpdateWorker.ensureScheduled(this) }
         container.appScope.launch {
             suspend fun stepS(name: String, block: suspend () -> Unit) = runCatching { block() }.onFailure { failed += name to it }
             // M3.6: custom exercises join the catalog before anything resolves an exercise id.
@@ -108,6 +111,7 @@ class FitnessApplication : Application(), Configuration.Provider {
                 foreground = true
                 container.calendar.requestRefresh("app_start", 0)
                 container.syncScheduler.request(trigger = "app_start", immediate = true)
+                runCatching { container.updates.checkIfDue() }
                 val cold = coldStart
                 coldStart = false
                 container.appScope.launch { runCatching { container.fgsEvent("app_opened", mapOf("cold_start" to cold)) } }
@@ -171,6 +175,7 @@ class FitnessApplication : Application(), Configuration.Provider {
                 when (workerClassName) {
                     SyncWorker::class.java.name -> SyncWorker(appContext, workerParameters, container.syncEngine)
                     MaintenanceWorker::class.java.name -> MaintenanceWorker(appContext, workerParameters, container)
+                    UpdateWorker::class.java.name -> UpdateWorker(appContext, workerParameters, container)
                     else -> null
                 }
         }).build()

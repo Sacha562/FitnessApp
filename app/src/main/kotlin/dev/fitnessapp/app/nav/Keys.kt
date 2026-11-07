@@ -102,6 +102,9 @@ object Routes {
         data object DataSync : Target
         data object DataSyncExport : Target
 
+        /** N-UPDATE (D98): check for the release and open the update prompt. */
+        data object Update : Target
+
         /** N-HABIT Start (ANDROID.md 17): the habit's home mini-session. */
         data class Habit(val habitId: String) : Target
     }
@@ -112,6 +115,7 @@ object Routes {
         "fitapp://session/current", "fitapp://session/current/rest" -> Target.CurrentSession
         "fitapp://you/data" -> Target.DataSync
         "fitapp://you/data/export" -> Target.DataSyncExport
+        "fitapp://update" -> Target.Update
         else -> route?.removePrefix("fitapp://habit/")?.takeIf { it != route && HABIT_ID.matches(it) }?.let(Target::Habit) ?: Target.Today
     }
 }

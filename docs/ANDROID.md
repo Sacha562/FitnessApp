@@ -1613,7 +1613,7 @@ Rest timers live entirely in UTC epoch milliseconds and elapsed time, so the DST
 | `habit_reminders` | "Reminders" | DEFAULT | system default | system default | PRIVATE | Home-habit reminders (`N-HABIT`, section 17) and the weigh-in reminder (`N-WEIGH`). |
 | `challenge` | "Challenge updates" | DEFAULT | system default | system default | PRIVATE | Test-day morning (`N-TEST-DAY`), program changes outside a session (`N-PROGRAM`), phase unlocked (`N-CELEBRATE`). |
 | `safety` | "Safety alerts" | HIGH | system default | system default | PRIVATE | Challenge rule notifications of kind stop/warn, such as a pain-protocol exit or extension (`N-SAFETY`). |
-| `app_status` | "App status" | LOW | none | none | PRIVATE | Sync problems (`N-SYNC`), export reminder (`N-EXPORT`), calendar write problems, session idle prompt (11.5). |
+| `app_status` | "App status" | LOW | none | none | PRIVATE | Sync problems (`N-SYNC`), export reminder (`N-EXPORT`), calendar write problems, session idle prompt (11.5), update available (`N-UPDATE`, D98). |
 
 The channel ids, importances and the assignment of each `N-…` notification to a channel above are final
 and authoritative (C54); UX §18 uses exactly these six ids and this assignment (`N-WEIGH` on
@@ -1641,6 +1641,7 @@ section only illustrate structure.
 | 3003 | Session idle prompt |
 | 3103 / 3113 / 3123 | Idle alarm / idle "Finish" / idle "Keep open" |
 | 3004 | Weigh-in reminder (and its alarm) |
+| 3005 | Update available (`N-UPDATE`, D98) |
 | 4001 / 4002 / 4003 | Test-day morning (and its alarm) / program change / phase unlocked |
 | 4101 | Safety alert |
 
@@ -2386,7 +2387,31 @@ session (debug menu "dry session" in release is not available, so use a real 2-s
 `adb shell pm clear dev.fitnessapp`; if an install fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
 (signature mismatch) or a downgrade error, Claude stops and reports.
 
-### 22.2 Optional GitHub Actions + Obtainium (later)
+### 22.2 Public releases and the in-app update check (D98)
+
+A release for other people is a GitHub release of `Sacha562/FitnessApp`:
+
+1. Commit, then build `:app:assembleRelease` from a clean worktree of that commit (copy
+   `local.properties`), so the version name matches the tree.
+2. Check the APK with `apksigner verify --print-certs` (release certificate, 5.4) and `aapt2 dump
+   badging` (version code, not debuggable).
+3. Tag the commit `v0.<milestone>.<versionCode>` (for example `v0.0.163`), push the tag, and create
+   the release with `gh release create <tag> FitnessApp-<versionName>.apk --notes-file <notes>`. Never
+   mark it a draft or pre-release if the app should offer it, and attach exactly one `.apk`.
+
+The app (`dev.fitnessapp.app.update`) reads `https://api.github.com/repos/<UPDATE_REPO>/releases/latest`
+unauthenticated (60 requests per hour per IP, far above one per day). `BuildConfig.UPDATE_REPO` holds
+the repository and `BuildConfig.UPDATE_CHECK_ENABLED` is true in `release` only, so the automatic
+check on open (at most every 24 h) and the daily `update-check` WorkManager job (network required)
+never run in `debug` or `sandbox`; the manual "Check for updates" works in every build. The APK is
+downloaded with `HttpURLConnection` (the asset URL redirects HTTPS to HTTPS) into
+`cacheDir/updates/FitnessApp-<versionCode>.apk`, its SHA-256 compared with the asset's `digest`, and
+handed to the package installer with `ACTION_VIEW` through the FileProvider `${applicationId}.updates`
+(`REQUEST_INSTALL_PACKAGES`). The installer rejects an APK whose signature differs from the installed
+app, so the release key (5.4) is what makes an update keep the data. Older APKs in the cache are
+deleted at the next check.
+
+### 22.3 Optional GitHub Actions + Obtainium (later)
 
 Prerequisites (user actions): a private GitHub repository; repository secrets
 `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_PASSWORD`, `SUPABASE_URL`,
@@ -2422,7 +2447,7 @@ Screenshot baselines are recorded on Windows; Linux font rendering can differ sl
 compares (reports) and does not fail on screenshot diffs. The release APK from CI is signed with the same
 key as local builds, so Obtainium updates replace the installed app in place.
 
-### 22.3 Sideloading policy
+### 22.4 Sideloading policy
 
 Android developer verification is enforced only in a few countries from 2026-09-30 and globally "2027 and
 beyond" (research, moderate). ADB installs are reported to remain possible. Before global enforcement,

@@ -205,6 +205,18 @@ class NotificationPresenter(private val context: Context) {
             .build(),
     )
 
+    /** N-UPDATE (D98 (2)): a newer release is out; the tap opens the update prompt. */
+    fun postUpdate(versionName: String): Boolean = notify(
+        Channels.ID_UPDATE,
+        NotificationCompat.Builder(context, Channels.APP_STATUS)
+            .setSmallIcon(R.drawable.ic_stat_session)
+            .setContentTitle("Update available")
+            .setContentText("FitnessApp $versionName is ready to install")
+            .setAutoCancel(true)
+            .setContentIntent(openIntent("fitapp://update", "N-UPDATE", Channels.APP_STATUS, Channels.ID_UPDATE))
+            .build(),
+    )
+
     fun cancelSession() = NotificationManagerCompat.from(context).cancel(Channels.ID_SESSION)
 
     /** Posts unless notifications are denied; returns whether it was posted. */

@@ -24,6 +24,8 @@ object Channels {
     const val ID_SYNC = 3001
     const val ID_EXPORT = 3002
     const val ID_IDLE = 3003
+    /** N-UPDATE (D98); 3004 is the weigh-in reminder. */
+    const val ID_UPDATE = 3005
 
     /** Request codes of PendingIntents that are not notification ids (added to ANDROID.md 13.2 in M1b). */
     const val RC_SESSION_DISMISSED = 1003
