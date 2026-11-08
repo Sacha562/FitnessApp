@@ -314,7 +314,8 @@ class SessionRepository(
         db.withTransaction {
             val block = db.blocks().bySession(sessionId).firstOrNull { it.id == blockId } ?: return@withTransaction
             val sets = db.setLogs().bySession(sessionId)
-            val rows = db.sessionExercises().bySession(sessionId).filter { it.block_id == blockId && it.status != "removed" }
+            // D111: rows the user added stay; only the planned rows are rebuilt.
+            val rows = db.sessionExercises().bySession(sessionId).filter { it.block_id == blockId && it.status != "removed" && it.origin != "user_added" }
             if (rows.any { r -> sets.any { it.session_exercise_id == r.id } }) return@withTransaction
             rows.forEach { writeExercise(it.copy(status = "removed", status_reason_code = reason)) }
             writeBlock(block.copy(budget_min = budgetMin, status = status))
@@ -330,7 +331,8 @@ class SessionRepository(
     suspend fun skipBlock(blockId: String, sessionId: String, reason: String) {
         db.withTransaction {
             val block = db.blocks().bySession(sessionId).firstOrNull { it.id == blockId } ?: return@withTransaction
-            val open = db.sessionExercises().bySession(sessionId).filter { it.block_id == blockId && it.status in setOf("pending", "deferred", "active") }
+            val open = db.sessionExercises().bySession(sessionId)
+                .filter { it.block_id == blockId && it.status in setOf("pending", "deferred", "active") && it.origin != "user_added" } // D111
             open.forEach { writeExercise(it.copy(status = "skipped", status_reason_code = reason, completed_at = ctx.nowMs())) }
             writeBlock(block.copy(status = "skipped"))
             telemetry.write(
@@ -414,9 +416,11 @@ class SessionRepository(
 
     /** Finishes the session; pending exercises become `not_done` (UX 11.14). */
     suspend fun finish(sessionId: String, endReason: String?) {
-        val now = ctx.nowMs()
+        val clockNow = ctx.nowMs()
         db.withTransaction {
             val s = db.sessions().get(sessionId) ?: return@withTransaction
+            // D108: a finish is never before the start (workout_sessions_times_ck); the session clock guards jumps.
+            val now = maxOf(clockNow, s.started_at ?: clockNow)
             val exs = db.sessionExercises().bySession(sessionId)
             val sets = db.setLogs().bySession(sessionId)
             // A challenge warm-up item (role `warmup`) plans and logs warm-up sets only: neither planned nor done work.
@@ -465,7 +469,7 @@ class SessionRepository(
         val now = ctx.nowMs()
         db.withTransaction {
             val s = db.sessions().get(sessionId) ?: return@withTransaction
-            writeSession(s.copy(status = "abandoned", finished_at = now))
+            writeSession(s.copy(status = "abandoned", finished_at = maxOf(now, s.started_at ?: now))) // D108
             val working = db.setLogs().bySession(sessionId).count { it.set_kind != "warmup" }
             telemetry.write(
                 EventDraft(
@@ -559,7 +563,12 @@ class SessionRepository(
         }
         lateinit var id: String
         db.withTransaction {
-            val block = db.blocks().bySession(sessionId).first()
+            // D111 (UX 16.6): the end of the last general block; a challenge session without one gets a user-built block.
+            val blocks = db.blocks().bySession(sessionId)
+            val block = blocks.lastOrNull { it.block_kind == "general" } ?: SessionBlockEntity(
+                id = ctx.ids.next(), user_id = uid, client_updated_at = 0, device_id = "", app_version = "", session_id = sessionId,
+                position = (blocks.maxOfOrNull { it.position } ?: 0) + 1, block_kind = "general", origin = "user_built", status = "active",
+            ).also { writeBlock(it) }
             val existing = db.sessionExercises().bySession(sessionId)
             val position = ((existing.maxOfOrNull { it.position } ?: 0L) / POSITION_STEP + 1) * POSITION_STEP
             id = ctx.ids.next()
@@ -584,7 +593,7 @@ class SessionRepository(
                     type = "exercise_added", sessionId = sessionId, entityType = "session_exercise", entityId = id,
                     payload = mapOf(
                         "exercise_id" to JsonPrimitive(exerciseId), "source" to JsonPrimitive("catalog"),
-                        "position" to JsonPrimitive(existing.size + 1), "block_kind" to JsonPrimitive("general"),
+                        "position" to JsonPrimitive(existing.size + 1), "block_kind" to JsonPrimitive(block.block_kind),
                     ),
                 ),
             )

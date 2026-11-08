@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.live
 
+import dev.fitnessapp.app.platform.AppClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.fitnessapp.algo.core.load.LoadMode
@@ -267,7 +268,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val _ui = MutableStateFlow(LiveUi())
     val ui: StateFlow<LiveUi> = _ui
     private val params get() = c.params.fork()
-    private var focusOverride: String? = null
+    /** D112: starts from the exercise the user was on when the screen was last left (minimise, process death). */
+    private var focusOverride: String? = c.liveFocus.load(sessionId)
+    private var storedFocus: String? = focusOverride
+    private var focusRestored = focusOverride != null
     private val historyCache = java.util.concurrent.ConcurrentHashMap<String, List<HistorySet>>()
     private val warmupHistoryCache = java.util.concurrent.ConcurrentHashMap<String, List<PastWarmup>>()
 
@@ -420,8 +424,17 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             }
         }
         if (snap.s?.status == "in_progress") requestPrescriptions(items)
+        if (!focusRestored) {
+            // D112: without a stored focus, reopen on the exercise of the last logged set while it has sets to do.
+            focusRestored = true
+            focusOverride = lastLoggedFocus(items, snap.sets)
+        }
         val focus = focusOf(items, focusOverride)
         if (focus != focusOverride) focusOverride = null
+        if (focus != null && focus != storedFocus && snap.s?.status == "in_progress") {
+            storedFocus = focus
+            c.liveFocus.save(sessionId, focus)
+        }
         val item = items.firstOrNull { it.se.id == focus }
         if (focus != null && focus != lastFocus) {
             if (lastFocus != null) emit("exercise_focused", focus, mapOf("via" to JsonPrimitive(focusVia ?: "auto")))
@@ -555,7 +568,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val eccTarget = row?.targetEccS?.toDouble() ?: item.se.planned_ecc_s?.let { Scaled.toDouble(it, 1) }
         val eccPrev = todayWorking.maxByOrNull { it.set_index }?.ecc_s_actual?.let { Scaled.toDouble(it, 1) }
         val fingers = if (mode == LoadMode.ASSISTED_ORDINAL) row?.fingers ?: todayWorking.maxByOrNull { it.set_index }?.assist_ordinal else null
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         val base = Card(
             item = item, mode = mode, points = points, scheme = resolved.scheme, loadIndex = idx,
             reps = pfv.values.reps, holdS = if (attempts != null) null else pfv.values.holdS, setIndex = setIndex, side = side, warmup = warmup,
@@ -740,7 +753,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             val touched = card.copy(
                 taps = card.taps + 1,
                 inputMethod = if (card.inputMethod == "none" || card.inputMethod == method) method else "mixed",
-                firstTouchAt = card.firstTouchAt ?: if (restRunning) null else System.currentTimeMillis(),
+                firstTouchAt = card.firstTouchAt ?: if (restRunning) null else AppClock.nowMs(),
             )
             u.copy(card = withDeviation(change(touched)))
         }
@@ -890,12 +903,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         if (card.isHold && !card.isRound && card.holdS == null) return
         if (card.mode == LoadMode.ASSISTED_ORDINAL && card.fingers == null) return
         if (pendingLog != null) {
-            emit("log_double_tap_dropped", null, mapOf("control" to JsonPrimitive(control), "gap_ms" to JsonPrimitive(System.currentTimeMillis() - pendingAt)))
+            emit("log_double_tap_dropped", null, mapOf("control" to JsonPrimitive(control), "gap_ms" to JsonPrimitive(AppClock.nowMs() - pendingAt)))
             return
         }
         // Double-tap guard: the next card is rebuilt from Room once the set is there (rebuild clears it).
         pendingLog = PendingLog(card.item.se.id, card.setIndex, card.side)
-        pendingAt = System.currentTimeMillis()
+        pendingAt = AppClock.nowMs()
         _ui.update { it.copy(card = null) }
         // The app scope: leaving the screen right after the tap must not cancel the write or the rest alarm.
         c.appScope.launch {
@@ -912,7 +925,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private suspend fun commitLog(u: LiveUi, card: Card, rir: Int?, feltReserveS: Double?, feltLowerBound: Boolean, control: String) {
         run {
-            val now = System.currentTimeMillis()
+            val now = AppClock.nowMs()
             // UX 11.10: logging the next set of the exercise without Apply or Keep is a Keep.
             _ui.value.suggestion?.takeIf { it.seId == card.item.se.id && !card.warmup }?.let { open ->
                 emit("suggestion_kept", open.seId, mapOf("implicit" to JsonPrimitive(true)), recommendationId = open.recommendationId)
@@ -983,8 +996,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             }
             historyCache.keys.removeIf { it.startsWith(card.item.se.exercise_id + "|") }
             warmupHistoryCache.keys.removeIf { it.startsWith(card.item.se.exercise_id + "|") }
-            // B9.8: once the probe is logged on every side, RX-1 plans the remaining sets from it.
-            if (!card.warmup && card.workIndex == 1 && card.item.rx?.probe == true && card.side != "L") {
+            // B9.8: once the probe is logged on every side, RX-1 plans the remaining sets from it. D110: the probe is
+            // the first working set with a normal RIR, so the follow-up is tried after every working set until it runs
+            // (a follow-up already made from the same probe sets returns at once).
+            if (!card.warmup && card.item.rx?.probe == true && card.side != "L") {
                 rxSlot(card.item)?.let { slot -> runCatching { c.prescriptions.followUp(slot) } }
             }
             if (card.item.se.challenge_item_key != null && challenge != null) applyChallengeRules(card.item.se.id)
@@ -1083,7 +1098,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val item = card.item
         if (card.warmup || card.taps > 0 || card.workIndex < 2 || item.rx == null || item.se.challenge_item_key != null) return
         val lastSet = item.working.filter { it.side == card.side }.maxByOrNull { it.completed_at } ?: return
-        val restS = ((System.currentTimeMillis() - lastSet.completed_at) / 1000L).toInt()
+        val restS = ((AppClock.nowMs() - lastSet.completed_at) / 1000L).toInt()
         val slot = rxSlot(item) ?: return
         val key = "${item.se.id}|${card.side}|${card.workIndex}"
         val t = c.prescriptions.restTarget(slot, card.side, restS.toDouble())
@@ -1151,7 +1166,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             trace = dev.fitnessapp.data.db.JsonText.canonical(dev.fitnessapp.algo.prescription.autoreg.AutoregJson.result(r)),
             recommendationId = id, codes = r.trace,
         )
-        val ui = SuggestionUi(item.se.id, v.side, id, r.kind!!, r.stopReason, title, reason, sets, System.currentTimeMillis(), why)
+        val ui = SuggestionUi(item.se.id, v.side, id, r.kind!!, r.stopReason, title, reason, sets, AppClock.nowMs(), why)
         emit(
             "suggestion_shown", item.se.id,
             mapOf(
@@ -1170,7 +1185,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val sg = _ui.value.suggestion ?: return
         emit(
             "suggestion_applied", sg.seId,
-            mapOf("recommendation_id" to JsonPrimitive(sg.recommendationId), "latency_ms" to JsonPrimitive(System.currentTimeMillis() - sg.shownAt)),
+            mapOf("recommendation_id" to JsonPrimitive(sg.recommendationId), "latency_ms" to JsonPrimitive(AppClock.nowMs() - sg.shownAt)),
             recommendationId = sg.recommendationId,
         )
         if (sg.kind == SuggestionKind.STOP) {
@@ -1331,7 +1346,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                         "targetReps" -> "reps"
                         else -> a.field ?: ""
                     }
-                    RuleLine(seId, a, "Rule: $field ${a.from ?: "–"} → ${a.to ?: "–"}" + (text(a.msg, a.msgParams)?.let { " · $it" } ?: ""), System.currentTimeMillis())
+                    RuleLine(seId, a, "Rule: $field ${a.from ?: "–"} → ${a.to ?: "–"}" + (text(a.msg, a.msgParams)?.let { " · $it" } ?: ""), AppClock.nowMs())
                 } ?: u.ruleLine,
                 ruleNotice = notices.joinToString(" ").ifEmpty { null } ?: u.ruleNotice,
             )
@@ -1342,7 +1357,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun undoRule(reasonCode: String) {
         val line = _ui.value.ruleLine ?: return
         _ui.update { it.copy(ruleLine = null) }
-        c.appScope.launch { c.challengeSessions.undo(sessionId, line.seId, line.app, reasonCode, System.currentTimeMillis() - line.at) }
+        c.appScope.launch { c.challengeSessions.undo(sessionId, line.seId, line.app, reasonCode, AppClock.nowMs() - line.at) }
     }
 
     fun dismissRuleLine() = _ui.update { it.copy(ruleLine = null) }
@@ -1375,7 +1390,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     // ------------------------------------------------------------------------------------------------ holds
 
     fun startHold() {
-        _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.LEAD_IN, holdPhaseStart = System.currentTimeMillis())) }
+        _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.LEAD_IN, holdPhaseStart = AppClock.nowMs())) }
         val card = _ui.value.card ?: return
         emit(
             "hold_started", card.item.se.id,
@@ -1388,13 +1403,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         )
     }
 
-    fun holdGo() = _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.HOLDING, holdPhaseStart = System.currentTimeMillis())) }
+    fun holdGo() = _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.HOLDING, holdPhaseStart = AppClock.nowMs())) }
 
     fun cancelHold() {
         val card = _ui.value.card
         _ui.update { u -> u.copy(card = u.card?.copy(holdPhase = HoldPhase.READY)) }
         if (card?.holdPhase == HoldPhase.LEAD_IN) {
-            emit("hold_lead_in_cancelled", card.item.se.id, mapOf("ms_into_lead_in" to JsonPrimitive(System.currentTimeMillis() - card.holdPhaseStart)))
+            emit("hold_lead_in_cancelled", card.item.se.id, mapOf("ms_into_lead_in" to JsonPrimitive(AppClock.nowMs() - card.holdPhaseStart)))
         }
     }
 
@@ -1402,7 +1417,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun stopHold(auto: Boolean = false) {
         val card = _ui.value.card ?: return
         if (card.holdPhase != HoldPhase.HOLDING) return
-        val elapsed = (System.currentTimeMillis() - card.holdPhaseStart) / 1000.0
+        val elapsed = (AppClock.nowMs() - card.holdPhaseStart) / 1000.0
         if (!auto && elapsed * 1000 < c.platformConfig.holdStopGuardMs) return
         val stepBasis = card.holdTargetS ?: card.target.holdS
         val result = UiPrefill.holdResult(elapsed, card.holdTargetS, params, stepBasis)
@@ -1553,7 +1568,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private fun liveCapacity(s: WorkoutSessionEntity): Int? {
         val budget = s.time_budget_min ?: return null
         val started = s.started_at ?: return null
-        return maxOf(0, kotlin.math.floor(budget - (System.currentTimeMillis() - started) / 60_000.0).toInt())
+        return maxOf(0, kotlin.math.floor(budget - (AppClock.nowMs() - started) / 60_000.0).toInt())
     }
 
     /** Rebuilds the add-on for [type] within [capacityMin]; [live] marks the one rebuild after the challenge block. */
@@ -1599,7 +1614,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         if (s == null || s.status != "in_progress") return null
         val budget = s.time_budget_min ?: return null
         val started = s.started_at ?: return null
-        val elapsed = (System.currentTimeMillis() - started) / 60_000.0
+        val elapsed = (AppClock.nowMs() - started) / 60_000.0
         val remaining = LiveTime.remainingMin(items, c.catalogModel, params)
         val over = elapsed + remaining - budget
         if (over <= c.platformConfig.sessionOverrunLineMin) return null
@@ -1627,8 +1642,8 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     suspend fun setTimeBudget(minutes: Int): String? {
         val s = _ui.value.session ?: return null
         c.sessionRepository.setTimeBudget(sessionId, minutes, "chip")
-        val started = s.started_at ?: System.currentTimeMillis()
-        val left = minutes - (System.currentTimeMillis() - started) / 60_000.0
+        val started = s.started_at ?: AppClock.nowMs()
+        val left = minutes - (AppClock.nowMs() - started) / 60_000.0
         val goals = runCatching { c.goals.current() }.getOrDefault(emptyMap())
         val items = _ui.value.items.filter { it.open }
         val trim = items.mapNotNull { it ->
@@ -1735,13 +1750,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val r = c.sessionRepository.swap(seId, to, reason, option?.rank, option?.candidate?.similarity, if (option != null) "list" else "search") ?: return@launch
         focusOverride = r.first
         focusVia = "auto"
-        _ui.update { it.copy(swapUndo = SwapUndo(r.first, r.second, to.nameEn, System.currentTimeMillis())) }
+        _ui.update { it.copy(swapUndo = SwapUndo(r.first, r.second, to.nameEn, AppClock.nowMs())) }
     }
 
     fun undoSwap() {
         val u = _ui.value.swapUndo ?: return
         _ui.update { it.copy(swapUndo = null) }
-        c.appScope.launch { c.sessionRepository.undoSwap(u.newId, u.eventId, System.currentTimeMillis() - u.at) }
+        c.appScope.launch { c.sessionRepository.undoSwap(u.newId, u.eventId, AppClock.nowMs() - u.at) }
     }
 
     fun dismissSwapUndo() = _ui.update { it.copy(swapUndo = null) }
@@ -1794,7 +1809,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     private suspend fun creditHabits() {
         val s = c.db.sessions().get(sessionId) ?: return
-        val at = java.time.Instant.ofEpochMilli(s.started_at ?: System.currentTimeMillis())
+        val at = java.time.Instant.ofEpochMilli(s.started_at ?: AppClock.nowMs())
         val day = dev.fitnessapp.app.ui.challenges.HabitDays.of(c, java.time.LocalDate.parse(s.local_date), at) ?: return
         c.challengeSessions.creditHabits(sessionId, day)
     }
@@ -1950,6 +1965,12 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
          * The focused item: a list-tap [override] holds while its item is open or still has planned sets left (a
          * finished or skipped item can be reopened from the list); otherwise the first open item.
          */
+        /** D112: the item of the newest logged set, when it is still open or has planned sets left; else null. */
+        fun lastLoggedFocus(items: List<ExerciseItem>, sets: List<SetLogEntity>): String? {
+            val lastSe = sets.maxWithOrNull(compareBy({ it.completed_at }, { it.id }))?.session_exercise_id ?: return null
+            return lastSe.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
+        }
+
         fun focusOf(items: List<ExerciseItem>, override: String?): String? =
             override?.takeIf { id -> items.any { it.se.id == id && (it.open || it.workingDone < it.planned) } }
                 ?: items.firstOrNull { it.open }?.se?.id

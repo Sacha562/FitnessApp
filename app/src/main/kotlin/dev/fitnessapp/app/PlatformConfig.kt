@@ -44,11 +44,14 @@ data class PlatformConfig(
     val remindersSnoozeMin: Int = 30,
     /** How long before a reminder its pre-alarm wakes the app to arm the alarm clock (ANDROID.md 17, two stages). */
     val remindersPreLeadMin: Int = 15,
+    /** D108: a wall-clock move larger than this during a session is a jump; the session clock stays anchored. */
+    val clockJumpToleranceS: Int = 120,
     val sync: SyncConfig = SyncConfig(),
 ) {
     /** Every key of the register with its value, in key order (JCS sorts again). */
     fun values(): JsonObject = JsonObject(
         sortedMapOf(
+            "clock.jumpToleranceS" to JsonPrimitive(clockJumpToleranceS),
             "timer.adjustStepS" to JsonPrimitive(timerAdjustStepS),
             "timer.longPressStepS" to JsonPrimitive(timerLongPressStepS),
             "timer.minLeftAfterAdjustS" to JsonPrimitive(timerMinLeftAfterAdjustS),

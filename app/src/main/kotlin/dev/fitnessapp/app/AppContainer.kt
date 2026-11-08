@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.withTransaction
 import androidx.work.WorkManager
 import dev.fitnessapp.algo.core.clock.Clock
+import dev.fitnessapp.app.platform.GuardedClock
 import dev.fitnessapp.algo.core.params.ParamView
 import dev.fitnessapp.algo.selection.catalog.Catalog
 import dev.fitnessapp.algo.selection.catalog.Taxonomy
@@ -48,8 +49,10 @@ import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonPrimitive
-import java.time.Instant
 import java.time.ZoneId
 
 /** Manual dependency injection (ANDROID.md 7.2). One instance per process, owned by the Application. */
@@ -57,14 +60,24 @@ class AppContainer(private val context: Context) {
     val appContext: Context get() = context
     val platformConfig = PlatformConfig.DEFAULT
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val clock: Clock = Clock { Instant.now() }
+    val device: DeviceState = DeviceState(context)
+
+    /**
+     * The app's clock (D108): the device wall clock, anchored to elapsed-realtime while a session is in progress so a
+     * manual date change cannot move the session's timestamps. [startClockGuard] keeps [GuardedClock.guarding] in step.
+     */
+    val guardedClock: GuardedClock = GuardedClock(
+        { System.currentTimeMillis() }, { device.elapsedRealtime() }, { device.bootCount() },
+        GuardedClock.PrefsStore(context.getSharedPreferences("session_clock", Context.MODE_PRIVATE)),
+        platformConfig.clockJumpToleranceS * 1000L,
+    )
+    val clock: Clock = guardedClock.also { g -> dev.fitnessapp.app.platform.AppClock.nowMs = g::nowMs }
 
     val supabase: SupabaseClient by lazy {
         SupabaseFactory.create(context, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY)
     }
     val accessCheck: AccessCheck by lazy { AccessCheck(supabase) }
 
-    val device: DeviceState = DeviceState(context)
     val deviceIdentity: DeviceIdentity = DeviceIdentity(context)
     val account: AccountStore = AccountStore(context)
     val ids = UuidV7Generator({ clock.now().toEpochMilli() })
@@ -205,14 +218,16 @@ class AppContainer(private val context: Context) {
     val calendar: dev.fitnessapp.app.calendar.CalendarSync by lazy { dev.fitnessapp.app.calendar.CalendarSync(this) }
     val idle: dev.fitnessapp.app.session.IdleWatcher by lazy { dev.fitnessapp.app.session.IdleWatcher(this) }
 
-    val notifications: NotificationPresenter by lazy { NotificationPresenter(context) }
+    /** D112: the live session's current exercise, kept across minimise and process death. */
+    val liveFocus: dev.fitnessapp.app.ui.live.LiveFocusStore by lazy { dev.fitnessapp.app.ui.live.LiveFocusStore(context) }
+    val notifications: NotificationPresenter by lazy { NotificationPresenter(context, guardedClock::nowMs, guardedClock::toDeviceMs) }
     /** The in-app update check (D98). */
     val updates: dev.fitnessapp.app.update.UpdateManager by lazy { dev.fitnessapp.app.update.UpdateManager(context, settings, appScope) }
     val haptics: Haptics by lazy { Haptics(context) }
     val selfTests: SelfTestStore by lazy { SelfTestStore(context) }
     val restTimer: RestTimerController by lazy {
         RestTimerController(
-            db, AlarmGateway(context), notifications, haptics, device, telemetry, profiles, ids,
+            db, AlarmGateway(context, guardedClock::toDeviceMs), notifications, haptics, device, telemetry, profiles, ids,
             { clock.now().toEpochMilli() }, platformConfig, syncScheduler, selfTests,
             { done -> dev.fitnessapp.app.timer.IntervalLog.log(db, sessionRepository, done) },
         ) {
@@ -273,6 +288,24 @@ class AppContainer(private val context: Context) {
     }
 
     /** A platform event that belongs to a session (idle prompt, restore). */
+    /**
+     * D108: the guard is on while a session is in progress; a detected jump is logged once on that session as
+     * `clock_jump_detected`.
+     */
+    fun startClockGuard() {
+        guardedClock.onJump = { wall, trusted ->
+            appScope.launch {
+                val s = sessionRepository.observeActiveOnce() ?: return@launch
+                runCatching {
+                    sessionEvent(s.id, "clock_jump_detected", mapOf("wall_ms" to wall, "trusted_ms" to trusted, "offset_ms" to (trusted - wall)))
+                }
+            }
+        }
+        appScope.launch {
+            sessionRepository.observeActive().map { it != null }.distinctUntilChanged().collect { guardedClock.guarding = it }
+        }
+    }
+
     suspend fun sessionEvent(sessionId: String, type: String, payload: Map<String, Any?>, screen: String? = null) {
         if (writeContext.userId() == null) return
         db.withTransaction {

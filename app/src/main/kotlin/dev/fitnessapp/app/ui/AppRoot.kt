@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui
 
+import dev.fitnessapp.app.platform.AppClock
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
@@ -141,7 +142,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
     val screen = screenName(top, tab)
     val lastViews = remember { mutableMapOf<String, Long>() }
     LaunchedEffect(screen) {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         if (now - (lastViews[screen] ?: 0L) >= SCREEN_VIEW_MIN_GAP_MS) {
             lastViews[screen] = now
             c.screenViewed(screen, emptyMap())
@@ -276,7 +277,7 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
 private suspend fun restored(c: AppContainer, sessionId: String) {
     val rest = c.db.restTimers().latest(sessionId)?.state?.takeIf { it == "running" || it == "overtime" } ?: "none"
     val last = c.db.events().lastActivity(sessionId, emptyList())
-    c.sessionEvent(sessionId, "session_restored", mapOf("rest_state" to rest, "ms_since_last_event" to (last?.let { System.currentTimeMillis() - it } ?: 0L)))
+    c.sessionEvent(sessionId, "session_restored", mapOf("rest_state" to rest, "ms_since_last_event" to (last?.let { AppClock.nowMs() - it } ?: 0L)))
 }
 
 /** The UX screen id of the visible destination (UX 3.1), the `screen` envelope column of `screen_viewed`. */

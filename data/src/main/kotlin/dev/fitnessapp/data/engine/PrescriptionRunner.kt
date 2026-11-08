@@ -191,7 +191,11 @@ class PrescriptionRunner(
         val oldRow = db.recommendations().byIds(listOf(oldId)).firstOrNull() ?: return@withLock null
         val current = decode(oldRow) ?: return@withLock null
         if (!current.probe) return@withLock null
-        val probes = db.setLogs().bySession(se.session_id).filter { it.session_exercise_id == se.id && it.set_kind != "warmup" && it.set_index == 1 }
+        // D110: per side, the first working set (by set order; warm-ups take set indexes too) with a normal RIR.
+        val probes = db.setLogs().bySession(se.session_id)
+            .filter { it.session_exercise_id == se.id && it.set_kind != "warmup" }
+            .sortedWith(compareBy({ it.set_index }, { it.completed_at }, { it.id }))
+            .groupBy { it.side }.values.mapNotNull { rows -> rows.firstOrNull(::usableProbe) }
         val probeIds = probes.map { it.id }.sorted()
         val old = if (FOLLOWUP in current.steps) {
             if (current.trace["probe_set_ids"]?.jsonArray?.map { it.jsonPrimitive.content } == probeIds) return@withLock null
@@ -217,6 +221,10 @@ class PrescriptionRunner(
         )
         storeRaw(user, session, se, requests, follow, outputs, trace, oldId, "followup:" + probes.joinToString(",") { it.id })
     }
+
+    /** D110: a set SSE-1 can start from: a reported RIR that is not a lower bound, and no excluding reason. */
+    private fun usableProbe(r: SetLogEntity): Boolean =
+        r.rir_reported != null && !r.rir_is_lower_bound && !r.pain_flag && r.deviation_reason_code !in PROBE_EXCLUDED
 
     /** The probe prescription a chain of follow-ups started from (the first one without [FOLLOWUP]). */
     private suspend fun original(row: RecommendationEntity): Prescription? {
@@ -619,6 +627,9 @@ class PrescriptionRunner(
         const val KIND = "rx.prescription"
         const val AUTOREG_KIND = "autoreg.suggestion"
         private const val FOLLOWUP = "rx.probe.followup"
+
+        /** D110: reasons that keep a set out of SSE-1 (excluded) or make it a lower bound (C8, ReasonSemantics). */
+        private val PROBE_EXCLUDED = setOf("pain", "occupied", "equipment_missing", "grip_failure")
 
         /** Longest follow-up chain [original] walks; each undo and re-log of the probe adds one link. */
         private const val MAX_CHAIN = 64

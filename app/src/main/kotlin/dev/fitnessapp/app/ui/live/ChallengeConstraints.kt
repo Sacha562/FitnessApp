@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.live
 
+import dev.fitnessapp.app.platform.AppClock
 import dev.fitnessapp.algo.challenge.cds.ProtectedWindowSpec
 import dev.fitnessapp.algo.challenge.contract.ContractBuilder
 import dev.fitnessapp.algo.challenge.enrollment.EnrollmentState
@@ -51,7 +52,7 @@ object ChallengeConstraints {
     )
 
     suspend fun day(c: AppContainer, session: WorkoutSessionEntity): Day? = day(
-        c, Instant.ofEpochMilli(session.started_at ?: System.currentTimeMillis()), LocalDate.parse(session.local_date),
+        c, Instant.ofEpochMilli(session.started_at ?: AppClock.nowMs()), LocalDate.parse(session.local_date),
         session.challenge_slot, session.habit_id,
     )
 

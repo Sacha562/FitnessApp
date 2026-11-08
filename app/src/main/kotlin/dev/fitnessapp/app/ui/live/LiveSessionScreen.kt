@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.live
 
+import dev.fitnessapp.app.platform.AppClock
 import android.media.AudioManager
 import android.media.ToneGenerator
 import androidx.activity.compose.BackHandler
@@ -331,8 +332,8 @@ private fun Header(
     ui: LiveUi, onMinimise: () -> Unit, onFinish: () -> Unit, onAdd: () -> Unit, onPain: () -> Unit, onAbandon: () -> Unit,
     onTimeBudget: () -> Unit,
 ) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    var now by remember { mutableLongStateOf(AppClock.nowMs()) }
+    LaunchedEffect(Unit) { while (true) { now = AppClock.nowMs(); delay(1000) } }
     var menu by remember { mutableStateOf(false) }
     val started = ui.session?.started_at ?: now
     val done = ui.items.sumOf { minOf(it.workingDone, maxOf(it.planned, it.workingDone)) }
@@ -556,8 +557,8 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
     var prewarned by remember(t.id) { mutableStateOf(false) }
     LaunchedEffect(t) {
         while (true) {
-            val r = RestTimerReducer.remainingMs(t, System.currentTimeMillis(), c.device.elapsedRealtime(), c.device.bootCount())
-            display = RestTimerReducer.display(t, System.currentTimeMillis(), c.device.elapsedRealtime(), c.device.bootCount())
+            val r = RestTimerReducer.remainingMs(t, AppClock.nowMs(), c.device.elapsedRealtime(), c.device.bootCount())
+            display = RestTimerReducer.display(t, AppClock.nowMs(), c.device.elapsedRealtime(), c.device.bootCount())
             // Pre-warning: one light tick at 10 s left, only while the UI is visible (ANDROID.md 12.4, C72).
             if (!prewarned && t.state == "running" && r in 1..(c.platformConfig.timerPrewarnS * 1000L)) {
                 prewarned = true
@@ -568,8 +569,8 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
         }
     }
     if (display is RestDisplay.Overtime) return
-    val shownAt = remember(t.id) { System.currentTimeMillis() }
-    val guard = { System.currentTimeMillis() - shownAt > 500 }
+    val shownAt = remember(t.id) { AppClock.nowMs() }
+    val guard = { AppClock.nowMs() - shownAt > 500 }
     // An interval is the countdown of a timed warm-up item (D33): its name, and Done instead of Skip.
     val interval = t.purpose == "interval"
     Tile(radius = 28.dp, padding = PaddingValues(16.dp), spacing = 12.dp) {
@@ -745,9 +746,9 @@ private fun SetCard(
 private fun LogRow(card: Card, vm: LiveSessionViewModel) {
     if (card.isHold && !card.isTimed && !card.isRound && card.holdPhase != HoldPhase.RESULT) return
     val haptic = LocalHapticFeedback.current
-    val shownAt = remember(card.slotKey) { System.currentTimeMillis() }
+    val shownAt = remember(card.slotKey) { AppClock.nowMs() }
     fun guarded(action: () -> Unit) {
-        if (System.currentTimeMillis() - shownAt < 500) return
+        if (AppClock.nowMs() - shownAt < 500) return
         haptic.performHapticFeedback(HapticFeedbackType.Confirm)
         action()
     }
@@ -936,13 +937,13 @@ private fun CountAloud() {
 @Composable
 private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
     val haptic = LocalHapticFeedback.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(AppClock.nowMs()) }
     val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
     DisposableEffect(Unit) { onDispose { tone?.release() } }
     LaunchedEffect(card.holdPhase, card.holdPhaseStart) {
         var lastSecond = -1L
         while (card.holdPhase == HoldPhase.LEAD_IN || card.holdPhase == HoldPhase.HOLDING) {
-            now = System.currentTimeMillis()
+            now = AppClock.nowMs()
             val sec = (now - card.holdPhaseStart) / 1000
             if (card.holdPhase == HoldPhase.LEAD_IN) {
                 val left = 5 - sec

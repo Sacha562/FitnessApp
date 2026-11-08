@@ -398,6 +398,19 @@
       "sort": 310
     },
     {
+      "event_type": "clock_jump_detected",
+      "category": "lifecycle",
+      "payload_keys": [
+        "wall_ms",
+        "trusted_ms",
+        "offset_ms"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 12.9 (the session clock guard, D108)",
+      "active": true,
+      "sort": 1620
+    },
+    {
       "event_type": "deviation_shown",
       "category": "logging",
       "payload_keys": [

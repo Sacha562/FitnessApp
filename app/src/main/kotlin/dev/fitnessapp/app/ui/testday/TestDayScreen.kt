@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.testday
 
+import dev.fitnessapp.app.platform.AppClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -363,7 +364,7 @@ private fun Stopwatch(onStop: (Double) -> Unit) {
     var now by remember { mutableLongStateOf(0L) }
     LaunchedEffect(start) {
         while (start > 0) {
-            now = System.currentTimeMillis()
+            now = AppClock.nowMs()
             delay(TICK_MS)
         }
     }
@@ -371,10 +372,10 @@ private fun Stopwatch(onStop: (Double) -> Unit) {
         val s = if (start > 0) (now - start).coerceAtLeast(0) / 1000.0 else 0.0
         Text(Numbers.num(s, 1) + " s", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
         if (start == 0L) {
-            TonalButton("Start", { start = System.currentTimeMillis(); now = start })
+            TonalButton("Start", { start = AppClock.nowMs(); now = start })
         } else {
             TonalButton("Stop", {
-                onStop((System.currentTimeMillis() - start) / 1000.0)
+                onStop((AppClock.nowMs() - start) / 1000.0)
                 start = 0L
             })
         }
@@ -385,10 +386,10 @@ private fun Stopwatch(onStop: (Double) -> Unit) {
 @Composable
 private fun RestLine(u: TestDayUi, vm: TestDayViewModel) {
     val r = u.rest ?: return
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(AppClock.nowMs()) }
     LaunchedEffect(r.id) {
         while (true) {
-            now = System.currentTimeMillis()
+            now = AppClock.nowMs()
             delay(TICK_MS)
         }
     }

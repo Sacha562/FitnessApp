@@ -56,6 +56,7 @@ class FitnessApplication : Application(), Configuration.Provider {
         val failed = java.util.Collections.synchronizedList(mutableListOf<Pair<String, Throwable>>())
         fun step(name: String, block: () -> Unit) = runCatching(block).onFailure { failed += name to it }
         step("channels") { Channels.create(this) }
+        step("clock_guard") { container.startClockGuard() } // D108
         step("periodic_sync") { container.syncScheduler.ensurePeriodic() }
         step("maintenance") { MaintenanceWorker.ensureScheduled(this) }
         // D98 (2): the daily background update check, release build only.

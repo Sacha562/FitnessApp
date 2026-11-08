@@ -163,6 +163,31 @@ class PrescriptionRunnerTest {
     }
 
     @Test
+    fun `D110 the follow-up finds the probe after a warm-up and waits for a set with a normal RIR`() = blocking {
+        gym()
+        now += 60_000
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL)
+        runner.ensure(RxSlot(seId)).shouldNotBeNull()
+        suspend fun cmd(index: Int, added: Double, reps: Int, rir: Double?, kind: String, lowerBound: Boolean): LogSetCommand {
+            now += 180_000
+            val p = equipment.loadables(wpu, LoadMode.BODYWEIGHT_PLUS_EXTERNAL, 70.7, params).second.first { it.nativeValue == added }
+            return LogSetCommand(
+                sid, seId, catalog.idOf(wpu), index, "both", kind, p, reps = reps, durationS = null, rir = rir,
+                rirLowerBound = lowerBound, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(), deviationReason = null,
+                planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+            )
+        }
+        sessions.logSet(cmd(1, 5.0, 5, null, "warmup", false)) // the warm-up takes set_index 1
+        sessions.logSet(cmd(2, 10.0, 10, 5.0, "working", true)) // the probe logged "5+": a lower bound
+        runner.followUp(RxSlot(seId)).shouldBeNull()
+        sessions.logSet(cmd(3, 15.0, 8, 2.0, "working", false))
+        val next = runner.followUp(RxSlot(seId)).shouldNotBeNull()
+        runner.get(next)!!.steps shouldContain "rx.probe.followup"
+        runner.followUp(RxSlot(seId)).shouldBeNull()
+    }
+
+    @Test
     fun `a probe undone and logged again plans the remaining sets from the new probe`() = blocking {
         gym()
         now += 60_000

@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.ui.testday
 
+import dev.fitnessapp.app.platform.AppClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.fitnessapp.algo.challenge.enrollment.EnrollmentState
@@ -103,7 +104,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
     private var plan: SessionPlan? = null
     private var exercises: List<SessionExerciseEntity> = emptyList()
     private var weighInId: String? = null
-    private var stepShownAt = System.currentTimeMillis()
+    private var stepShownAt = AppClock.nowMs()
     private var shownStep: Int? = null
 
     init {
@@ -252,7 +253,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         }
         if (current?.number != shownStep) {
             shownStep = current?.number
-            stepShownAt = System.currentTimeMillis()
+            stepShownAt = AppClock.nowMs()
         }
         if (phase == Phase.REVIEW && _ui.value.review == null) review()
     }
@@ -373,7 +374,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
 
     private suspend fun logWarmup(keys: List<String>) {
         val sid = sessionId ?: return
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         for (key in keys) {
             val item = plan?.items?.firstOrNull { it.key == key } ?: continue
             val se = exercises.firstOrNull { it.challenge_item_key == key } ?: continue
@@ -391,7 +392,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         val step = _ui.value.current ?: return@act
         val se = exercises.firstOrNull { it.challenge_item_key == step.item.key } ?: return@act
         val point = _ui.value.points.minByOrNull { kotlin.math.abs(it.addedKg - addedKg.toDouble()) }
-        c.sessionRepository.logSet(command(sid, se, "both", "warmup", point, reps = reps, now = System.currentTimeMillis()))
+        c.sessionRepository.logSet(command(sid, se, "both", "warmup", point, reps = reps, now = AppClock.nowMs()))
     }
 
     /** Record (clean) or Not clean / Failed on the current card: one `set_kind = test` row (C63). */
@@ -401,7 +402,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         val step = u.current ?: return@act
         val side = u.side ?: return@act
         val se = exercises.firstOrNull { it.challenge_item_key == step.item.key } ?: return@act
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         val prevCompleted = u.rows.maxOfOrNull { it.completedAt }
         val rest = c.restTimer.onNextSetLogged(sid, prevCompleted, now, null, null, 0.0)
         val flags = if (clean) emptyList() else listOf(if (step.kind == StepKind.ATTEMPTS) LoggedRow.NOT_CLEAN_FLAG else LoggedRow.FAILED_FLAG)
@@ -478,7 +479,7 @@ class TestDayViewModel(private val c: AppContainer, private val enrollmentId: St
         if (ids.isNotEmpty()) c.testDays.finishStep(ids, skipped)
         c.sessionEvent(
             sid, "test_step_completed",
-            mapOf("step" to step.number, "step_key" to step.key, "duration_ms" to System.currentTimeMillis() - stepShownAt, "skipped" to skipped),
+            mapOf("step" to step.number, "step_key" to step.key, "duration_ms" to AppClock.nowMs() - stepShownAt, "skipped" to skipped),
             screen = SCREEN,
         )
     }

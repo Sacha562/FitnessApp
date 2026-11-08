@@ -25,7 +25,13 @@ data class SessionNotificationText(
 )
 
 /** Builds and posts the notifications of ANDROID.md 13.3 (structure) with the UX wording. */
-class NotificationPresenter(private val context: Context) {
+class NotificationPresenter(
+    private val context: Context,
+    /** The app's clock (D108). */
+    private val appNowMs: () -> Long = { System.currentTimeMillis() },
+    /** App time to device wall time for the chronometers (D108); identity without a clock jump. */
+    private val toDeviceMs: (Long) -> Long = { it },
+) {
     private val prefs = context.getSharedPreferences("session_notification", Context.MODE_PRIVATE)
 
     var text: SessionNotificationText
@@ -92,10 +98,10 @@ class NotificationPresenter(private val context: Context) {
      */
 
     /** Between sets: count-up from the session start. */
-    fun session(t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
+    fun session(t: SessionNotificationText = text, nowWall: Long = appNowMs()): Notification {
         val start = if (t.sessionStartWall > 0) t.sessionStartWall else nowWall
         return base().setContentTitle(t.sessionTitle).setContentText(t.currentLine)
-            .setUsesChronometer(true).setWhen(start).setShowWhen(true)
+            .setUsesChronometer(true).setWhen(toDeviceMs(start)).setShowWhen(true)
             .setShortCriticalText(RestTimerReducer.mmss(maxOf(0L, nowWall - start) / 1000))
             .build()
     }
@@ -104,11 +110,11 @@ class NotificationPresenter(private val context: Context) {
      * Resting: countdown to the rest end with -15 s, Skip, +15 s. An interval (the warm-up row, D33) shows the item
      * ([interval] = its name) and Done instead of Skip: "Rowing machine · 1:12 left".
      */
-    fun resting(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis(), interval: String? = null): Notification {
+    fun resting(endWall: Long, t: SessionNotificationText = text, nowWall: Long = appNowMs(), interval: String? = null): Notification {
         val left = RestTimerReducer.mmss((maxOf(0L, endWall - nowWall) + 999) / 1000)
         return base().setContentTitle(interval?.let { "$it · $left left" } ?: "Rest")
             .setContentText(if (interval != null) "Logged as done at zero" else nextLine(t))
-            .setUsesChronometer(true).setChronometerCountDown(true).setWhen(endWall).setShowWhen(true)
+            .setUsesChronometer(true).setChronometerCountDown(true).setWhen(toDeviceMs(endWall)).setShowWhen(true)
             .setShortCriticalText(left)
             .addAction(action(Channels.RC_MINUS_15, RestActionReceiver.MINUS_15, "-15 s"))
             .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, if (interval != null) "Done" else "Skip"))
@@ -117,9 +123,9 @@ class NotificationPresenter(private val context: Context) {
     }
 
     /** Overtime: count-up from the rest end, Skip only. */
-    fun overtime(endWall: Long, t: SessionNotificationText = text, nowWall: Long = System.currentTimeMillis()): Notification {
+    fun overtime(endWall: Long, t: SessionNotificationText = text, nowWall: Long = appNowMs()): Notification {
         return base().setContentTitle("Rest over").setContentText(nextLine(t))
-            .setUsesChronometer(true).setWhen(endWall).setShowWhen(true)
+            .setUsesChronometer(true).setWhen(toDeviceMs(endWall)).setShowWhen(true)
             .setShortCriticalText("+" + RestTimerReducer.mmss(maxOf(0L, nowWall - endWall) / 1000))
             .addAction(action(Channels.RC_SKIP, RestActionReceiver.SKIP, "Skip"))
             .build()

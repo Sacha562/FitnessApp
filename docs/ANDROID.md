@@ -1603,6 +1603,31 @@ Rest timers live entirely in UTC epoch milliseconds and elapsed time, so the DST
 02:00 CET on 2026-10-25 has no effect on a running timer: a 180 s rest started at 02:59 CEST
 (00:59:00Z) ends at 01:02:00Z, displayed as 02:02 CET. Golden test G4 asserts this.
 
+### 12.9 Session clock guard (D108)
+
+A user who changes the phone's date or time by hand during a session moves the wall clock under every timestamp
+the app writes (8 November 2026: the clock went back 24 h mid-session, sets were stamped the day before, the rest
+timer lookup kept an old timer, the Week tab dropped the session and the finish was rejected as earlier than the
+start). `GuardedClock` (`app/platform`) is therefore the app's clock (`AppContainer.clock`, `WriteContext`, ids,
+the live screen through `AppClock`, the rest timer and the notifications):
+
+```
+anchor = (wall, elapsed, boot, guarding)       # persisted in SharedPreferences "session_clock" at most every 30 s
+now():
+  if !guarding or boot changed or elapsed < anchor.elapsed: anchor = (wall, elapsed, boot); return wall
+  trusted = anchor.wall + (elapsed − anchor.elapsed)
+  if |trusted − wall| <= clock.jumpToleranceS: anchor = (wall, elapsed, boot); return wall
+  report clock_jump_detected {wall_ms, trusted_ms, offset_ms} once per jump; return trusted
+offset = trusted − wall                         # 0 without a jump
+```
+
+`guarding` follows "a session is in progress" (`AppContainer.startClockGuard`, from the active-session flow, and is
+persisted so it holds from the first read after a restart). When the session ends the next read takes the wall
+clock again. `AlarmGateway` schedules every alarm at `app time − offset` and the session notification's
+chronometers use `app time − offset`, so alarms and countdowns stay right on the device clock. `finish` and
+`abandon` never write `finished_at` before `started_at`. A reboot cannot be checked (elapsed time restarts), so the
+wall clock is taken as it is.
+
 ---
 
 ## 13. Notifications
@@ -2598,6 +2623,7 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 | `reminders.horizonH` | 48 h | 24–96 | assumption | — | Yes: missed reminders after long offline periods |
 | `reminders.snoozeMin` | 30 min | 10–60 | assumption | — | Yes: snooze usage |
 | `reminders.preLeadMin` | 15 min | 11–30 | measured on OxygenOS (exact alarms deferred up to 1 h) | — | Yes: `notification_posted.latency_ms` of N-HABIT |
+| `clock.jumpToleranceS` | 120 s | 30–600 | assumption (NTP corrections are seconds; a manual date change is hours) | D108 | Yes: `clock_jump_detected.offset_ms` |
 | `reminders.inexactWindowMin` | 10 min | 5–30 | assumption | — | Yes: `latency_ms` of reminder `notification_posted` events |
 | `export.reminderDays` | 30 | 7–90 | DEFAULT | F4 | No: the reminder itself is a local on/off setting (UX 15.11, default on) |
 | `db.preMigrationBackupsKept` | 3 | 1–10 | assumption | — | No data needed |

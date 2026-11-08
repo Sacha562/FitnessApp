@@ -201,7 +201,9 @@ a persistent mini-bar sits directly above the navigation bar on every tab:
 * Centre: elapsed session time (counts up, from the session's start Instant).
 * Right: rest countdown if a rest timer runs; "+0:23" in advisory colour when overtime; nothing
   when no timer runs.
-* Tapping anywhere on the bar returns to the Live Session at the current set.
+* Tapping anywhere on the bar returns to the Live Session at the current set. The current set is on the
+  exercise the user was on when they left the screen (D112: stored on the phone at every focus change); without
+  one, the exercise of the last logged set while it has sets to do, else the first open exercise.
 * The bar is not dismissable while the session is in progress; it disappears on finish or abandon.
 
 ### 3.4 Back behaviour, deep links, restoration

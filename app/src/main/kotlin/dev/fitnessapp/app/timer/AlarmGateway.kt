@@ -12,7 +12,11 @@ import dev.fitnessapp.app.notify.Channels
  * in Doze), `setExactAndAllowWhileIdle` when the user chose it, and the inexact fallback when exact alarms
  * are not allowed. Returns the mode actually used.
  */
-class AlarmGateway(private val context: Context) {
+class AlarmGateway(
+    private val context: Context,
+    /** App time to device wall time (D108: a guarded clock jump); identity otherwise. */
+    private val toDeviceMs: (Long) -> Long = { it },
+) {
     private val am = context.getSystemService(AlarmManager::class.java)
 
     private fun pi(requestCode: Int, action: String, timerId: String): PendingIntent = PendingIntent.getBroadcast(
@@ -38,7 +42,8 @@ class AlarmGateway(private val context: Context) {
         am.cancel(pi(Channels.RC_OVERTIME, RestAlarmReceiver.ACTION_OVERTIME, timerId))
     }
 
-    private fun schedule(rc: Int, action: String, timerId: String, atWall: Long, preferred: String, exactAllowed: Boolean): String {
+    private fun schedule(rc: Int, action: String, timerId: String, atApp: Long, preferred: String, exactAllowed: Boolean): String {
+        val atWall = toDeviceMs(atApp)
         val p = pi(rc, action, timerId)
         if (!exactAllowed) {
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atWall, p)

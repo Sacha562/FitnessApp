@@ -91,7 +91,8 @@ class WarningRunner(
             val mine = sets.filter { it.session_exercise_id == se.id && it.set_kind != "warmup" }
             // WE-S2 notice: a manual load above the cap of the last exposure (general items; RULE loads follow the challenge).
             if (se.challenge_item_key == null && rx != null) {
-                val cap = capFor(se.exercise_id, sessionId, highRisk, ex.mechanics == "isolation")
+                val cap = capFor(se.exercise_id, sessionId, highRisk, ex.mechanics == "isolation", rx.qStar)
+                    ?.let { generic -> maxOf(generic, rx.sets.mapNotNull { it.wSys }.maxOrNull() ?: generic) } // D109: never the engine's own load
                 val heaviest = mine.mapNotNull { it.effective_load_kg?.let { w -> Scaled.toDouble(w, 2) } }.maxOrNull()
                 if (cap != null && heaviest != null) Warnings.loadAboveCap(entity, heaviest, cap, ruleItem = false, hold = false)?.let { out += it }
             }
@@ -118,12 +119,23 @@ class WarningRunner(
         return Warnings.rank(out)
     }
 
-    /** `w_last * (1 + cap_up)` of the last earlier exposure (B9.14), or null without one. */
-    private suspend fun capFor(exerciseId: String, sessionId: String, highRisk: Boolean, isolation: Boolean): Double? {
+    /**
+     * `w_last * (1 + cap_up)` of the last earlier exposure (B9.14), or null without one. D109: RX-1's fast cap when that
+     * exposure's last working set was logged at least `rx.cap_fast_rir_margin` above [qStar] (not for high-risk items);
+     * the reported RIR stands in for SSE-1's `q_true`.
+     */
+    private suspend fun capFor(exerciseId: String, sessionId: String, highRisk: Boolean, isolation: Boolean, qStar: Double): Double? {
         val history = db.setLogs().historyForExercise(exerciseId, sessionId, HISTORY_LIMIT).filter { it.set.set_kind in WORKING }
         val last = history.firstOrNull()?.set?.session_id ?: return null
-        val wLast = history.filter { it.set.session_id == last }.mapNotNull { it.set.effective_load_kg?.let { w -> Scaled.toDouble(w, 2) } }.maxOrNull() ?: return null
-        val up = if (isolation && !highRisk) params.double("rx.cap_up_isolation") else params.double("rx.cap_up_compound")
+        val lastSets = history.filter { it.set.session_id == last }
+        val wLast = lastSets.mapNotNull { it.set.effective_load_kg?.let { w -> Scaled.toDouble(w, 2) } }.maxOrNull() ?: return null
+        val lastRir = lastSets.maxWithOrNull(compareBy({ it.set.completed_at }, { it.set.id }))?.set?.rir_reported?.let { Scaled.toDouble(it, 1) }
+        val fast = !highRisk && lastRir != null && lastRir >= qStar + params.double("rx.cap_fast_rir_margin")
+        val up = when {
+            fast -> params.double("rx.cap_up_fast")
+            isolation && !highRisk -> params.double("rx.cap_up_isolation")
+            else -> params.double("rx.cap_up_compound")
+        }
         return wLast * (1.0 + up)
     }
 

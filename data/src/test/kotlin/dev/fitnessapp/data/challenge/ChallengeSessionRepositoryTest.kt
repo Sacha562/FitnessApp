@@ -175,6 +175,25 @@ class ChallengeSessionRepositoryTest {
     }
 
     @Test
+    fun `D111 an exercise added to a challenge session joins a user-built general block`() = blocking {
+        val enrollmentId = enroll(except = mapOf("P13" to "declined"))
+        val sessionId = live.start(enrollmentId, "A")
+        val bench = CatalogRepository.bundled().bySlug("db_bench_press")!!
+        val first = sessions.addExercise(sessionId, bench, dev.fitnessapp.algo.core.load.LoadMode.EXTERNAL)
+        val blocks = db.blocks().bySession(sessionId)
+        blocks.map { it.block_kind } shouldBe listOf("challenge", "general")
+        val general = blocks.last()
+        general.origin shouldBe "user_built"
+        db.sessionExercises().get(first)!!.block_id shouldBe general.id
+        // A second add joins the same block; the event names the block it went to.
+        val second = sessions.addExercise(sessionId, bench, dev.fitnessapp.algo.core.load.LoadMode.EXTERNAL)
+        db.sessionExercises().get(second)!!.block_id shouldBe general.id
+        db.blocks().bySession(sessionId).size shouldBe 2
+        db.events().exportAll().filter { it.event_type == "exercise_added" }
+            .all { it.payload.contains("\"block_kind\":\"general\"") } shouldBe true
+    }
+
+    @Test
     fun `a session with every planned set logged is complete, warm-up items aside, and its block is done`() = blocking {
         val enrollmentId = enroll()
         val sessionId = live.start(enrollmentId, "C")

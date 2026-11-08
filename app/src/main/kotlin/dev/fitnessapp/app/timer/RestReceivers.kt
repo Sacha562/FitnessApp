@@ -1,5 +1,6 @@
 package dev.fitnessapp.app.timer
 
+import dev.fitnessapp.app.platform.AppClock
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,7 +10,7 @@ import kotlinx.coroutines.launch
 /** Delivers the rest end and overtime alarms (exported = false, ANDROID.md 12.4). */
 class RestAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val fired = System.currentTimeMillis()
+        val fired = AppClock.nowMs()
         val app = context.applicationContext as FitnessApplication
         val c = app.container
         val timerId = intent.getStringExtra(EXTRA_TIMER_ID) ?: return
@@ -37,7 +38,7 @@ class RestAlarmReceiver : BroadcastReceiver() {
 class RestActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val c = (context.applicationContext as FitnessApplication).container
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         synchronized(LOCK) {
             if (intent.action == lastAction && now - lastAt < c.platformConfig.uiDoubleTapDebounceMs) return
             lastAction = intent.action
