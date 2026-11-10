@@ -1552,6 +1552,11 @@ WarningEngine reports a deficit (amber) or an overshoot. Groups owned by an acti
 "covered by challenge" instead of a bar (D6; challenge volume is exempt from MRV warnings). Tapping a
 row opens a sheet with the per-exercise contributions this week and the Why for the target.
 
+Planned counts everything still ahead this ISO week (D113): the challenge's sessions and habits, and the week
+plan's general sessions (recommended sessions, the user's planned gym events, add-ons). The sheet lists done
+exercises first, then committed challenge exercises and each planned general session ("Thu · Legs + push") as
+"planned". The `!` deficit uses the same projection.
+
 ### 10.9 Day sheet
 
 Opens from any day row: the date, the recommended session (exercise list preview, est. minutes,

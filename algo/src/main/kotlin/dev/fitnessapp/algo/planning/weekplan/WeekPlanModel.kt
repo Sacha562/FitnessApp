@@ -129,6 +129,8 @@ data class PlanItem(
     val rirOffset: Map<String, Int> = emptyMap(),
     val writePolicy: String,
     val source: String,
+    /** The allocation's projected Vhyp per group (7.6): the session's planned volume on the Week tab's bars (D113). */
+    val vhyp: Map<String, Double> = emptyMap(),
 )
 
 data class PlanDay(

@@ -593,6 +593,7 @@ object WeeklyPlanner : DeclaresParams {
                         sim?.alloc?.estMinutes ?: Duration.between(f.start, f.end).toMinutes().toDouble(), sim?.alloc?.direct.orEmpty(),
                         sim?.alloc?.credit.orEmpty(), sim?.alloc?.rirOffset.orEmpty(),
                         writePolicy = when (f.kind) { FixedItem.KIND_CHALLENGE, FixedItem.KIND_TEST -> "auto"; else -> "never" }, source = "fixed",
+                        vhyp = sim?.alloc?.vhyp.orEmpty(),
                     )
                     byDate[dm.date]?.firstOrNull { it.point.fixed === f && it.point.kind == Point.ADDON }?.let { s ->
                         items += item(s, KIND_ADDON, "in_parent_description", "${f.key}:addon")
@@ -638,7 +639,7 @@ object WeeklyPlanner : DeclaresParams {
             val end = s.start.plusMillis((s.alloc.estMinutes * 60_000.0).toLong())
             return PlanItem(
                 key, kind, s.point.fixed?.slot, s.type.code, s.alloc.label, s.start, end, s.alloc.estMinutes, s.alloc.direct, s.alloc.credit,
-                s.alloc.rirOffset, policy, "weekplan",
+                s.alloc.rirOffset, policy, "weekplan", s.alloc.vhyp,
             )
         }
 

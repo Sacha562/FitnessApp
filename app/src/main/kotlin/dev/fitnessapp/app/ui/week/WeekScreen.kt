@@ -117,6 +117,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
@@ -156,7 +157,9 @@ private suspend fun load(c: AppContainer, offset: Int): WeekPage = withContext(D
         offset == 0 -> {
             val run = WeekPlans.thisWeek(c, now)
             val shown = UiWeekRows.withMoved(run.plan, c.settings.movedSuggestions(run.plan.isoWeek), zone)
-            WeekPage(monday, 0, run, run.volume, rows(shown, emptyList()), grid(shown, emptyList()), run.volume.challenge, degraded)
+            // The bars count the plan's general sessions as shown (moved suggestions included) beside the challenge's (D113).
+            val volume = run.volume.withPlan(shown, c.params)
+            WeekPage(monday, 0, run, volume, rows(shown, emptyList()), grid(shown, emptyList()), volume.challenge, degraded)
         }
         offset == 1 -> {
             val run = WeekPlans.nextWeek(c, WeekPlans.thisWeek(c, now), now)
@@ -758,8 +761,8 @@ private fun VolumeTile(c: AppContainer, w: WeekVolume, onOpen: (String) -> Unit)
     Tile(spacing = 0.dp, padding = PaddingValues(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp)) {
         TileLabel("Muscle volume (hard sets this week)", Modifier.padding(start = 10.dp, bottom = 2.dp))
         Text(
-            if (w.targets.deload.active) "Deload week: targets are halved. Planned is your challenge's sessions still ahead."
-            else "Solid: done. Light: your challenge's sessions still ahead. Tick: this week's target.",
+            if (w.targets.deload.active) "Deload week: targets are halved. Planned is the sessions still ahead this week."
+            else "Solid: done. Light: sessions still planned this week. Tick: this week's target.",
             style = MaterialTheme.typography.bodySmall, color = Fit.Muted, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
         )
         w.bars.rows.forEachIndexed { i, r ->
@@ -853,7 +856,9 @@ private fun GroupSheet(c: AppContainer, w: WeekVolume, group: String, onDismiss:
             if (rows.isEmpty()) Text("Nothing yet.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
             rows.forEach { r ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(c.catalog.bySlug(r.slug)?.nameEn ?: r.slug, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    val name = r.label?.let { l -> (r.date?.let { it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + " · " } ?: "") + l }
+                        ?: c.catalog.bySlug(r.slug)?.nameEn ?: r.slug
+                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     Text(
                         UiVolumeBars.text(r.vhyp, 0.0, 0.0).substringBefore(" / ") + (if (r.committed) " planned" else ""),
                         style = MaterialTheme.typography.bodyMedium, color = if (r.committed) Fit.Muted else Fit.Ink,

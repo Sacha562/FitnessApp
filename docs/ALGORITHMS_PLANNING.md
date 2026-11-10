@@ -2912,6 +2912,8 @@ for g in GROUPS:
   if status covered: row "covered by challenge" (no bar; challenge volume exempt from MRV warnings, D6); continue
   if status skip: collect into one line "Not trained: …"; continue
   done = account.done[g].vhyp; planned = committed[g] + plannedGeneral[g]       // Vhyp, the C6 table via SetCredit
+  // plannedGeneral: Σ PlanItem.vhyp of the chosen week plan's items (§8); the app applies it after the planner
+  // ran, since the planner's own input is the account without it (D113). WE-V1's x = done + planned.
   tgt = targetEffective[g] (deload weeks) else target[g]; normalTarget shown as a faint tick in deload weeks
   fillDone = min(done / tgt, BAR_CAP); fillPlanned = min((done + planned) / tgt, BAR_CAP) − fillDone
   state = (WarningEngine has a WARN or STRONG volume deficit for g) ? DEFICIT
