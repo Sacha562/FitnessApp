@@ -125,7 +125,13 @@ class LocalSettings(context: Context) {
         get() = prefs.getInt(KEY_UPDATE_NOTIFIED, 0)
         set(v) = prefs.edit().putInt(KEY_UPDATE_NOTIFIED, v).apply()
 
+    /** The Plan grid's hour height in dp, as last pinched (D114). */
+    var planHourDp: Float
+        get() = prefs.getFloat(KEY_PLAN_HOUR, dev.fitnessapp.app.ui.week.DEFAULT_HOUR_DP)
+        set(v) = prefs.edit().putFloat(KEY_PLAN_HOUR, v).apply()
+
     private companion object {
+        const val KEY_PLAN_HOUR = "plan_hour_dp"
         const val KEY_UPDATE_CHECK = "update_check_ms"
         const val KEY_UPDATE_NOTIFIED = "update_notified_code"
         const val KEY_ONCE = "once."

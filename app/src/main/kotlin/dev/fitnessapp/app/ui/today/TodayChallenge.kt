@@ -137,7 +137,7 @@ class TodayChallengeViewModel(private val c: AppContainer) : ViewModel() {
         val f = c.challenges.folded(e.id)
         val def = f.def
         val program = ChallengeTexts.title(def)
-        if (f.state.status == "paused") return TodayChallengeUi(e.id, program, f.state.mode, "Challenge paused", "Resume it in the Challenges tab.", null, false, null)
+        if (f.state.status == "paused") return TodayChallengeUi(e.id, program, f.state.mode, "Challenge paused", "Resume it in Settings > Challenges.", null, false, null)
         val facts = c.challengeFacts.facts(def, f.state)
         val (input, plan) = ChallengeWeek.plan(c, f, facts)
         val today = Week.localDate(input.now, input.zone)

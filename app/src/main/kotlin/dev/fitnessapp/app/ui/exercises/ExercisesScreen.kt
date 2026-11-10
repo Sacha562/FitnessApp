@@ -35,10 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,13 +107,15 @@ class ExercisesViewModel(private val c: AppContainer) : ViewModel() {
         combine(query, filter, sort, dutch) { q, f, s, d -> Inputs(q, f, s, d) },
         c.preferences.observe(),
         c.sessionRepository.observeUsageSince(since),
-        c.equipment.observeEquipment(),
-        c.customExercises.observe(),
-    ) { (q, f, s, d), prefs, usage, equipment, _ ->
+        // Every exercise with a logged set, ever: the "Done" chip (D114). The custom exercises only trigger a refresh.
+        combine(c.equipment.observeEquipment(), c.customExercises.observe(), c.sessionRepository.observeUsageSince(EVER)) { e, _, all -> e to all },
+    ) { (q, f, s, d), prefs, usage, (equipment, ever) ->
         val stations = equipment.filter { it.available }.map { it.equipment_type }.toSet()
         val available: (CatalogExercise) -> Boolean = { e -> equipment.isEmpty() || e.requiresStation.all { it in stations } }
         val usageMap = usage.associate { it.exercise_id to it.sessions }
-        val list = CatalogQuery.apply(c.catalog.exercises, q, f, s, c.catalogModel, prefs, usageMap, available, c.catalog::idOf, d, c.catalog::isCustom)
+        val logged = ever.mapTo(HashSet()) { it.exercise_id }
+        val done: (CatalogExercise) -> Boolean = { e -> c.catalog.idOf(e) in logged }
+        val list = CatalogQuery.apply(c.catalog.exercises, q, f, s, c.catalogModel, prefs, usageMap, available, c.catalog::idOf, d, c.catalog::isCustom, done)
         CatalogUi(
             q, f, s,
             list.map { e ->
@@ -165,6 +167,9 @@ class ExercisesViewModel(private val c: AppContainer) : ViewModel() {
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 150L
+
+        /** A date before any session: usage since then is usage ever. */
+        const val EVER = "0000-01-01"
     }
 }
 
@@ -197,11 +202,21 @@ private fun ExercisesContent(c: AppContainer, ui: CatalogUi, vm: ExercisesViewMo
         }
         FilterBar(c, ui, vm)
         if (ui.rows.isEmpty()) {
+            val f = ui.filter
+            val nothingDone = f.doneOnly && text.isBlank() && f == CatalogFilter()
             Text(
-                if (text.isNotBlank()) "No exercise matches '$text'." else "No exercise matches these filters.",
+                when {
+                    nothingDone -> "No exercises logged yet."
+                    text.isNotBlank() -> "No exercise matches '$text'."
+                    else -> "No exercise matches these filters."
+                },
                 style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
             )
-            LinkButton("Create a custom exercise", { onCreate(text.trim()) }, Modifier.padding(horizontal = 8.dp))
+            if (f.doneOnly) {
+                LinkButton("Show all exercises", { vm.setFilter("done", "false") { it.copy(doneOnly = false) } }, Modifier.padding(horizontal = 8.dp))
+            } else {
+                LinkButton("Create a custom exercise", { onCreate(text.trim()) }, Modifier.padding(horizontal = 8.dp))
+            }
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(ui.rows, key = { it.id }) { row -> CatalogRowItem(row) { onOpen(row.id) } }
@@ -217,6 +232,10 @@ private fun FilterBar(c: AppContainer, ui: CatalogUi, vm: ExercisesViewModel) {
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        ChipButton(
+            "Done", selected = f.doneOnly, role = Role.Checkbox,
+            onClick = { vm.setFilter("done", (!f.doneOnly).toString()) { it.copy(doneOnly = !it.doneOnly) } },
+        )
         val groups = c.catalogModel.taxonomy.activeGroups
         MenuChip("Muscle", groups.firstOrNull { it.id == f.muscle }?.labelEn, listOf<Pair<String?, String>>(null to "Any muscle") + groups.map { it.id to it.labelEn }) { v ->
             vm.setFilter("muscle", v) { it.copy(muscle = v) }

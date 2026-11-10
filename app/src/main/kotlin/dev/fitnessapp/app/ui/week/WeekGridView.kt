@@ -3,6 +3,8 @@ package dev.fitnessapp.app.ui.week
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +28,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -43,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -59,10 +63,9 @@ import dev.fitnessapp.app.uidet.WeekGrid
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** Hour height of the Week grid. */
-private val HOUR = 48.dp
 private val GUTTER = 30.dp
 private val HEADER = 46.dp
 
@@ -70,16 +73,21 @@ private val HEADER = 46.dp
 private const val DRAG_STEP_MIN = 15
 private const val TAP_STEP_MIN = 30
 
+/** The smallest vertical finger distance a pinch step is measured over, so side-by-side fingers do not jump the zoom. */
+private val PINCH_MIN_SPAN = 24.dp
+
 /** A block being dragged: its day column and the finger's travel since the long press, in pixels. */
 private data class Drag(val block: GridBlock, val day: Int, val dx: Float, val dy: Float)
 
 /**
- * The Week tab's calendar grid (D83, D84): a time gutter and the seven days of the week side by side. Tapping a header
+ * The Plan tab's calendar grid (D83, D84, D114): a time gutter and the seven days of the week side by side. Tapping a header
  * or a block opens that day ([onOpenDay]); tapping an empty spot of a day asks for a session there ([onTapSlot], minutes
  * after midnight, rounded down to the half hour); a long press lifts a movable block, which follows the finger in
  * 15-minute steps and across days and is dropped with [onMove]. [nowMin] draws the current-time line in today's column.
  * [pending] holds dropped blocks (key -> day and start minute) at their drop place until the reloaded week shows them
- * there, so a block never jumps back while its move is written (D84 (2)).
+ * there, so a block never jumps back while its move is written (D84 (2)). [hour] is the height of one hour; two fingers
+ * moving apart or together vertically report each step's scale and the focal point's distance below the first hour
+ * through [onZoom] (D114), and that gesture never reaches the scroll, taps or drags underneath.
  */
 @Composable
 fun WeekGridView(
@@ -90,13 +98,16 @@ fun WeekGridView(
     onMove: (GridBlock, LocalDate, Int) -> Unit,
     modifier: Modifier = Modifier,
     pending: Map<String, Pair<LocalDate, Int>> = emptyMap(),
+    hour: Dp = 48.dp,
+    onZoom: (factor: Float, focalPx: Float) -> Unit = { _, _ -> },
 ) {
-    BoxWithConstraints(modifier.fillMaxWidth()) {
+    val zoom by rememberUpdatedState(onZoom)
+    BoxWithConstraints(modifier.fillMaxWidth().pointerInput(Unit) { pinch(PINCH_MIN_SPAN.toPx(), HEADER.toPx()) { f, y -> zoom(f, y) } }) {
         val dayW = (maxWidth - GUTTER) / 7
         val hours = grid.endHour - grid.startHour
         val density = LocalDensity.current
         val haptics = LocalHapticFeedback.current
-        val hourPx = with(density) { HOUR.toPx() }
+        val hourPx = with(density) { hour.toPx() }
         val dayPx = with(density) { dayW.toPx() }
         var drag by remember { mutableStateOf<Drag?>(null) }
 
@@ -113,7 +124,7 @@ fun WeekGridView(
             Column(Modifier.width(GUTTER)) {
                 Box(Modifier.height(HEADER))
                 for (h in grid.startHour until grid.endHour) {
-                    Box(Modifier.height(HOUR)) {
+                    Box(Modifier.height(hour)) {
                         if (h > grid.startHour) {
                             Text(
                                 "%02d".format(Locale.ROOT, h), style = MaterialTheme.typography.labelSmall, color = Fit.Muted,
@@ -127,10 +138,10 @@ fun WeekGridView(
                 Row(Modifier.height(HEADER)) {
                     grid.days.forEach { d -> DayHeader(d.date, d.today, d.blocked, dayW) { onOpenDay(d.date) } }
                 }
-                Box(Modifier.height(HOUR * hours).fillMaxWidth()) {
+                Box(Modifier.height(hour * hours).fillMaxWidth()) {
                     // The empty grid under the blocks: a tap there plans a session at that spot (D84 (1)).
                     Box(
-                        Modifier.fillMaxSize().pointerInput(grid) {
+                        Modifier.fillMaxSize().pointerInput(grid, hourPx) {
                             detectTapGestures { p ->
                                 val day = (p.x / dayPx).toInt().coerceIn(0, 6)
                                 val minute = grid.startHour * 60 + ((p.y / hourPx * 60f).toInt() / TAP_STEP_MIN) * TAP_STEP_MIN
@@ -139,7 +150,7 @@ fun WeekGridView(
                         },
                     )
                     for (h in 0 until hours) {
-                        Box(Modifier.offset(y = HOUR * h).fillMaxWidth().height(1.dp).background(Fit.Line))
+                        Box(Modifier.offset(y = hour * h).fillMaxWidth().height(1.dp).background(Fit.Line))
                     }
                     grid.days.forEachIndexed { i, d ->
                         if (d.blocked) Box(Modifier.offset(x = dayW * i).width(dayW).fillMaxHeight().background(Fit.Raised.copy(alpha = 0.35f)))
@@ -148,15 +159,15 @@ fun WeekGridView(
                     grid.days.forEachIndexed { i, d ->
                         d.blocks.filter { it.key !in pending }.forEach { b ->
                             val laneW = (dayW - 3.dp) / b.lanes
-                            val top = HOUR * ((b.startMin - grid.startHour * 60) / 60f)
-                            val height = HOUR * ((b.endMin - b.startMin) / 60f)
+                            val top = hour * ((b.startMin - grid.startHour * 60) / 60f)
+                            val height = hour * ((b.endMin - b.startMin) / 60f)
                             val lifted = drag?.block?.key == b.key
                             Block(
                                 b,
                                 modifier = Modifier.offset(x = dayW * i + 2.dp + laneW * b.lane, y = top + 1.dp).width(laneW - 1.dp).height(height - 2.dp)
                                     .alpha(if (lifted) 0.3f else 1f)
                                     .then(
-                                        if (b.movable) Modifier.pointerInput(b.key, b.startMin, i) {
+                                        if (b.movable) Modifier.pointerInput(b.key, b.startMin, i, hourPx) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
                                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -181,7 +192,7 @@ fun WeekGridView(
                             )
                         }
                         if (d.today && nowMin != null && nowMin in grid.startHour * 60 until grid.endHour * 60) {
-                            val y = HOUR * ((nowMin - grid.startHour * 60) / 60f)
+                            val y = hour * ((nowMin - grid.startHour * 60) / 60f)
                             Box(Modifier.offset(x = dayW * i, y = y - 1.dp).width(dayW).height(2.dp).background(Fit.Safety))
                             Box(Modifier.offset(x = dayW * i - 4.dp, y = y - 4.dp).size(8.dp).clip(CircleShape).background(Fit.Safety))
                         }
@@ -194,8 +205,8 @@ fun WeekGridView(
                         val moved = b.copy(startMin = at.second, endMin = at.second + dur, time = "%02d:%02d".format(Locale.ROOT, at.second / 60, at.second % 60))
                         Block(
                             moved,
-                            modifier = Modifier.offset(x = dayW * day + 2.dp, y = HOUR * ((at.second - grid.startHour * 60) / 60f) + 1.dp)
-                                .width(dayW - 4.dp).height(HOUR * (dur / 60f) - 2.dp),
+                            modifier = Modifier.offset(x = dayW * day + 2.dp, y = hour * ((at.second - grid.startHour * 60) / 60f) + 1.dp)
+                                .width(dayW - 4.dp).height(hour * (dur / 60f) - 2.dp),
                             onClick = {},
                         )
                     }
@@ -207,8 +218,8 @@ fun WeekGridView(
                         val ghost = b.copy(startMin = minute, endMin = minute + dur, time = "%02d:%02d".format(Locale.ROOT, minute / 60, minute % 60))
                         Block(
                             ghost,
-                            modifier = Modifier.offset(x = dayW * day + 1.dp, y = HOUR * ((minute - grid.startHour * 60) / 60f))
-                                .width(dayW - 2.dp).height(HOUR * (dur / 60f)).shadow(8.dp, RoundedCornerShape(6.dp))
+                            modifier = Modifier.offset(x = dayW * day + 1.dp, y = hour * ((minute - grid.startHour * 60) / 60f))
+                                .width(dayW - 2.dp).height(hour * (dur / 60f)).shadow(8.dp, RoundedCornerShape(6.dp))
                                 .border(2.dp, Fit.Ink, RoundedCornerShape(6.dp)),
                             onClick = {},
                             showTime = true,
@@ -217,6 +228,31 @@ fun WeekGridView(
                 }
             }
         }
+    }
+}
+
+/**
+ * A vertical pinch: while two or more fingers are down, each move reports the change of the first two fingers' vertical
+ * distance as a factor and their midpoint below the header, and the event is consumed in the initial pass so the scroll
+ * and the blocks underneath ignore it. A single finger passes through untouched.
+ */
+private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.pinch(minSpan: Float, header: Float, onStep: (Float, Float) -> Unit) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        do {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val down = event.changes.filter { it.pressed }
+            if (down.size >= 2) {
+                val a = down[0]
+                val b = down[1]
+                if (a.previousPressed && b.previousPressed) {
+                    val before = abs(a.previousPosition.y - b.previousPosition.y)
+                    val now = abs(a.position.y - b.position.y)
+                    if (before >= minSpan && now >= minSpan) onStep(now / before, (a.position.y + b.position.y) / 2f - header)
+                }
+                event.changes.forEach { it.consume() }
+            }
+        } while (event.changes.any { it.pressed })
     }
 }
 

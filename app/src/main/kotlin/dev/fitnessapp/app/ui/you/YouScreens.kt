@@ -26,11 +26,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,8 +87,16 @@ fun YouRoute(
     onPreferences: () -> Unit = {},
     onPrompts: () -> Unit = {},
     onProgress: () -> Unit = {},
+    onChallenges: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
+    // The Challenges row's subtitle (D114): the open challenge's name, else an invitation to browse.
+    var challenge by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        challenge = runCatching {
+            c.challenges.open().firstOrNull()?.let { e -> dev.fitnessapp.app.ui.challenges.ChallengeTexts.title(c.challenges.definition(e.definition_id)) }
+        }.getOrNull()
+    }
     val history by remember { c.history.observeHistory() }.collectAsState(initial = emptyList())
     val syncState by c.sync.state.collectAsState()
     val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
@@ -100,7 +108,7 @@ fun YouRoute(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("You", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+        Text("Settings", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         val thisWeek = history.firstOrNull()?.session?.iso_week
         Tile(spacing = 0.dp, padding = PaddingValues(horizontal = 6.dp, vertical = 6.dp)) {
             NavRow("Progress", "Strength charts, personal bests, this mesocycle", onProgress)
@@ -110,9 +118,11 @@ fun YouRoute(
                 thisWeek?.let { w -> "Week ${w.substringAfter("-W").trimStart('0')} · ${history.count { it.session.iso_week == w }} sessions" } ?: "No sessions yet",
                 onHistory,
             )
+            TileDivider(Modifier.padding(horizontal = 10.dp))
+            NavRow("Challenges", challenge ?: "Browse challenges", onChallenges)
         }
         Tile(spacing = 0.dp, padding = PaddingValues(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp)) {
-            TileLabel("Settings", Modifier.padding(start = 10.dp, bottom = 4.dp))
+            TileLabel("App", Modifier.padding(start = 10.dp, bottom = 4.dp))
             NavRow("Preferences", "Muscle goals, sessions, sets and reps", onPreferences)
             TileDivider(Modifier.padding(horizontal = 10.dp))
             NavRow("Prompts", "Questions before and after a session", onPrompts)

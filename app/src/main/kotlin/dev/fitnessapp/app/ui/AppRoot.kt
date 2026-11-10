@@ -5,21 +5,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.FitnessCenter
-import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -59,6 +57,8 @@ import dev.fitnessapp.app.ui.common.FitNavBar
 import dev.fitnessapp.app.ui.common.NavItem
 import dev.fitnessapp.app.ui.theme.Fit
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -89,7 +89,7 @@ fun AppRoot(c: AppContainer, route: MutableStateFlow<Routes.Target?>) {
 private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlow<Routes.Target?>) {
     val backStack = rememberSaveable(saver = BackStackSaver) { mutableStateListOf<AppKey>(AppKey.Main) }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
-    // A day tapped in Today's week strip: the Week tab opens at that week with the day marked (UX 9.7, D82).
+    // A day tapped in Today's week strip: the Plan tab opens at that week with the day marked (UX 9.7, D82, D114).
     var weekFocus by remember { mutableStateOf<java.time.LocalDate?>(null) }
     val pending by route.collectAsState()
     val scope = rememberCoroutineScope()
@@ -186,19 +186,20 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                             onOpenPast = { push(AppKey.SessionDetail(it)) }, onHistory = { push(AppKey.History) },
                             onOpenReliability = { push(AppKey.Reliability) }, onOpenEquipment = { push(AppKey.Equipment) },
                             onSetGoals = { push(AppKey.Preferences) },
-                            onOpenWeek = { d -> weekFocus = d; tab = Tab.WEEK },
+                            onOpenWeek = { d -> weekFocus = d; tab = Tab.PLAN },
                             onSignIn = { openSignIn() },
                         )
-                        Tab.WEEK -> dev.fitnessapp.app.ui.week.WeekRoute(
-                            c, m, onSetGoals = { push(AppKey.Preferences) }, onOpenCalendars = { push(AppKey.Calendars) },
+                        Tab.GOALS -> dev.fitnessapp.app.ui.week.GoalsRoute(c, m, onSetGoals = { push(AppKey.Preferences) })
+                        Tab.PLAN -> dev.fitnessapp.app.ui.week.PlanRoute(
+                            c, m, onOpenCalendars = { push(AppKey.Calendars) },
                             onOpenToday = { tab = Tab.TODAY }, focus = weekFocus, onFocusUsed = { weekFocus = null },
                         )
                         Tab.EXERCISES -> ExercisesRoute(c, m, onOpen = { push(AppKey.ExerciseDetail(it, "list")) }, onCreate = { push(AppKey.CustomExercise(it)) })
-                        Tab.CHALLENGES -> ChallengesRoute(c, m, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) })
-                        Tab.YOU -> YouRoute(
+                        Tab.SETTINGS -> YouRoute(
                             c, appVm, m, onDataSync = { push(AppKey.DataSync) }, onEquipment = { push(AppKey.Equipment) },
                             onReliability = { push(AppKey.Reliability) }, onHistory = { push(AppKey.History) }, onCalendars = { push(AppKey.Calendars) },
                             onPreferences = { push(AppKey.Preferences) }, onPrompts = { push(AppKey.Prompts) }, onProgress = { push(AppKey.Progress) },
+                            onChallenges = { push(AppKey.Challenges) },
                         )
                     }
                 }
@@ -250,6 +251,9 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
                 dev.fitnessapp.app.ui.exercises.CustomExerciseRoute(c, k.name, onBack = { pop() }, onSaved = { id -> pop(); push(AppKey.ExerciseDetail(id, "list")) })
             }
             entry<AppKey.ExerciseDetail> { k -> ExerciseDetailRoute(c, k.exerciseId, k.from, onBack = { pop() }, onOpen = { push(AppKey.ExerciseDetail(it, "alternatives")) }) }
+            entry<AppKey.Challenges> {
+                ChallengesRoute(c, Modifier, onOpen = { push(AppKey.ChallengeDashboard(it)) }, onSetup = { push(AppKey.ChallengeSetup(it)) }, onBack = { pop() })
+            }
             entry<AppKey.ChallengeDashboard> { k -> ChallengeDashboardRoute(c, k.enrollmentId, onBack = { pop() }, onTestDay = { push(AppKey.TestDay(k.enrollmentId, null)) }) }
             entry<AppKey.TestDay> { k ->
                 TestDayRoute(
@@ -284,11 +288,12 @@ private suspend fun restored(c: AppContainer, sessionId: String) {
 private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Main, null -> when (tab) {
         Tab.TODAY -> "today"
-        Tab.WEEK -> "week"
+        Tab.GOALS -> "goals"
+        Tab.PLAN -> "plan"
         Tab.EXERCISES -> "exercises"
-        Tab.CHALLENGES -> "challenges"
-        Tab.YOU -> "you"
+        Tab.SETTINGS -> "settings"
     }
+    AppKey.Challenges -> "challenges"
     is AppKey.LiveSession -> "session.live"
     is AppKey.Summary -> "session.summary"
     AppKey.DataSync, AppKey.DataSyncExport -> "you.data"
@@ -319,10 +324,10 @@ private const val SCREEN_VIEW_MIN_GAP_MS = 1_000L
 /** The floating navigation tile's destinations, in [Tab] order (UX 3.1, 4.3). */
 private val NAV_ITEMS = listOf(
     NavItem("Today", Icons.Rounded.FitnessCenter),
-    NavItem("Week", Icons.Rounded.CalendarMonth),
+    NavItem("Goals", Icons.Rounded.TrackChanges),
+    NavItem("Plan", Icons.Rounded.CalendarMonth),
     NavItem("Exercises", Icons.AutoMirrored.Rounded.FormatListBulleted),
-    NavItem("Challenges", Icons.Rounded.EmojiEvents),
-    NavItem("You", Icons.Rounded.Person),
+    NavItem("Settings", Icons.Rounded.Settings),
 )
 
 private val BackStackSaver = listSaver<SnapshotStateList<AppKey>, String>(

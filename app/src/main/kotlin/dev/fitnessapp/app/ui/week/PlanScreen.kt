@@ -2,36 +2,27 @@ package dev.fitnessapp.app.ui.week
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
@@ -43,48 +34,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.fitnessapp.algo.challenge.calendar.CalendarLink
 import dev.fitnessapp.algo.challenge.calendar.WritePrompt
 import dev.fitnessapp.algo.common.Groups
-import dev.fitnessapp.algo.core.calendar.CalendarClassification
 import dev.fitnessapp.algo.core.calendar.AnchorKind
 import dev.fitnessapp.algo.core.calendar.SlotKey
 import dev.fitnessapp.algo.planning.weekplan.PlanIt
 import dev.fitnessapp.algo.core.clock.Week
 import dev.fitnessapp.algo.planning.weekplan.FixedItem
-import dev.fitnessapp.algo.planning.weekplan.WeekPlan
-import dev.fitnessapp.algo.planning.weekplan.WeeklyPlanner
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.uidet.UiTrim
 import dev.fitnessapp.app.planning.SessionBuild
 import dev.fitnessapp.app.ui.challenges.ChallengeLines
 import dev.fitnessapp.app.planning.PlanItContent
 import dev.fitnessapp.app.planning.PlanningFacts
-import dev.fitnessapp.app.planning.WeekChallenge
-import dev.fitnessapp.app.planning.WeekPlans
-import dev.fitnessapp.app.planning.WeekVolume
 import dev.fitnessapp.app.ui.calendar.EventSheet
 import dev.fitnessapp.app.ui.calendar.errorText
-import dev.fitnessapp.app.ui.calendar.kindText
-import dev.fitnessapp.app.ui.calendar.linkStateText
 import dev.fitnessapp.app.ui.common.Banner
-import dev.fitnessapp.app.ui.common.ChipButton
 import dev.fitnessapp.app.ui.common.BannerKind
 import dev.fitnessapp.app.ui.common.LinkButton
 import dev.fitnessapp.app.ui.common.LoadingDumbbell
@@ -92,21 +73,14 @@ import dev.fitnessapp.app.ui.common.PLANNER_LINES
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TileDivider
-import dev.fitnessapp.app.ui.common.TileLabel
 import dev.fitnessapp.app.ui.common.showUndo
 import dev.fitnessapp.app.ui.theme.Fit
-import dev.fitnessapp.app.uidet.UiVolumeBars
-import dev.fitnessapp.app.uidet.LoggedSession
-import dev.fitnessapp.app.uidet.UiWeekGrid
 import dev.fitnessapp.app.uidet.UiWeekRows
-import dev.fitnessapp.app.uidet.WeekGrid
-import dev.fitnessapp.app.uidet.VolumeRow
-import dev.fitnessapp.app.uidet.VolumeState
 import dev.fitnessapp.app.uidet.WeekAction
 import dev.fitnessapp.app.uidet.WeekRow
-import dev.fitnessapp.data.db.entity.WorkoutSessionEntity
 import dev.fitnessapp.data.telemetry.EventDraft
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
@@ -117,84 +91,20 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-/** One page of the Week tab (UX 10, D82): one ISO week's rows, header facts and volume. */
-private class WeekPage(
-    val monday: LocalDate,
-    val offset: Int,
-    /** This week's plan, or next week's provisional one; null for a past week and the weeks after next. */
-    val run: WeekPlans.Run?,
-    /** This week's volume, or a past week's; null for the weeks ahead. */
-    val volume: WeekVolume?,
-    /** The day sheet's rows (D82 (2)). */
-    val rows: List<WeekRow>,
-    /** The calendar grid (D83); null for the weeks after next. */
-    val grid: WeekGrid?,
-    val challenge: WeekChallenge?,
-    val degraded: Boolean,
-)
-
 /**
- * Loads the page [offset] ISO weeks from this one (UX 10.7): this and next week from the week planner, a past week from
- * its logged sessions and volume (read-only), a later week as the challenge's block structure only.
- */
-private suspend fun load(c: AppContainer, offset: Int): WeekPage = withContext(Dispatchers.Default) {
-    val now = c.clock.now()
-    val zone = PlanningFacts.ZONE
-    val today = Week.localDate(now, zone)
-    val monday = Week.isoWeekStart(today).plusWeeks(offset.toLong())
-    val snap = c.calendar.snapshot.value
-    val degraded = snap.status != CalendarClassification.OK
-    val canPlan = !degraded && snap.writeOff == null && snap.target != null
-    val labels = c.catalogModel.taxonomy.activeGroups.associate { it.id to it.labelEn }
-    fun rows(plan: WeekPlan?, done: List<LoggedSession>) =
-        UiWeekRows.rows(plan, monday, snap.anchors, snap.instances, snap.links, snap.prompts, done.map { it.date to it.label }, today, now, zone, canPlan) { g -> labels[g] ?: g }
-    fun grid(plan: WeekPlan?, done: List<LoggedSession>) = UiWeekGrid.grid(plan, monday, snap.anchors, snap.instances, done, today, now, zone)
-    when {
-        offset == 0 -> {
-            val run = WeekPlans.thisWeek(c, now)
-            val shown = UiWeekRows.withMoved(run.plan, c.settings.movedSuggestions(run.plan.isoWeek), zone)
-            // The bars count the plan's general sessions as shown (moved suggestions included) beside the challenge's (D113).
-            val volume = run.volume.withPlan(shown, c.params)
-            WeekPage(monday, 0, run, volume, rows(shown, emptyList()), grid(shown, emptyList()), volume.challenge, degraded)
-        }
-        offset == 1 -> {
-            val run = WeekPlans.nextWeek(c, WeekPlans.thisWeek(c, now), now)
-            val shown = UiWeekRows.withMoved(run.plan, c.settings.movedSuggestions(run.plan.isoWeek), zone)
-            WeekPage(monday, 1, run, null, rows(shown, emptyList()), grid(shown, emptyList()), runCatching { WeekPlans.blockAt(c, monday) }.getOrNull(), degraded)
-        }
-        offset < 0 -> {
-            val volume = runCatching { WeekVolume.compute(c, Week.atLocal(monday.plusDays(6), LocalTime.of(23, 59), zone)) }.getOrNull()
-            val done = c.db.sessions().finishedInIsoWeek(Week.isoWeek(monday))
-                .filter { it.habit_id == null && it.deleted_at == null && it.status == "finished" }
-                .map { s -> LoggedSession(LocalDate.parse(s.local_date), sessionLabel(s), s.started_at?.let(Instant::ofEpochMilli), s.finished_at?.let(Instant::ofEpochMilli)) }
-            WeekPage(monday, offset, null, volume, rows(null, done), grid(null, done), volume?.challenge, degraded)
-        }
-        else -> WeekPage(monday, offset, null, null, emptyList(), null, runCatching { WeekPlans.blockAt(c, monday) }.getOrNull(), degraded)
-    }
-}
-
-private fun sessionLabel(s: WorkoutSessionEntity): String = when {
-    s.challenge_slot == "TEST" -> "Test day"
-    s.challenge_slot != null -> "Session ${s.challenge_slot}"
-    s.families.isNotEmpty() -> s.families.joinToString(" + ") { it.lowercase() }.replaceFirstChar { it.uppercase() }
-    else -> "Gym session"
-}
-
-/**
- * The Week tab (UX 10, D82): the week's header, one stacked row per day (the planner's line, the calendar's events and
- * the row's action: Plan it, Adopt or Add to calendar), the day sheet, week navigation, and the muscle volume bars of
- * 10.8. [focus] opens the week of that day with its row marked (a tap on Today's week strip).
+ * The Plan tab (UX 10, D82, D83, D114): the week's header, the calendar grid (the planner's sessions, the calendar's
+ * events, Plan it, Adopt or Add to calendar from the day sheet) and week navigation; the muscle volume bars of 10.8 are
+ * on the Goals tab. A vertical pinch zooms the grid's hours around the fingers. [focus] opens the week of that day (a
+ * tap on Today's week strip).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun WeekRoute(
+fun PlanRoute(
     c: AppContainer,
     modifier: Modifier,
-    onSetGoals: () -> Unit,
     onOpenCalendars: () -> Unit = {},
     onOpenToday: () -> Unit = {},
     focus: LocalDate? = null,
@@ -203,12 +113,28 @@ fun WeekRoute(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
+    val scroll = rememberScrollState()
+    // The grid's hour height (D114): pinched by the user, kept on the phone.
+    var hourDp by remember { mutableFloatStateOf(c.settings.planHourDp.coerceIn(MIN_HOUR_DP, MAX_HOUR_DP)) }
+    // Scroll the zoom could not apply yet because the grid had not grown; applied once the new height is laid out.
+    val zoomScroll = remember { floatArrayOf(0f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { scroll.maxValue }.collect {
+            if (zoomScroll[0] != 0f) {
+                scroll.dispatchRawDelta(zoomScroll[0])
+                zoomScroll[0] = 0f
+            }
+        }
+    }
+    LaunchedEffect(hourDp) {
+        delay(HOUR_SAVE_DELAY_MS)
+        c.settings.planHourDp = hourDp
+    }
     val snap by c.calendar.snapshot.collectAsState()
     var tick by remember { mutableIntStateOf(0) }
     var offset by rememberSaveable { mutableIntStateOf(0) }
     var page by remember { mutableStateOf<WeekPage?>(null) }
     var failed by remember { mutableStateOf<String?>(null) }
-    var open by remember { mutableStateOf<String?>(null) }
     var day by remember { mutableStateOf<LocalDate?>(null) }
     var busy by remember { mutableStateOf(false) }
     // A tapped empty spot waiting for its "New gym session" sheet (D84 (1)).
@@ -217,6 +143,16 @@ fun WeekRoute(
     var changing by remember { mutableStateOf<Changing?>(null) }
     // Dropped blocks held at their drop place until the reloaded week shows them there (D84 (2)).
     var pending by remember { mutableStateOf<Map<String, Pair<LocalDate, Int>>>(emptyMap()) }
+
+    /** One step of a vertical pinch: scale the hour height and keep the time under the fingers ([focalPx] below the first hour) in place. */
+    fun zoom(factor: Float, focalPx: Float) {
+        val next = (hourDp * factor).coerceIn(MIN_HOUR_DP, MAX_HOUR_DP)
+        if (next == hourDp) return
+        val applied = next / hourDp
+        hourDp = next
+        val delta = focalPx * (applied - 1f)
+        zoomScroll[0] += delta - scroll.dispatchRawDelta(delta)
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
     LaunchedEffect(focus) {
         val f = focus ?: return@LaunchedEffect
@@ -224,7 +160,7 @@ fun WeekRoute(
         offset = ChronoUnit.WEEKS.between(thisMonday, Week.isoWeekStart(f)).toInt()
         onFocusUsed()
     }
-    LaunchedEffect(offset) { runCatching { c.screenViewed("week", mapOf("iso_week_offset" to offset)) } }
+    LaunchedEffect(offset) { runCatching { c.screenViewed("plan", mapOf("iso_week_offset" to offset)) } }
     LaunchedEffect(tick, offset, snap.refreshedAt) {
         runCatching { load(c, offset) }
             .onSuccess { p ->
@@ -345,28 +281,11 @@ fun WeekRoute(
 
     Box(modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val p = page?.takeIf { it.offset == offset }
-            val monday = Week.isoWeekStart(Week.localDate(c.clock.now(), PlanningFacts.ZONE)).plusWeeks(offset.toLong())
-            val fmt = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Week " + monday.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR) + when {
-                            offset == 0 -> " · this week"
-                            offset == 1 -> " · next week"
-                            offset < 0 -> " · past"
-                            else -> ""
-                        },
-                        style = MaterialTheme.typography.titleSmall, color = Fit.Muted,
-                    )
-                    Text(fmt.format(monday) + " – " + fmt.format(monday.plusDays(6)), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-                }
-                IconButton(onClick = { offset-- }, modifier = Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Previous week") }
-                IconButton(onClick = { offset++ }, modifier = Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, "Next week") }
-            }
+            WeekHeader(c, offset, onPrev = { offset-- }, onNext = { offset++ })
             p?.challenge?.let { ch ->
                 Text(
                     ch.name + " · block ${ch.blockIndex} · week ${ch.blockWeek}" + if (ch.deload) " · deload" else "",
@@ -405,13 +324,15 @@ fun WeekRoute(
                             onTapSlot = { date, minute -> tapSlot(p, date, minute) },
                             onMove = { b, date, minute -> drop(p, b, date, minute) },
                             pending = pending,
+                            hour = hourDp.dp,
+                            onZoom = ::zoom,
                             onOpenDay = { d ->
                                 day = d
                                 val kind = p.rows.firstOrNull { it.date == d }?.kind ?: "rest"
                                 scope.launch {
                                     runCatching {
                                         c.sessionRepository.event(
-                                            EventDraft(type = "week_day_opened", screen = "week", entityType = "none", payload = mapOf("date" to JsonPrimitive(d.toString()), "row_kind" to JsonPrimitive(kind))),
+                                            EventDraft(type = "week_day_opened", screen = "plan", entityType = "none", payload = mapOf("date" to JsonPrimitive(d.toString()), "row_kind" to JsonPrimitive(kind))),
                                         )
                                     }
                                 }
@@ -421,41 +342,16 @@ fun WeekRoute(
                     GridLegend()
                     if (p.run != null) {
                         Text(
-                            "Tap an empty spot to plan a session there. Long-press a gym session or a suggestion to move it.",
+                            "Tap an empty spot to plan a session there. Long-press a gym session or a suggestion to move it. Pinch up or down to zoom.",
                             style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
                         )
                     }
                     if (offset == 1) Text("Next week is provisional: it changes as this week goes.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
                 }
             }
-            val w = p?.volume
-            if (p != null && w != null && offset <= 0) {
-                if (!w.goalsSet) {
-                    Tile(spacing = 6.dp, onClick = onSetGoals) {
-                        Text("Set your goals", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Pick a goal per muscle group, then this page shows your weekly targets next to what you did.",
-                            style = MaterialTheme.typography.bodySmall, color = Fit.Muted,
-                        )
-                        LinkButton("Open Muscle goals", onSetGoals)
-                    }
-                } else {
-                    VolumeTile(c, w) { group ->
-                        open = group
-                        val state = w.bars.rows.firstOrNull { it.group == group }?.state?.name ?: "COVERED"
-                        scope.launch {
-                            c.sessionRepository.event(
-                                EventDraft(type = "volume_row_opened", screen = "week", entityType = "none", payload = mapOf("group" to JsonPrimitive(group), "state" to JsonPrimitive(state))),
-                            )
-                        }
-                    }
-                }
-            }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(12.dp))
     }
-    val w = page?.volume
-    if (open != null && w != null) GroupSheet(c, w, open!!) { open = null }
     val p = page
     val at = placing
     val run = p?.run
@@ -504,6 +400,12 @@ fun WeekRoute(
         }
     }
 }
+
+/** Hour height range and default of the Plan grid (D114), in dp, and how long a pinch rests before its height is saved. */
+internal const val MIN_HOUR_DP = 24f
+internal const val MAX_HOUR_DP = 144f
+internal const val DEFAULT_HOUR_DP = 48f
+private const val HOUR_SAVE_DELAY_MS = 500L
 
 private fun planItError(code: String?): String = when (code) {
     "nothing_to_train" -> "Nothing to plan for that day any more."
@@ -747,7 +649,7 @@ private suspend fun shownOnce(c: AppContainer, p: WeekPage) {
     }
     c.sessionRepository.event(
         EventDraft(
-            type = "weekplan_shown", screen = "week", entityType = "none",
+            type = "weekplan_shown", screen = "plan", entityType = "none",
             payload = mapOf(
                 "iso_week" to JsonPrimitive(w.isoWeek), "iso_week_offset" to JsonPrimitive(p.offset), "days" to JsonArray(days),
                 "volume_rows" to JsonArray(rows),
@@ -756,139 +658,3 @@ private suspend fun shownOnce(c: AppContainer, p: WeekPage) {
     )
 }
 
-@Composable
-private fun VolumeTile(c: AppContainer, w: WeekVolume, onOpen: (String) -> Unit) {
-    Tile(spacing = 0.dp, padding = PaddingValues(start = 6.dp, end = 6.dp, top = 14.dp, bottom = 6.dp)) {
-        TileLabel("Muscle volume (hard sets this week)", Modifier.padding(start = 10.dp, bottom = 2.dp))
-        Text(
-            if (w.targets.deload.active) "Deload week: targets are halved. Planned is the sessions still ahead this week."
-            else "Solid: done. Light: sessions still planned this week. Tick: this week's target.",
-            style = MaterialTheme.typography.bodySmall, color = Fit.Muted, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-        )
-        w.bars.rows.forEachIndexed { i, r ->
-            if (i > 0) TileDivider(Modifier.padding(horizontal = 10.dp))
-            BarRow(label(c, r.group), r) { onOpen(r.group) }
-        }
-        w.bars.covered.forEach { g ->
-            TileDivider(Modifier.padding(horizontal = 10.dp))
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).clickable { onOpen(g.group) }.padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(label(c, g.group), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text("covered by challenge · " + UiVolumeBars.text(g.done, g.planned, 0.0).substringBefore(" / "), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-            }
-        }
-        if (w.bars.skipped.isNotEmpty()) {
-            TileDivider(Modifier.padding(horizontal = 10.dp))
-            Text(
-                "Not trained: " + w.bars.skipped.joinToString(", ") { label(c, it).lowercase(Locale.ENGLISH) },
-                style = MaterialTheme.typography.bodySmall, color = Fit.Muted, modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-            )
-        }
-    }
-}
-
-/** One bar row (UX 19.5): name, goal tag, bar (done solid, planned light, target tick at 1.0, MRV marker), numbers, `!`. */
-@Composable
-private fun BarRow(name: String, r: VolumeRow, onClick: () -> Unit) {
-    val tag = when {
-        r.goal == "improve" && r.focus -> "focus"
-        r.goal == "improve" -> "improve"
-        else -> "maintain"
-    }
-    val stateText = when (r.state) {
-        VolumeState.DEFICIT -> ", below the evidence minimum"
-        VolumeState.OVER -> ", above the recoverable maximum"
-        VolumeState.OK -> ""
-    }
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 8.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "$name, $tag, ${r.text} sets$stateText" },
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Text(r.text, style = MaterialTheme.typography.bodyMedium)
-            Text(tag, style = MaterialTheme.typography.labelSmall, color = Fit.Muted)
-            if (r.flag) Text("!", style = MaterialTheme.typography.titleSmall, color = if (r.state == VolumeState.DEFICIT) Fit.Advisory else Fit.Muted)
-        }
-        val color = if (r.goal == "improve") Fit.Accent else Fit.Outline
-        BoxWithConstraints(Modifier.fillMaxWidth().height(10.dp)) {
-            val full = maxWidth
-            val cap = 1.25f
-            fun x(share: Double) = full * (share.toFloat() / cap).coerceIn(0f, 1f)
-            Box(
-                Modifier.fillMaxSize().clip(CircleShape).background(Fit.Raised)
-                    .then(if (r.focus) Modifier.border(1.dp, Fit.Accent, CircleShape) else Modifier),
-            )
-            Box(Modifier.width(x(r.fillDone + r.fillPlanned)).fillMaxHeight().clip(CircleShape).background(color.copy(alpha = 0.35f)))
-            Box(Modifier.width(x(r.fillDone)).fillMaxHeight().clip(CircleShape).background(color))
-            Box(Modifier.offset(x = x(1.0) - 1.dp).width(2.dp).fillMaxHeight().background(Fit.Ink))
-            r.normalMark?.let { Box(Modifier.offset(x = x(it) - 1.dp).width(2.dp).fillMaxHeight().background(Fit.Ink.copy(alpha = 0.3f))) }
-            r.mrvMark?.let { Box(Modifier.offset(x = x(it) - 1.dp).width(2.dp).fillMaxHeight().background(Fit.Safety)) }
-        }
-    }
-}
-
-/** The row's sheet (UX 10.8): this week's contributions per exercise and the Why of the target. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun GroupSheet(c: AppContainer, w: WeekVolume, group: String, onDismiss: () -> Unit) {
-    val gt = w.targets.groups[group]
-    val rows = w.contributions[group].orEmpty()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(
-            Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp).navigationBarsPadding().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(label(c, group), style = MaterialTheme.typography.titleLarge)
-            if (gt != null) Text(why(w, group), style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-            w.warnings.firstOrNull { it.entity == "group:$group" }?.let { v ->
-                val x = v.numbers["x"] ?: 0.0
-                Text(
-                    "Planned this week: ${UiVolumeBars.text(x, 0.0, 0.0).substringBefore(" / ")} hard sets. Research finds more growth from at least 10 a week " +
-                        "for a muscle you want to improve (Pelland 2026; moderate evidence).",
-                    style = MaterialTheme.typography.bodySmall, color = Fit.Advisory,
-                )
-            }
-            TileLabel("This week")
-            if (rows.isEmpty()) Text("Nothing yet.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-            rows.forEach { r ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val name = r.label?.let { l -> (r.date?.let { it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + " · " } ?: "") + l }
-                        ?: c.catalog.bySlug(r.slug)?.nameEn ?: r.slug
-                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        UiVolumeBars.text(r.vhyp, 0.0, 0.0).substringBefore(" / ") + (if (r.committed) " planned" else ""),
-                        style = MaterialTheme.typography.bodyMedium, color = if (r.committed) Fit.Muted else Fit.Ink,
-                    )
-                }
-            }
-            Text(
-                "Hard sets are weighted: a set counts fully for its main muscles and partly for the muscles that help (Pelland 2026).",
-                style = MaterialTheme.typography.bodySmall, color = Fit.Muted, modifier = Modifier.padding(top = 6.dp),
-            )
-        }
-    }
-}
-
-/** The Why of a group's target (F19): goal, base by training age, focus, deload, or the challenge that covers it. */
-private fun why(w: WeekVolume, group: String): String {
-    val gt = w.targets.groups.getValue(group)
-    val age = when (w.targets.trainingAge) { "novice" -> "under 1 year"; "advanced" -> "more than 3 years"; else -> "1-3 years" }
-    val n = { x: Double -> UiVolumeBars.text(x, 0.0, 0.0).substringBefore(" / ") }
-    return when (gt.status) {
-        "covered" -> "Your challenge trains this group while it is active, so the general plan leaves it alone." +
-            (gt.conflictNote?.let { " You chose Skip; $it." } ?: "")
-        "skip" -> "Goal: skip. Nothing is planned for this group."
-        "maintain" -> "Goal: maintain. ${n(gt.t)} hard sets a week keep what you have." +
-            (if (w.targets.deload.active) " Deload week: ${n(gt.targetEffective)}." else "")
-        else -> "Goal: improve${if (gt.focus) " with focus" else ""}. ${n(w.targets.base)} hard sets a week for your training experience ($age)" +
-            (if (gt.focus) ", plus 4 for focus" else "") + "." +
-            (if (w.targets.deload.active) " Deload week: ${n(gt.targetEffective)} this week, synced with your challenge." else "")
-    }
-}
-
-private fun label(c: AppContainer, group: String): String =
-    c.taxonomy.groups.firstOrNull { it.id == group }?.labelEn?.substringBefore(" (") ?: group

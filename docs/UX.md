@@ -144,10 +144,14 @@ five destinations):
 | Tab | Id | Question it answers | Main content |
 |---|---|---|---|
 | Today | `today` | "Do I train today, and what?" | Today card (verdict, primary option, alternatives, time-budget chips, Start), home habits checklist, week strip, prompts such as weigh-in |
-| Week | `week` | "What does my week look like?" | Recommended vs planned per day, challenge / blocked / rest reasons, Plan it, app-written event markers, adopt, muscle volume bars |
-| Exercises | `exercises` | "What can I do and what do I like?" | Catalog search and filters, exercise detail (muscle map, preference, history, loading, alternatives), custom exercise creation |
-| Challenges | `challenges` | "Where am I in my challenge?" | Library, active dashboard (phase, block/week, gates per arm, next test, this week), rules, history, tests, report pain, pause/resume/abandon |
-| You | `you` | "How am I progressing, and how is the app set up?" | Progress, History, Preferences, Equipment, Calendars, Rest and alerts, Prompts, Appearance, Transparency, Data and sync, Account |
+| Goals | `goals` | "Am I hitting my weekly muscle targets?" | Muscle volume bars per group (done, planned, target), group sheet with contributions and the Why, week arrows (this and past weeks), link to the muscle goals |
+| Plan | `plan` | "What does my week look like?" | Calendar grid of recommended vs planned sessions, challenge / blocked / rest reasons, Plan it, app-written event markers, adopt, day sheet; a vertical pinch zooms the hours |
+| Exercises | `exercises` | "What have I done, and what else is there?" | Exercises the user has logged ("Done" chip, on by default; off shows the whole catalog), search and filters, exercise detail (muscle map, preference, history, loading, alternatives), custom exercise creation |
+| Settings | `settings` | "How am I progressing, and how is the app set up?" | Progress, History, Challenges (library, active dashboard, rules, history, tests, pause/resume/abandon), Preferences, Equipment, Calendars, Rest and alerts, Prompts, Data and sync, Account |
+
+D114 (2026-11-10) replaced the earlier Today, Week, Exercises, Challenges, You tabs: Week was split into Goals (its
+volume bars, 10.8) and Plan (the rest of section 10), You was renamed Settings, and the Challenges library (14.1)
+is a screen opened from Settings. Sub-screens of Settings keep their `you.*` ids.
 
 Full-screen flows hide the navigation bar:
 
@@ -1386,7 +1390,13 @@ previews, trimming), `safety` (banners, hard rest), `bodyweight` (weigh-in stale
 
 ---
 
-## 10. Screens: Week (`week`)
+## 10. Screens: Plan (`plan`) and Goals (`goals`)
+
+Since D114 the former Week tab is two tabs. Plan shows everything below except 10.8; Goals shows the muscle volume
+bars of 10.8 with its own week arrows (this week and past weeks; there are no bars ahead) and a link to the muscle
+goals. On Plan, two fingers moving apart or together vertically zoom the grid's hours (hour height 24-144 dp,
+default 48, kept on the phone; the time under the fingers stays put); one finger still scrolls, taps and long-presses
+as before. The sketch below predates the split.
 
 ### 10.1 Purpose
 
@@ -2434,8 +2444,10 @@ is loaded and what can replace it, and create custom exercises.
   substring; ties by name. Results update 150 ms after the last keystroke. The query text is never
   logged (only its length).
 * **Filters** (chips with menus): muscle group (the 18 groups of C9), equipment (barbell, dumbbell,
-  machine, cable, bodyweight, assisted machine, belt), preference (Favorite, Like, Neutral, Dislike, Never), "Available here" (default on; hides
-  exercises whose `requires_station` is missing from the gym profile), "Custom".
+  machine, cable, bodyweight, assisted machine, belt), preference (Favorite, Like, Neutral, Dislike, Never), "Done" (default on, D114;
+  only exercises with at least one logged set in any session; off shows the whole catalog), "Available here" (default on; hides
+  exercises whose `requires_station` is missing from the gym profile), "Custom". With "Done" on and nothing logged yet,
+  the list says "No exercises logged yet." with a "Show all exercises" link that turns the chip off.
 * **Sort**: A-Z (default), most used (last 8 weeks), preference.
 * **Row**: name; up to two primary groups (group coefficient 1.0); equipment abbreviation; a
   preference badge when not Neutral (`*` favorite, thumbs-up like, thumbs-down dislike, block icon
@@ -2885,7 +2897,11 @@ dashboard.
 
 ---
 
-## 15. Screens: You (`you`)
+## 15. Screens: Settings (`settings`, formerly You)
+
+Since D114 this tab is titled Settings and its first tile also has a Challenges row (the active challenge's name, or
+"Browse challenges") that opens the Challenges library of 14.1 as a screen with a back arrow. Its sub-screens keep
+their `you.*` ids.
 
 ### 15.1 Overview
 

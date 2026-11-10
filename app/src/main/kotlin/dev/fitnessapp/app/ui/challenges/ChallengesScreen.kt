@@ -15,8 +15,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -24,6 +22,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.common.Banner
 import dev.fitnessapp.app.ui.common.BannerKind
+import dev.fitnessapp.app.ui.common.FitScaffold
 import dev.fitnessapp.app.ui.common.Pill
 import dev.fitnessapp.app.ui.common.PrimaryButton
 import dev.fitnessapp.app.ui.common.SectionLabel
@@ -31,16 +30,23 @@ import dev.fitnessapp.app.ui.common.Tile
 import dev.fitnessapp.app.ui.common.TonalButton
 import dev.fitnessapp.app.ui.theme.Fit
 
-/** The Challenges tab (UX 14.1): active, available and past challenges, and the absence prompt (4.6). */
+/**
+ * The Challenges library (UX 14.1): active, available and past challenges, and the absence prompt (4.6). Opened from
+ * Settings as a screen with a back arrow (D114).
+ */
 @Composable
-fun ChallengesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Unit, onSetup: (String) -> Unit) {
+fun ChallengesRoute(c: AppContainer, modifier: Modifier, onOpen: (String) -> Unit, onSetup: (String) -> Unit, onBack: () -> Unit) {
+    FitScaffold("Challenges", onBack) { pad -> ChallengesContent(c, modifier.padding(pad), onOpen, onSetup) }
+}
+
+@Composable
+private fun ChallengesContent(c: AppContainer, modifier: Modifier, onOpen: (String) -> Unit, onSetup: (String) -> Unit) {
     val vm: ChallengesViewModel = viewModel(factory = viewModelFactory { initializer { ChallengesViewModel(c) } })
     val ui by vm.ui.collectAsState()
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Challenges", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         ui.error?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = vm::dismissError) }
         ui.absence?.let { (_, last) ->
             Tile {

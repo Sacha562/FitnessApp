@@ -713,7 +713,7 @@ private fun SetCard(
             // An external load without equipment (a plate on the back of a plank) has nothing to calibrate.
             card.points.isEmpty() && item.ex.equipment.all { it == "bodyweight" || it == "other" } ->
                 card.target.native?.takeIf { it > 0 }?.let { Text("+ " + Numbers.num(it, 2) + " kg", style = MaterialTheme.typography.titleMedium) }
-            card.points.isEmpty() -> Text("No loadable values known for this machine. Set them in You > Equipment.", style = MaterialTheme.typography.bodyMedium, color = Fit.Advisory)
+            card.points.isEmpty() -> Text("No loadable values known for this machine. Set them in Settings > Equipment.", style = MaterialTheme.typography.bodyMedium, color = Fit.Advisory)
             else -> {
                 val assisted = card.mode == LoadMode.ASSISTED_MACHINE
                 StepperRow(

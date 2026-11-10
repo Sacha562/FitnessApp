@@ -30,6 +30,9 @@ sealed interface AppKey {
     /** Data and sync opened from the N-EXPORT reminder: starts the monthly export right away (UX 18). */
     data object DataSyncExport : AppKey
 
+    /** Settings → Challenges: the challenges library (UX 14.1, D114). */
+    data object Challenges : AppKey
+
     /** The active challenge dashboard (UX 14.2). */
     data class ChallengeDashboard(val enrollmentId: String) : AppKey
 
@@ -60,6 +63,7 @@ sealed interface AppKey {
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
             is CustomExercise -> "custom_exercise:" + k.name
             DataSyncExport -> "data_sync_export"
+            Challenges -> "challenges"
             is ChallengeDashboard -> "challenge:" + k.enrollmentId
             is ChallengeSetup -> "challenge_setup:" + k.definitionId
             is TestDay -> "test_day:" + k.enrollmentId + ":" + (k.sessionId ?: "")
@@ -83,6 +87,7 @@ sealed interface AppKey {
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
             s == "data_sync_export" -> DataSyncExport
             s == "sign_in" -> SignIn
+            s == "challenges" -> Challenges
             s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))
             s.startsWith("challenge_setup:") -> ChallengeSetup(s.removePrefix("challenge_setup:"))
             s.startsWith("test_day:") -> s.removePrefix("test_day:").split(':', limit = 2).takeIf { it.size == 2 }?.let { TestDay(it[0], it[1].ifEmpty { null }) }
@@ -91,8 +96,8 @@ sealed interface AppKey {
     }
 }
 
-/** Top-level tabs (UX 3.1); Week since M4.2. */
-enum class Tab { TODAY, WEEK, EXERCISES, CHALLENGES, YOU }
+/** Top-level tabs (UX 3.1, D114). */
+enum class Tab { TODAY, GOALS, PLAN, EXERCISES, SETTINGS }
 
 /** Internal route names of notification taps (ANDROID.md 7.4, C54): never deep links. */
 object Routes {
