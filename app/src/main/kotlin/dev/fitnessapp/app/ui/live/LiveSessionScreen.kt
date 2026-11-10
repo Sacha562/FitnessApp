@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,6 +72,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,6 +134,7 @@ import dev.fitnessapp.app.uidet.ChipRoute
 import dev.fitnessapp.app.uidet.UiReasonChips
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private sealed interface Sheet {
     data object Add : Sheet
@@ -149,6 +155,27 @@ private sealed interface Sheet {
     data object AddOnSkip : Sheet
 }
 
+/**
+ * Scrolls the set column without animation so a target (a timer that just started) is fully visible: its top when it
+ * sits above the viewport or is taller than it, otherwise just enough to show its bottom.
+ */
+private class Revealer(private val scroll: ScrollState) {
+    var viewport: LayoutCoordinates? = null
+
+    suspend fun reveal(target: LayoutCoordinates) {
+        val vp = viewport?.takeIf { it.isAttached } ?: return
+        if (!target.isAttached) return
+        val top = vp.localPositionOf(target, Offset.Zero).y
+        val height = target.size.height
+        val delta = when {
+            top < 0f || height >= vp.size.height -> top
+            top + height > vp.size.height -> top + height - vp.size.height
+            else -> return
+        }
+        scroll.scrollTo(scroll.value + delta.roundToInt())
+    }
+}
+
 @Composable
 fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: String) -> Unit, onFinished: (String) -> Unit, onAbandoned: () -> Unit) {
     val vm: LiveSessionViewModel = viewModel(key = sessionId, factory = viewModelFactory { initializer { LiveSessionViewModel(c, sessionId) } })
@@ -166,6 +193,15 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
     DisposableEffect(profile?.keep_screen_on, holding) {
         view.keepScreenOn = (profile?.keep_screen_on ?: true) || holding
         onDispose { view.keepScreenOn = false }
+    }
+
+    // A timer that starts (a hold's lead-in and clock, a timed item's countdown) snaps fully into view, no animation.
+    val setScroll = rememberScrollState()
+    val revealer = remember(setScroll) { Revealer(setScroll) }
+    val intervalRunning = ui.rest?.let { it.purpose == "interval" && it.state == "running" } == true
+    LaunchedEffect(intervalRunning) {
+        // The countdown sits in the rest card, the first thing in the column.
+        if (intervalRunning) { withFrameNanos {}; setScroll.scrollTo(0) }
     }
 
     Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
@@ -204,7 +240,10 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         onReorder = { ids, moved -> vm.reorder(ids, moved, via = "drag") },
                         onAddOnSkip = { sheet = Sheet.AddOnSkip }, onAddOnFamily = { vm.setAddOnFamily(it) },
                     )
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(
+                        Modifier.weight(1f).onGloballyPositioned { revealer.viewport = it }.verticalScroll(setScroll),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         ui.rest?.let { RestCard(c, it, ui, vm) }
                         ui.suggestion?.let { sg -> SuggestionCard(sg, onApply = vm::applySuggestion, onKeep = vm::keepSuggestion, onWhy = { sheet = Sheet.Why(sg.why) }) }
                         ui.applied?.let { a ->
@@ -215,7 +254,6 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         if (card == null) {
                             EmptyAction(ui, onAdd = { sheet = Sheet.Add }, onFinish = { vm.finish(null, onFinished) })
                         } else {
-                            val intervalRunning = ui.rest?.let { it.purpose == "interval" && it.state == "running" } == true
                             val attempt = card.attempt
                             if (attempt != null) {
                                 // Phase 3's attempts block uses the test day's attempt card (UX 14.9): Clean or Not clean.
@@ -237,7 +275,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                 }
                             }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain },
                                 onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } },
-                                marker = ui.warn?.markers?.get("session_exercise:${card.item.se.id}"))
+                                marker = ui.warn?.markers?.get("session_exercise:${card.item.se.id}"), reveal = revealer::reveal)
                         }
                         Spacer(Modifier.height(2.dp))
                     }
@@ -610,7 +648,7 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
 @Composable
 private fun SetCard(
     card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit,
-    onWhy: () -> Unit, marker: WarnMarker? = null,
+    onWhy: () -> Unit, marker: WarnMarker? = null, reveal: suspend (LayoutCoordinates) -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
@@ -699,7 +737,7 @@ private fun SetCard(
         when {
             card.isTimed -> TimedSection(card, intervalRunning, vm)
             card.isRound -> RoundSection(card, vm, beep)
-            card.isHold -> HoldSection(card, vm)
+            card.isHold -> HoldSection(card, vm, reveal)
             else -> {
                 StepperRow(value = "${card.reps ?: 0} reps", secondary = null, onMinus = { vm.stepReps(false) }, onPlus = { vm.stepReps(true) })
                 if (card.isEcc) EccSection(card, vm, beep)
@@ -935,8 +973,16 @@ private fun CountAloud() {
 
 /** UX 11.7.3: ready, 5 s lead-in with 3-2-1, holding (tap anywhere to stop), result. */
 @Composable
-private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
+private fun HoldSection(card: Card, vm: LiveSessionViewModel, reveal: suspend (LayoutCoordinates) -> Unit) {
     val haptic = LocalHapticFeedback.current
+    // The lead-in digits and the hold clock snap fully into view when they appear (the log row hides at the same time).
+    val timerAt = remember { arrayOfNulls<LayoutCoordinates>(1) }
+    LaunchedEffect(card.holdPhase) {
+        if (card.holdPhase == HoldPhase.LEAD_IN || card.holdPhase == HoldPhase.HOLDING) {
+            withFrameNanos {}
+            timerAt[0]?.let { reveal(it) }
+        }
+    }
     var now by remember { mutableLongStateOf(AppClock.nowMs()) }
     val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
     DisposableEffect(Unit) { onDispose { tone?.release() } }
@@ -964,13 +1010,14 @@ private fun HoldSection(card: Card, vm: LiveSessionViewModel) {
     card.holdTargetS?.let { Text("Target " + Numbers.num(it, 1) + " s", style = MaterialTheme.typography.titleMedium) }
     when (card.holdPhase) {
         HoldPhase.READY -> PrimaryButton("Start (5 s lead-in)", vm::startHold, Modifier.fillMaxWidth(), height = 64.dp)
-        HoldPhase.LEAD_IN -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        HoldPhase.LEAD_IN -> Column(Modifier.fillMaxWidth().onGloballyPositioned { timerAt[0] = it }, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(maxOf(1, 5 - (now - card.holdPhaseStart) / 1000).toString(), style = FitType.HoldDigits, color = Fit.Ink)
             Text("Get on the bar", style = MaterialTheme.typography.titleMedium, color = Fit.Muted)
             LinkButton("Cancel", vm::cancelHold)
         }
         HoldPhase.HOLDING -> Box(
-            Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(24.dp)).background(Fit.Raised).clickable { vm.stopHold() },
+            Modifier.fillMaxWidth().height(260.dp).onGloballyPositioned { timerAt[0] = it }
+                .clip(RoundedCornerShape(24.dp)).background(Fit.Raised).clickable { vm.stopHold() },
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

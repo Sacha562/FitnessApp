@@ -1837,6 +1837,9 @@ HOLDING                                RESULT
 
 * **Lead-in.** Default 5 s with audible and haptic 3-2-1 for the last three seconds (the user needs
   time to put the phone down and grip the bar). Options 3 / 5 / 10 s in You > Rest and alerts.
+* **Always in view.** When the lead-in starts and again when holding starts, the set column snaps
+  (no animation) so the countdown or the hold timer is fully on screen. A timed item's countdown
+  (11.7.6) does the same by snapping the column to its top, where the rest card shows it.
 * **Holding.** Count-up in the 96 sp hold timer style (4.2), a bar filling toward the target, a beep and 40 ms tick every 5 s, a
   double beep and double pulse at the target. While holding, the whole screen except the header is
   one stop target ("tap anywhere"), because the user taps with a chalky or sweaty hand after
