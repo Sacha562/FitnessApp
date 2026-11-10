@@ -226,7 +226,6 @@ data class LiveUi(
     val ruleNotice: String? = null,
     /** UX 11.10: an engine suggestion waiting for Apply or Keep, and the "applied · Undo" line after Apply. */
     val suggestion: SuggestionUi? = null,
-    val applied: String? = null,
     /** UX 17: what UI-10 shows of the session's warnings. */
     val warn: WarnDisplayResult? = null,
     /** "Session C" for a challenge session (the session notification and the header). */
@@ -309,7 +308,6 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     /** Applied suggestions (UX 11.10): "seId|side" -> set index -> the accepted target, UI-04's first prefill source. */
     private val accepted = java.util.concurrent.ConcurrentHashMap<String, Map<Int, RxTarget>>()
-    @Volatile private var lastApplied: String? = null
 
     /** B13.7 (D69): the next set's target refitted to its last set and the rest so far, by "seId|side|workIndex". */
     private val restFit = java.util.concurrent.ConcurrentHashMap<String, Pair<RxTarget, Int>>()
@@ -1195,8 +1193,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
         val key = "${sg.seId}|${sg.side}"
         accepted[key] = sg.sets.associateBy { it.setIndex }
-        lastApplied = key
-        _ui.update { it.copy(suggestion = null, applied = sg.title) }
+        _ui.update { it.copy(suggestion = null) }
         viewModelScope.launch { last?.let { rebuild(it) } }
     }
 
@@ -1205,16 +1202,6 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         emit("suggestion_kept", sg.seId, mapOf("implicit" to JsonPrimitive(false)), recommendationId = sg.recommendationId)
         _ui.update { it.copy(suggestion = null) }
     }
-
-    /** Undo of an applied suggestion: the remaining sets go back to the prescription. */
-    fun undoApplied() {
-        lastApplied?.let { accepted.remove(it) }
-        lastApplied = null
-        _ui.update { it.copy(applied = null) }
-        viewModelScope.launch { last?.let { rebuild(it) } }
-    }
-
-    fun dismissApplied() = _ui.update { it.copy(applied = null) }
 
     // ------------------------------------------------------------------------------------------------ warnings (UX 17)
 

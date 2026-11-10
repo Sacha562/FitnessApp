@@ -2004,8 +2004,9 @@ per session, general items only, C46). The UI renders it inside the rest card:
   A proposal never goes against its trigger: after easier sets no lighter load and no fewer reps.
 * Never auto-applied (D10, C16). "Keep" is the default: if the user logs the next set without
   tapping either button, that counts as Keep (`suggestion_kept {implicit: true}`).
-* Apply sets the accepted adjustment that `ui.prefill` uses for the remaining sets of that exercise;
-  snackbar with Undo.
+* Apply sets the accepted adjustment that `ui.prefill` uses for the remaining sets of that exercise.
+  No confirmation banner or Undo (D115): the new targets on the set card are the confirmation, and a
+  load or reps the user prefers is changed on the card itself.
 * Pain reason bypass: a Pain reason does not produce a suggestion; it opens the Pain sheet (11.11).
 * Not a suggestion (C57): after a first-exposure calibration set, `rx` plans the remaining sets of
   that exercise from it automatically, because it fills an undetermined plan rather than changing one.

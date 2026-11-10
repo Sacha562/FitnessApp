@@ -246,9 +246,6 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                     ) {
                         ui.rest?.let { RestCard(c, it, ui, vm) }
                         ui.suggestion?.let { sg -> SuggestionCard(sg, onApply = vm::applySuggestion, onKeep = vm::keepSuggestion, onWhy = { sheet = Sheet.Why(sg.why) }) }
-                        ui.applied?.let { a ->
-                            Banner("Applied: $a", BannerKind.ADVISORY, action = "Undo", onAction = vm::undoApplied, onClick = vm::dismissApplied)
-                        }
                         if (ui.switchHint) Pill("Switch to your right side", container = Fit.Accent, content = Fit.OnAccent)
                         val card = ui.card
                         if (card == null) {
