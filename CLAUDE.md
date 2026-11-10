@@ -20,6 +20,9 @@ entry, before changing dependent docs or code.
   `supabase migration repair`, or `alter role authenticator ...`. Apply migrations through the
   Supabase MCP `apply_migration` only after the user has seen the SQL; run `get_advisors` afterwards.
   Never add triggers on `auth.users`. Never grant anything to `anon`.
+  A data migration that writes rows of a synced table sets `device_id` to the migration device
+  (`ffffffff-ffff-ffff-ffff-ffffffffffff`) and `client_updated_at = now()`: the pull skips a phone's own device id,
+  so otherwise the change never reaches that phone. `MigrationDeviceStampTest` (`:sim`) enforces it.
 - **Calendar writes** only touch events carrying the app's marker line, unless the user adopts one.
 - Safety rules (pain protocol, no failure on weighted/one-arm pulls or loaded dips, load-jump caps,
   challenge hard constraints) are never overridden by user preferences or tuning.
