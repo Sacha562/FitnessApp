@@ -59,7 +59,7 @@ class EcaSnapshotSemanticsTest {
         val step = apply(OapFixture.def, s, b)
         rows(step, "prog.B.wpu").single().outcome shouldBe Outcome.APPLIED
         (step.state.vars.getValue("wpuB") as QV).v.compareTo(BigDecimal("30")) shouldBe 0
-        rows(step, "prog.B.wpu").single().explanation shouldBe "All 6 x 2 with at least 2 reps in reserve: +2.5 kg next week."
+        rows(step, "prog.B.wpu").single().explanation shouldBe "All 5 x 2 with at least 2 reps in reserve: +2.5 kg next week."
     }
 
     @Test

@@ -1,13 +1,13 @@
 {
     "persona": "machine_busy",
     "proposals": "approved",
-    "definition": "oap@1.11.0",
-    "definition_jcs_sha256": "1cd15ed52eb7537dd025885115f608165eab3189062cec7f721f5b7ecec91199",
+    "definition": "oap@1.12.0",
+    "definition_jcs_sha256": "cd399ef7ccc6b27a5713057c905dabad2a106a96602f8943c9e052f5db9c5e65",
     "engine_version": "1.26.0",
     "params_hash": "6298d1217c3ba230b98acc6d40777d075b50b97f2cce6db007764e60beab6c57",
     "events": 482,
-    "audit_rows": 414,
-    "final_state_hash": "9aa64ef3fe91c34ce1e8117f18a897a1c9da202898d063a9f1fb3c0f69e2c50e",
+    "audit_rows": 415,
+    "final_state_hash": "d49a8d8f5db76b81518bbd17b67ac01117b798662a07e968ed4fa4010f54d779",
     "violations": [],
     "weeks": [
         {
@@ -74,6 +74,9 @@
                 },
                 "data.test.pins": {
                     "no_effect": 1
+                },
+                "prog.A.sth": {
+                    "suppressed_lock": 1
                 },
                 "safety.elbow.trace": {
                     "no_effect": 3

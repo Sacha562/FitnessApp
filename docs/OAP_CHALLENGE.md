@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.11.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.12.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63), 1.11.0 hands the prehab loads to RX-1 with rep ranges and a target RIR (D90); the frozen
-1.0.0 to 1.10.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.10.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63), 1.11.0 hands the prehab loads to RX-1 with rep ranges and a target RIR (D90), 1.12.0 shortens the sessions (D117); the frozen
+1.0.0 to 1.11.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.11.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -841,6 +841,15 @@ RIR, C66); heavy pronated row 4 x 8 at RIR 1 (barbell, seated cable or chest-sup
 preference; load by the general engine); dips 3 x 8-10 on neutral handles at RIR 2 (first time: log
 your clean bodyweight reps, the load follows); one-arm plank 3 x 20 s per side, stop when the hip
 tilts; prevention.
+
+**Shorter sessions from 1.12.0 (D117).** The sessions ran far over their time (C took 93 minutes on 4 November;
+A was stopped at 59 minutes with half of it done, B at 65 minutes), so A and B lose about a quarter of their planned
+time and C a little. A: assisted one-arm pull-up 4 x 3 per arm with 2 min rest; weighted pull-ups 4 x 4 with 2.5 min
+rest; top hold 2 rounds; 90-degree hold and straight-arm hold 2 sets per arm each (the straight-arm progression now
+asks for every planned hold to be clean, four instead of six). B: weighted pull-ups 5 x 2 with 2.5 min rest (the
+`6x2` variant keeps its name); negatives 2 x 2; row 3 x 8; dips rest 90 s. C: scapular pulls rest 75 s. In every
+session the Pallof press is 2 x 10 per side with 45 s rest and the prevention sets rest 30 s. The calendar blocks stay
+90 minutes; the warm-up, the calibration negative, the progression steps and every safety rule are unchanged.
 
 **T1, test day**: section 8.
 

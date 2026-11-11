@@ -45,15 +45,15 @@ class InSessionRuleTest {
         app.ruleId shouldBe "ins.A.oaa.calibrate"
         app.msg shouldBe "calibration_adjust"
         app.msgParams["value"] shouldBe "45 lb"
-        after.rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(45) }
+        after.rows.drop(2).map { it.pin } shouldBe List(6) { BigDecimal(45) }
         after.rows.drop(2).all { it.changedByRule == "ins.A.oaa.calibrate" } shouldBe true
         after.rows.take(2).map { it.pin } shouldBe listOf(BigDecimal(40), BigDecimal(40))
         val undone = InSessionRuleRunner.undo(def, params, s, OapFixture.facts, date, after, app)
-        undone.rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(40) }
+        undone.rows.drop(2).map { it.pin } shouldBe List(6) { BigDecimal(40) }
         // The undone rule does not fire again on this item, even after another weak pair.
         val (again, apps2) = pair(undone, s, 2, l = 1, r = 1, pin = "40")
         apps2.none { it.kind == "suggest" } shouldBe true
-        again.rows.drop(4).map { it.pin } shouldBe List(6) { BigDecimal(40) }
+        again.rows.drop(4).map { it.pin } shouldBe List(4) { BigDecimal(40) }
     }
 
     @Test
@@ -66,13 +66,13 @@ class InSessionRuleTest {
         a2.none { it.kind == "suggest" } shouldBe true
         val (p3, a3) = pair(p2, s, 3, l = 1, r = 3, pin = "45")
         a3.single { it.kind == "suggest" }.ruleId shouldBe "ins.A.oaa.fail"
-        p3.rows.drop(6).map { it.pin } shouldBe List(4) { BigDecimal(50) }
+        p3.rows.drop(6).map { it.pin } shouldBe List(2) { BigDecimal(50) }
         item = p3
         val (_, a4) = pair(item, s, 4, l = 1, r = 1, pin = "50")
         a4.none { it.kind == "suggest" } shouldBe true
         // Undo of the calibration takes back its own +5 lb only; the failure rule's +5 lb stays.
         val undone = InSessionRuleRunner.undo(def, params, s, OapFixture.facts, date, p3, a1.single { it.kind == "suggest" })
-        undone.rows.drop(6).map { it.pin } shouldBe List(4) { BigDecimal(45) }
+        undone.rows.drop(6).map { it.pin } shouldBe List(2) { BigDecimal(45) }
         undone.rows.drop(6).all { it.changedByRule == "ins.A.oaa.fail" } shouldBe true
         undone.rows.drop(6).map { it.assistKg } shouldBe p1.rows.drop(6).map { it.assistKg }
         undone.rows.subList(2, 6).map { it.pin } shouldBe List(4) { BigDecimal(40) }
@@ -108,7 +108,7 @@ class InSessionRuleTest {
         val r = log(wpu, s, "B", row("both", 1, reps = 1, rir = "0", added = "27.5"))
         val app = r.applications.single { it.kind == "suggest" }
         app.ruleId shouldBe "ins.B.wpu.grind"
-        r.item.rows.drop(1).map { it.addedKg } shouldBe List(5) { BigDecimal(25) }
+        r.item.rows.drop(1).map { it.addedKg } shouldBe List(4) { BigDecimal(25) }
     }
 
     @Test

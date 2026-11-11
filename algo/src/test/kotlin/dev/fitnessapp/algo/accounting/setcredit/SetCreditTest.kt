@@ -156,8 +156,8 @@ class SetCreditTest {
         // Warm-up rows never count; every planned working row is credited.
         sets.none { it.setKind == "warmup" } shouldBe true
         planned.single().credits.size shouldBe sets.size
-        // The assisted one-arm pairs at creditRir 1: 3 pairs, lats 0.5 per side row at STIM 1.0.
-        sets.filter { it.exerciseSlug == "oap_assisted_machine" }.size shouldBe 6
+        // The assisted one-arm pairs at creditRir 1: 2 pairs (half of 4, D117), lats 0.5 per side row at STIM 1.0.
+        sets.filter { it.exerciseSlug == "oap_assisted_machine" }.size shouldBe 4
         val json = Coverage.contractJson(planned, emptyList(), planned)
         json.getValue("committed") shouldBe json.getValue("planned")
         planned.single().vhyp.getValue("lats") shouldBe (planned.single().credits.sumOf { it.vhyp["lats"] ?: 0.0 } plusOrMinus 1e-9)

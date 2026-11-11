@@ -53,7 +53,8 @@ class MaterializerTest {
         p.templateId shouldBe "A1"
         p.items.map { it.key } shouldBe listOf("wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pallof", "pre_rwc", "pre_ps", "pre_fp")
         val oaa = p.item("oaa")
-        oaa.pairs() shouldBe 5
+        // D117: 4 pairs (was 5) with 2 min rest.
+        oaa.pairs() shouldBe 4
         oaa.rows.first().pin shouldBe BigDecimal(40)
         oaa.rows.first().assistKg shouldBe BigDecimal("24.64")
         oaa.rows.first().oneArmLoadKg shouldBe BigDecimal("46.06")
@@ -62,7 +63,12 @@ class MaterializerTest {
         p.item("wpu").rows.map { it.addedKg } shouldBe List(4) { BigDecimal("22.5") }
         p.item("wpu").rows.first().systemLoadKg shouldBe BigDecimal("93.20")
         p.item("cal").rows.map { it.logMode } shouldBe listOf(LogMode.ECC_SECONDS, LogMode.ECC_SECONDS)
-        p.item("top").rows.size shouldBe 6
+        // D117: 2 rounds per arm, 2 sets of each hold, 2 Pallof sets, prehab at 30 s rest.
+        p.item("top").rows.size shouldBe 4
+        p.item("h90").pairs() shouldBe 2
+        p.item("sth").pairs() shouldBe 2
+        p.item("pallof").pairs() shouldBe 2
+        p.item("pre_rwc").rows.size shouldBe 2
         p.item("h90").rows.first().targetHoldS shouldBe BigDecimal(6)
         p.item("h90").rows.first().targetHoldMaxS shouldBe BigDecimal(8)
         p.item("sth").rows.first().targetHoldS shouldBe BigDecimal(6)
@@ -83,17 +89,17 @@ class MaterializerTest {
     fun `GF-CE-21 test-pending week in deload form`() {
         val s = OapFixture.start()
         val p = plan(s, "A")
-        p.item("oaa").pairs() shouldBe 3
+        p.item("oaa").pairs() shouldBe 2
         p.item("wpu").rows.size shouldBe 2
         p.item("wpu").rows.first().addedKg shouldBe BigDecimal("22.5")
-        p.item("top").rows.mapNotNull { it.pairIndex }.distinct().size shouldBe 2
-        p.item("h90").pairs() shouldBe 2
-        p.item("sth").pairs() shouldBe 2
+        p.item("top").rows.mapNotNull { it.pairIndex }.distinct().size shouldBe 1
+        p.item("h90").pairs() shouldBe 1
+        p.item("sth").pairs() shouldBe 1
         p.item("wu_pull").rows.size shouldBe 2
         p.item("oaa").rows.first().pin shouldBe BigDecimal(40)
         // P19 declined: the waiting week keeps the full sessions.
         val full = plan(OapFixture.start(except = mapOf("P19" to false)), "A")
-        full.item("oaa").pairs() shouldBe 5
+        full.item("oaa").pairs() shouldBe 4
     }
 
     @Test

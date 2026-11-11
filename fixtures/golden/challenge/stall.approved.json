@@ -1,13 +1,13 @@
 {
     "persona": "stall",
     "proposals": "approved",
-    "definition": "oap@1.11.0",
-    "definition_jcs_sha256": "1cd15ed52eb7537dd025885115f608165eab3189062cec7f721f5b7ecec91199",
+    "definition": "oap@1.12.0",
+    "definition_jcs_sha256": "cd399ef7ccc6b27a5713057c905dabad2a106a96602f8943c9e052f5db9c5e65",
     "engine_version": "1.26.0",
     "params_hash": "6298d1217c3ba230b98acc6d40777d075b50b97f2cce6db007764e60beab6c57",
     "events": 480,
-    "audit_rows": 407,
-    "final_state_hash": "b8d0f18f3dd2e001c129addab1f05541ec87d0b511e97d7f501e130f24c98183",
+    "audit_rows": 408,
+    "final_state_hash": "fd5f3f95f5a7e62c942c489c4e06864a486441626d21b40bb5b7bc48a1794877",
     "violations": [],
     "weeks": [
         {
@@ -74,6 +74,9 @@
                 },
                 "prog.A.pin.gated": {
                     "no_effect": 1
+                },
+                "prog.A.sth": {
+                    "suppressed_lock": 1
                 },
                 "safety.elbow.trace": {
                     "no_effect": 3
