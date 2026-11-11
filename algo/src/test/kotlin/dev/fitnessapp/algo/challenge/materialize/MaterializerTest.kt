@@ -53,7 +53,7 @@ class MaterializerTest {
         p.templateId shouldBe "A1"
         p.items.map { it.key } shouldBe listOf("wu_face", "wu_scap", "wu_pull", "oaa", "cal", "wpu", "top", "h90", "sth", "pallof", "pre_rwc", "pre_ps", "pre_fp")
         val oaa = p.item("oaa")
-        // D117: 4 pairs (was 5) with 2 min rest.
+        // D117: 4 pairs (was 5); the rest stays 150 s.
         oaa.pairs() shouldBe 4
         oaa.rows.first().pin shouldBe BigDecimal(40)
         oaa.rows.first().assistKg shouldBe BigDecimal("24.64")

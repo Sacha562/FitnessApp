@@ -62,10 +62,10 @@ class DefinitionTextPatchTest {
     }
 
     @Test
-    fun `oap 1_12_0 declares empty migrations from every earlier version`() {
-        ChallengeTestSupport.oap.version shouldBe "1.12.0"
+    fun `oap 1_13_0 declares empty migrations from every earlier version`() {
+        ChallengeTestSupport.oap.version shouldBe "1.13.0"
         val migrations = Json.parseToJsonElement(ChallengeTestSupport.oapText).jsonObject.getValue("migrations").jsonObject
-        for (from in listOf("1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0")) migrations.getValue(from).jsonObject.getValue("varMap") shouldBe JsonObject(emptyMap())
+        for (from in listOf("1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0")) migrations.getValue(from).jsonObject.getValue("varMap") shouldBe JsonObject(emptyMap())
     }
 
     private companion object {

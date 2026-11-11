@@ -59,7 +59,7 @@ class ChallengeLibrary(private val params: ParamView, private val changeoverMin:
 
     companion object {
         /** File names under `fitness/challenges/`. */
-        val BUNDLED: List<String> = listOf("oap.challenge.v1.0.0.json", "oap.challenge.v1.0.1.json", "oap.challenge.v1.1.0.json", "oap.challenge.v1.2.0.json", "oap.challenge.v1.3.0.json", "oap.challenge.v1.4.0.json", "oap.challenge.v1.5.0.json", "oap.challenge.v1.6.0.json", "oap.challenge.v1.7.0.json", "oap.challenge.v1.8.0.json", "oap.challenge.v1.9.0.json", "oap.challenge.v1.10.0.json", "oap.challenge.v1.11.0.json", "oap.challenge.v1.json")
+        val BUNDLED: List<String> = listOf("oap.challenge.v1.0.0.json", "oap.challenge.v1.0.1.json", "oap.challenge.v1.1.0.json", "oap.challenge.v1.2.0.json", "oap.challenge.v1.3.0.json", "oap.challenge.v1.4.0.json", "oap.challenge.v1.5.0.json", "oap.challenge.v1.6.0.json", "oap.challenge.v1.7.0.json", "oap.challenge.v1.8.0.json", "oap.challenge.v1.9.0.json", "oap.challenge.v1.10.0.json", "oap.challenge.v1.11.0.json", "oap.challenge.v1.12.0.json", "oap.challenge.v1.json")
 
         /** DATA_MODEL 6.4: `challenge_definition:<slug>@<version>`. */
         fun idOf(def: CompiledDefinition) = idOf(def.slug, def.version)
