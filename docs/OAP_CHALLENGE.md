@@ -2,14 +2,14 @@
 
 Version of this document: 1.1 (2026-10-07; aligned with DECISIONS D13-D16, the corrected D8 wording,
 the revised F11, F21-F27 and the cross-document resolutions C37-C65). Definition:
-`docs/challenges/oap.challenge.v1.json` (`oap@1.13.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
+`docs/challenges/oap.challenge.v1.json` (`oap@1.14.0`, schema `fitapp.challenge/1`; 1.0.1 is a text-only patch of
 1.0.0 with shorter user-facing texts (D35), 1.1.0 adds P21's protocols as structured `stepsIfApproved` with five params
 (D36), 1.2.0 lets the first valid test fill empty loads, negatives and pins (engineering rules `data.test.first*`, param
 `firstAnchorRir`) and initialises the gate e1RM from the entered 3RM (D37), 1.3.0 lets the test fall on any day and puts it
 first in its week while there are no loads (D38), 1.4.0 is the cutover version with the Pallof press, P28 and P29 (D40),
 1.5.0 drops the rowing machine from the warm-up (D44), 1.6.0 widens the elbow trace to the back of the elbow and the
-forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63), 1.11.0 hands the prehab loads to RX-1 with rep ranges and a target RIR (D90), 1.12.0 shortens the sessions (D117), 1.13.0 gives back the rests of the main pulls, dips and Pallof press (D117 revised); the frozen
-1.0.0 to 1.12.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.12.0.json`). The proposal
+forearm and makes the Pallof press per side (D45), 1.7.0 keeps the prehab sets in deload weeks (D47), 1.8.0 skips the daily hang on every gym day (D51), 1.9.0 gives the torso-rotation notice one message per exercise (D52), 1.10.0 keeps the re-entry pin offset out of pinA and pinC (D63), 1.11.0 hands the prehab loads to RX-1 with rep ranges and a target RIR (D90), 1.12.0 shortens the sessions (D117), 1.13.0 gives back the rests of the main pulls, dips and Pallof press (D117 revised), 1.14.0 drops the C pin after one session at RIR >= 2 (D119); the frozen
+1.0.0 to 1.13.0 are `oap.challenge.v1.0.0.json` to `oap.challenge.v1.13.0.json`). The proposal
 rationales quoted in section 6 are the 1.0.0 wording; the app shows the shorter 1.0.1 texts.
 Engine: `docs/CHALLENGE_ENGINE.md`. Decisions: `docs/DECISIONS.md` (cited by id, for example "D7").
 
@@ -94,7 +94,7 @@ this week and next (D11), reminds you of the home habits, and explains every cha
 | Week layout, blocks of 4 + 1, deload = halve sets keep loads halve hang | 04 | | Block-relative test dates (P07); deload form while a test is pending (P19) |
 | Working loads: anchor 20 kg 4 x 5, A = anchor + 1 rep, B = anchor + 3 reps, 2.17 kg per rep, negatives 105 % of 1RM, pins 40/50/35 lb | 05 | C: "4 x 5 @ 20 kg is the measured anchor" | Test-day recalculation formula for the anchor (P10); pins from the least-assistance test (P11) |
 | B progression (+2.5 kg after 6 x 2 at RIR >= 2), grip-slip guard, negatives 8 s / 5 s rule | 05, 06 | B | In-block progression for A and C (P05) |
-| A pin -5 lb per week; C pin -5 lb after two easy sessions | 05 | A, C | Gated A pin (P01); definition of "easy" (P03) |
+| A pin -5 lb per week; C pin -5 lb after two easy sessions (one from 1.14.0, D119) | 05 | A, C | Gated A pin (P01); definition of "easy" (P03) |
 | A first-set calibration (+5 / -5 lb), controlled calibration negative -> -10 lb, warning at 35 lb | | A | |
 | C fewer than 4 reps -> +5 lb | | C | |
 | 90-degree hold: fails +5 lb, -5 lb every week | 06 | A | |
@@ -242,7 +242,7 @@ is a protective rule that only makes things easier (marked "allowed in frozen we
 | `prog.A.pin.gated` | P (P01), allowed in frozen weeks (only its +5 lb branch can act there) | Session completed | Session A, assisted sets logged | All 5 x 3 per arm done (normal week): -5 lb (-10 lb after a controlled negative), fail streak 0. Reps missed: same pin; second failed week in a row: +5 lb and streak 0 | P01 | In a re-entry week the base is the logged pin minus `reentryPinOffsetLb` (D63). |
 | `prog.A.hold90` | A | Session completed | Session A, normal week, 90-degree holds logged | Next pin = the pin you finished on - 5 lb (not below 0) | Artifact 06, Todoist A ("elke week 5 lbs eraf") | The in-session +5 lb on a failed hold is `ins.h90.fail`. From a pin of 45 lb or more the -5 lb step is above the generic cap: applied with a warning (D13, section 4.9). |
 | `prog.A.sth` | A | Session completed | Session A, straight-arm hold target below 8 s, all six holds (3 per arm) at least at target, no torso rotation | Target 6 s -> 8 s | Todoist A | |
-| `prog.C.pin.easy` | A, uses P03 | Session completed | Session C, normal week, every set >= 4 reps | Easy session: second easy one in a row -> pin - 5 lb and streak 0; otherwise streak + 1. Not easy: streak 0 | Artifact 05, Todoist C | Without P03 only an explicit "too easy" tap counts as easy. At pin 50 the -5 lb step is +5.5 % one-arm load, above the generic cap: applied with a warning (D13, section 4.9). |
+| `prog.C.pin.easy` | A, uses P03 | Session completed | Session C, normal week, every set >= 4 reps | Easy session: pin - 5 lb once the streak reaches `cEasySessions` (1 from 1.14.0, D119; 2 before), else streak + 1. Not easy: streak 0 | Artifact 05, Todoist C | Without P03 only an explicit "too easy" tap counts as easy. At pin 50 the -5 lb step is +5.5 % one-arm load, above the generic cap: applied with a warning (D13, section 4.9). |
 | `prog.C.pin.hard` | A, allowed in frozen weeks | Session completed | Session C, any set below 4 reps | Pin + 5 lb (more help), streak 0 | Todoist C ("kom je onder de vier reps, 5 lbs erbij") | In a re-entry week the step starts from the logged pin minus `reentryPinOffsetLb` (D63). |
 | `prog.plank` | A, uses P22 | Week closed | Plank done on at least 3 days that week, 6 sets per day (18 in total), every set at the target time, hip never tilted | 20 s -> 30 s; at 30 s: a plate on the upper back (P22: 5 kg; declined: the app asks which plate) | Todoist Core and B | In deload and test weeks this cannot fire (fewer sets, B replaced). |
 | `prog.wpu.A` | P (P05) | Session completed | Session A, normal week, all 4 x 4 done, every set RIR >= 2 | A load + 2.5 kg next week | P05 | |
@@ -280,7 +280,7 @@ rotation, hip tilt) only show a message and never change a load.
 | Name | Tag | Definition | Source |
 |---|---|---|---|
 | `calNegControlled` | A (E reading) | Both arms' calibration negatives logged, each >= 5 s, none jerky, the hand did not shift | Todoist A ("lukt dat gecontroleerd"); E: "controlled" made concrete |
-| `cEasy` | A, uses P03 | An explicit "too easy" tap on the C assisted exercise; with P03 also: all 3 x 5 per arm done with RIR >= 3 on every set | Artifact 05, Todoist C; P03 |
+| `cEasy` | A, uses P03 | An explicit "too easy" tap on the C assisted exercise; with P03 also: all 3 x 5 per arm done with RIR >= `cEasyMinRir` on every set (2 from 1.14.0, D119; 3 before) | Artifact 05, Todoist C; P03 |
 | `weekCounts` | A, uses P02 | With P02: at least 2 of the week's required sessions, each with >= 50 % of its working sets logged. Without P02: at least one session | Artifact 10; P02 |
 | `testProgress` | A, uses P04 | Versus the previous valid test, on the weaker arm: with P04, e1RM + >= 1.0 kg, or hang + >= 2 s, or top hold + >= 1 s, or least assistance 5 lb lower; without P04, any strict improvement in one of these | Artifact 10; P04 |
 | Test validity | A | No clean-session debt, in a deload or test-pending week, weigh-in recorded | Artifact 01, 07, 10 |
@@ -379,7 +379,7 @@ approval as a new definition version.
 | `pinAReportLb` | 35 lb |  | A | engineering-fact | Todoist A ('Let op bij 35 lbs': 5 x 3 per arm there means the 30-08 baseline underestimated you) | no |
 | `h90MinHoldS` | 6 s |  | A | expert-opinion | artifact section 06 / Todoist A (hold 6-8 s; fails -> +5 lb) | no |
 | `sthTargetS` | 8 s |  | A | expert-opinion | Todoist A (all six attempts clean at 6 s -> 8 s) | no |
-| `cEasySessions` | 2 |  | A | expert-opinion | artifact section 05 / Todoist C | no |
+| `cEasySessions` | 1 (2 before 1.14.0, D119) |  | A | expert-opinion | artifact section 05 / Todoist C | no |
 | `cHardBelowReps` | 4 |  | A | expert-opinion | Todoist C ('kom je onder de vier reps, 5 lbs erbij') | no |
 | `plankTargetS` | 30 s |  | A | expert-opinion | Todoist Core / B | no |
 | `injuryDays` | 14 days |  | A | expert-opinion | artifact section 08 / 10 | no |
@@ -396,7 +396,7 @@ approval as a new definition version.
 | `aFailsToRaise` | 2 | 1 - 4 | P (P01) | expert-opinion | proposal P01 | yes: oaa completion rate per pin level and pin trajectory (challenge_rule_events for prog.A.pin.gated) |
 | `minSessionsForWeek` | 2 | 1 - 3 | P (P02) | expert-opinion | proposal P02 | yes: weeks repeated vs performance in the following week |
 | `sessionCountsRatio` | 0.5 | 0.25 - 1 | P (P02) | expert-opinion | proposal P02 | yes: completionRatio distribution of logged sessions |
-| `cEasyMinRir` | 3 | 3 - 5 | P (P03) | expert-opinion | proposal P03 | yes: reported RIR on C oaa sets vs next-session performance after a -5 lb step |
+| `cEasyMinRir` | 2 (3 before 1.14.0, D119) | 2 - 5 | P (P03) | expert-opinion | proposal P03 | yes: reported RIR on C oaa sets vs next-session performance after a -5 lb step |
 | `progressEpsE1rm` | 1 kg | 0.5 - 2.5 | P (P04) | weak | proposal P04 | yes: test-retest noise of the gate e1RM (Grgic 2020: CV ~4 %, i.e. ~4 kg on 110 kg total) and SSE-1 posterior sd |
 | `progressEpsHang` | 2 s |  | P (P04) | expert-opinion | proposal P04 | yes: day-to-day spread of fresh hang measurements |
 | `progressEpsTopHold` | 1 s |  | P (P04) | expert-opinion | proposal P04 | yes: spread of top-hold attempts within a test |
@@ -476,7 +476,7 @@ Session C drops 5 lb after two easy sessions in a row but 'easy' is undefined; p
 
 - Replaces: nothing (fills a gap)
 - Switches: definition cEasy
-- Parameters: cEasyMinRir = 3
+- Parameters: cEasyMinRir = 3 (2 from 1.14.0, and one easy session is enough: D119)
 - If you decline: Only an explicit 'too easy' tap on the exercise counts as easy.
 - Recommendation: approve
 - Your decision: [ ] Approve   [ ] Decline

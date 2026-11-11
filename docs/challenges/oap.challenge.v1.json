@@ -1,7 +1,7 @@
 {
   "schema": "fitapp.challenge/1",
   "id": "oap",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "engine": ">=1.0.0 <2.0.0",
   "title": { "en": "One-arm pull-up", "nl": "Van twaalf naar één" },
   "summary": {
@@ -42,7 +42,7 @@
   "proposals": [
     { "id": "P01", "title": { "en": "Lower the session A pin only after a good week" }, "rationale": { "en": "The pin drops 5 lb only when all sets were done and goes back up 5 lb after two failed weeks, instead of dropping every week (about 5 % more load each week)." }, "ifDeclined": { "en": "The pin drops 5 lb after every session A (10 lb after a controlled negative)." }, "recommended": "approve", "supersedes": ["prog.A.pin.weekly"], "affects": { "rules": ["prog.A.pin.gated"], "params": ["aFailsToRaise"] } },
     { "id": "P02", "title": { "en": "When a week counts as missed" }, "rationale": { "en": "A session counts when at least half its sets were logged; a week counts with 2 of its 3 sessions." }, "ifDeclined": { "en": "A week is missed only when no session was done in it." }, "recommended": "approve", "supersedes": [], "affects": { "derived": ["weekCounts"], "params": ["minSessionsForWeek", "sessionCountsRatio"] } },
-    { "id": "P03", "title": { "en": "When session C counts as easy" }, "rationale": { "en": "Easy means every set had 3 or more reps left, or you tapped 'too easy'." }, "ifDeclined": { "en": "Only a 'too easy' tap counts." }, "recommended": "approve", "supersedes": [], "affects": { "derived": ["cEasy"], "params": ["cEasyMinRir"] } },
+    { "id": "P03", "title": { "en": "When session C counts as easy" }, "rationale": { "en": "Easy means every set had 2 or more reps left (the target), or you tapped 'too easy'." }, "ifDeclined": { "en": "Only a 'too easy' tap counts." }, "recommended": "approve", "supersedes": [], "affects": { "derived": ["cEasy"], "params": ["cEasyMinRir"] } },
     { "id": "P04", "title": { "en": "What counts as progress on a test" }, "rationale": { "en": "Max +1 kg, or weaker-arm hang +2 s, or top hold +1 s, or 5 lb less help, compared with the last valid test." }, "ifDeclined": { "en": "Any improvement in any of these counts." }, "recommended": "approve", "supersedes": [], "affects": { "derived": ["testProgress"], "params": ["progressEpsE1rm", "progressEpsHang", "progressEpsTopHold", "progressEpsAssist"] } },
     { "id": "P05", "title": { "en": "Add weight to sessions A and C during a block" }, "rationale": { "en": "+2.5 kg next week when every set hit its reps with 2 or more left and no grip slip, as in session B." }, "ifDeclined": { "en": "A and C weights stay the same until the next test." }, "recommended": "approve", "supersedes": [], "affects": { "rules": ["prog.wpu.A", "prog.wpu.C"], "params": ["inBlockStepKg", "inBlockMinRir"] } },
     { "id": "P06", "title": { "en": "Set the session C hang time from your test" }, "rationale": { "en": "Target: 67 % of your weaker arm's test hang, between 10 and 30 s, at most 5 s more per test." }, "ifDeclined": { "en": "The target stays 10 s; the test summary asks whether to change it." }, "recommended": "approve", "supersedes": [], "affects": { "rules": ["data.test.hangTarget"], "params": ["hangTargetFraction", "hangTargetMin", "hangTargetMax", "hangTargetMaxStep"] } },
@@ -124,7 +124,7 @@
     "pinAReportLb": { "type": "pin", "default": 35, "tag": "A", "source": "Todoist A ('Let op bij 35 lbs': 5 x 3 per arm there means the 30-08 baseline underestimated you)", "grade": "engineering-fact" },
     "h90MinHoldS": { "type": "duration", "default": 6, "tag": "A", "source": "artifact section 06 / Todoist A (hold 6-8 s; fails -> +5 lb)", "grade": "expert-opinion" },
     "sthTargetS": { "type": "duration", "default": 8, "tag": "A", "source": "Todoist A (all six attempts clean at 6 s -> 8 s)", "grade": "expert-opinion" },
-    "cEasySessions": { "type": "int", "default": 2, "tag": "A", "source": "artifact section 05 / Todoist C", "grade": "expert-opinion" },
+    "cEasySessions": { "type": "int", "default": 1, "tag": "A", "source": "artifact section 05 / Todoist C (two sessions); one session from 1.14.0 (D119, user)", "grade": "expert-opinion" },
     "cHardBelowReps": { "type": "int", "default": 4, "tag": "A", "source": "Todoist C ('kom je onder de vier reps, 5 lbs erbij')", "grade": "expert-opinion" },
     "plankTargetS": { "type": "duration", "default": 30, "tag": "A", "source": "Todoist Core / B", "grade": "expert-opinion" },
     "injuryDays": { "type": "days", "default": 14, "tag": "A", "source": "artifact section 08 / 10", "grade": "expert-opinion" },
@@ -142,7 +142,7 @@
     "aFailsToRaise": { "type": "int", "default": 2, "min": 1, "max": 4, "tag": "P", "proposal": "P01", "tunable": true, "tunedBy": "oaa completion rate per pin level and pin trajectory (challenge_rule_events for prog.A.pin.gated)", "grade": "expert-opinion" },
     "minSessionsForWeek": { "type": "int", "default": 2, "min": 1, "max": 3, "tag": "P", "proposal": "P02", "tunable": true, "tunedBy": "weeks repeated vs performance in the following week", "grade": "expert-opinion" },
     "sessionCountsRatio": { "type": "number", "default": 0.5, "min": 0.25, "max": 1.0, "tag": "P", "proposal": "P02", "tunable": true, "tunedBy": "completionRatio distribution of logged sessions", "grade": "expert-opinion" },
-    "cEasyMinRir": { "type": "int", "default": 3, "min": 3, "max": 5, "tag": "P", "proposal": "P03", "tunable": true, "tunedBy": "reported RIR on C oaa sets vs next-session performance after a -5 lb step", "grade": "expert-opinion" },
+    "cEasyMinRir": { "type": "int", "default": 2, "min": 2, "max": 5, "tag": "P", "proposal": "P03", "tunable": true, "tunedBy": "reported RIR on C oaa sets vs next-session performance after a -5 lb step", "grade": "expert-opinion" },
     "progressEpsE1rm": { "type": "mass", "default": 1.0, "min": 0.5, "max": 2.5, "tag": "P", "proposal": "P04", "tunable": true, "tunedBy": "test-retest noise of the gate e1RM (Grgic 2020: CV ~4 %, i.e. ~4 kg on 110 kg total) and SSE-1 posterior sd", "grade": "weak" },
     "progressEpsHang": { "type": "duration", "default": 2, "tag": "P", "proposal": "P04", "tunable": true, "tunedBy": "day-to-day spread of fresh hang measurements", "grade": "expert-opinion" },
     "progressEpsTopHold": { "type": "duration", "default": 1, "tag": "P", "proposal": "P04", "tunable": true, "tunedBy": "spread of top-hold attempts within a test", "grade": "expert-opinion" },
@@ -767,7 +767,7 @@
           ],
           "else": [ { "set": "s.cEasyStreak", "to": "0" } ] }
       ],
-      "explain": { "en": "Two easy C sessions in a row: -5 lb." }, "source": "artifact section 05 / Todoist C" },
+      "explain": { "en": "Every C set done with 2 or more reps left (or a 'too easy' tap): -5 lb." }, "source": "artifact section 05 / Todoist C" },
     { "id": "prog.C.pin.hard", "tag": "A", "stage": "progression", "prio": 50, "on": ["session.completed"], "allowInFrozen": true, "allowInFrozenNote": "E: protective step back (more assistance) is allowed in frozen modes.",
       "if": "sess.slot == 'C' && valid('oaa') && min(ex.oaa.reps) < p.cHardBelowReps",
       "then": [ { "set": "s.pinC", "to": "roundPin(max(0lb, last(ex.oaa.pin) - (s.reentry ? p.reentryPinOffsetLb : 0lb)) + p.pinDropLb, 'up')" }, { "set": "s.cEasyStreak", "to": "0" } ],
@@ -927,6 +927,7 @@
     "1.9.0": {"varMap": {}, "defaults": {}, "notes": "D63: in a re-entry week the protective pin rules (prog.A.pin.gated, prog.C.pin.hard) take the logged pin minus the re-entry offset as their base, so the offset never reaches s.pinA or s.pinC. No state var changes."},
     "1.10.0": {"varMap": {}, "defaults": {}, "notes": "D90: the three prehab items (reverse wrist curls, pronation-supination, face pulls) are delegated to RX-1 with rep ranges and a target RIR (3, 3, 2), so their load progresses from the exercise's own history; creditRir follows the target. No state var changes."},
     "1.11.0": {"varMap": {}, "defaults": {}, "notes": "D117: shorter A and B sessions (about a quarter less) and a lighter C: fewer accessory sets (A top hold 2 rounds, 90-degree and straight-arm holds 2 sets; B negatives 2 sets, row 3 sets; Pallof press 2 sets everywhere), a small cut in the main work (A assisted one-arm 4 sets, B weighted pull-ups 5 x 2) and shorter rests on lighter work; prehab rests 30 s. prog.A.sth counts the planned rows instead of a fixed six. No state var changes."},
-    "1.12.0": {"varMap": {}, "defaults": {}, "notes": "D117 revised: the rests of the dips, the Pallof press, the assisted one-arm pull-ups and the weighted pull-up sets of 4 or more reps go back to their 1.11.0 values (A assisted one-arm 150 s, A weighted pull-ups 180 s, dips 120 s, Pallof press 60 s); the set cuts stay. No state var changes."}
+    "1.12.0": {"varMap": {}, "defaults": {}, "notes": "D117 revised: the rests of the dips, the Pallof press, the assisted one-arm pull-ups and the weighted pull-up sets of 4 or more reps go back to their 1.11.0 values (A assisted one-arm 150 s, A weighted pull-ups 180 s, dips 120 s, Pallof press 60 s); the set cuts stay. No state var changes."},
+    "1.13.0": {"varMap": {}, "defaults": {}, "notes": "D119: the C pin drops 5 lb after one C session with every set done at RIR >= 2 or a 'too easy' tap (cEasySessions 2 -> 1, cEasyMinRir 3 -> 2). No state var changes; a cEasyStreak of 1 simply no longer matters."}
   }
 }
