@@ -5,8 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dev.fitnessapp.app.AppContainer
 import dev.fitnessapp.app.ui.auth.mask
 import dev.fitnessapp.data.remote.AccessCheck
+import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.mfa.AuthenticatorAssuranceLevel
+import io.github.jan.supabase.auth.mfa.MfaLevel
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.user.UserMfaFactor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -29,6 +33,27 @@ internal fun classifySignInError(e: Throwable): Pair<String, String> {
     }
 }
 
+/**
+ * D116: the TOTP factor to verify after a password sign-in, or null when no second step applies (the session
+ * is already `aal2`, or the account has no verified TOTP factor). Picks the oldest factor, ties by id.
+ */
+internal fun totpFactorToVerify(level: MfaLevel, factors: List<UserMfaFactor>): String? {
+    if (level.current != AuthenticatorAssuranceLevel.AAL1 || level.next != AuthenticatorAssuranceLevel.AAL2) return null
+    return factors.filter { it.isVerified && it.factorType == "totp" }
+        .sortedWith(compareBy<UserMfaFactor> { it.createdAt }.thenBy { it.id })
+        .firstOrNull()?.id
+}
+
+/** D116 / UX 8.2 errors of the authenticator-code step as (`error_class`, message). */
+internal fun classifyMfaError(e: Throwable): Pair<String, String> {
+    val m = e.message.orEmpty()
+    return when {
+        e is java.io.IOException || e::class.simpleName == "HttpRequestException" -> "offline" to "No internet. The first sign-in needs a connection."
+        m.contains("rate", ignoreCase = true) && !m.contains("TOTP", ignoreCase = true) -> "rate_limited" to "Too many attempts. Wait a minute and try again."
+        else -> "mfa_code" to "Code is wrong or expired. Try again."
+    }
+}
+
 /** Which top-level flow the app shows (UX 8.1): sign-in, rejection, onboarding or the main app. */
 enum class Gate { STARTING, SIGNED_OUT, CHECKING, NOT_ALLOWED, SCHEMA_NOT_EXPOSED, OFFLINE, ONBOARDING, READY }
 
@@ -37,6 +62,8 @@ data class AppState(
     val busy: Boolean = false,
     val error: String? = null,
     val email: String? = null,
+    /** The password was accepted and the authenticator code is being asked (D116). */
+    val mfaPending: Boolean = false,
 )
 
 /**
@@ -75,19 +102,60 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
      * Sign in again after the session expired (D94): only the remembered account is accepted, so one account's
      * rows are never uploaded under another; then the upload resumes. No allowlist check, no onboarding.
      */
-    fun reauth(email: String, password: String, captchaToken: String?, onDone: () -> Unit) = authenticate(email, password, captchaToken) {
-        val u = c.supabase.auth.currentUserOrNull()
-        val remembered = c.account.userId()
-        if (u == null || (remembered != null && u.id != remembered)) {
-            runCatching { c.supabase.auth.signOut() }
-            val who = c.account.email()?.let(::mask) ?: "another account"
-            _state.update { it.copy(error = "This phone holds the data of $who. Sign in with that account.") }
-            return@authenticate
-        }
+    fun reauth(email: String, password: String, captchaToken: String?, onDone: () -> Unit) = authenticate(
+        email, password, captchaToken,
+        accept = {
+            val u = c.supabase.auth.currentUserOrNull()
+            val remembered = c.account.userId()
+            val ok = u != null && (remembered == null || u.id == remembered)
+            if (!ok) {
+                runCatching { c.supabase.auth.signOut(SignOutScope.LOCAL) }
+                val who = c.account.email()?.let(::mask) ?: "another account"
+                _state.update { it.copy(error = "This phone holds the data of $who. Sign in with that account.") }
+            }
+            ok
+        },
+    ) {
+        val u = c.supabase.auth.currentUserOrNull() ?: return@authenticate
         c.account.remember(u.id, u.email)
         _state.update { it.copy(email = u.email ?: email.trim()) }
         c.sync.syncNow()
         onDone()
+    }
+
+    /** The TOTP factor and the rest of the sign-in while the authenticator code is asked (D116). */
+    private var mfaFactorId: String? = null
+    private var afterMfa: (suspend () -> Unit)? = null
+
+    /** Verifies the authenticator code (D116); the session becomes `aal2`, then the sign-in continues. */
+    fun verifyMfa(code: String) {
+        val factorId = mfaFactorId ?: return
+        val then = afterMfa ?: return
+        if (_state.value.busy) return
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true, error = null) }
+            try {
+                c.supabase.auth.mfa.createChallengeAndVerify(factorId = factorId, code = code.trim())
+                mfaFactorId = null
+                afterMfa = null
+                _state.update { it.copy(mfaPending = false) }
+                then()
+            } catch (e: Exception) {
+                val (cls, msg) = classifyMfaError(e)
+                _state.update { it.copy(error = msg) }
+                runCatching { c.fgsEvent("signin_failed", mapOf("error_class" to cls)) }
+            } finally {
+                _state.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    /** Cancel on the code step (D116): the half-finished `aal1` session is signed out; the password form returns. */
+    fun cancelMfa() {
+        mfaFactorId = null
+        afterMfa = null
+        _state.update { it.copy(mfaPending = false, error = null) }
+        viewModelScope.launch { runCatching { c.supabase.auth.signOut(SignOutScope.LOCAL) } }
     }
 
     fun clearError() = _state.update { it.copy(error = null) }
@@ -98,7 +166,14 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
         viewModelScope.launch { runCatching { c.fgsEvent("signin_failed", mapOf("error_class" to "captcha_widget")) } }
     }
 
-    private fun authenticate(email: String, password: String, captchaToken: String?, then: suspend () -> Unit) {
+    /**
+     * Password sign-in; [accept] may refuse the signed-in account before anything else happens. With a verified
+     * TOTP factor the code step comes next (D116) and [then] runs after it; otherwise [then] runs at once.
+     */
+    private fun authenticate(
+        email: String, password: String, captchaToken: String?,
+        accept: suspend () -> Boolean = { true }, then: suspend () -> Unit,
+    ) {
         if (_state.value.busy) return
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
@@ -108,7 +183,16 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
                     this.password = password
                     this.captchaToken = captchaToken
                 }
-                then()
+                if (!accept()) return@launch
+                val mfa = c.supabase.auth.mfa
+                val factorId = totpFactorToVerify(mfa.getAuthenticatorAssuranceLevel(), mfa.verifiedFactors)
+                if (factorId != null) {
+                    mfaFactorId = factorId
+                    afterMfa = then
+                    _state.update { it.copy(mfaPending = true) }
+                } else {
+                    then()
+                }
             } catch (e: Exception) {
                 val (cls, msg) = classifySignInError(e)
                 _state.update { it.copy(error = msg) }

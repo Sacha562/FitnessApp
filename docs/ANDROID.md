@@ -1222,6 +1222,10 @@ object SupabaseFactory {
    the user already has an account in the shared project (D3), and magic links would need deep links and
    the rate-limited shared SMTP.
 2. `supabase.auth.signInWith(Email) { email = …; password = … }`. The password is never stored by the app.
+   Then, when `auth.mfa.getAuthenticatorAssuranceLevel()` is `AAL1 → AAL2` and the user has a verified TOTP
+   factor, `auth.mfa.createChallengeAndVerify(factorId, code)` with the code the user types (D116, UX 8.2);
+   otherwise the session stays `aal1`. GoTrue deletes a user's sessions below `aal2` on every factor verify
+   (also from the chess app), so a password-only session of an MFA account does not last.
 3. Access check (10.4). If allowed: create the local `device` row if missing, run a full bootstrap pull,
    upsert the `profiles` row lazily (no trigger on `auth.users`, which belongs to the chess app), then open
    onboarding or Today.

@@ -51,7 +51,12 @@ fun SignInScreen(
     onCaptchaError: (code: String) -> Unit,
     initialEmail: String = "", subtitle: String = "Sign in with your existing account",
     siteKey: String = BuildConfig.TURNSTILE_SITE_KEY, captchaBaseUrl: String = BuildConfig.TURNSTILE_BASE_URL,
+    mfaPending: Boolean = false, onMfaCode: (code: String) -> Unit = {}, onMfaCancel: () -> Unit = {},
 ) {
+    if (mfaPending) {
+        MfaCodeForm(busy, error, onMfaCode, onMfaCancel)
+        return
+    }
     var email by rememberSaveable { mutableStateOf(initialEmail) }
     var password by rememberSaveable { mutableStateOf("") }
     var show by rememberSaveable { mutableStateOf(false) }
@@ -97,6 +102,38 @@ fun SignInScreen(
         }
     }
 }
+
+/** D116 / UX 8.2: the authenticator code after a correct password, for accounts with a TOTP factor. */
+@Composable
+private fun MfaCodeForm(busy: Boolean, error: String?, onCode: (String) -> Unit, onCancel: () -> Unit) {
+    var code by rememberSaveable { mutableStateOf("") }
+    val complete = code.length == MFA_CODE_LENGTH
+    Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
+        Column(
+            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text("Fitness", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 44.sp, lineHeight = 48.sp), color = Fit.Accent)
+            Text("Enter the 6-digit code from your authenticator app", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted)
+            FitTextField(
+                value = code, onValueChange = { v -> code = v.filter(Char::isDigit).take(MFA_CODE_LENGTH) },
+                label = "Code", singleLine = true, enabled = !busy,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.SmsOtpCode },
+                isError = error != null,
+                supportingText = error?.let { { Text(it, color = Fit.Safety) } },
+            )
+            if (busy) {
+                Box(Modifier.fillMaxWidth().height(58.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp) }
+            } else {
+                PrimaryButton("Verify", { onCode(code) }, Modifier.fillMaxWidth(), enabled = complete)
+                TonalButton("Cancel", onCancel, Modifier.fillMaxWidth(), container = Fit.Tile)
+            }
+        }
+    }
+}
+
+private const val MFA_CODE_LENGTH = 6
 
 /** UX 8.3 and the other blocking states before onboarding. */
 @Composable
