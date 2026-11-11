@@ -90,7 +90,7 @@ class ChallengeSessionRepositoryTest {
     private fun scheme(s: String) = kotlinx.serialization.json.Json.parseToJsonElement(s).let { it as kotlinx.serialization.json.JsonObject }
 
     /** The Basic-Fit checklist of the M1 onboarding, with the OAP stations. */
-    private suspend fun gym() {
+    private suspend fun gym(extra: List<EquipmentDraft> = emptyList()) {
         val bw = scheme("""{"type":"bodyweight"}""")
         equipment.saveChecklist(
             GymDraft("Basic-Fit", listOf("basic-fit"), "{}"),
@@ -102,13 +102,13 @@ class ChallengeSessionRepositoryTest {
                 EquipmentDraft("dip_station", "Dip station", true, bw),
                 EquipmentDraft("rower_erg", "Rower", true, bw),
                 EquipmentDraft("cable_station", "Cable station", true, scheme("""{"type":"stack","unit":"lb","start":5,"step":5,"max":220,"ratio":1,"add_on_steps":[]}""")),
-            ),
+            ) + extra,
             confirmed = true,
         )
     }
 
-    private suspend fun enroll(except: Map<String, String> = emptyMap()): String {
-        gym()
+    private suspend fun enroll(except: Map<String, String> = emptyMap(), extra: List<EquipmentDraft> = emptyList()): String {
+        gym(extra)
         challenges.ensureBundled()
         val defId = db.challengeDefinitions().all().maxBy { it.version }.id
         val def = challenges.definition(defId)
@@ -231,6 +231,48 @@ class ChallengeSessionRepositoryTest {
         pallof.load_mode shouldBe "external"
         pallof.planned_load_input shouldBe 1134L
         equipment.resolve(CatalogRepository.bundled().bySlug("pallof_press")!!, dev.fitnessapp.algo.core.load.LoadMode.EXTERNAL).row!!.equipment_type shouldBe "cable_station"
+    }
+
+    @Test
+    fun `D118 the B row swaps to another option of its anyOf choice, keeps its item key and plan, and the report credits it`() = blocking {
+        val bw = scheme("""{"type":"bodyweight"}""")
+        val enrollmentId = enroll(
+            extra = listOf(EquipmentDraft("barbell", "Barbell", true, bw), EquipmentDraft("chest_supported_row", "Chest-supported row", true, bw)),
+        )
+        val sessionId = live.start(enrollmentId, "B")
+        val catalog = CatalogRepository.bundled()
+        val exercises = db.sessionExercises().bySession(sessionId)
+        val row = exercises.single { it.challenge_item_key == "row" }
+        row.exercise_id shouldBe catalog.idOf(catalog.bySlug("barbell_row_pronated")!!)
+        val wpu = exercises.single { it.challenge_item_key == "wpu" }
+
+        // The seated cable row needs stations this gym lacks; a fixed item has no options.
+        live.swapOptions(row.id).map { it.slug } shouldBe listOf("chest_supported_row_pronated")
+        live.swapOptions(wpu.id) shouldBe emptyList()
+        val chest = catalog.bySlug("chest_supported_row_pronated")!!
+        sessions.swap(wpu.id, chest, null, 1, 0.9, "list", live.swapOptions(wpu.id).map { it.slug }.toSet()) shouldBe null
+        sessions.swap(row.id, catalog.bySlug("seated_cable_row_wide_pronated")!!, null, 1, 0.9, "list", setOf(chest.slug)) shouldBe null
+
+        val (newId, _) = sessions.swap(row.id, chest, null, 1, 0.9, "list", setOf(chest.slug))!!
+        val sub = db.sessionExercises().get(newId)!!
+        sub.challenge_item_key shouldBe "row"
+        sub.origin shouldBe "substitute"
+        sub.planned_sets shouldBe row.planned_sets
+        sub.planned_rep_min shouldBe row.planned_rep_min
+        sub.planned_rest_s shouldBe row.planned_rest_s
+        sub.progression_mode shouldBe row.progression_mode
+        db.sessionExercises().get(row.id)!!.status shouldBe "removed"
+        live.swapOptions(newId).map { it.slug } shouldBe listOf("barbell_row_pronated")
+
+        log(sessionId, newId, sub.exercise_id, 1, "both", 8)
+        now += 600_000
+        sessions.finish(sessionId, "no_time")
+        live.complete(sessionId)!!
+        val report = db.challengeEvents().forEnrollment(enrollmentId).single { it.source_session_id == sessionId && it.event_type == EventTypes.SESSION_COMPLETED }
+        val item = kotlinx.serialization.json.Json.parseToJsonElement(report.payload).let { it as kotlinx.serialization.json.JsonObject }
+            .getValue("items").let { it as kotlinx.serialization.json.JsonObject }.getValue("row") as kotlinx.serialization.json.JsonObject
+        (item.getValue("rows") as kotlinx.serialization.json.JsonArray).size shouldBe 1
+        (item.getValue("status") as kotlinx.serialization.json.JsonPrimitive).content shouldBe "partial"
     }
 
     @Test

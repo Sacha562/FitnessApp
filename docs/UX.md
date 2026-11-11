@@ -3279,6 +3279,9 @@ sets_done}`.
   only if no non-disliked candidate qualifies (labelled); Never-preferred candidates never appear.
 * Each shows tags and the starting prescription: the user's own history, or a calibration first set
   aimed at target RIR + 2 when there is no history.
+* Challenge items (D118): only an item with an `anyOf` exercise choice offers Swap, and its sheet
+  lists only the item's other options available at the gym (no similarity floor, no "Search
+  catalog"); fixed challenge items have no Swap.
 * Emits `swap_sheet_shown {from_exercise_id, candidates, trigger_reason}`, `exercise_swapped
   {from_exercise_id, to_exercise_id, rank?, similarity?, via: list|search, reason_code?}`.
 

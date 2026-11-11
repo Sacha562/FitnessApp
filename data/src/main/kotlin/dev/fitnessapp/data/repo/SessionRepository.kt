@@ -616,16 +616,21 @@ class SessionRepository(
      * Swap (SUB-1, UX 16.5): a new row with origin `substitute` takes the place and planned sets of [sessionExerciseId],
      * which becomes `removed` with the reason (`user` when the menu swap gave none). Only before any working set.
      * Returns the new row's id and the event id for Undo.
+     *
+     * A challenge item swaps only to one of [challengeOptions] (D118, the slugs of its `anyOf` options): the substitute
+     * keeps the item key and its planned scheme, rest and progression mode, so the challenge report credits it.
      */
     suspend fun swap(
         sessionExerciseId: String, to: CatalogExercise, reason: String?, rank: Int?, similarity: Double?, via: String,
+        challengeOptions: Set<String> = emptySet(),
     ): Pair<String, String>? {
         val uid = ctx.requireUser()
         var out: Pair<String, String>? = null
         db.withTransaction {
             val old = db.sessionExercises().get(sessionExerciseId) ?: return@withTransaction
             val sets = db.setLogs().bySession(old.session_id).count { it.session_exercise_id == old.id && it.set_kind != "warmup" }
-            if (sets > 0 || old.challenge_item_key != null) return@withTransaction
+            val challenge = old.challenge_item_key != null
+            if (sets > 0 || (challenge && to.slug !in challengeOptions)) return@withTransaction
             val mode = plannedMode(to, old.session_id)
             val resolved = equipment.resolve(to, mode)
             val id = ctx.ids.next()
@@ -645,7 +650,13 @@ class SessionRepository(
                     equipment_id = resolved.row?.id, progression_mode = "none",
                     rep_scheme = when (to.measure) { "duration" -> "hold"; "attempt" -> "attempt"; else -> "range" },
                     planned_sets = old.planned_sets ?: DEFAULT_SETS, superset_group = old.superset_group,
-                ),
+                ).let { row ->
+                    if (!challenge) row else row.copy(
+                        challenge_item_key = old.challenge_item_key, progression_mode = old.progression_mode, rep_scheme = old.rep_scheme,
+                        planned_rep_min = old.planned_rep_min, planned_rep_max = old.planned_rep_max, planned_rir = old.planned_rir,
+                        planned_rest_s = old.planned_rest_s,
+                    )
+                },
             )
             val payload = buildMap {
                 put("from_exercise_id", JsonPrimitive(old.exercise_id))

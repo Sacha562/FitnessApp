@@ -2,12 +2,15 @@ package dev.fitnessapp.data.challenge
 
 import androidx.room.withTransaction
 import dev.fitnessapp.algo.EngineVersion
+import dev.fitnessapp.algo.challenge.cds.ExerciseChoice
+import dev.fitnessapp.algo.challenge.eca.RuleEnv
 import dev.fitnessapp.algo.challenge.enrollment.EventPayload
 import dev.fitnessapp.algo.challenge.enrollment.EventTypes
 import dev.fitnessapp.algo.challenge.enrollment.ItemLog
 import dev.fitnessapp.algo.challenge.enrollment.RowLog
 import dev.fitnessapp.algo.challenge.enrollment.SessionLog
 import dev.fitnessapp.algo.challenge.fitexpr.Dec
+import dev.fitnessapp.algo.challenge.materialize.ExerciseResolver
 import dev.fitnessapp.algo.challenge.materialize.HabitInput
 import dev.fitnessapp.algo.challenge.materialize.HabitPlanner
 import dev.fitnessapp.algo.challenge.materialize.HabitToday
@@ -396,7 +399,9 @@ class ChallengeSessionRepository(
         val pain = db.wellness().bySession(sessionId).any { it.kind == "pain" }
         val items = TreeMap<String, ItemLog>()
         for (item in live.plan.items) {
-            val se = exercises.firstOrNull { it.challenge_item_key == item.key }
+            // D118: a swapped item has its removed original and the substitute under the same key; the latter counts.
+            val keyed = exercises.filter { it.challenge_item_key == item.key && it.deleted_at == null }
+            val se = keyed.firstOrNull { it.status != "removed" } ?: keyed.firstOrNull()
             val rows = se?.let { e -> sets.filter { it.session_exercise_id == e.id }.sortedBy { it.completed_at }.map(::rowLog) }.orEmpty()
             val current = live.items[item.key]?.rows ?: item.rows
             val plannedRows = current.count { it.setKind != "warmup" }
@@ -550,6 +555,26 @@ class ChallengeSessionRepository(
         val rows = live.items[key]?.rows ?: return null
         val kind = { r: PlannedRow -> (r.setKind == "warmup") == warmup || live.items[key]?.plan?.role == "warmup" }
         return rows.firstOrNull { it.setIndex == setIndex && (it.side == side || it.side == "both" || it.side == "none") && kind(it) }
+    }
+
+    /**
+     * D118: the exercises a challenge item may be swapped to, in definition order: the other options of its `anyOf`
+     * exercise choice whose stations the gym has. Empty for a general item, a fixed or expression choice, or a session
+     * without a live challenge plan.
+     */
+    suspend fun swapOptions(sessionExerciseId: String): List<dev.fitnessapp.algo.selection.catalog.CatalogExercise> {
+        val se = db.sessionExercises().get(sessionExerciseId) ?: return emptyList()
+        val key = se.challenge_item_key ?: return emptyList()
+        val live = live(se.session_id) ?: return emptyList()
+        val f = challenges.folded(live.enrollmentId)
+        val item = f.def.templates[live.plan.templateId]?.items?.firstOrNull { it.key == key } ?: return emptyList()
+        val choice = item.exercise as? ExerciseChoice.AnyOf ?: return emptyList()
+        val has = facts.facts(f.def, f.state).has.toSet()
+        val resolver = ExerciseResolver(f.def, catalog.doc, RuleEnv.effectiveParams(f.def, f.state))
+        return choice.keys.mapNotNull { k ->
+            val r = resolver.resolve(k)?.takeIf { e -> e.stations.all { it in has } } ?: return@mapNotNull null
+            (r.catalogSlug ?: r.key).let(catalog::bySlug)
+        }.filter { catalog.idOf(it) != se.exercise_id }.distinctBy { it.slug }
     }
 
     private companion object {

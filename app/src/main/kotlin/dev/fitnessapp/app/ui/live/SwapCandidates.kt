@@ -39,6 +39,30 @@ object SwapCandidates {
         return options(c, from, Substitute.rank(input, c.catalogModel, p), session.id)
     }
 
+    /**
+     * D118: the Swap sheet of a challenge item, over its `anyOf` [options] only. SUB-1 ranks them, but the definition
+     * makes every option valid, so options under SUB-1's similarity floor follow the ranked ones in definition order
+     * instead of being dropped; `never`, occupied stations and exercises already in the session are left out.
+     */
+    suspend fun forChallengeItem(
+        c: AppContainer, session: WorkoutSessionEntity, from: CatalogExercise, options: List<CatalogExercise>, inSession: Set<String>, occupied: Boolean,
+    ): List<SwapOption> {
+        val prefs = c.selection.prefs(LocalDate.parse(session.local_date))
+        val ctx = ChallengeConstraints.eligContext(c, session, prefs)
+        val p = c.params.fork()
+        val occupiedStations = if (occupied) from.requiresStation.toSet() else emptySet()
+        val busy = if (occupied) c.selection.busyStations(c.clock.now(), dev.fitnessapp.app.planning.PlanningFacts.ZONE) else emptySet()
+        val input = SubInput(from, options, inSession, occupiedStations, prefs, ctx.jointFlags, busy)
+        val ranked = Substitute.scored(input, c.catalogModel, p)
+        val rest = options.filter { o ->
+            ranked.none { it.slug == o.slug } && o.slug != from.slug && o.slug !in inSession &&
+                o.requiresStation.none { it in occupiedStations } && prefs[o.slug]?.tier != PrefTier.NEVER
+        }.map { o ->
+            SubCandidate(o.slug, 0.0, c.catalogModel.similarity(from, o), 0.0, 0.0, 0.0, 0.0, prefs[o.slug]?.tier ?: PrefTier.NEUTRAL)
+        }
+        return options(c, from, ranked + rest, session.id)
+    }
+
     /** The exercise detail's Alternatives (UX 13.3): no occupied context, stations and preferences only, up to 5. */
     suspend fun alternatives(c: AppContainer, from: CatalogExercise, today: LocalDate): List<SwapOption> {
         val prefs = c.selection.prefs(today)

@@ -301,7 +301,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
         is Sheet.Swap -> SwapSheet(
             nameOf(ui, s.seId), s.reason, s.trigger, options = { vm.swapOptions(s.seId, s.trigger) }, onDismiss = { sheet = null },
             onPick = { option, reason -> vm.swap(s.seId, option.ex, reason, option); sheet = null },
-            onSearch = { reason -> sheet = Sheet.SwapSearch(s.seId, reason) },
+            // D118: a challenge item swaps only within its options, so its sheet has no catalog search.
+            onSearch = if (vm.swapPinned(s.seId)) null else { reason -> sheet = Sheet.SwapSearch(s.seId, reason) },
             onSkip = { reason -> if (reason != null) { vm.skip(s.seId, reason, 1); sheet = null } else sheet = Sheet.Skip(s.seId) },
         )
         is Sheet.SwapSearch -> AddExerciseSheet(c, onDismiss = { sheet = null }, title = "Replace ${nameOf(ui, s.seId)}") { ex ->
@@ -1137,7 +1138,7 @@ private fun OccupiedSheet(
 @Composable
 private fun SwapSheet(
     name: String, reason: String?, trigger: String, options: suspend () -> List<SwapOption>, onDismiss: () -> Unit,
-    onPick: (SwapOption, String?) -> Unit, onSearch: (String?) -> Unit, onSkip: (String?) -> Unit,
+    onPick: (SwapOption, String?) -> Unit, onSearch: ((String?) -> Unit)?, onSkip: (String?) -> Unit,
 ) {
     var list by remember { mutableStateOf<List<SwapOption>?>(null) }
     var why by remember { mutableStateOf(reason) }
@@ -1156,7 +1157,10 @@ private fun SwapSheet(
             val l = list
             when {
                 l == null -> Text("Finding alternatives…", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
-                l.isEmpty() -> Text("No close alternative here. Search the catalog instead.", style = MaterialTheme.typography.bodyMedium, color = Fit.Muted)
+                l.isEmpty() -> Text(
+                    if (onSearch != null) "No close alternative here. Search the catalog instead." else "No other option of this challenge exercise is available here.",
+                    style = MaterialTheme.typography.bodyMedium, color = Fit.Muted,
+                )
                 else -> l.forEach { o ->
                     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onPick(o, why) }.padding(horizontal = 8.dp, vertical = 12.dp)) {
                         Text(o.ex.nameEn, style = MaterialTheme.typography.titleMedium)
@@ -1166,9 +1170,11 @@ private fun SwapSheet(
                     TileDivider()
                 }
             }
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onSearch(why) }.padding(horizontal = 8.dp, vertical = 14.dp)) {
-                Text("Search catalog", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Text(">", color = Fit.Muted)
+            if (onSearch != null) {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { onSearch(why) }.padding(horizontal = 8.dp, vertical = 14.dp)) {
+                    Text("Search catalog", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(">", color = Fit.Muted)
+                }
             }
             LinkButton("Skip instead", { onSkip(why) })
         }

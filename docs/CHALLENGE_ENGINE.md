@@ -1454,6 +1454,9 @@ is `never`, the first available option is still used and a conflict warning expl
 challenge prescribes it (precedence: challenge above user hard constraints); the user can change the
 rating, decline the related proposal, or pause the challenge. Fixed (non-`anyOf`) challenge
 exercises are always used regardless of rating, with the same warning when rated `never`.
+In the live session an `anyOf` item can be swapped to another of its options before its first
+working set (D118); the substitute keeps the item key and its planned fields. Fixed items cannot be
+swapped.
 
 ### 6.8 Logging modes
 

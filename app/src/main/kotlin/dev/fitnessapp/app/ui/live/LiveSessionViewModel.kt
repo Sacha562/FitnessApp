@@ -232,6 +232,8 @@ data class LiveUi(
     val title: String? = null,
     /** The last swap, for its Undo bar (P6). */
     val swapUndo: SwapUndo? = null,
+    /** D118: per challenge item (session exercise id) the `anyOf` options it may be swapped to; absent until looked up. */
+    val challengeSwaps: Map<String, List<CatalogExercise>> = emptyMap(),
     /** The add-on block of a challenge session (D62): its header, family and Skip. */
     val addOn: AddOnUi? = null,
     /** C63's overrun line: the session runs more than `session.overrunLineMin` over its budget. */
@@ -390,6 +392,19 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
     }
 
+    private val swapLookups = HashSet<String>()
+
+    /** D118: looks up once per open challenge item which `anyOf` options it may be swapped to. */
+    private fun requestChallengeSwaps(items: List<ExerciseItem>) {
+        for (item in items) {
+            if (item.se.challenge_item_key == null || !item.open || !swapLookups.add(item.se.id)) continue
+            viewModelScope.launch {
+                val options = runCatching { c.challengeSessions.swapOptions(item.se.id) }.getOrDefault(emptyList())
+                _ui.update { it.copy(challengeSwaps = it.challengeSwaps + (item.se.id to options)) }
+            }
+        }
+    }
+
     /** The planned row of a challenge item for the slot being logged. */
     private fun plannedRow(item: ExerciseItem, setIndex: Int, side: String, warmup: Boolean): dev.fitnessapp.algo.challenge.materialize.PlannedRow? {
         val live = challenge ?: return null
@@ -421,7 +436,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
                 )
             }
         }
-        if (snap.s?.status == "in_progress") requestPrescriptions(items)
+        if (snap.s?.status == "in_progress") {
+            requestPrescriptions(items)
+            requestChallengeSwaps(items)
+        }
         if (!focusRestored) {
             // D112: without a stored focus, reopen on the exercise of the last logged set while it has sets to do.
             focusRestored = true
@@ -1497,8 +1515,16 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
     }
 
-    /** Swap is offered for general exercises before their first working set (challenge items are pinned). */
-    fun canSwap(seId: String): Boolean = _ui.value.items.firstOrNull { it.se.id == seId }?.let { it.se.challenge_item_key == null && it.workingDone == 0 } == true
+    /**
+     * Swap is offered before the first working set: for general exercises, and for a challenge item only when its
+     * `anyOf` choice has another option at this gym (D118); fixed challenge items are pinned.
+     */
+    fun canSwap(seId: String): Boolean = _ui.value.let { ui ->
+        ui.items.firstOrNull { it.se.id == seId }?.let { it.workingDone == 0 && (it.se.challenge_item_key == null || !ui.challengeSwaps[seId].isNullOrEmpty()) } == true
+    }
+
+    /** True for a challenge item: its Swap sheet offers only the item's options, no catalog search (D118). */
+    fun swapPinned(seId: String): Boolean = _ui.value.items.firstOrNull { it.se.id == seId }?.se?.challenge_item_key != null
 
     /** From `substitute.max_defers` defers on, or with nothing to move behind, Swap is the primary choice (UX 11.12). */
     fun swapPrimary(seId: String): Boolean {
@@ -1727,14 +1753,22 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val item = ui.items.firstOrNull { it.se.id == seId } ?: return emptyList()
         val session = ui.session ?: return emptyList()
         val inSession = ui.items.map { it.ex.slug }.toSet()
-        val options = runCatching { SwapCandidates.forSession(c, session, item.ex, inSession, occupied = trigger == "occupied") }.getOrDefault(emptyList())
+        val occupied = trigger == "occupied"
+        val options = runCatching {
+            if (item.se.challenge_item_key != null) {
+                SwapCandidates.forChallengeItem(c, session, item.ex, ui.challengeSwaps[seId].orEmpty(), inSession, occupied)
+            } else {
+                SwapCandidates.forSession(c, session, item.ex, inSession, occupied)
+            }
+        }.getOrDefault(emptyList())
         c.sessionRepository.swapSheetShown(seId, options.map { c.catalog.idOf(it.ex) to it.candidate.score }, trigger)
         return options
     }
 
     /** A substitute chosen from the list ([option] set) or by search; the new item takes the focus. */
     fun swap(seId: String, to: CatalogExercise, reason: String?, option: SwapOption?) = viewModelScope.launch {
-        val r = c.sessionRepository.swap(seId, to, reason, option?.rank, option?.candidate?.similarity, if (option != null) "list" else "search") ?: return@launch
+        val allowed = _ui.value.challengeSwaps[seId].orEmpty().map { it.slug }.toSet()
+        val r = c.sessionRepository.swap(seId, to, reason, option?.rank, option?.candidate?.similarity, if (option != null) "list" else "search", allowed) ?: return@launch
         focusOverride = r.first
         focusVia = "auto"
         _ui.update { it.copy(swapUndo = SwapUndo(r.first, r.second, to.nameEn, AppClock.nowMs())) }
