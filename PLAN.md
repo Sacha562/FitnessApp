@@ -667,7 +667,7 @@ M3 is built in six steps (D49), each ending with a green build and checks on the
    `elig` and `substitute`: "Occupied" offers the next exercise first, then three ranked alternatives with a starting load
    from the transfer ratios; the exercise detail's Alternatives section; custom exercises (all five form steps, Room v10).
 
-### M4 — Planning (4–6 sessions)
+### M4 — Planning (4–6 sessions) — done 2026-11-11
 
 - Volume accounting, readiness, runs from the calendar, weekly targets and goal presets, challenge
   contract consumption, add-on blocks, Today recommender with reason chips, weekly planner (Week tab
@@ -691,7 +691,7 @@ catalog 1.0.2 (OI-16).
    synced to the challenge block, re-entry, the goal presets file) and `runs`. Tests: the module tests of
    ALGORITHMS_PLANNING 2-6 and the goldens W41_targets, W41_accounting, W41_readiness and DST_W43_readiness and
    DST_W43_week. No screen changes, so the engine version stays.
-2. **M4.2 Goals, settings, prompts and this week's volume** (built 2026-10-29, phone checks open). Storage and sync for the profile fields and per-group goals
+2. **M4.2 Goals, settings, prompts and this week's volume** (built 2026-10-29, checked on the phone 2026-10-30). Storage and sync for the profile fields and per-group goals
    (the migration is shown first). Two new Preferences sections: Muscle goals (the presets, per-group improve, maintain or
    skip, groups owned by the OAP shown as covered) and Sessions (training age, maximum visits, availability windows,
    default session length, running priority), opened once from a Today card "Set your goals". The feedback prompts after
@@ -703,24 +703,24 @@ catalog 1.0.2 (OI-16).
    `select` (beam search with set tuning, checked against an exhaustive search; candidates per D56) and `order` with the
    optional supersets. Goldens: W41_addon_thu, W41_allocation_fri, W41_select_fri, the Wednesday train-anyway block and
    the F-SEL cases. Params 1.0.3 adds `select.per_group_k` (D56); the app moves to it with the M4.4 migration.
-4. **M4.4 Building a session in the app** (built 2026-10-30, D62, phone checks open). A general session can start for a session type (Legs, Push, Legs + push,
+4. **M4.4 Building a session in the app** (built 2026-10-30, D62, checked 2026-11-11). A general session can start for a session type (Legs, Push, Legs + push,
    Full and the others of ALGORITHMS_PLANNING 0.3) with time chips; the exercises, order and loads come from `select`,
    `order` and `rx`. The add-on blocks after C and A are offered at the end of the challenge session, with Skip on the
    block header. SUB-1's "Do {k} now" follows ORD-1, and busy stations count in the ranking (deferred by D53).
-5. **M4.5 Planner and Today** (built 2026-11-02, scope fixed by D70, phone checks open). `weekplan` (the day model, hard constraints, enumeration, the tie
+5. **M4.5 Planner and Today** (built 2026-11-02, scope fixed by D70, checked 2026-11-11). `weekplan` (the day model, hard constraints, enumeration, the tie
    band, rest-day reasons, replanning, next week) and `today`, with `ui.todaycard`: the verdict (train, rest soft, rest
    hard), the primary option and alternatives with reason chips, "Train anyway" and the week strip. Goldens:
    W41_weekplan, the W41_today days, W41_trainAnywayWed, the capacity and novice variants, W41_elbowCheck2,
    W41_testPostponed and DST_W43_windows. The Today card sits on top of the current Today screen, "Other options" and
    "Train anyway" open the New session sheet, the week plan picks the add-on family and the per-group opportunities for
    session building, and the week strip can show next week's provisional plan.
-6. **M4.6 Week tab and Plan it** (built 2026-11-03, scope fixed by D82, D83 and D84, phone checks open). T17 and the switch to real calendar writes, required before
+6. **M4.6 Week tab and Plan it** (built 2026-11-03, scope fixed by D82, D83 and D84, checked 2026-11-11). T17 and the switch to real calendar writes, required before
    this step, are done (real writes on since 2026-10-22, T17 passed on 2026-11-03). The Week tab shows recommended
    versus planned per day as a calendar time grid (D83) with the reasons in the day sheet, week navigation (past weeks read-only, next week
    provisional), the day sheet, and Plan it: one tap writes a marked calendar event that is then read back as a planned
    gym session and sets the session's time budget, with Undo, also from the Today card. While unedited, the app keeps
    that event's title and exercise lines current, never its time. Golden: W41_planItFri.
-7. **M4.7 Rotation and progress** (scope fixed by D86). `rotate`: main lifts are locked for a mesocycle that follows the
+7. **M4.7 Rotation and progress** (built 2026-11-03, checked on the phone 2026-11-04, scope fixed by D86). `rotate`: main lifts are locked for a mesocycle that follows the
    challenge block (the first one starts in 2026-W45, the OAP's block 2), and accessories rotate only when stalled or
    disliked. Standalone general sessions pin the main lifts, every build rewards the mesocycle's exercises through
    SEL-1's consistency term, and rotated-out accessories stay out of automatic builds until the mesocycle ends.

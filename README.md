@@ -306,7 +306,7 @@ from the hack squat, the grouped gym equipment with the prototype's cable statio
 muscles" opening Advanced; step 4 with one name field; the leg extension's five Alternatives opening their detail.
 Open: Swap in a live session, "Apply to similar", saving a custom exercise and the summary prompt (they write real data).
 
-## M4 log (in progress, from 2026-10-29)
+## M4 log (2026-10-29 to 2026-11-11)
 
 D55 fixed the scope and the order: session building first, then the planner and Today, then the Week tab.
 
@@ -329,7 +329,7 @@ group (the start of the history counts as a gap); the long-run threshold is the 
 severity. No app change, no params change and no engine bump: the modules start at 1.0.0 and the app does not call them
 until M4.2.
 
-**M4.2 (2026-10-29, phone checks open)**: goals, session settings, prompts and this week's volume. Room v11 adds
+**M4.2 (2026-10-29, phone checks closed 2026-10-30)**: goals, session settings, prompts and this week's volume. Room v11 adds
 `muscle_goals` (synced LWW, UUIDv5 per group, pushed after `rep_preferences`); the server table, the profile columns and
 `wellness_logs` already existed (migrations 010, 013), so there is no server migration. You → Preferences gains Muscle
 goals (the four presets, Improve / Maintain / Skip and Focus per group, the resulting weekly target from `targets`,
@@ -385,7 +385,7 @@ category `station`, so dumbbells do not chain; pre-fatigue wins over chaining; S
 reps (default 10, the middle of RX-1's default range) and REST-1's class base. No app change and no engine bump: the
 modules start at 1.0.0 and the app calls them from M4.4. Tests: `:algo` 495, `:app` 119, `:sim` 60, all green.
 
-**M4.4 (2026-10-30, D62, phone checks open)**: building a session in the app. Today's "Start session" opens the New
+**M4.4 (2026-10-30, D62, phone checks closed 2026-11-11 except the add-on family chip and the in-session trim)**: building a session in the app. Today's "Start session" opens the New
 session sheet: the eight types of ALGORITHMS_PLANNING 0.3 as chips (a type the allocator can give nothing today is
 disabled with its reason), the time chips of UX 9.4 (a calendar chip from today's classified general gym event, then
 45, 60, 75 and 90+ = `today.max_budget_min`, the default length preselected), and a live preview of the build: the
@@ -417,7 +417,7 @@ both families (`AddOnSlot.family` "PUSH+LEGS"); when the live capacity after the
 the planned add-on stays as it is for the user to do or skip; the in-session trim prefers to cut later exercises
 among equals. `substitute@1.1.0`, ENGINE_VERSION 1.11.0, params 1.0.3 (D56's `select.per_group_k`), migration 043.
 
-**M4.5 (2026-11-02, D70, phone checks open)**: the week planner and the Today card. `weekplan@1.0.0` (ALGORITHMS_PLANNING 8)
+**M4.5 (2026-11-02, D70, phone checks closed 2026-11-11)**: the week planner and the Today card. `weekplan@1.0.0` (ALGORITHMS_PLANNING 8)
 builds the day model (past, fixed, blocked, free with its slot and budget, no slot), enumerates every plan of up to
 `kMax` general sessions with a type each and a family or none for each add-on slot, simulates it in time order with the
 allocator and readiness, checks H1-H8 (H6 keeps heavy-legs sessions 40 h apart, H1 keeps gap-rule tags a day apart) and
@@ -456,7 +456,7 @@ yourself became `user_deleted` and were not re-created. The planner placed W46's
 because of the chess round at 19:30. You confirmed the deletions and the 4 November session C on calendar.google.com
 (title, time, exercise lines, human line and marker).
 
-**M4.6 (2026-11-03, D82, D83, D84, phone checks open)**: the Week tab and Plan it. `PlanIt` in `:algo` (`planning.weekplan`, part
+**M4.6 (2026-11-03, D82, D83, D84, phone checks closed 2026-11-11)**: the Week tab and Plan it. `PlanIt` in `:algo` (`planning.weekplan`, part
 of ALGORITHMS_PLANNING 8.9, no registry module of its own): the event of an accepted recommended general session (title
 `Gym — {session type}`, D84, the planner's start, length = estimate + changeover rounded up to 5 minutes, the English exercise lines,
 the human line and the C37 marker `[fitapp:v1 <recommendationId> gen/<isoYear>-W<ww>/<isoDow>]` last), and the reconciliation
@@ -513,3 +513,17 @@ without a bodyweight part, tapping a lift or a best scrolls its chart into view,
 change sheet's wording (a main lift joins a session only when its muscles have sets that day: the Push preview on
 4 November had no chest sets after the 3 November push day, so no bench or dip). Tests: `:algo`
 570, `:app` 173, `:data` 104, `:sim` 60, all green; screenshots `progress_*.png`, `summary_new_best.png`.
+
+**Done-when checks (2026-11-11)**: M4 is done. `gradlew check` is green, lint included: the `PreferencesScreen` error noted at
+M4.6 (a coroutine launched during composition) is fixed by logging `warning_shown` from a `LaunchedEffect`. The W41 goldens
+(GF-W41-WEEKPLAN, the GF-W41-TODAY days, GF-W41-PLAN-IT-FRI and the others above) pass. The real week 2026-W46, from the
+latest `weekplan.plan` snapshot (ENGINE_VERSION 1.26.0): general session Tue (done), C Wed (done), Legs + push planned Thu,
+A Fri, Sat rest with the reason REST_BEFORE (B), B Sun; nothing double-booked and the day before B free. The phone checks
+of M4.4 to M4.6 were closed from real use between 2026-10-30 and 2026-11-11, read on the server (`session_events`,
+`workout_sessions`): five `family_combo` sessions, one by the second user; an add-on after C on 4 November and one
+`block_addon_skipped`; `time_budget_selected` and four `session_overrun_shown`; 177 `today_card_shown` for both users
+and `today_action` start, select_alt, budget and log_anyway; five `plan_it_tapped`; general calendar writes for plan_it,
+plan_changed, user_move, user_change and user_remove. You checked on the phone on 2026-11-11: Undo after Plan it
+removes the event, and tapping an empty spot of the Week grid opens "New gym session". Still open (not done-when items):
+the add-on family chip (`template_picked` kind `addon`), which needs a C session with an add-on (A1 normal leaves less
+than `time.min_addon_min`, TimeModelTest), and the in-session trim from Time budget (`session_trimmed`).

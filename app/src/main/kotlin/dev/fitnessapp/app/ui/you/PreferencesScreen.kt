@@ -22,6 +22,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,11 +132,15 @@ fun PreferencesRoute(c: AppContainer, onBack: () -> Unit) {
         editing = PrefScope("exercise:" + c.catalog.idOf(ex), ex.nameEn, ex.mechanics != "isolation", ex.safetyClass == "high_risk")
     }
     // `warning_shown` for the notes on screen, once per screen visit (UX 17).
+    // Logged from an effect, not launched during composition (lint CoroutineCreationDuringComposition).
     val shown = remember { HashSet<String>() }
-    (fixed + perExercise).forEach { s ->
-        val values = byKey[s.key]?.let { RepPreferenceRepository.values(it) } ?: return@forEach
-        notes(s, values, params).forEach { w ->
-            if (shown.add(w.ruleId + "|" + w.entity)) scope.launch {
+    val onScreen = (fixed + perExercise).flatMap { s ->
+        val values = byKey[s.key]?.let { RepPreferenceRepository.values(it) } ?: return@flatMap emptyList()
+        notes(s, values, params)
+    }
+    LaunchedEffect(onScreen) {
+        onScreen.forEach { w ->
+            if (shown.add(w.ruleId + "|" + w.entity)) {
                 c.sessionRepository.event(
                     EventDraft(
                         type = "warning_shown", screen = "you.preferences", entityType = "none",
