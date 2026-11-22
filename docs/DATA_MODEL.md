@@ -1978,7 +1978,7 @@ Rebuildable estimator state so a fresh install can resume without replaying all 
 | `module_version` | text | not null | | E50 | |
 | `engine_version` | text | not null | | E50 | |
 | `params_hash` | text | not null | | E51 | |
-| `state` | jsonb | not null | | object | For example SSE-1 `{L, g, P:[[...],[...]], k, t_last}`. |
+| `state` | jsonb | not null | | object | For example SSE-1 `{l, g, p_ll, p_lg, p_gg, k, t_last, n_obs, zn_prev}` (`zn_prev` from `sse@1.1.0`, D123). |
 | `state_hash` | text | not null | | E51 | |
 | `n_observations` | int | not null | `0` | >= 0 | |
 | `as_of` | timestamptz | not null | | | |
@@ -2050,7 +2050,7 @@ This list is canonical (C58): every module writes at least these `outputs` keys,
 
 | kind | Required `outputs` keys |
 |------|-------------------------|
-| `estimation.sse` | `sets[]: {set_id, q_true, n_eff, n_fresh, fatigue_f, z, s, estimator_class, e1rm_kg, e1rm_added_kg, k_used, residual, n_eff_pred, z_pred_lo, z_pred_hi}`; `states[]: {exercise_id, side, m_kg, ci80_lo_kg, ci80_hi_kg, g_per_week, l_prior, p_ll_prior, huber_applied, lb_applied}`. The one-step-ahead keys (`n_eff_pred`, `z_pred_lo`, `z_pred_hi` per set, `l_prior`, `p_ll_prior` per state) come from the prior state before this session's update (ALGORITHMS B6.5); `huber_applied` and `lb_applied` feed review metric M5. |
+| `estimation.sse` | `sets[]: {set_id, q_true, n_eff, n_fresh, fatigue_f, z, s, estimator_class, e1rm_kg, e1rm_added_kg, k_used, residual, n_eff_pred, z_pred_lo, z_pred_hi}`; `states[]: {exercise_id, side, m_kg, ci80_lo_kg, ci80_hi_kg, g_per_week, l_prior, p_ll_prior, huber_applied, lb_applied, drift_applied}`. The one-step-ahead keys (`n_eff_pred`, `z_pred_lo`, `z_pred_hi` per set, `l_prior`, `p_ll_prior` per state) come from the prior state before this session's update (ALGORITHMS B6.5); `huber_applied`, `lb_applied` and `drift_applied` (D123) feed review metric M5. |
 | `estimation.rcm` | `k_prev`, `k_hat`, `k_used`, `sd_lnk`, `m`, `n_sets`, `rate_limited`, `pooled`, `j_min`, `j_k0`; `sets[]: {set_id, w_sys, n_eff, fatigue_f, n_fresh, window, residual}` (ALGORITHMS B5.1) |
 | `estimation.rircal` | `b_before`, `b_after`, `s_q_before`, `s_q_after`, `e`, `type` (`explicit`, `implicit`, `reason_hook`), `class`, `n_c` (ALGORITHMS B4.6) |
 | `estimation.fatigue` | `c_hat`, `c_used`, `d_hat`, `d_used`, `m`, `resid_by_rest_bucket: {<bucket>: mean}` (buckets `lt75`, `b75_105`, `b105_150`, `b150_210`, `gt210` s), `resid_by_rir_bucket: {<bucket>: mean}` (`q0_1`, `q2_3`, `q4_plus`), `resid_by_set_index: {<bucket>: mean}` (`s2`, `s3`, `s4`, `s5_plus`) (ALGORITHMS B7.5; the curve class is the scope key `class:<curve_class>`) |
@@ -2433,6 +2433,7 @@ No automatic down migrations exist. Each file ends with a commented manual rollb
 | 073 | `fitness_073_autoreg_1_3_0_stop_on_evidence` (data; applied 2026-11-22, version 20261122110614) | D121 | Registers `autoreg@1.3.0`, ENGINE_VERSION 1.27.0 (default params 1.0.8, constants_hash of the `autoreg` slice unchanged). No DDL, no params change. | Checks inside the migration (constants_hash equal to 1.2.0, one module row for engine 1.27.0); advisors. |
 | 074 | `fitness_074_challenge_where_engine_1_28_0` (data; applied 2026-11-22, version 20261122112452) | D122 | Registers `challenge.cds@1.3.0` and `challenge.materialize@1.2.0`, ENGINE_VERSION 1.28.0 (default params 1.0.8, constants_hash of both slices unchanged): an `anyOf` exercise choice may add catalog exercises through a `where` filter. No DDL, no params change. Applied before the APK is installed (9.1.9 release rule). | Checks inside the migration (both constants_hash equal to the previous versions, two module rows for engine 1.28.0); advisors. |
 | 075 | `fitness_075_oap_v1_15_0` (data; applied 2026-11-22, version 20261122112518) | D122 | `oap@1.15.0`: 5 jsonb operations on the 1.14.0 row (version, `engine` `>=1.28.0 <2.0.0`, the B1 row item's exercise choice with `where: {pattern: [horiz_pull]}` and its note, the empty migration from 1.14.0); `engine_range` follows; proven by `server_checksum` (a dry run matched first). An app below engine 1.28.0 cannot compile it and keeps 1.14.0. | Checks inside the migration (the 1.14.0 checksum, the B1 row item's place, status, jcs_sha256 and server_checksum of the new row); advisors. |
+| 076 | `fitness_076_sse_1_1_0_drift` (data; applied 2026-11-22, version 20261122113425) | D123 | `algo_params` 1.0.9 = 1.0.8 with the keys `sse.drift_gate_sd` (1.5) and `sse.drift_max_inflate` (25), 1.0.8 `superseded`; registers `sse@1.1.0` (constants_hash = the new `sse` slice), ENGINE_VERSION 1.29.0 (1.28.0 is D122's). No DDL. | Checks inside the migration (634 keys, only the two D123 keys differ from 1.0.8, params_hash, one active params version, one module row for engine 1.29.0); advisors. |
 
 The user exposes the schema (F2, action 3) after 004 so the app can read reference data; the exposure can happen any time before the first app sync. Later migrations continue at 019 with the same process.
 

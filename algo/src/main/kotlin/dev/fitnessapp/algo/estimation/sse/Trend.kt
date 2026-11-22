@@ -26,7 +26,18 @@ data class TrendState(
 /** One observation for the trend update: value [z] (log space) and variance [s2] (class multiplier included). */
 data class TrendObs(val z: Double, val s2: Double)
 
-/** The outcome of one session update; [nu], [s], [k0], [k1] are the innovation statistics of the NORMAL step. */
+/**
+ * SSE-1's drift rule (B6.4, D123): when this session's and the previous session's normalised innovations both exceed
+ * [gateSd] on the same side, `P_LL` is widened to match the innovation, by at most [maxInflate]. [znPrev] is the
+ * previous NORMAL step's `zn` (null: none yet). HOLD-1 passes no drift rule.
+ */
+data class Drift(val gateSd: Double, val maxInflate: Double, val znPrev: Double?)
+
+/**
+ * The outcome of one session update; [nu], [s], [k0], [k1] are the innovation statistics of the NORMAL step, [zn] its
+ * normalised innovation `nu / sqrt(P_LL + R)` before any drift or Huber change, and [driftLambda] the `P_LL` factor of
+ * the drift rule when it applied.
+ */
 data class TrendUpdate(
     val state: TrendState,
     val huberApplied: Boolean,
@@ -35,6 +46,8 @@ data class TrendUpdate(
     val s: Double?,
     val k0: Double?,
     val k1: Double?,
+    val zn: Double? = null,
+    val driftLambda: Double? = null,
 )
 
 /** The predict and update equations of SSE-1 (ALGORITHMS.md B6.2, B6.4), also used by HOLD-1 with its own `sd_day`. */
@@ -84,7 +97,8 @@ object Trend {
     /**
      * The session update of B6.4 on the predicted [prior]: one NORMAL step over [normal] (day-level noise [sdDay]
      * counted once, robust gate), then the LOWER BOUND step with the best of [lowerBounds], which can only raise the
-     * level. [used] observations are added to `n_obs`; `t_last` becomes [at]. Not rounded.
+     * level. With a [drift] rule (SSE-1 only), two sessions in a row beyond its gate on the same side first widen
+     * `P_LL` (D123). [used] observations are added to `n_obs`; `t_last` becomes [at]. Not rounded.
      */
     fun update(
         prior: TrendState,
@@ -94,6 +108,7 @@ object Trend {
         at: Instant,
         used: Int,
         params: ParamView,
+        drift: Drift? = null,
     ): TrendUpdate {
         var t = prior
         var huber = false
@@ -101,12 +116,28 @@ object Trend {
         var sOut: Double? = null
         var k0: Double? = null
         var k1: Double? = null
+        var zn: Double? = null
+        var lambda: Double? = null
         if (normal.isNotEmpty()) {
             val w = normal.sumOf { 1.0 / it.s2 }
             val zbar = normal.sumOf { it.z / it.s2 } / w
             var r = sdDay * sdDay + 1.0 / w
             val innovation = zbar - t.l
             var s = t.pLL + r
+            val z = innovation / Det.sqrt(s)
+            zn = z
+            val prev = drift?.znPrev
+            if (drift != null && prev != null && t.pLL > 0.0 &&
+                kotlin.math.abs(z) > drift.gateSd && kotlin.math.abs(prev) > drift.gateSd && (z > 0.0) == (prev > 0.0)
+            ) {
+                // Covariance matching (D123): open P_LL so that S matches the observed nu^2, capped.
+                val f = minOf(drift.maxInflate, maxOf(1.0, (innovation * innovation - r) / t.pLL))
+                if (f > 1.0) {
+                    t = t.copy(pLL = t.pLL * f, pLg = t.pLg * Det.sqrt(f))
+                    s = t.pLL + r
+                    lambda = f
+                }
+            }
             val gate = params.double("sse.huber_gate_sd")
             if (kotlin.math.abs(innovation) > gate * Det.sqrt(s)) {
                 val ratio = kotlin.math.abs(innovation) / (gate * Det.sqrt(s))
@@ -128,7 +159,7 @@ object Trend {
             t = kalman(t, best.z - t.l, t.pLL + r).first
             lb = true
         }
-        return TrendUpdate(t.copy(tLast = at, nObs = prior.nObs + used), huber, lb, nu, sOut, k0, k1)
+        return TrendUpdate(t.copy(tLast = at, nObs = prior.nObs + used), huber, lb, nu, sOut, k0, k1, zn, lambda)
     }
 
     /** The Kalman step with innovation [nu] and innovation variance [s]; every right-hand side uses the prior. */

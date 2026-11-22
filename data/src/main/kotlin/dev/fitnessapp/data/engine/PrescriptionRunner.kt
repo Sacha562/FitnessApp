@@ -506,6 +506,7 @@ class PrescriptionRunner(
         return SseState(
             TrendState(d("l"), d("g"), d("p_ll"), d("p_lg"), d("p_gg"), Instant.parse(o.getValue("t_last").jsonPrimitive.content), d("n_obs").toInt()),
             d("k"),
+            o["zn_prev"]?.jsonPrimitive?.doubleOrNull,
         )
     }
 

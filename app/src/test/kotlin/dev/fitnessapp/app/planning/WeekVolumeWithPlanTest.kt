@@ -25,7 +25,7 @@ import java.time.ZoneId
 /** D113: the Week tab's bars count the week plan's general sessions beside the challenge's committed volume (19.4). */
 class WeekVolumeWithPlanTest {
     private val params = ParamView.fromParamsFile(
-        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.8.json")).readText(Charsets.UTF_8),
+        requireNotNull(javaClass.getResource("/fitness/params/default-params-1.0.9.json")).readText(Charsets.UTF_8),
     )
     private val zone = ZoneId.of("Europe/Amsterdam")
     private val monday = LocalDate.parse("2026-11-09")

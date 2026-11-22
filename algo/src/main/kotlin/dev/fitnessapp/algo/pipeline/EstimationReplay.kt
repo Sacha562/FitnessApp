@@ -267,6 +267,7 @@ object EstimationReplay {
     private fun sseState(st: SseState): JsonObject = buildJsonObject {
         trend(st.trend)
         put("k", stat(st.k))
+        st.znPrev?.let { put("zn_prev", stat(it)) }
     }
 
     private fun holdState(st: HoldState): JsonObject = buildJsonObject {
@@ -311,6 +312,7 @@ object EstimationReplay {
                     put("side", key.side)
                     trend(st.trend)
                     put("k", stat(st.k))
+                    st.znPrev?.let { put("zn_prev", stat(it)) }
                 })
             }
         })

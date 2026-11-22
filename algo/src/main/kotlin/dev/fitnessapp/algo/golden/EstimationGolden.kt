@@ -134,7 +134,7 @@ internal object EstimationGolden {
         val priors = TreeMap<SideKey, SseState>()
         payload["priors"]?.jsonArray?.forEach { p ->
             val o = p.jsonObject
-            priors[SideKey(str(o, "exercise_id"), str(o, "side"))] = SseState(trend(o), dbl(o, "k"))
+            priors[SideKey(str(o, "exercise_id"), str(o, "side"))] = SseState(trend(o), dbl(o, "k"), o["zn_prev"]?.takeUnless { it is JsonNull }?.let { d(it) })
         }
         payload["predict"]?.jsonObject?.let { p ->
             val t = trend(p.getValue("state").jsonObject)
