@@ -1970,8 +1970,12 @@ if w_new == w_cur and no reps change: no card (a Keep outcome never renders)
 
 ### B13.4 Stop advice (one card, counts toward the limit)
 
-(a) Fatigue stop: no candidate `w >= autoreg.fatigue_stop_floor (0.85) * w_plan` predicts reps `>= r_lo` at
-RIR `>= max(0, q* - 1)` -> "end this exercise". (b) Two consecutive sets with reps `< r_lo` at reported RIR 0.
+(a) Fatigue stop (D121): the last working set fell short of its plan (reps below its target, or `q_true <
+max(0, q* - 1)`) **and** no candidate `w >= autoreg.fatigue_stop_floor (0.85) * min(w_plan, w_last)` predicts reps
+`>= min(r_lo, remaining targets)` at RIR `>= max(0, q* - 1)` -> "end this exercise". The prediction takes the last
+set's own capacity `M_obs = w_last * (1 + (n_fresh - 1) / k)` (B13.7; `M_use * exp(delta_ex)` without one) and the
+F state after the planned rest. A capacity check that fails after a set on plan logs `autoreg.stop.fatigue_on_plan`
+and gives no stop. (b) Two consecutive sets with reps `< r_lo` at reported RIR 0.
 (c) Two technique events (`technique_breakdown` or `torso_rotation`) in the exercise. (d) Time budget
 exceeded -> the `no_time` flow (UI-02 trimming, REASON-1). Safety notices (WE-S5) are WarningEngine
 outputs and do not count toward the limit.

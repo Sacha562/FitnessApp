@@ -189,12 +189,22 @@ object Autoreg : DeclaresParams {
         val shortAtFailure = i.logged.takeLast(params.int("autoreg.stop_consec_short")).let { tail ->
             tail.size == params.int("autoreg.stop_consec_short") && tail.all { it.set.reps < s.rLo && it.set.rirReported == 0.0 }
         }
+        // D121: the fatigue stop needs the last set itself to fall short of its plan (fewer reps than its target, or a
+        // calibrated RIR below max(0, q* - 1)); the capacity is the last set's own (M_obs, B13.7) when it has one; the
+        // reps to reach are the lower of r_lo and the remaining planned targets; the load floor is relative to the
+        // lighter of the planned load and the last set's load.
         val qMin = maxOf(0.0, s.qStar - 1.0)
-        val floor = params.double("autoreg.fatigue_stop_floor") * wPlan
-        val fatigueStop = i.rx.loadables.filter { it >= floor - EPS }.none { w ->
-            val cap = RepCurve.cap(w, mNew, k) * (1.0 - fNext)
-            Rx.roundHalfDown(cap - qMin) >= s.rLo
+        val lastQ = last.q?.qTrue ?: last.set.rirReported
+        val belowPlan = last.set.reps < (target ?: s.rLo) || (lastQ != null && lastQ < qMin - EPS)
+        val mStop = last.set.wSys?.let { wl -> last.nFresh?.takeIf { it > 0.0 }?.let { wl * (1.0 + (it - 1.0) / k) } } ?: mNew
+        val rMin = minOf(s.rLo, targets.min())
+        val floor = params.double("autoreg.fatigue_stop_floor") * minOf(wPlan, last.set.wSys ?: wPlan)
+        val noLoadReaches = i.rx.loadables.filter { it >= floor - EPS }.none { w ->
+            val cap = RepCurve.cap(w, mStop, k) * (1.0 - fNext)
+            Rx.roundHalfDown(cap - qMin) >= rMin
         }
+        if (noLoadReaches && !belowPlan) trace += "autoreg.stop.fatigue_on_plan"
+        val fatigueStop = noLoadReaches && belowPlan
         val stop = when {
             fatigueStop -> "fatigue"
             shortAtFailure -> "short_at_failure"

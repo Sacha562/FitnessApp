@@ -1,6 +1,7 @@
 package dev.fitnessapp.algo.prescription.autoreg
 
 import dev.fitnessapp.algo.core.det.Det
+import dev.fitnessapp.algo.core.det.Grid
 import dev.fitnessapp.algo.core.load.LoadMode
 import dev.fitnessapp.algo.estimation.EstimationFixtures.FACTS
 import dev.fitnessapp.algo.estimation.EstimationFixtures.LEG_PRESS
@@ -213,6 +214,63 @@ class AutoregTest {
         (r.hysteresis!!.rirNextObs!! < 0.0) shouldBe true
         r.kind shouldBe SuggestionKind.LOAD
         (r.wNew!! < 20.0) shouldBe true
+    }
+
+    /** Lateral raise of 2026-11-18 (D121): DOUBLE advanced 20 -> 24 kg (no 22) with targets 6 / 4 under 8-10; M_use 29.07. */
+    private val lat18Input = latInput.copy(sets = 2, estimate = RxEstimate(Det.ln(29.07), 0.00122581126247))
+    private val lat18Plan = Rx.modelMode(lat18Input, params.fork()).let { m ->
+        m.copy(mode = RxMode.DOUBLE, sets = m.sets.mapIndexed { n, s -> s.copy(wSys = 24.0, targetReps = listOf(6, 4)[n]) })
+    }
+
+    private fun lat18Run(w: Double, reps: Int, rir: Double) = Autoreg.evaluate(
+        AutoregInput(lat18Input, lat18Plan, Sse.prepare(listOf(set("r1", "2026-11-18T19:25:00Z", w, reps, rir, exercise = lateral.exerciseId,
+            loadMode = LoadMode.EXTERNAL)), FACTS + (lateral.exerciseId to lateral), RirCal.initial(params), params)),
+        params.fork(),
+    )
+
+    @Test
+    fun `a set on plan never advises a fatigue stop, even below r_lo after a big double step (D121)`() {
+        // 24 kg x 6 at RIR 1 is exactly the plan. Before D121: stop, because no load >= 0.85 x 24 kg reaches r_lo 8.
+        val r = lat18Run(24.0, 6, 1.0)
+        r.kind shouldBe null
+    }
+
+    @Test
+    fun `a lighter set that beats the plan never advises a fatigue stop (D121)`() {
+        // 20 kg x 10 at RIR 2, under the planned 24 kg: the floor follows the lighter load and the set's own capacity.
+        val r = lat18Run(20.0, 10, 2.0)
+        r.stopReason.shouldBeNull()
+        (r.kind != SuggestionKind.STOP) shouldBe true
+    }
+
+    @Test
+    fun `a set short of its plan with no load left in range still advises a fatigue stop (D121)`() {
+        val r = lat18Run(24.0, 3, 0.0)
+        r.kind shouldBe SuggestionKind.STOP
+        r.stopReason shouldBe "fatigue"
+    }
+
+    /** Face pull of 2026-11-20 (D121): DOUBLE 30 lb x 15 / 13, 12-20 at q* 2, rest 30 s, M_use 17.42 (the model lags). */
+    private val facePull = ExerciseFacts("face_pull", CurveClass.UPPER_ISOLATION, 0.0, 0.0, sortedMapOf("rear_delts" to 1.0))
+    private val fpInput = RxInput(
+        exerciseId = facePull.exerciseId, side = "both", isolation = true, highRisk = false, bodyweightOnly = false,
+        scheme = scheme(SchemeKind.RANGE, 12, 20, 2.0), sets = 2, restsS = listOf(30.0),
+        loadables = (1..40).map { Grid.kg(it * 5 * 0.45359237) }, k = 28.2313932796,
+        estimate = RxEstimate(Det.ln(17.42), 0.0016),
+    )
+    private val fpPlan = Rx.modelMode(fpInput, params.fork()).let { m ->
+        m.copy(mode = RxMode.DOUBLE, sets = m.sets.mapIndexed { n, s -> s.copy(wSys = 13.61, targetReps = listOf(15, 13)[n]) })
+    }
+
+    @Test
+    fun `face pull 15 at RIR 3 against a lagging model is no fatigue stop (D121)`() {
+        val r = Autoreg.evaluate(
+            AutoregInput(fpInput, fpPlan, Sse.prepare(listOf(set("f1", "2026-11-20T10:10:00Z", 13.61, 15, 3.0, exercise = facePull.exerciseId,
+                loadMode = LoadMode.EXTERNAL)), FACTS + (facePull.exerciseId to facePull), RirCal.initial(params), params)),
+            params.fork(),
+        )
+        (r.deltas.single()!! > 5.0) shouldBe true // far easier than the model
+        r.stopReason.shouldBeNull()
     }
 
     private fun prepared(sets: List<LoggedSet>) = Sse.prepare(sets, FACTS, RirCal.initial(params), params).filter { it.set.setKind != "warmup" }
