@@ -1876,6 +1876,7 @@ Event registry. This table is canonical (C39): it is the union of the event name
 | sync | `sync_conflict` | 11.4, ANDROID 9.8 | `table`, `row_id`, `local_tuple`, `server_tuple`, `winner` |
 | sync | `sync_error` | 11.8, ANDROID 9.8 | `table`, `row_id?`, `rows?`, `error_class`, `http_status?`, `pg_code?`, `pgrst_code?`, `attempts` |
 | sync | `sync_dead_letter` | 11.8 | `table`, `row_id`, `http_status?`, `pg_code?`, `pgrst_code?`, `attempts` |
+| sync | `sync_dead_letter_resolved` | 11.8, ANDROID 9.5 (D120) | `table`, `row_id` |
 | sync | `sync_now_tapped` | UX 20.12 | `outbox_depth` |
 | config | `onboarding_step_completed` | UX 20.8 | `step`, `duration_ms`, `skipped`, `fields_set` |
 | config | `disclaimer_acknowledged` | UX 20.8 (C33) | `version` |
@@ -2323,7 +2324,7 @@ ANDROID.md 8.3 defines them: `outbox`, `sync_cursor`, `dead_letter`, `rest_timer
 |------|-------------|
 | One outbox entry per row, pushed in dependency order (11.3), with the payload read from the entity at push time, and no edit lost while a push is in flight | `outbox` with its `(seq, gen)` guard (ANDROID.md 8.3; 11.2) |
 | Pull cursor per table with microsecond precision and keyset tie-break | `sync_cursor` (`server_updated_at` as text, `last_id`) |
-| Rows the server rejected permanently, kept for retry or export and never deleted automatically | `dead_letter` |
+| Rows the server rejected permanently, kept for retry or export until the server holds the row (D120) | `dead_letter` |
 | The random `device_id` used as the LWW tie-break, new on every install | `device` |
 | Rest-timer state that survives process death; outcomes copied to the `set_logs` rest fields (C55) and to `session_events` | `rest_timer` |
 | Mapping between app-written calendar events and slots, rebuildable from the markers (C37) | `calendar_link` |

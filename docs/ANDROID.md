@@ -944,6 +944,7 @@ example of the write path.
 | `sync_conflict` | sync | 9.6, 9.8 | `table`, `row_id`, `local_tuple`, `server_tuple`, `winner` |
 | `sync_error` | sync | 9.5, 9.8 | `table`, `row_id?`, `rows?`, `error_class`, `http_status?`, `pg_code?`, `pgrst_code?`, `attempts` |
 | `sync_dead_letter` | sync | 9.5, 9.8 | `table`, `row_id`, `http_status?`, `pg_code?`, `pgrst_code?`, `attempts` |
+| `sync_dead_letter_resolved` | sync | 9.5 (D120) | `table`, `row_id` |
 | `export_completed` | export | 20.4 | `export_id`, `kind` (`monthly_full`, `manual_full`, `review_bundle`), `rows`, `bytes`, `from?`, `to?`, `notes_included?` |
 
 **Platform constants in payloads (C54).** A platform constant that shaped an event is logged in that
@@ -1119,7 +1120,10 @@ new event that requires another sync.
 | HTTP 413 (payload too large) | batch size | Halve the batch size for this table for the rest of the run and retry (DATA_MODEL §11.8). |
 
 Dead letters are shown in You → Settings → Sync status with "Retry" (moves them back to the outbox) and
-"Export" (JSON). They are never deleted automatically.
+"Export" (JSON). They are removed automatically only once the server holds the row (D120): after each
+pull, every dead letter whose server row has the local row's LWW tuple or a newer one (append-only tables: whose
+row exists on the server) is deleted and logged as `sync_dead_letter_resolved`. This clears rows that a data
+migration repaired on the server (such as 067). A dead letter whose local row is gone is kept.
 
 ### 9.6 Pull and merge
 

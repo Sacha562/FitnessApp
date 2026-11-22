@@ -1844,6 +1844,18 @@
       "sort": 1380
     },
     {
+      "event_type": "sync_dead_letter_resolved",
+      "category": "sync",
+      "payload_keys": [
+        "table",
+        "row_id"
+      ],
+      "introduced_in": "1.0.0",
+      "description": "Emitted by ANDROID 9.5 (a dead letter whose row the server holds, D120)",
+      "active": true,
+      "sort": 1630
+    },
+    {
       "event_type": "sync_error",
       "category": "sync",
       "payload_keys": [

@@ -161,6 +161,44 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a dead letter whose row a migration repaired on the server is removed after the pull`() = blocking {
+        writeSession(session("s1"))
+        remote.failRow["s1"] = SyncFailure(400, "23514")
+        engine.run("test")
+        db.deadLetters().all().map { it.row_id } shouldBe listOf("s1")
+        // D120: a data migration writes the fixed row as the migration device; the next pull brings it to the phone
+        // and the dead letter is cleared, because the server now holds the phone's version.
+        remote.failRow.clear()
+        val fixed = db.sessions().get("s1")!!.copy(client_updated_at = now + 60_000, device_id = "ffffffff-ffff-ffff-ffff-ffffffffffff", notes = "repaired")
+        remote.seed("workout_sessions", SyncJson.encodeToJsonElement(WorkoutSessionEntity.serializer(), fixed) as JsonObject)
+        engine.run("test") shouldBe RunOutcome.SUCCESS
+        db.sessions().get("s1")!!.notes shouldBe "repaired"
+        db.deadLetters().all() shouldBe emptyList()
+        db.events().exportAll().filter { it.event_type == "sync_dead_letter_resolved" }.map { it.payload }.single().let {
+            it.contains("\"table\":\"workout_sessions\"") shouldBe true
+            it.contains("\"row_id\":\"s1\"") shouldBe true
+        }
+    }
+
+    @Test
+    fun `a dead letter stays while the server has an older version or no row`() = blocking {
+        writeSession(session("s1"))
+        engine.run("test")
+        // s1 is on the server; a later local edit of it is rejected. The server never had s3.
+        db.withTransaction {
+            db.sessions().upsert(db.sessions().get("s1")!!.copy(notes = "bad edit", client_updated_at = ctx.nextClientMs()))
+            outbox.enqueue("workout_sessions", "s1", now)
+            writeSession(session("s3"))
+        }
+        remote.failRow["s1"] = SyncFailure(400, "23514")
+        remote.failRow["s3"] = SyncFailure(400, "23514")
+        engine.run("test")
+        repeat(2) { engine.run("test") }
+        db.deadLetters().all().map { it.row_id }.sorted() shouldBe listOf("s1", "s3")
+        db.events().exportAll().count { it.event_type == "sync_dead_letter_resolved" } shouldBe 0
+    }
+
+    @Test
     fun `foreign-key errors are deferred, not dead-lettered`() = blocking {
         writeSession(session("s1"))
         remote.failRow["s1"] = SyncFailure(409, "23503")

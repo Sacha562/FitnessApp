@@ -101,6 +101,7 @@ class SyncEngine(
                 finalState = s.state
             }
             pull(uid, stats)
+            resolveDeadLetters(stats)
             if (pushAllowed) drain(uid, stats)
         } catch (s: Stop) {
             outcome = s.outcome
@@ -415,6 +416,66 @@ class SyncEngine(
         }
     }
 
+    // ---------------------------------------------------------------------------------------------- dead letters
+
+    /**
+     * D120 (ANDROID 9.5): a dead letter is removed once the server holds its row at the local row's version or a newer
+     * one (append-only tables: once the row exists), e.g. after a data migration repaired the row on the server. Runs
+     * after the pull, so the local rows are current. A dead letter whose local row is gone is kept.
+     */
+    private suspend fun resolveDeadLetters(stats: RunStats) {
+        val byTable = db.deadLetters().all().groupBy { it.table_name }
+        for (t in tables) {
+            val letters = byTable[t.name] ?: continue
+            @Suppress("UNCHECKED_CAST")
+            resolveTable(t as SyncTable<SyncedRow>, letters, stats)
+        }
+    }
+
+    private suspend fun resolveTable(t: SyncTable<SyncedRow>, letters: List<DeadLetterEntity>, stats: RunStats) {
+        for (chunk in letters.chunked(DEAD_LETTER_LOOKUP_IDS)) {
+            val ids = chunk.map { it.row_id }.distinct()
+            val server = try {
+                remote.selectByIds(t.name, ids)
+            } catch (ex: SyncRemoteException) {
+                val cls = ErrorClassifier.classify(ex.failure)
+                stats.error(cls)
+                when (cls) {
+                    SyncErrorClass.AUTH -> throw authStop(t.name, ex.failure)
+                    SyncErrorClass.SCHEMA_NOT_EXPOSED -> throw Stop(RunOutcome.STOPPED, SyncState.SchemaNotExposed)
+                    SyncErrorClass.TRANSIENT -> throw Stop(RunOutcome.RETRY, SyncState.Offline)
+                    else -> {
+                        logError(t.name, null, ids.size, cls, ex.failure)
+                        return
+                    }
+                }
+            }.associateBy { it["id"]?.jsonPrimitive?.contentOrNull }
+            val local = t.dao.byIds(ids).associateBy { it.id }
+            for (d in chunk) {
+                val obj = server[d.row_id] ?: continue
+                val row = local[d.row_id] ?: continue
+                val held = if (t.append) {
+                    true
+                } else {
+                    val lt = t.tuple(row)
+                    val rt = try { t.tuple(t.fromPulled(obj)) } catch (e: Exception) { null }
+                    lt != null && rt != null && rt >= lt
+                }
+                if (!held) continue
+                db.withTransaction {
+                    db.deadLetters().delete(d.id)
+                    telemetry.write(
+                        EventDraft(
+                            type = "sync_dead_letter_resolved",
+                            entityType = "none",
+                            payload = mapOf("table" to JsonPrimitive(t.name), "row_id" to JsonPrimitive(d.row_id)),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------- helpers
 
     /** Records the server timestamp without touching a row that changed meanwhile (guarded by its tuple). */
@@ -533,6 +594,8 @@ class SyncEngine(
 
         /** Guard of [drain]; not a tunable (a pass only finds rows written during the run). */
         private const val MAX_DRAIN_PASSES = 5
+        /** Ids per `selectByIds` lookup of the dead-letter check (D120): keeps the PostgREST URL short. */
+        private const val DEAD_LETTER_LOOKUP_IDS = 100
         private const val TELEMETRY_TABLE = "session_events"
 
         /** `server_updated_at` minus the overlap, kept at microsecond precision (ANDROID.md 8.2). */
