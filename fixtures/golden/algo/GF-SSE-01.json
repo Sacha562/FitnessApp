@@ -169,7 +169,8 @@
                                 "l_prior": 4.70293476243,
                                 "p_ll_prior": 0.001025,
                                 "huber_applied": false,
-                                "lb_applied": false
+                                "lb_applied": false,
+                                "drift_applied": false
                             }
                         ]
                     },
@@ -181,7 +182,9 @@
                                 "nu": 0.0295780594678,
                                 "s": 0.00262166720795,
                                 "k0": 0.390972582977,
-                                "k1": 0.00810552915928
+                                "k1": 0.00810552915928,
+                                "zn": 0.577671440277,
+                                "drift_lambda": null
                             }
                         ],
                         "steps": []
@@ -189,6 +192,6 @@
                 }
             ]
         },
-        "outputs_jcs_sha256": "ca25fd00fe40109259701c250d9be9136bdd2853020d09057d7ef02bf7cb41ea"
+        "outputs_jcs_sha256": "21c70fa92acd0d12b758d008b4fd82cb49f3188d3c48ae0bdb77924fef20d646"
     }
 }

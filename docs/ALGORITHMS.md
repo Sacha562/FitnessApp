@@ -1083,7 +1083,8 @@ filter in log space. App_benchmarks' A5 weights survive only as REASON-1 varianc
 ### B6.1 State and eligibility
 
 State per `(user, exercise, side)` in `exercise_model_state` (`model = 'sse'`):
-`{L, g, P_LL, P_Lg, P_gg, k, t_last (Instant), n_obs}` on the STAT grid.
+`{L, g, P_LL, P_Lg, P_gg, k, t_last (Instant), n_obs, zn_prev}` on the STAT grid (`zn_prev`: the last NORMAL step's
+normalised innovation, for the drift rule of B6.4, D123; absent before `sse@1.1.0`).
 
 Only sets that pass the C8 filter enter SSE-1: `contraction = dynamic`; `load_mode` in {`external`,
 `bodyweight`, `bodyweight_plus_external`, `assisted_machine`}; `w_sys` defined and `> 0`; `set_kind` in
@@ -1140,6 +1141,10 @@ NORMAL (if the session has >= 1 set of class normal or downweight):
   zbar = sum(z_i / s_i^2) / sum(1 / s_i^2)
   R    = sse.sd_day^2 + 1 / sum(1 / s_i^2)        // day-level noise once: sets of one session are correlated
   nu   = zbar - L;  S = P_LL + R
+  zn   = nu / sqrt(S)                             // normalised innovation, stored as zn_prev
+  if |zn| > sse.drift_gate_sd and zn_prev has the same sign with |zn_prev| > sse.drift_gate_sd:   // drift (D123)
+       lambda = clamp((nu^2 - R) / P_LL, 1, sse.drift_max_inflate)      // covariance matching
+       P_LL = lambda * P_LL;  P_Lg = sqrt(lambda) * P_Lg;  S = P_LL + R  // trace sse.drift
   if |nu| > sse.huber_gate_sd * sqrt(S):          // robust gate (trace sse.huber)
        R = R * (|nu| / (sse.huber_gate_sd * sqrt(S)))^2;  S = P_LL + R
   K    = [P_LL / S, P_Lg / S]
@@ -1151,7 +1156,18 @@ LOWER BOUND (if lower_bound sets exist; applied after NORMAL):
   if z_lb > L + sse.lb_gate_sd * sqrt(P_LL):
        same update with nu = z_lb - L and R = sse.lb_r_mult * (sd_day^2 + s_lb^2)     // can only raise L
 t_last = session start Instant; n_obs += number of used sets; k = current RCM-1 k_used
+zn_prev = zn of this session's NORMAL step (unchanged when the session had none)
 ```
+
+**Drift rule (D123).** One surprising session is an outlier for the Huber gate; two in a row on the same side are a
+sustained change (fast early gains on a new exercise, a return after a lay-off), which a filter with a small `q_L`
+and `sg0` follows only slowly: with high-rep sets (`s` about 0.08-0.10) the gain per session stays near 0.2. The rule
+widens `P_LL` just enough that `S` matches the observed `nu^2` (capped at `sse.drift_max_inflate`, 25) before the
+update, so the level catches up in one or two sessions; the Huber gate then sees the widened `S` and rarely fires. It
+never changes `R`, the lower-bound step or HOLD-1, which shares this Trend code without the rule. Params without the
+`sse.drift_*` keys (before 1.0.9) run without it. Replay of the 2026-11 face pull (11.34-13.61 kg x 12-15): innovations
+of 2.05 and 2.72 sd on 11 and 15 November ask for `lambda` 32.3, capped at 25 (sd 0.037 -> 0.184), and the level moves
+from 16.92 to 20.50 kg instead of 17.70 kg.
 
 When no set of the session moves the state (only a lower bound below its gate), the stored state is kept as it
 was, trace `sse.no_update`: predicting it to the session start and storing that would change later predictions,
@@ -1169,8 +1185,8 @@ Snapshot `estimation.sse` (scope `session:<uuid>`) with the DATA_MODEL 10.2 keys
 `sets[]: {set_id, q_true, n_eff, n_fresh, fatigue_f, z, s, estimator_class, e1rm_kg = exp(z), e1rm_added_kg
 = exp(z) - f_bw * BW - implement_base_kg, k_used, residual = z - L_prior}` and
 `states[]: {exercise_id, side, m_kg = exp(L), ci80_lo_kg = exp(L - z80 * sqrt(P_LL)), ci80_hi_kg, g_per_week,
-huber_applied, lb_applied}` (the two flags are output keys for review metric M5), plus the innovation
-statistics `{nu, S, K0, K1}` in the trace. For the review
+huber_applied, lb_applied, drift_applied}` (the flags are output keys for review metric M5), plus the innovation
+statistics `{nu, S, K0, K1, zn, drift_lambda}` in the trace. For the review
 metrics of Part D every set additionally carries the one-step-ahead prediction made from the **prior** state
 before this session's update: `n_eff_pred = cap(w; exp(L_prior), k) * (1 - F_i)` and the predictive 80 %
 interval `z_pred_lo/hi = L_prior -/+ z80 * sqrt(P_LL_prior + s_i^2 + sd_day^2)`, and every state carries
@@ -1202,7 +1218,8 @@ posterior `M = 111.55` kg = BW + 40.85 kg, 80 % CI +37.34 to +44.48 kg, `g = 0.2
 ### B6.7 Tests
 
 `SseUpdateTest` (example above to the grid), `SsePredictTest` (grace, detraining continuity at 21 days, cap
-at 15 %, 25-hour DST night), `SseClassesTest` (downweight, lower bound only raises, excluded), `SseColdStartTest`,
+at 15 %, 25-hour DST night), `SseClassesTest` (downweight, lower bound only raises, excluded), `SseColdStartTest`, `SseDriftTest` (D123: the
+face pull replay, one surprise alone, opposite signs, the cap, params without the keys),
 `SseEligibilityTest` (negatives, holds, finger assistance, `n_eff > 25` all excluded).
 
 <a id="fat-1"></a>
@@ -2845,7 +2862,7 @@ below are the ones the modules emit, and DATA_MODEL 10.2 lists them unchanged (O
 
 | kind | Review keys in `outputs` (in addition to those DATA_MODEL 10.2 already lists) | Used by |
 |------|-------------------------------------------------------------------------------|---------|
-| `estimation.sse` | `sets[]: {n_eff_pred, z_pred_lo, z_pred_hi}`; `states[]: {l_prior, p_ll_prior, huber_applied, lb_applied}` (B6.5) | M1, M2, M3, M5 |
+| `estimation.sse` | `sets[]: {n_eff_pred, z_pred_lo, z_pred_hi}`; `states[]: {l_prior, p_ll_prior, huber_applied, lb_applied, drift_applied}` (B6.5) | M1, M2, M3, M5 |
 | `estimation.rcm` | `k_prev`, `k_hat`, `k_used`, `sd_lnk`, `m`, `n_sets`, `rate_limited`, `pooled`, `j_min`, `j_k0`; `sets[]: {set_id, w_sys, n_eff, fatigue_f, n_fresh, window, residual}` (B5.1) | M7, M3 |
 | `estimation.rircal` | `type`, `class`, `n_c` (B4.6) | M6 |
 | `estimation.fatigue` | `c_hat`, `c_used`, `d_hat`, `d_used`, `m`, `resid_by_rest_bucket`, `resid_by_rir_bucket`, `resid_by_set_index` (B7.5) | M9 |

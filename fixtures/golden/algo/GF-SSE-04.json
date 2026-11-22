@@ -155,7 +155,8 @@
                                 "l_prior": 4.70293476243,
                                 "p_ll_prior": 0.001025,
                                 "huber_applied": false,
-                                "lb_applied": true
+                                "lb_applied": true,
+                                "drift_applied": false
                             }
                         ]
                     },
@@ -167,7 +168,9 @@
                                 "nu": null,
                                 "s": null,
                                 "k0": null,
-                                "k1": null
+                                "k1": null,
+                                "zn": null,
+                                "drift_lambda": null
                             }
                         ],
                         "steps": []
@@ -175,6 +178,6 @@
                 }
             ]
         },
-        "outputs_jcs_sha256": "c2bd588321bfccc02ba585a6aad65afde9542b3eb9a0cd689bdc9cea8c481e5f"
+        "outputs_jcs_sha256": "b3b613dc87f0fe5006db506a64c521da3ac749917a93e849b868d25e3be101b4"
     }
 }

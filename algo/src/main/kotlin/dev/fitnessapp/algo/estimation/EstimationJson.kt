@@ -59,6 +59,7 @@ object EstimationJson {
                     num("p_ll_prior", s.pLLPrior, GridKind.STAT)
                     put("huber_applied", s.huberApplied)
                     put("lb_applied", s.lbApplied)
+                    s.driftApplied?.let { put("drift_applied", it) }
                 })
             }
         })
@@ -75,6 +76,10 @@ object EstimationJson {
                     num("s", s.innovationS, GridKind.STAT)
                     num("k0", s.k0, GridKind.STAT)
                     num("k1", s.k1, GridKind.STAT)
+                    if (s.driftApplied != null) {
+                        num("zn", s.zn, GridKind.STAT)
+                        num("drift_lambda", s.driftLambda, GridKind.STAT)
+                    }
                 })
             }
         })

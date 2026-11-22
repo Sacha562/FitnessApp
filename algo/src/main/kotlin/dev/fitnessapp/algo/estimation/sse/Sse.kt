@@ -29,8 +29,11 @@ data class SideKey(val exerciseId: String, val side: String) : Comparable<SideKe
     override fun compareTo(other: SideKey): Int = compareValuesBy(this, other, SideKey::exerciseId, SideKey::side)
 }
 
-/** SSE-1 state (B6.1): the trend in `ln M` and the `k` it was last updated with. */
-data class SseState(val trend: TrendState, val k: Double)
+/**
+ * SSE-1 state (B6.1): the trend in `ln M`, the `k` it was last updated with and [znPrev], the last NORMAL step's
+ * normalised innovation for the drift rule (B6.4, D123; null before the first NORMAL step or before `sse@1.1.0`).
+ */
+data class SseState(val trend: TrendState, val k: Double, val znPrev: Double? = null)
 
 /**
  * One set of a session after the shared estimation steps: REASON-1 class, RIRCAL-1 `q_true`, FAT-1 `F` and
@@ -83,6 +86,10 @@ data class SseStateOut(
     val innovationS: Double?,
     val k0: Double?,
     val k1: Double?,
+    /** Null when the params have no drift rule (before 1.0.9, D123); then the drift keys stay out of the output. */
+    val driftApplied: Boolean? = null,
+    val zn: Double? = null,
+    val driftLambda: Double? = null,
 )
 
 data class SseResult(
@@ -108,6 +115,8 @@ object Sse : DeclaresParams {
         ParamSpec.number("sse.detrain_cap", "ln", 0.05, 0.4),
         ParamSpec.number("sse.detrain_per_week", "ln per week", 0.0, 0.03),
         ParamSpec.number("sse.detrain_var_per_week", "ln^2 per week", 0.0, 0.004),
+        ParamSpec.number("sse.drift_gate_sd", "sd", 1.0, 3.0),
+        ParamSpec.number("sse.drift_max_inflate", "dimensionless", 1.0, 100.0),
         ParamSpec.number("sse.fatigue_err", "ln at F = 0.3", 0.0, 0.1),
         ParamSpec.number("sse.form_err_free_reps", "reps", 1.0, 10.0),
         ParamSpec.number("sse.form_err_per_rep", "ln per rep", 0.0, 0.02),
@@ -224,6 +233,8 @@ object Sse : DeclaresParams {
 
         val sdDay = params.double("sse.sd_day")
         val z80 = params.double("sse.ci_z")
+        // Params before 1.0.9 have no drift keys: SSE-1 runs without the drift rule, as sse@1.0.0 did (D123).
+        val driftOn = params.has("sse.drift_gate_sd")
         val usable = prepared.filter { it.skipCode == null }
         for ((key, group) in usable.groupBy { SideKey(it.set.exerciseId, it.set.side) }.toSortedMap()) {
             val stored = priors[key]
@@ -270,11 +281,14 @@ object Sse : DeclaresParams {
                 sessionStart,
                 0,
                 params,
+                if (driftOn) Drift(params.double("sse.drift_gate_sd"), params.double("sse.drift_max_inflate"), stored?.znPrev) else null,
             )
             val used = normalRows.size + (if (upd.lbApplied) 1 else 0)
             val post = upd.state.copy(nObs = (stored?.trend?.nObs ?: 0) + used).rounded()
+            val znPrev = if (driftOn) upd.zn?.let { Grid.stat(it) } ?: stored?.znPrev else null
             // Nothing moved the state (a lower bound below the gate): keep the stored one, a re-prediction would drift.
-            if (used > 0) next[key] = SseState(post, Grid.stat(k))
+            if (used > 0) next[key] = SseState(post, Grid.stat(k), znPrev)
+            if (upd.driftLambda != null) trace += TraceStep("sse.drift", key.exerciseId)
             if (upd.huberApplied) trace += TraceStep("sse.huber", key.exerciseId)
 
             for ((p, z, s2) in rows) {
@@ -320,6 +334,9 @@ object Sse : DeclaresParams {
                 innovationS = upd.s?.let { Grid.stat(it) },
                 k0 = upd.k0?.let { Grid.stat(it) },
                 k1 = upd.k1?.let { Grid.stat(it) },
+                driftApplied = if (driftOn) upd.driftLambda != null else null,
+                zn = if (driftOn) upd.zn?.let { Grid.stat(it) } else null,
+                driftLambda = upd.driftLambda?.let { Grid.stat(it) },
             )
         }
         return SseResult(setsOut, statesOut, next, trace)
