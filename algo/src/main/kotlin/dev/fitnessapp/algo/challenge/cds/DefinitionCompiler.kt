@@ -13,6 +13,7 @@ import dev.fitnessapp.algo.challenge.fitexpr.StrV
 import dev.fitnessapp.algo.challenge.fitexpr.Type
 import dev.fitnessapp.algo.challenge.fitexpr.TypeScope
 import dev.fitnessapp.algo.challenge.fitexpr.Value
+import dev.fitnessapp.algo.selection.catalog.CatalogDomains
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -451,12 +452,33 @@ internal class DefinitionCompiler(private val doc: DefinitionDoc, private val ct
 
     private fun exerciseChoice(e: JsonElement, ptr: String, scope: TypeScope): ExerciseChoice? = when {
         e is JsonPrimitive && e.isString -> ExerciseChoice.Fixed(e.content)
-        e is JsonObject && e["anyOf"] != null -> ExerciseChoice.AnyOf(TemplateResolver.strings(e["anyOf"]), TemplateResolver.str(e["pick"]) ?: "preference")
+        e is JsonObject && (e["anyOf"] != null || e["where"] != null) -> {
+            val where = e["where"]?.let { catalogFilter(it, "$ptr/where") }
+            val keys = TemplateResolver.strings(e["anyOf"])
+            if (keys.isEmpty() && where == null) err("S1", ptr, "anyOf needs keys or a where filter")
+            ExerciseChoice.AnyOf(keys, TemplateResolver.str(e["pick"]) ?: "preference", where)
+        }
         e is JsonObject && e["expr"] != null -> TemplateResolver.str(e["expr"])?.let { expr(it, scope, "$ptr/expr", expect = Type.STR) }?.let { ExerciseChoice.Expr(it) }
         else -> {
-            err("S1", ptr, "exercise must be a key, {anyOf, pick} or {expr}")
+            err("S1", ptr, "exercise must be a key, {anyOf, where, pick} or {expr}")
             null
         }
+    }
+
+    /** D122: `{pattern: [..], grip: [..]}`; `pattern` is required and every value must be a catalog domain value. */
+    private fun catalogFilter(e: JsonElement, ptr: String): CatalogFilter? {
+        if (e !is JsonObject) {
+            err("S1", ptr, "where must be an object")
+            return null
+        }
+        val unknown = e.keys - setOf("pattern", "grip")
+        if (unknown.isNotEmpty()) err("S1", ptr, "unknown where fields ${unknown.sorted()}")
+        val patterns = TemplateResolver.strings(e["pattern"])
+        val grips = TemplateResolver.strings(e["grip"])
+        if (patterns.isEmpty()) err("S1", "$ptr/pattern", "where needs at least one pattern")
+        patterns.filter { it !in CatalogDomains.PATTERNS }.forEach { err("S1", "$ptr/pattern", "unknown pattern $it") }
+        grips.filter { it !in CatalogDomains.GRIPS }.forEach { err("S1", "$ptr/grip", "unknown grip $it") }
+        return CatalogFilter(patterns, grips)
     }
 
     private fun positionValue(e: JsonElement, ptr: String, scope: TypeScope): FieldValue? = when {

@@ -228,9 +228,10 @@ object Materializer {
             if (!on) return planned("excluded", "enabledIf: ${c.source}", null)
         }
         // Step 5 (resolved first: steps 2 and 3 need the exercise): the exercise choice.
+        val picked = (item.exercise as? ExerciseChoice.AnyOf)?.let { pick(resolver.options(it), input, ctx) }
         var exKey: String? = when (val e = item.exercise) {
             is ExerciseChoice.Fixed -> e.key
-            is ExerciseChoice.AnyOf -> pick(e.keys, resolver, input, ctx)
+            is ExerciseChoice.AnyOf -> picked?.key
             is ExerciseChoice.Expr -> try {
                 (eval(env, e.expr) as? StrV)?.s
             } catch (_: EvalError) {
@@ -238,7 +239,7 @@ object Materializer {
             }
             null -> null
         }
-        var ex = exKey?.let { resolver.resolve(it) }
+        var ex = picked ?: exKey?.let { resolver.resolve(it) }
         if (item.exercise is ExerciseChoice.Fixed && ex != null && prefOf(ex, input) == "never") {
             ctx.warnings += PlanWarning("challenge_never_conflict", "WARN", "${ex.key} is rated never; the challenge prescribes it")
         }
@@ -475,16 +476,19 @@ object Materializer {
     private fun prefOf(ex: ResolvedExercise, input: MaterializeInput): String =
         input.preferences[ex.catalogSlug ?: ex.key] ?: input.preferences[ex.key] ?: "neutral"
 
-    /** 6.7: the available option with the highest PREF-1 tier; ties keep list order; `never` only as a last resort. */
-    private fun pick(keys: List<String>, resolver: ExerciseResolver, input: MaterializeInput, ctx: Ctx): String? {
-        val available = keys.mapNotNull { k -> resolver.resolve(k)?.takeIf { e -> e.stations.all { it in input.facts.has } } }
-        if (available.isEmpty()) return keys.firstOrNull()
+    /**
+     * 6.7: the available option with the highest PREF-1 tier; ties keep option order (listed keys, then D122's filtered
+     * catalog exercises by slug); `never` only as a last resort.
+     */
+    private fun pick(options: List<ResolvedExercise>, input: MaterializeInput, ctx: Ctx): ResolvedExercise? {
+        val available = options.filter { e -> e.stations.all { it in input.facts.has } }
+        if (available.isEmpty()) return options.firstOrNull()
         val usable = available.filter { prefOf(it, input) != "never" }
         if (usable.isEmpty()) {
             ctx.warnings += PlanWarning("challenge_never_conflict", "WARN", "every option is rated never; the challenge prescribes ${available.first().key}")
-            return available.first().key
+            return available.first()
         }
-        return usable.minByOrNull { PREF_ORDER.indexOf(prefOf(it, input)).let { i -> if (i < 0) PREF_ORDER.indexOf("neutral") else i } }?.key
+        return usable.minByOrNull { PREF_ORDER.indexOf(prefOf(it, input)).let { i -> if (i < 0) PREF_ORDER.indexOf("neutral") else i } }
     }
 
     /** Step 13: stable reorder by `position` (first = after the leading warm-ups, C65). */

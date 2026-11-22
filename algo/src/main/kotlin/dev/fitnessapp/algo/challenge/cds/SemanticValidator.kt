@@ -274,7 +274,10 @@ class SemanticValidator(private val doc: DefinitionDoc, private val def: Compile
                 val ptr = "/templates/${t.id} item ${item.key}"
                 when (val e = item.exercise) {
                     is ExerciseChoice.Fixed -> if (e.key !in exerciseKeys) err("V02", ptr, "unknown exercise ${e.key}")
-                    is ExerciseChoice.AnyOf -> e.keys.filter { it !in exerciseKeys }.forEach { err("V02", ptr, "unknown exercise $it") }
+                    is ExerciseChoice.AnyOf -> {
+                        e.keys.filter { it !in exerciseKeys }.forEach { err("V02", ptr, "unknown exercise $it") }
+                        e.where?.let { w -> if (ctx.catalog.exercises.none { CatalogFilters.matches(w, it) }) err("V02", "$ptr/where", "the filter matches no catalog exercise") }
+                    }
                     is ExerciseChoice.Expr -> (e.expr.type as? Type.StrT)?.literals?.filter { it !in exerciseKeys }?.forEach { err("V02", ptr, "unknown exercise $it") }
                     null -> if (item.spec.metric == null) err("V08", ptr, "an item without a metric needs an exercise")
                 }

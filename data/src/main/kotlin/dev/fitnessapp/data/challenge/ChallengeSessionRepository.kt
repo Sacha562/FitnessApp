@@ -558,8 +558,8 @@ class ChallengeSessionRepository(
     }
 
     /**
-     * D118: the exercises a challenge item may be swapped to, in definition order: the other options of its `anyOf`
-     * exercise choice whose stations the gym has. Empty for a general item, a fixed or expression choice, or a session
+     * D118: the exercises a challenge item may be swapped to, in option order: the other options of its `anyOf`
+     * exercise choice (with D122's filtered catalog exercises after the listed keys) whose stations the gym has. Empty for a general item, a fixed or expression choice, or a session
      * without a live challenge plan.
      */
     suspend fun swapOptions(sessionExerciseId: String): List<dev.fitnessapp.algo.selection.catalog.CatalogExercise> {
@@ -571,9 +571,8 @@ class ChallengeSessionRepository(
         val choice = item.exercise as? ExerciseChoice.AnyOf ?: return emptyList()
         val has = facts.facts(f.def, f.state).has.toSet()
         val resolver = ExerciseResolver(f.def, catalog.doc, RuleEnv.effectiveParams(f.def, f.state))
-        return choice.keys.mapNotNull { k ->
-            val r = resolver.resolve(k)?.takeIf { e -> e.stations.all { it in has } } ?: return@mapNotNull null
-            (r.catalogSlug ?: r.key).let(catalog::bySlug)
+        return resolver.options(choice).mapNotNull { r ->
+            r.takeIf { e -> e.stations.all { it in has } }?.let { (it.catalogSlug ?: it.key).let(catalog::bySlug) }
         }.filter { catalog.idOf(it) != se.exercise_id }.distinctBy { it.slug }
     }
 

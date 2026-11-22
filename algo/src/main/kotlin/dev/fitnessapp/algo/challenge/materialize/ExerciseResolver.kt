@@ -1,6 +1,8 @@
 package dev.fitnessapp.algo.challenge.materialize
 
+import dev.fitnessapp.algo.challenge.cds.CatalogFilters
 import dev.fitnessapp.algo.challenge.cds.CompiledDefinition
+import dev.fitnessapp.algo.challenge.cds.ExerciseChoice
 import dev.fitnessapp.algo.challenge.cds.ExerciseSpec
 import dev.fitnessapp.algo.challenge.cds.I18n
 import dev.fitnessapp.algo.challenge.fitexpr.Dec
@@ -57,9 +59,25 @@ class ExerciseResolver(private val def: CompiledDefinition, private val catalog:
             )
         }
         val slug = slugOf(spec) ?: return null
+        return catalogExercise(key, slug, spec.overlay?.tags.orEmpty(), spec.overlay?.flagsOffered.orEmpty())
+    }
+
+    /**
+     * The options of an `anyOf` choice in option order (6.7, D122): the listed keys, then the catalog exercises matching
+     * its `where` filter by slug, without those a listed key already names. A filtered option's key is its catalog slug.
+     */
+    fun options(choice: ExerciseChoice.AnyOf): List<ResolvedExercise> {
+        val listed = choice.keys.mapNotNull { resolve(it) }
+        val named = listed.mapNotNull { it.catalogSlug }.toSet()
+        val filtered = choice.where?.let { w ->
+            bySlug.values.filter { CatalogFilters.matches(w, it) && it.slug !in named }.sortedBy { it.slug }
+                .map { catalogExercise(it.slug, it.slug, emptyList(), emptyList()) }
+        }.orEmpty()
+        return listed + filtered
+    }
+
+    private fun catalogExercise(key: String, slug: String, overlayTags: List<String>, overlayFlags: List<String>): ResolvedExercise {
         val c = bySlug[slug]
-        val overlayTags = spec.overlay?.tags.orEmpty()
-        val overlayFlags = spec.overlay?.flagsOffered.orEmpty()
         return ResolvedExercise(
             key = key,
             catalogSlug = slug,

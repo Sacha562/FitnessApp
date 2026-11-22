@@ -98,6 +98,28 @@ class SemanticValidatorTest {
         } shouldContain "V07"
     }
 
+    private fun MutableMap<String, JsonElement>.editRowChoice(choice: String) {
+        val templates = LinkedHashMap(getValue("templates").jsonObject)
+        val b1 = templates.getValue("B1").jsonObject
+        val items = b1.getValue("items").jsonArray.map { i ->
+            if ((i.jsonObject["key"] as? JsonPrimitive)?.content == "row") i.jsonObject.with("exercise", Json.parseToJsonElement(choice)) else i
+        }
+        templates["B1"] = b1.with("items", JsonArray(items))
+        this["templates"] = JsonObject(templates)
+    }
+
+    @Test
+    fun `D122 a where filter needs known fields, patterns and grips and a catalog match`() {
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horiz_pull"]}, "pick": "preference"}""") }.shouldBeEmpty()
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horiz_pull"], "grip": ["neutral", "pronated"]}}""") }.shouldBeEmpty()
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horizontal_pull"]}}""") } shouldContain "S1"
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horiz_pull"], "grip": ["overhand"]}}""") } shouldContain "S1"
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horiz_pull"], "equipment": ["barbell"]}}""") } shouldContain "S1"
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": []}}""") } shouldContain "S1"
+        idsAfter { m -> m.editRowChoice("""{"anyOf": [], "pick": "preference"}""") } shouldContain "S1"
+        idsAfter { m -> m.editRowChoice("""{"where": {"pattern": ["horiz_pull"], "grip": ["supinated"]}}""") }.toSet() shouldBe setOf("V02") // B1 and B3 (extends B1)
+    }
+
     @Test
     fun `stage 1 rejects unknown keys`() {
         idsAfter { m -> m["surprise"] = JsonPrimitive(1) } shouldBe listOf("S1")

@@ -3,6 +3,7 @@ package dev.fitnessapp.algo.challenge.cds
 import dev.fitnessapp.algo.challenge.fitexpr.CompiledExpr
 import dev.fitnessapp.algo.challenge.fitexpr.Type
 import dev.fitnessapp.algo.challenge.fitexpr.Value
+import dev.fitnessapp.algo.selection.catalog.CatalogExercise
 
 /** One finding of a validation stage (2.6): the check id (`S1` for structural, `V01`-`V18`), a JSON pointer, the text. */
 data class ValidationError(val id: String, val pointer: String, val message: String, val warning: Boolean = false) {
@@ -127,8 +128,19 @@ sealed class FieldValue {
 /** How an item names its exercise (2.4.7). */
 sealed class ExerciseChoice {
     data class Fixed(val key: String) : ExerciseChoice()
-    data class AnyOf(val keys: List<String>, val pick: String) : ExerciseChoice()
+    /**
+     * The listed definition [keys], then (D122) the catalog exercises matching [where] in slug order, without those a
+     * listed key already names; [pick] chooses among them (6.7).
+     */
+    data class AnyOf(val keys: List<String>, val pick: String, val where: CatalogFilter? = null) : ExerciseChoice()
     data class Expr(val expr: CompiledExpr) : ExerciseChoice()
+}
+
+/** D122: an `anyOf` choice's catalog filter; an exercise matches when its pattern is in [patterns] and, when given, its grip in [grips]. */
+data class CatalogFilter(val patterns: List<String>, val grips: List<String> = emptyList())
+
+object CatalogFilters {
+    fun matches(f: CatalogFilter, e: CatalogExercise): Boolean = e.pattern in f.patterns && (f.grips.isEmpty() || e.grip in f.grips)
 }
 
 /** An item of a resolved template with every expression field compiled. */

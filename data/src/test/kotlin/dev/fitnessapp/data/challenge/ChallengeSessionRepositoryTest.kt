@@ -110,7 +110,7 @@ class ChallengeSessionRepositoryTest {
     private suspend fun enroll(except: Map<String, String> = emptyMap(), extra: List<EquipmentDraft> = emptyList()): String {
         gym(extra)
         challenges.ensureBundled()
-        val defId = db.challengeDefinitions().all().maxBy { it.version }.id
+        val defId = db.challengeDefinitions().all().maxBy { dev.fitnessapp.algo.core.registry.SemVer.parse(it.version) }.id
         val def = challenges.definition(defId)
         val onboard = TreeMap<String, Value>(
             mapOf(
@@ -147,7 +147,7 @@ class ChallengeSessionRepositoryTest {
         val exercises = db.sessionExercises().bySession(sessionId)
         val oaa = exercises.single { it.challenge_item_key == "oaa" }
         oaa.load_mode shouldBe "assisted_machine"
-        oaa.planned_sets shouldBe 5
+        oaa.planned_sets shouldBe 4 // A1 oaa 4 sets from oap@1.11.0 (D117)
         oaa.side_mode shouldBe "unilateral_sequential"
         exercises.any { it.challenge_item_key == "wu_face" } shouldBe true
         exercises.none { it.challenge_item_key == "wu_row" } shouldBe true
@@ -159,10 +159,10 @@ class ChallengeSessionRepositoryTest {
         val apps = live.onSetLogged(sessionId, oaa.id)
         val calib = apps.single { it.kind == "suggest" }
         calib.ruleId shouldBe "ins.A.oaa.calibrate"
-        live.live(sessionId)!!.items.getValue("oaa").rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(45) }
+        live.live(sessionId)!!.items.getValue("oaa").rows.drop(2).map { it.pin } shouldBe List(6) { BigDecimal(45) }
 
         live.undo(sessionId, oaa.id, calib, "other", 1_500)
-        live.live(sessionId)!!.items.getValue("oaa").rows.drop(2).map { it.pin } shouldBe List(8) { BigDecimal(40) }
+        live.live(sessionId)!!.items.getValue("oaa").rows.drop(2).map { it.pin } shouldBe List(6) { BigDecimal(40) }
         db.sessionExercises().get(oaa.id)!!.user_override shouldBe true
 
         now += 3_600_000
@@ -234,10 +234,13 @@ class ChallengeSessionRepositoryTest {
     }
 
     @Test
-    fun `D118 the B row swaps to another option of its anyOf choice, keeps its item key and plan, and the report credits it`() = blocking {
+    fun `D118 D122 the B row swaps to another option of its anyOf choice, keeps its item key and plan, and the report credits it`() = blocking {
         val bw = scheme("""{"type":"bodyweight"}""")
         val enrollmentId = enroll(
-            extra = listOf(EquipmentDraft("barbell", "Barbell", true, bw), EquipmentDraft("chest_supported_row", "Chest-supported row", true, bw)),
+            extra = listOf(
+                EquipmentDraft("barbell", "Barbell", true, bw), EquipmentDraft("chest_supported_row", "Chest-supported row", true, bw),
+                EquipmentDraft("landmine", "Landmine", true, bw),
+            ),
         )
         val sessionId = live.start(enrollmentId, "B")
         val catalog = CatalogRepository.bundled()
@@ -246,8 +249,9 @@ class ChallengeSessionRepositoryTest {
         row.exercise_id shouldBe catalog.idOf(catalog.bySlug("barbell_row_pronated")!!)
         val wpu = exercises.single { it.challenge_item_key == "wpu" }
 
-        // The seated cable row needs stations this gym lacks; a fixed item has no options.
-        live.swapOptions(row.id).map { it.slug } shouldBe listOf("chest_supported_row_pronated")
+        // The listed options first, then (D122) every other catalog row by slug; rows needing stations this gym lacks
+        // (seated cable, dumbbells and bench, Smith machine) are left out. A fixed item has no options.
+        live.swapOptions(row.id).map { it.slug } shouldBe listOf("chest_supported_row_pronated", "machine_row", "tbar_row")
         live.swapOptions(wpu.id) shouldBe emptyList()
         val chest = catalog.bySlug("chest_supported_row_pronated")!!
         sessions.swap(wpu.id, chest, null, 1, 0.9, "list", live.swapOptions(wpu.id).map { it.slug }.toSet()) shouldBe null
@@ -262,7 +266,7 @@ class ChallengeSessionRepositoryTest {
         sub.planned_rest_s shouldBe row.planned_rest_s
         sub.progression_mode shouldBe row.progression_mode
         db.sessionExercises().get(row.id)!!.status shouldBe "removed"
-        live.swapOptions(newId).map { it.slug } shouldBe listOf("barbell_row_pronated")
+        live.swapOptions(newId).map { it.slug } shouldBe listOf("barbell_row_pronated", "machine_row", "tbar_row")
 
         log(sessionId, newId, sub.exercise_id, 1, "both", 8)
         now += 600_000

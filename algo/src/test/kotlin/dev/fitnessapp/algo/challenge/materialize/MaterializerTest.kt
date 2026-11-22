@@ -138,12 +138,29 @@ class MaterializerTest {
         val withWide = facts.copy(has = facts.has + "wide_bar")
         val prefs = mapOf("barbell_row_pronated" to "never", "seated_cable_row_wide_pronated" to "like", "chest_supported_row_pronated" to "neutral")
         plan(normal(), "B", f = withWide, prefs = prefs).item("row").exerciseKey shouldBe "seated_cable_row_wide_pronated"
-        val allNever = prefs.mapValues { "never" }
+        // D122: the `where` filter adds every catalog row, so "all never" covers them too.
+        val allNever = catalog.exercises.filter { it.pattern == "horiz_pull" }.associate { it.slug to "never" }
         val p = plan(normal(), "B", f = withWide, prefs = allNever)
         p.item("row").exerciseKey shouldBe "barbell_row_pronated"
         p.item("row").warnings.map { it.code } shouldContain "challenge_never_conflict"
         p.item("row").rows.first().addedKg shouldBe null
         p.item("row").progressionMode shouldBe "delegate:rx"
+    }
+
+    @Test
+    fun `D122 the row's where filter adds every catalog row after the listed options`() {
+        // Neutral ratings keep the first listed option the gym has.
+        plan(normal(), "B").item("row").exerciseKey shouldBe "barbell_row_pronated"
+        // A liked T-bar row (neutral grip, not listed) wins once the gym has a landmine; its key is its catalog slug.
+        val withLandmine = facts.copy(has = facts.has + "landmine")
+        val t = plan(normal(), "B", f = withLandmine, prefs = mapOf("tbar_row" to "like")).item("row")
+        t.exerciseKey shouldBe "tbar_row"
+        t.catalogSlug shouldBe "tbar_row"
+        t.progressionMode shouldBe "delegate:rx"
+        // Without the landmine the T-bar row is not available, so the liked rating does not count.
+        plan(normal(), "B", prefs = mapOf("tbar_row" to "like")).item("row").exerciseKey shouldBe "barbell_row_pronated"
+        // Listed options never repeat: a listed row rated `like` is picked under its definition key.
+        plan(normal(), "B", prefs = mapOf("chest_supported_row_pronated" to "like")).item("row").exerciseKey shouldBe "chest_supported_row_pronated"
     }
 
     @Test

@@ -382,7 +382,7 @@ Item fields (all optional unless noted):
 |---|---|---|
 | `key` | string, required except for `block` items | Stable item key, unique within the resolved template. Rules address logged sets as `ex.<key>.*`. |
 | `block` | string | Expands a reusable block from `blocks` in place. |
-| `exercise` | key, `{anyOf: [keys], pick: "preference"}` or `{expr: <FitExpr returning a key>}` | Exercise to perform. |
+| `exercise` | key, `{anyOf: [keys], where: {pattern: [..], grip: [..]}, pick: "preference"}` or `{expr: <FitExpr returning a key>}` | Exercise to perform. `where` (D122) adds the catalog exercises it matches to an `anyOf` (section 6.7); `anyOf` may then be empty or left out. |
 | `metric`, `record`, `attempts` | | Test items: which metric the item records and how (`max`, `heaviestClean`, `lowestClean`, `bool`). |
 | `role` | enum | `warmup`, `main`, `prehab`, `test`, `attempt`. Roles listed in a mode's `exemptRoles` keep their sets; warm-ups never count for coverage. Stored set kinds (DATA_MODEL E2, C38): `warmup` -> `warmup`; `main` and `prehab` -> `working`; `test` -> `test`; `attempt` -> `attempt`. |
 | `sets`, `reps`, `repsRange`, `rounds`, `attemptsPerRound` | int / range / FitExpr | Volume prescription. |
@@ -1447,15 +1447,22 @@ LOAD-1 (ALGORITHMS B2); the materializer only calls it.
 
 ### 6.7 Exercise choice and preferences
 
+An `anyOf` choice's options are its listed keys in order, then (D122) the catalog exercises matching its
+`where` filter in slug order: `pattern` (required, catalog patterns) and optionally `grip` (catalog grips; any grip
+when absent). An exercise a listed key already names is not repeated, and a filtered option's exercise key is its
+catalog slug. The compiler rejects unknown filter fields, an empty `pattern` and unknown patterns or grips (S1);
+stage 2 rejects a filter that matches no catalog exercise (V02). OAP B's row lists its three pronated rows and
+adds every row (`where: {pattern: ["horiz_pull"]}`).
+
 `{anyOf: [...], pick: "preference"}` picks, among options whose equipment is available, the one
 with the highest PREF-1 multiplier (C26: never 0 / dislike 0.6 / neutral 1.0 / like 1.15 /
-favorite 1.495); ties keep list order. Options rated `never` are skipped. If every available option
+favorite 1.495); ties keep option order. Options rated `never` are skipped. If every available option
 is `never`, the first available option is still used and a conflict warning explains that the
 challenge prescribes it (precedence: challenge above user hard constraints); the user can change the
 rating, decline the related proposal, or pause the challenge. Fixed (non-`anyOf`) challenge
 exercises are always used regardless of rating, with the same warning when rated `never`.
-In the live session an `anyOf` item can be swapped to another of its options before its first
-working set (D118); the substitute keeps the item key and its planned fields. Fixed items cannot be
+In the live session an `anyOf` item can be swapped to another of its options (filtered ones included)
+before its first working set (D118); the substitute keeps the item key and its planned fields. Fixed items cannot be
 swapped.
 
 ### 6.8 Logging modes

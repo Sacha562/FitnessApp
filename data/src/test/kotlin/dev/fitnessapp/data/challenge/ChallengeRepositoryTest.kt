@@ -101,7 +101,7 @@ class ChallengeRepositoryTest {
 
     private suspend fun start(version: String? = null, pastTests: List<PastTest> = emptyList()): FoldedEnrollment {
         repo.ensureBundled()
-        val defId = db.challengeDefinitions().all().let { all -> version?.let { v -> all.single { it.version == v } } ?: all.maxBy { it.version } }.id
+        val defId = db.challengeDefinitions().all().let { all -> version?.let { v -> all.single { it.version == v } } ?: all.maxBy { SemVer.parse(it.version) } }.id
         val def = repo.definition(defId)
         return repo.create(
             defId, sortedMapOf(), onboard,
@@ -117,7 +117,7 @@ class ChallengeRepositoryTest {
     @Test
     fun `create folds the import and every decision and queues the rows`() = blocking {
         val f = start()
-        db.challengeDefinitions().all().map { it.version to it.source }.sortedBy { SemVer.parse(it.first) } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled", "1.5.0" to "bundled", "1.6.0" to "bundled", "1.7.0" to "bundled", "1.8.0" to "bundled", "1.9.0" to "bundled", "1.10.0" to "bundled", "1.11.0" to "bundled", "1.12.0" to "bundled", "1.13.0" to "bundled", "1.14.0" to "bundled")
+        db.challengeDefinitions().all().map { it.version to it.source }.sortedBy { SemVer.parse(it.first) } shouldBe listOf("1.0.0" to "bundled", "1.0.1" to "bundled", "1.1.0" to "bundled", "1.2.0" to "bundled", "1.3.0" to "bundled", "1.4.0" to "bundled", "1.5.0" to "bundled", "1.6.0" to "bundled", "1.7.0" to "bundled", "1.8.0" to "bundled", "1.9.0" to "bundled", "1.10.0" to "bundled", "1.11.0" to "bundled", "1.12.0" to "bundled", "1.13.0" to "bundled", "1.14.0" to "bundled", "1.15.0" to "bundled")
         f.state.status shouldBe EnrollmentState.ACTIVE
         f.state.block.week shouldBe 2
         f.state.proposalDecisions.size shouldBe 29
@@ -223,10 +223,10 @@ class ChallengeRepositoryTest {
     }
 
     @Test
-    fun `a definition update moves the enrollment to the newest version and refolds across it (D44, D45, D47, D51, D52, D63, D90, D117, D119)`() = blocking {
+    fun `a definition update moves the enrollment to the newest version and refolds across it (D44, D45, D47, D51, D52, D63, D90, D117, D119, D122)`() = blocking {
         val f = start("1.4.0")
         val to = requireNotNull(repo.updateFor(f.enrollment.id))
-        to.version shouldBe "1.14.0"
+        to.version shouldBe "1.15.0"
         val facts = ChallengeFactsProvider(db, EquipmentRepository(db, OutboxWriter(db), TelemetryWriter(db, OutboxWriter(db), ctx, EventRegistry.bundled()), ctx, SyncScheduler({ error("off") }, SyncConfig(), enabled = false)), { CatalogRepository.bundled().doc }, params, { Instant.ofEpochMilli(now) })
         val today = LocalDate.parse("2026-10-20")
         val preview = MigrationPreviews.preview(
@@ -244,15 +244,15 @@ class ChallengeRepositoryTest {
         )
         now += 60_000
         val out = repo.migrate(f.enrollment.id, to, preview)
-        out.folded.def.version shouldBe "1.14.0"
+        out.folded.def.version shouldBe "1.15.0"
         val row = db.enrollments().get(f.enrollment.id)!!
-        row.definition_version shouldBe "1.14.0"
-        row.definition_id shouldBe ChallengeLibrary.idOf("oap", "1.14.0").toString()
-        db.challengeEvents().forEnrollment(f.enrollment.id).last().let { it.event_type to it.definition_version } shouldBe (EventTypes.MIGRATED to "1.14.0")
+        row.definition_version shouldBe "1.15.0"
+        row.definition_id shouldBe ChallengeLibrary.idOf("oap", "1.15.0").toString()
+        db.challengeEvents().forEnrollment(f.enrollment.id).last().let { it.event_type to it.definition_version } shouldBe (EventTypes.MIGRATED to "1.15.0")
         repo.updateFor(f.enrollment.id) shouldBe null
         // A fresh repository folds the stored events across both versions to the same state.
         val g = make().folded(f.enrollment.id)
-        g.def.version shouldBe "1.14.0"
+        g.def.version shouldBe "1.15.0"
         g.enrollment.fold_generation shouldBe 0
         StateJson.hash(g.state) shouldBe row.state_hash
     }
