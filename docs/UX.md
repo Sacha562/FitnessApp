@@ -3369,8 +3369,8 @@ See 10.9.
 ### 16.12 Warnings list sheet (`sheet.notes`)
 
 All current warnings for the screen's scope, sorted like `ui.warndisplay`; each row expands to its
-Why; "Dismiss" per row (enforced SAFETY rows have none). A dismissed row leaves the list for the snooze
-period of 19.6 (D126). Opened from the "N more notes" row.
+Why; "Dismiss" on every row, enforced SAFETY rows included (D131: the clamp stays, only the note goes). A
+dismissed row leaves the list for the snooze period of 19.6 (D126). Opened from the "N more notes" row.
 
 ### 16.13 Finish sheet (`sheet.finish`)
 

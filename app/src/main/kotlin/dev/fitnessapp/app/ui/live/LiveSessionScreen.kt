@@ -1033,7 +1033,7 @@ private fun NotesSheet(notes: List<Warning>, vm: LiveSessionViewModel, onDismiss
             notes.forEach { w ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(vm.warningText(w), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).clickable { onWhy(w) })
-                    if (!w.enforced) LinkButton("Dismiss", { vm.dismissWarning(w) })
+                    LinkButton("Dismiss", { vm.dismissWarning(w) }) // D131: every note, enforced SAFETY included
                 }
             }
         }

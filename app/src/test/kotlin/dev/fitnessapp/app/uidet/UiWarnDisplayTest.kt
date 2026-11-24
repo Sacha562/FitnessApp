@@ -72,6 +72,23 @@ class UiWarnDisplayTest {
     }
 
     @Test
+    fun `a dismissed enforced SAFETY note leaves the list until the snooze ends, keeping its dot (D131)`() {
+        val enforced = w("WE-S2", Severity.SAFETY, 0.2, enforced = true)
+        show(listOf(enforced)).notes.single().ruleId shouldBe "WE-S2"
+        show(listOf(enforced), mapOf("WE-S2|e" to Dismissal(now.minusSeconds(60), 0.2))).let { r ->
+            r.safety.shouldBeEmpty()
+            r.notes.shouldBeEmpty()
+            r.moreNotes shouldBe 0
+            r.markers["e"] shouldBe WarnMarker.MUTED_DOT
+        }
+        val old = mapOf("WE-S2|e" to Dismissal(now.minusSeconds(29L * 86_400), 0.2))
+        show(listOf(enforced), old).notes.single().ruleId shouldBe "WE-S2"
+        // A worse cap comes back inside the snooze.
+        show(listOf(w("WE-S2", Severity.SAFETY, 0.3, enforced = true)), mapOf("WE-S2|e" to Dismissal(now.minusSeconds(60), 0.2)))
+            .notes.single().magnitude shouldBe 0.3
+    }
+
+    @Test
     fun useMineMarker() {
         val r = show(listOf(w("WE-P2", Severity.WARN, 0.5)), useMine = setOf("WE-P2|e"))
         r.banner.shouldBeNull()

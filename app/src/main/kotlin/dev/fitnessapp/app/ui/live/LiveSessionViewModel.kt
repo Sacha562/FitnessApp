@@ -1291,10 +1291,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     fun warningName(w: Warning): String = seIdOf(w.entity)?.let { id -> _ui.value.items.firstOrNull { it.se.id == id }?.ex?.nameEn }
         ?: w.entity.substringAfter(':').let { id -> c.catalog.byId(id)?.nameEn ?: id.replace('_', ' ') }
 
-    /** SAFETY notices are acknowledged, advisory ones dismissed (snoozed, UX 19.5); both are `warning_dismissed`. */
+    /**
+     * SAFETY notices are acknowledged, advisory and enforced SAFETY notes dismissed (snoozed, UX 19.5, D131); all are
+     * `warning_dismissed`.
+     */
     fun dismissWarning(w: Warning) {
         val key = UiWarnDisplay.key(w.ruleId, w.entity)
-        if (w.severity == dev.fitnessapp.algo.prescription.warnings.Severity.SAFETY) acknowledged += key
+        if (w.severity == dev.fitnessapp.algo.prescription.warnings.Severity.SAFETY && !w.enforced) acknowledged += key
         else dismissals = dismissals + (key to Dismissal(java.time.Instant.now(), w.magnitude))
         emit(
             "warning_dismissed", seIdOf(w.entity),

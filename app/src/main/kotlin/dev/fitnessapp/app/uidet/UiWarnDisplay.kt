@@ -29,7 +29,8 @@ data class WarnDisplayResult(
  * notices are always visible; an enforced SAFETY (the engine already clamped its own output) needs no action and goes
  * to the list with a dot. INFO never makes a banner; WARN and STRONG need `ui.warndisplay.min_magnitude`, and a
  * dismissal snoozes any non-SAFETY note, out of the banner and the list, for `ui.warndisplay.snooze_d` days unless the
- * magnitude grew by `ui.warndisplay.worsen_factor`; an acknowledged SAFETY notice leaves the list as well (D126).
+ * magnitude grew by `ui.warndisplay.worsen_factor`; an acknowledged SAFETY notice leaves the list as well (D126), and a
+ * dismissed enforced one is snoozed like an advisory note (D131).
  */
 object UiWarnDisplay {
     fun key(ruleId: String, entity: String) = "$ruleId|$entity"
@@ -62,6 +63,11 @@ object UiWarnDisplay {
             val cur = markers[entity]
             if (cur == null || m.ordinal > cur.ordinal) markers[entity] = m
         }
+        // D126: a dismissed note is snoozed out of the banner and the list alike, unless it grew by the worsen factor.
+        fun snoozed(k: String, v: Warning): Boolean {
+            val d = dismissals[k] ?: return false
+            return Duration.between(d.at, now).toDays() < snoozeD && v.magnitude < d.magnitude * (1.0 + worsen)
+        }
         for (v in warnings) {
             val k = key(v.ruleId, v.entity)
             if (v.severity == Severity.SAFETY) {
@@ -70,7 +76,8 @@ object UiWarnDisplay {
                     k in acknowledged && !v.enforced -> mark(v.entity, WarnMarker.MUTED_DOT)
                     v.enforced -> {
                         mark(v.entity, WarnMarker.MUTED_DOT)
-                        listOnly += v
+                        // D131: an enforced note is dismissable like an advisory one; the clamp itself stays.
+                        if (!snoozed(k, v)) listOnly += v
                     }
                     else -> safety += v
                 }
@@ -81,9 +88,8 @@ object UiWarnDisplay {
                 continue
             }
             mark(v.entity, if (v.severity == Severity.INFO) WarnMarker.MUTED_DOT else WarnMarker.AMBER_DOT)
-            // D126: a dismissed note is snoozed out of the banner and the list alike, INFO and small ones included.
-            val d = dismissals[k]
-            if (d != null && Duration.between(d.at, now).toDays() < snoozeD && v.magnitude < d.magnitude * (1.0 + worsen)) continue
+            // D126: INFO and small notes included.
+            if (snoozed(k, v)) continue
             if (v.severity == Severity.INFO || v.magnitude < minMag) {
                 listOnly += v
                 continue
