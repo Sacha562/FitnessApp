@@ -329,6 +329,38 @@ class SessionRepositoryTest {
     }
 
     @Test
+    fun `add or remove sets never goes below the sets done, ends at it and reopens above it (D132)`() = blocking {
+        setUpGym()
+        val ex = catalog.exercises.first { it.loadMode == "bodyweight" && it.measure == "reps" && it.laterality == "bilateral" }
+        val sid = sessions.start(params)
+        val seId = sessions.addExercise(sid, ex)
+        val p = equipment.loadables(ex, LoadMode.BODYWEIGHT, null, params).second.single()
+        sessions.setSets(seId, 5)
+        db.sessionExercises().get(seId)!!.planned_sets shouldBe 5
+        for (i in 1..2) {
+            now += 60_000
+            sessions.logSet(
+                LogSetCommand(sid, seId, catalog.idOf(ex), i, "both", "working", p, 10, null, 2.0, false, null, false, emptyList(), null, null, null, null, now, emptyMap()),
+            )
+        }
+        sessions.setSets(seId, 1)
+        db.sessionExercises().get(seId)!!.let {
+            it.planned_sets shouldBe 2
+            it.status shouldBe "done"
+            (it.completed_at != null) shouldBe true
+        }
+        sessions.setSets(seId, 4)
+        db.sessionExercises().get(seId)!!.let {
+            it.planned_sets shouldBe 4
+            it.status shouldBe "active"
+            it.completed_at shouldBe null
+        }
+        db.events().exportAll().filter { it.event_type == "override_applied" }.map {
+            Json.parseToJsonElement(it.payload).jsonObject.let { o -> o["from"]!!.jsonPrimitive.content + ">" + o["to"]!!.jsonPrimitive.content }
+        } shouldBe listOf("3>5", "5>2", "2>4")
+    }
+
+    @Test
     fun `a load-mode switch or a stack change re-plans an exercise without working sets (D80)`() = blocking {
         setUpGym()
         val sid = sessions.start(params)

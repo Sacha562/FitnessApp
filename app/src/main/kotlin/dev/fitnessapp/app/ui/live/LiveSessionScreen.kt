@@ -151,6 +151,7 @@ private sealed interface Sheet {
     data class Swap(val seId: String, val reason: String?, val trigger: String) : Sheet
     data class SwapSearch(val seId: String, val reason: String?) : Sheet
     data class End(val seId: String) : Sheet
+    data class Sets(val seId: String) : Sheet
     data object Finish : Sheet
     data object Pain : Sheet
     data object Keypad : Sheet
@@ -290,6 +291,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                     "skip" -> sheet = Sheet.Skip(card.item.se.id)
                                     "swap" -> sheet = Sheet.Swap(card.item.se.id, null, "user")
                                     "end" -> sheet = Sheet.End(card.item.se.id)
+                                    "sets" -> sheet = Sheet.Sets(card.item.se.id)
                                     "pain" -> sheet = Sheet.Pain
                                     "stack" -> sheet = Sheet.Stack
                                 }
@@ -299,8 +301,15 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         }
                         Spacer(Modifier.height(2.dp))
                     }
-                    // The log row is pinned in the thumb zone (P3, D9); it waits while a rest is counting down.
-                    ui.card?.let { card -> if (ui.rest?.state != "running" && card.attempt == null) LogRow(card, vm) }
+                    // The log row is pinned in the thumb zone (P3, D9); it waits while a rest is counting down, when only
+                    // a warm-up card's "Skip warm-up" shows (D132).
+                    ui.card?.let { card ->
+                        when {
+                            card.attempt != null -> {}
+                            ui.rest?.state != "running" -> LogRow(card, vm)
+                            else -> SkipWarmupRow(card, vm)
+                        }
+                    }
                 }
             }
             UndoBar(ui, vm)
@@ -349,6 +358,9 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                 vm.saveStack(unit, start, step, max)
                 sheet = null
             }
+        }
+        is Sheet.Sets -> ui.items.firstOrNull { it.se.id == s.seId }?.let { item ->
+            SetsDialog(item.planned, minOf(MAX_SETS, maxOf(1, item.workingDone)), onDismiss = { sheet = null }) { n -> sheet = null; vm.setSets(s.seId, n) }
         }
         Sheet.RuleUndo -> AlertDialog(
             onDismissRequest = { sheet = null },
@@ -962,10 +974,10 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
         when {
             card.warmup -> {
                 PrimaryButton("Done", { guarded { vm.log(control = "done") } }, Modifier.fillMaxWidth(), height = 64.dp)
-                // D104 (5): one tap to the working sets (the menu's "Log working sets"); a challenge warm-up item is the work.
+                // D104 (5): one tap to the working sets; a challenge warm-up item is the work.
                 if (!card.item.warmupItem) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        LinkButton(if (card.item.generatedWarmupsLeft > 1) "Skip warm-ups" else "Skip warm-up", { guarded { vm.setWarmup(false) } })
+                        LinkButton(skipWarmupLabel(card), { guarded { vm.setWarmup(false) } })
                     }
                 }
             }
@@ -1003,6 +1015,43 @@ private fun LogRow(card: Card, vm: LiveSessionViewModel) {
         }
     }
 }
+
+private fun skipWarmupLabel(card: Card) = if (card.item.generatedWarmupsLeft > 1) "Skip warm-ups" else "Skip warm-up"
+
+/**
+ * D132: while the rest before a warm-up counts down, the warm-up card's "Skip warm-up" shows in place of the log row;
+ * it switches the card to the working sets and leaves the rest running. It ignores taps for 500 ms after it appears,
+ * since it shows where the Done button was (P5).
+ */
+@Composable
+private fun SkipWarmupRow(card: Card, vm: LiveSessionViewModel) {
+    if (!card.warmup || card.item.warmupItem) return
+    val shownAt = remember(card.slotKey) { AppClock.nowMs() }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        LinkButton(skipWarmupLabel(card), { if (AppClock.nowMs() - shownAt >= 500) vm.setWarmup(false) })
+    }
+}
+
+/** "Add/remove sets" (D132): the planned working sets, from the sets done (at least 1) to [MAX_SETS]. */
+@Composable
+private fun SetsDialog(planned: Int, min: Int, onDismiss: () -> Unit, onSet: (Int) -> Unit) {
+    var n by remember { mutableStateOf(planned.coerceIn(min, MAX_SETS)) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Working sets") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StepperRow(value = "$n " + if (n == 1) "set" else "sets", secondary = if (n == planned) "planned" else "planned $planned",
+                    onMinus = { n = (n - 1).coerceAtLeast(min) }, onPlus = { n = (n + 1).coerceAtMost(MAX_SETS) })
+                if (min > 1 && n == min) Text("$min done: the exercise ends.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSet(n) }) { Text("OK") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+private const val MAX_SETS = 10
 
 /** An engine suggestion in the rest area (UX 11.10): Keep is the default; nothing changes until Apply. */
 @Composable
@@ -1058,14 +1107,11 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, be
     val se = card.item.se
     DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
         if (vm.canSwap(se.id)) DropdownMenuItem(text = { Text("Swap") }, onClick = { onDismiss(); onAction("swap") })
-        if (card.item.workingDone == 0) DropdownMenuItem(text = { Text("Skip") }, onClick = { onAction("skip") })
+        // D132: no warm-up switch, Remove (Skip covers it) or Move up / down (drag on the Schedule view).
+        if (card.item.workingDone == 0) DropdownMenuItem(text = { Text("Skip exercise") }, onClick = { onAction("skip") })
         if (vm.canDoLater(se.id)) DropdownMenuItem(text = { Text("Do later") }, onClick = { onDismiss(); vm.doLater(se.id) })
-        DropdownMenuItem(text = { Text("Add a set") }, onClick = { onDismiss(); vm.addSet(se.id) })
-        DropdownMenuItem(text = { Text(if (card.warmup) "Log working sets" else "Log a warm-up set") }, onClick = { onDismiss(); vm.setWarmup(!card.warmup) })
+        DropdownMenuItem(text = { Text("Add/remove sets") }, onClick = { onAction("sets") })
         if (card.item.workingDone > 0) DropdownMenuItem(text = { Text("End exercise") }, onClick = { onAction("end") })
-        if (card.item.sets.isEmpty()) DropdownMenuItem(text = { Text("Remove") }, onClick = { onDismiss(); vm.remove(se.id) })
-        DropdownMenuItem(text = { Text("Move up") }, onClick = { onDismiss(); vm.move(se.id, up = true) })
-        DropdownMenuItem(text = { Text("Move down") }, onClick = { onDismiss(); vm.move(se.id, up = false) })
         card.item.ex.allowedLoadModes.map(LoadMode::of).filter { it != card.mode && it != LoadMode.ASSISTED_ORDINAL }.forEach { m ->
             val label = when (m) {
                 LoadMode.BODYWEIGHT -> "Bodyweight only"

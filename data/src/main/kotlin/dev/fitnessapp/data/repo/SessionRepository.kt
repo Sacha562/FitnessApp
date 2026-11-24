@@ -763,11 +763,29 @@ class SessionRepository(
         EventDraft(type = "exercise_removed", payload = mapOf("exercise_id" to JsonPrimitive(e.exercise_id)))
     }
 
-    /** Add a set (C63): one more set with the targets of the last one. */
-    suspend fun addSet(sessionExerciseId: String) = exerciseEvent(sessionExerciseId) { e, _ ->
+    /**
+     * "Add/remove sets" (C63, D132): the planned working sets become [count], never fewer than the working sets done
+     * (an L+R pair is one) nor fewer than 1. A count equal to the sets done ends the exercise as done; a higher count
+     * reopens a done exercise. Added sets take the targets of the last one.
+     */
+    suspend fun setSets(sessionExerciseId: String, count: Int) = exerciseEvent(sessionExerciseId) { e, _ ->
+        val working = db.setLogs().bySession(e.session_id).filter { it.session_exercise_id == e.id && it.set_kind != "warmup" }
+        val done = working.distinctBy { it.set_index to it.side }.sumOf { if (it.side == "both") 2 else 1 } / 2
         val from = e.planned_sets ?: 0
-        writeExercise(e.copy(planned_sets = from + 1, status = if (e.status == "done") "active" else e.status, completed_at = null))
-        EventDraft(type = "override_applied", payload = mapOf("field" to JsonPrimitive("sets"), "from" to JsonPrimitive(from), "to" to JsonPrimitive(from + 1)))
+        val to = maxOf(count, done, 1)
+        val finished = done > 0 && to <= done
+        writeExercise(
+            e.copy(
+                planned_sets = to,
+                status = when {
+                    finished -> "done"
+                    e.status == "done" -> "active"
+                    else -> e.status
+                },
+                completed_at = if (finished) (e.completed_at ?: ctx.nowMs()) else null,
+            ),
+        )
+        EventDraft(type = "override_applied", payload = mapOf("field" to JsonPrimitive("sets"), "from" to JsonPrimitive(from), "to" to JsonPrimitive(to)))
     }
 
     /** Reorders the session's exercises to [orderedIds]; [deferred] marks a do-later move (UI-05). */

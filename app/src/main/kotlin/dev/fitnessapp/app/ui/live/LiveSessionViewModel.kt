@@ -1511,11 +1511,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         return viewModelScope.launch { c.sessionRepository.end(seId, reason) }
     }
 
-    fun remove(seId: String) = viewModelScope.launch { c.sessionRepository.remove(seId) }
-
-    fun addSet(seId: String) = viewModelScope.launch {
-        c.sessionRepository.addSet(seId)
-        focusOverride = seId
+    /** "Add/remove sets" (D132): the exercise keeps focus unless the new count ends it. */
+    fun setSets(seId: String, count: Int) = viewModelScope.launch {
+        val item = _ui.value.items.firstOrNull { it.se.id == seId } ?: return@launch
+        if (count == item.planned) return@launch
+        val ends = item.workingDone > 0 && count <= item.workingDone
+        focusOverride = if (ends) releaseFocus(focusOverride, seId) else seId
+        c.sessionRepository.setSets(seId, count)
     }
 
     fun canDoLater(seId: String): Boolean = UiReasonChips.canDoLater(refs(), seId)
@@ -1798,16 +1800,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
 
     fun dismissSwapUndo() = _ui.update { it.copy(swapUndo = null) }
 
-    fun move(seId: String, up: Boolean) {
-        val ids = _ui.value.items.map { it.se.id }.toMutableList()
-        val i = ids.indexOf(seId)
-        val j = if (up) i - 1 else i + 1
-        if (i < 0 || j !in ids.indices) return
-        ids[i] = ids[j].also { ids[j] = ids[i] }
-        reorder(ids, seId, via = "menu")
-    }
-
-    /** A new order of the session's exercises (UX 11.4): long-press drag (`drag`) or Move up / down (`menu`). */
+    /** A new order of the session's exercises (UX 11.4): long-press drag on the Schedule view (`drag`). */
     fun reorder(ids: List<String>, movedId: String, via: String) = viewModelScope.launch {
         if (ids == _ui.value.items.map { it.se.id }) return@launch
         focusVia = "reorder"

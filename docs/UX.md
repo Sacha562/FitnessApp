@@ -540,8 +540,8 @@ replaces it (with the rest card or the next side). A second tap within 300 ms
 sets are logged with one "Done" tap and no RIR (11.5). Test-day entries are metric observations and
 use a "Record" button; a 3RM attempt is stored with RIR 0 by protocol (14.9). Eccentric-only sets
 (negatives) are logged with the lowering seconds and the felt chips Max / Hard / OK / Easy, never with
-RIR chips (C66, 11.7.5). An "Add a set" action in
-the exercise menu adds one more set to the current exercise (11.12).
+RIR chips (C66, 11.7.5). An "Add/remove sets" action in
+the exercise menu sets the number of working sets of the current exercise (11.12, D132).
 
 ### 6.3 Reason chips (only on deviation)
 
@@ -567,7 +567,7 @@ that define them. A flag is not a reason; it is a fact about the set that rules 
 | Exercise skipped / removed / moved later | "Leg press skipped · Undo" | 6 s |
 | Suggestion applied (general item) | "Next sets: BW + 25 kg · Undo" | 6 s |
 | Challenge rule applied automatically (D14) | not a snackbar: the set card shows "Rule: pin 35 -> 40 lb · Undo" (11.10) | until the item's last set is logged |
-| Set added ("Add a set", C63) | "Set 4 added · Undo" | 6 s |
+| Sets changed ("Add/remove sets", C63, D132) | none: the dialog's Cancel is the undo | — |
 | Session abandoned | "Session abandoned, 8 sets kept · Undo" | 10 s |
 | Calendar event written (Plan it) | "Added to calendar · Undo" | 6 s |
 | Pain reported (protocol started) | "Elbow protocol started · Undo (wrong tap)" | 10 s |
@@ -1704,8 +1704,8 @@ Block labels (C34) are small muted text, shown only when the session has more th
 The add-on label has a `:` menu with "Skip" (one-tap reason sheet, `no_time` first) and the family
 choices. A general session has a single block without a label.
 
-Long-press (300 ms) on a pending row starts drag-to-reorder with a `LONG_PRESS` haptic. Accessible
-alternative: "Move up" / "Move down" in the exercise's `:` menu. Moving an item of the challenge
+Long-press (300 ms) on a pending row starts drag-to-reorder with a `LONG_PRESS` haptic. The exercise's `:`
+menu has no "Move up" / "Move down" since D132. Moving an item of the challenge
 block out of the program's order shows an advisory line once: "Order changed from the program
 (Session A does one-arm work first, while fresh)."
 
@@ -1733,11 +1733,11 @@ working exercise appear as the first rows of that exercise's card ("Warm-up BW x
 "Warm-up +12.5 kg x 2 [Done]"), also without RIR. Add-on blocks have no second general warm-up, only
 specific warm-up sets (C34).
 
-The set card's menu switches an exercise between "Log working sets" (skips its remaining warm-ups) and
-"Log a warm-up set"; the warm-up card also has a "Skip warm-ups" link under Done (D104). "Log working sets"
+The warm-up card has a "Skip warm-ups" link under Done (D104); while the rest before a warm-up counts down,
+the link shows in place of the hidden log row and leaves the rest running (D132). The set card's menu no longer
+switches between "Log working sets" and "Log a warm-up set" (D132). "Skip warm-ups"
 holds for that exercise for the rest of the session, also after leaving the screen or a restart: it is written
-as `warmup_switched` and read back when the live screen opens (D81). "Log a warm-up set" adds one warm-up: once
-it is logged the card goes back to the generated warm-ups left, else to the working sets (D104). Another exercise
+as `warmup_switched` and read back when the live screen opens (D81). Another exercise
 still starts with its own warm-ups.
 
 A generated bodyweight warm-up shows "BW" also on an exercise loaded with held plates or the belt, and "Bodyweight
@@ -1761,8 +1761,8 @@ From top to bottom:
 
 1. **Title row**: exercise name (Title L, wraps to 2 lines rather than truncating), "Set 2 of 4"
    ("Set 2 of 4 each side" for unilateral work, where an L+R pair is one set, C7), side badge for
-   unilateral work, `:` exercise menu (Swap · Skip · Do later · Add a set (C63) · End
-   exercise · Remove (only with 0 logged sets) · Move up / down · Stack setup (machines with a kg or
+   unilateral work, `:` exercise menu (D132: Swap · Skip exercise · Do later · Add/remove sets (C63) · End
+   exercise · load-mode switches · Stack setup (machines with a kg or
    lb stack, D43: unit, step, lightest and heaviest of this machine; the card rebuilds on the new
    stack, and an exercise on that machine without a working set is prescribed again on it, D80) · Note ·
    Exercise details).
@@ -2113,7 +2113,7 @@ card shows the same line for the set that triggered it):
 
 ### 11.12 Skip, occupied, do later, swap, add, remove, reorder
 
-**Skip** (exercise menu > Skip, or the add-on header Skip): opens the Skip sheet (16.4). One tap on
+**Skip** (exercise menu > Skip exercise, or the add-on header Skip): opens the Skip sheet (16.4). One tap on
 a reason completes the skip. Reasons and order come from `ui.reasonchips` (skip direction).
 
 **Occupied** inside the Skip sheet does not skip; the sheet changes to:
@@ -2142,17 +2142,18 @@ label; adding one needs a second tap "Add anyway" and is logged as `rule_overrid
 never recommends it; logging is never blocked). The consequences are the challenge engine's (a
 warning and the `rule_override` record, CHALLENGE_ENGINE section 8.5).
 
-**Add a set** (exercise menu, C63) appends one more set to the current exercise with the targets of its
-last set (for a unilateral item, one more L/R pair). Snackbar "Set 4 added · Undo". It is logged as
-`override_applied {field: sets, from, to}`. Inside a challenge block the extra set is logged as a
+**Add/remove sets** (exercise menu, C63, D132) opens a dialog with a stepper on the planned working sets (an
+L/R pair is one set), from the working sets done (at least 1) to 10. OK writes the count; an added set takes
+the targets of the last set, a count equal to the sets done ends the exercise as done, a higher count reopens a
+done exercise. It is logged as `override_applied {field: sets, from, to}`. Inside a challenge block the extra set is logged as a
 deviation from the program; the challenge rules decide whether it affects the session's validity. It
 never changes the general engine's plan for other exercises.
 
-**Remove** is offered only for exercises with no logged sets (undo). For exercises with logged sets
-the menu offers **End exercise**: logged sets stay, remaining sets are marked skipped with a reason
+**Remove** left the menu (D132): an exercise with no logged sets is skipped with a reason. For exercises
+with logged sets the menu offers **End exercise**: logged sets stay, remaining sets are marked skipped with a reason
 (one tap).
 
-**Reorder**: drag (long-press) or Move up / down (11.4).
+**Reorder**: drag (long-press) on the Schedule view (11.4, D132).
 
 ### 11.13 Rest timer
 
@@ -4333,16 +4334,16 @@ sent as null.
 | `hold_count_aloud_toggled`, `hold_ecc_pacing_started` | compact timer modes (19.9) | session_exercise | `on` / `lead_in_s` |
 | `warmup_item_done` | Done on a warm-up block item or specific warm-up set | block or set | `item_key`, `block_id` |
 | `warmup_load_mode` | "Bodyweight only" / "+ Add weight" on a warm-up card (11.5, D104) | session_exercise | `to` |
-| `warmup_switched` | "Log working sets" / "Log a warm-up set" in the set card's menu, "Skip warm-ups" (11.5, D81, D104) | session_exercise | `on`, `auto` |
+| `warmup_switched` | "Skip warm-ups" on the warm-up card or during the rest before it (11.5, D81, D104, D132) | session_exercise | `on`, `auto` |
 | `exercise_skipped` | a reason tap in the Skip sheet | session_exercise | `reason_code`, `chip_position`, `sets_done` |
 | `exercise_deferred` | Do later | session_exercise | `defer_count`, `from_position`, `to_position` |
 | `swap_sheet_shown` | Swap sheet opened | session_exercise | `from_exercise_id`, `candidates[{exercise_id, score}]`, `trigger_reason` (occupied, equipment_missing, user) |
 | `exercise_swapped` | a substitute is chosen | session_exercise | `from_exercise_id`, `to_exercise_id`, `rank`? (absent when chosen by search), `similarity`?, `via` (list, search), `reason_code`? |
 | `exercise_added` | Add exercise sheet adds an exercise | session_exercise | `exercise_id`, `source` (suggested, recent, search, catalog), `position` (end, after_current), `block_kind`, `rule_override` |
-| `exercise_removed` | Remove (no logged sets) | session_exercise | `exercise_id` |
+| `exercise_removed` | Remove (no logged sets; not offered since D132) | session_exercise | `exercise_id` |
 | `exercise_ended` | End exercise (logged sets kept) | session_exercise | `sets_done`, `sets_planned`, `reason_code` |
-| `exercise_reordered` | drag or Move up / down | session_exercise | `from_position`, `to_position`, `via` (drag, menu), `left_program_order` |
-| `override_applied` | "Add a set" (C63) or another prescription change at exercise level made by the user | session_exercise | `field` (sets, rest_s), `from`, `to`, `reason_code`? |
+| `exercise_reordered` | drag (Move up / down left the menu, D132) | session_exercise | `from_position`, `to_position`, `via` (drag, menu), `left_program_order` |
+| `override_applied` | "Add/remove sets" (C63, D132) or another prescription change at exercise level made by the user | session_exercise | `field` (sets, rest_s), `from`, `to`, `reason_code`? |
 | `rule_override` | the user does something a hard rule forbids ("Add anyway", "Log a session anyway") | session_exercise or session | `rule_id`, `enrollment_id`?, `action` (add_exercise, log_anyway), `exercise_id`? |
 | `action_undone` | Undo of a skip, remove, defer, swap, suggestion or Plan it | as the undone event | `undone_event_type`, `undone_event_id`, `ms_since` |
 | `habit_toggled` | habit row checkbox or home session finish (a notification never completes a habit, ANDROID section 17) | session | `habit_id`, `done`, `via` (checkbox, session) |
@@ -5013,7 +5014,7 @@ own accessibility guidance.
 | WCAG 1.4.1 use of colour | colour never the only carrier | every state has icon + text; warnings have a `!` or icon; goal bars have text tags | engineering-fact |
 | WCAG 1.4.4 / 1.4.10 resize and reflow | usable at 200 % text | font scale 2.0 tested (4.8, 25); 2 x 3 RIR grid; wrapping instead of truncation; no horizontal scroll | engineering-fact |
 | WCAG 2.5.8 target size | at least 24 x 24 CSS px; Android 48 x 48 dp | 48 dp minimum, 56-64 dp in session (P4) | moderate (Parhi 2006) |
-| WCAG 2.5.1 pointer gestures, 2.5.7 dragging | no path or drag-only gestures | swipe never required; drag-to-reorder has Move up / Move down actions | engineering-fact |
+| WCAG 2.5.1 pointer gestures, 2.5.7 dragging | no path or drag-only gestures | swipe never required; drag-to-reorder has no single-pointer alternative since D132 (user's choice) | engineering-fact |
 | WCAG 2.2.1 timing adjustable | time limits can be extended | undo snackbars use `AccessibilityManager.getRecommendedTimeoutMillis` (at least 6 s or 10 s, longer when the user's accessibility timeout is longer); the rest timer never forces an action | engineering-fact |
 | WCAG 3.3.1 error identification | errors in text | inline field errors with `error()` semantics and a `REJECT` haptic | engineering-fact |
 | WCAG 4.1.2 name, role, value | every control exposes them | semantics table below | engineering-fact |
