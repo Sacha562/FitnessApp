@@ -1648,7 +1648,7 @@ screen always opens on Exercise (restore, deep links, mini-bar, notification).
 
 Banners sit at the top of the exercise view. Safety banners stay in full; of the advisory banners
 (time-budget trim, rule notice, the warning banner) one shows at a time, the next after it is dismissed,
-and "N more notes" opens the notes sheet as before. The rule line with Undo (11.10) stays on its own.
+and "N more notes" opens the notes sheet as before; with no advisory banner showing it reads "N notes" (D130). The rule line with Undo (11.10) stays on its own.
 
 The navigation bar is hidden. Status bar stays visible (time, battery, the alarm icon during rest
 when `setAlarmClock` is used).
@@ -3406,7 +3406,7 @@ and, where possible, a suggested alternative. `ui.warndisplay` (19.6) decides wh
 | Surface | What | Rules |
 |---|---|---|
 | Banner | One per screen, below the header (after the safety banner, which is separate) | The highest-ranked visible warning; actions: Why, "Use suggested" (STRONG only, or when an alternative exists), dismiss |
-| "N more notes" row | under the banner | opens the Warnings list sheet |
+| "N more notes" row | under the banner | opens the Warnings list sheet; reads "N notes" ("1 note") when no banner shows above it (D130) |
 | Inline dot | an amber dot next to the affected value (a target, a goal row, a volume bar, a preference control) | always for WARN and STRONG on that entity; INFO uses a muted dot |
 | "Your choice" marker | a small text "your choice" next to the value | when the user tapped "Use mine anyway" for this rule and entity |
 | Why sheet | full explanation | from any banner, dot or marker |

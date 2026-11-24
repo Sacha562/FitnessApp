@@ -258,7 +258,11 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                         warnBanner != null -> Banner(vm.warningText(warnBanner), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(warnBanner) },
                             onClick = { sheet = Sheet.Why(vm.warningWhy(warnBanner)) })
                     }
-                    ui.warn?.moreNotes?.takeIf { it > 0 }?.let { n -> LinkButton("$n more note" + if (n == 1) "" else "s", { sheet = Sheet.Notes }) }
+                    // D130: "more" only when an advisory banner shows above the link.
+                    val bannerShown = trimNotice != null || ui.ruleNotice != null || warnBanner != null
+                    ui.warn?.moreNotes?.takeIf { it > 0 }?.let { n ->
+                        LinkButton("$n " + (if (bannerShown) "more " else "") + "note" + if (n == 1) "" else "s", { sheet = Sheet.Notes })
+                    }
                     Column(
                         Modifier.weight(1f).onGloballyPositioned { revealer.viewport = it }.verticalScroll(setScroll),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
