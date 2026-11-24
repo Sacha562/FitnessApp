@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -93,6 +92,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -153,6 +161,7 @@ private sealed interface Sheet {
     data object Notes : Sheet
     data object TimeBudget : Sheet
     data object AddOnSkip : Sheet
+    data object Reasons : Sheet
 }
 
 /**
@@ -204,47 +213,57 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
         if (intervalRunning) { withFrameNanos {}; setScroll.scrollTo(0) }
     }
 
+    // D124: two full-height views, Exercise (page 0) and Schedule (page 1); the screen always opens on Exercise.
+    val pager = rememberPagerState(pageCount = { 2 })
+    fun showPage(page: Int) { routeScope.launch { pager.animateScrollToPage(page) } }
+
     Surface(Modifier.fillMaxSize(), color = Fit.Ground) {
         Column(Modifier.safeDrawingPadding().fillMaxSize().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Header(ui, { onMinimise("chevron") }, onFinish = {
                 if (vm.openExercises().isEmpty()) vm.finish(null, onFinished) else sheet = Sheet.Finish
             }, onAdd = { sheet = Sheet.Add }, onPain = { sheet = Sheet.Pain }, onAbandon = { sheet = Sheet.Abandon },
                 onTimeBudget = { sheet = Sheet.TimeBudget })
-            trimNotice?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = { trimNotice = null }) }
-            if (ui.banner == "pain") Banner(
-                "Pain noted, exercise ended. If it hurts, stop and get it checked.",
-                BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
-            )
-            if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner)
-            ui.ruleNotice?.let { Banner(it, BannerKind.ADVISORY, action = "OK", onAction = vm::dismissRuleNotice) }
-            // UX 11.10 (D14): an in-session rule changed the remaining sets at once; Undo takes it back with a reason.
-            ui.ruleLine?.let { line -> Banner(line.text, BannerKind.ADVISORY, action = "Undo", onAction = { sheet = Sheet.RuleUndo }) }
-            // UX 17: SAFETY notices stay until acknowledged; at most one advisory banner; the rest behind "N more notes".
-            ui.warn?.let { w ->
-                w.safety.forEach { n ->
-                    Banner(vm.warningText(n), BannerKind.SAFETY, action = "OK", onAction = { vm.dismissWarning(n) },
-                        onClick = { sheet = Sheet.Why(vm.warningWhy(n)) })
-                }
-                w.banner?.let { b ->
-                    Banner(vm.warningText(b), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(b) },
-                        onClick = { sheet = Sheet.Why(vm.warningWhy(b)) })
-                }
-                if (w.moreNotes > 0) LinkButton("${w.moreNotes} more note" + if (w.moreNotes == 1) "" else "s", { sheet = Sheet.Notes })
-            }
-            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                // The list takes what it needs, at most the top 38 % (UX 4.3); the set card gets the rest.
-                val listMax = maxHeight * 0.38f
-                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (ui.items.isNotEmpty()) ExerciseList(
-                        ui, Modifier.heightIn(max = listMax), onFocus = vm::focus, onAdd = { sheet = Sheet.Add },
+            ViewSwitch(c, pager.currentPage, ui.rest, onSelect = ::showPage)
+            // Swiping is off during a hold's lead-in and hold, so "tap anywhere to stop" never changes the view (D124).
+            HorizontalPager(
+                pager, Modifier.weight(1f).fillMaxWidth(), pageSpacing = 12.dp, beyondViewportPageCount = 1,
+                userScrollEnabled = !holding, verticalAlignment = Alignment.Top,
+            ) { page ->
+                if (page == 1) {
+                    ScheduleList(
+                        ui, Modifier.fillMaxSize(), onFocus = { id -> vm.focus(id); showPage(0) }, onAdd = { sheet = Sheet.Add },
                         onReorder = { ids, moved -> vm.reorder(ids, moved, via = "drag") },
                         onAddOnSkip = { sheet = Sheet.AddOnSkip }, onAddOnFamily = { vm.setAddOnFamily(it) },
                     )
+                    return@HorizontalPager
+                }
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (ui.banner == "pain") Banner(
+                        "Pain noted, exercise ended. If it hurts, stop and get it checked.",
+                        BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner,
+                    )
+                    if (ui.banner == "log_failed") Banner("That set could not be saved. Log it again.", BannerKind.SAFETY, action = "OK", onAction = vm::dismissBanner)
+                    // UX 17: SAFETY notices stay until acknowledged.
+                    ui.warn?.safety?.forEach { n ->
+                        Banner(vm.warningText(n), BannerKind.SAFETY, action = "OK", onAction = { vm.dismissWarning(n) },
+                            onClick = { sheet = Sheet.Why(vm.warningWhy(n)) })
+                    }
+                    // UX 11.10 (D14): an in-session rule changed the remaining sets at once; Undo takes it back with a reason.
+                    ui.ruleLine?.let { line -> Banner(line.text, BannerKind.ADVISORY, action = "Undo", onAction = { sheet = Sheet.RuleUndo }) }
+                    // D124: one advisory banner at a time, the next once it is dismissed; the rest behind "N more notes".
+                    val warnBanner = ui.warn?.banner
+                    when {
+                        trimNotice != null -> Banner(trimNotice!!, BannerKind.ADVISORY, action = "OK", onAction = { trimNotice = null })
+                        ui.ruleNotice != null -> Banner(ui.ruleNotice!!, BannerKind.ADVISORY, action = "OK", onAction = vm::dismissRuleNotice)
+                        warnBanner != null -> Banner(vm.warningText(warnBanner), BannerKind.ADVISORY, action = "Dismiss", onAction = { vm.dismissWarning(warnBanner) },
+                            onClick = { sheet = Sheet.Why(vm.warningWhy(warnBanner)) })
+                    }
+                    ui.warn?.moreNotes?.takeIf { it > 0 }?.let { n -> LinkButton("$n more note" + if (n == 1) "" else "s", { sheet = Sheet.Notes }) }
                     Column(
                         Modifier.weight(1f).onGloballyPositioned { revealer.viewport = it }.verticalScroll(setScroll),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        ui.rest?.let { RestCard(c, it, ui, vm) }
+                        ui.rest?.let { RestCard(c, it, vm) }
                         ui.suggestion?.let { sg -> SuggestionCard(sg, onApply = vm::applySuggestion, onKeep = vm::keepSuggestion, onWhy = { sheet = Sheet.Why(sg.why) }) }
                         if (ui.switchHint) Pill("Switch to your right side", container = Fit.Accent, content = Fit.OnAccent)
                         val card = ui.card
@@ -270,8 +289,8 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
                                     "pain" -> sheet = Sheet.Pain
                                     "stack" -> sheet = Sheet.Stack
                                 }
-                            }, onKeypad = { sheet = Sheet.Keypad }, onPainReason = { sheet = Sheet.Pain },
-                                onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } },
+                            }, onKeypad = { sheet = Sheet.Keypad }, onWhy = { vm.why(card)?.let { sheet = Sheet.Why(it) } },
+                                onReasons = { sheet = Sheet.Reasons },
                                 marker = ui.warn?.markers?.get("session_exercise:${card.item.se.id}"), reveal = revealer::reveal)
                         }
                         Spacer(Modifier.height(2.dp))
@@ -353,6 +372,7 @@ fun LiveSessionRoute(c: AppContainer, sessionId: String, onMinimise: (via: Strin
             sheet = null
             routeScope.launch { trimNotice = vm.setTimeBudget(minutes) ?: "Time budget: $minutes min. Everything still fits." }
         }
+        Sheet.Reasons -> ui.card?.let { card -> ReasonFlagSheet(card, vm, onDismiss = { sheet = null }, onPain = { sheet = Sheet.Pain }) }
         Sheet.AddOnSkip -> ReasonSheet(c, ChipContext.SKIP, "Skip the add-on?", onDismiss = { sheet = null }) { code, _ ->
             vm.skipAddOn(code)
             sheet = null
@@ -472,23 +492,51 @@ private class ListDrag(val list: LazyListState) {
 }
 
 @Composable
-private fun ExerciseList(
+private fun EmptyAction(ui: LiveUi, onAdd: () -> Unit, onFinish: () -> Unit) {
+    Tile(radius = 28.dp, padding = PaddingValues(18.dp), spacing = 12.dp) {
+        if (ui.items.isEmpty()) {
+            Text("Add your first exercise", style = MaterialTheme.typography.titleLarge)
+            PrimaryButton("Add exercise", onAdd, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add)
+        } else {
+            Text("All exercises done", style = MaterialTheme.typography.titleLarge)
+            PrimaryButton("Finish session", onFinish, Modifier.fillMaxWidth())
+            TonalButton("Add another exercise", onAdd, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/**
+ * The schedule view (D124, UX 11.4, schedule S1): one row per open exercise with its set dots; done, ended and skipped
+ * exercises fold into one "N done" row at the top. Tap jumps; long-press drags an open row (Move up / down in the
+ * exercise menu is the accessible alternative).
+ */
+@Composable
+private fun ScheduleList(
     ui: LiveUi, modifier: Modifier, onFocus: (String) -> Unit, onAdd: () -> Unit, onReorder: (List<String>, String) -> Unit,
-    onAddOnSkip: () -> Unit = {}, onAddOnFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit = {},
+    onAddOnSkip: () -> Unit, onAddOnFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit,
 ) {
     val list = rememberLazyListState()
     val drag = remember(list) { ListDrag(list) }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    val ids = ui.items.map { it.se.id }
-    // The dropped order stays until Room has it, or the exercises themselves change.
-    LaunchedEffect(ids) { drag.order?.let { o -> if (drag.dragged == null && (o == ids || o.toSet() != ids.toSet())) drag.order = null } }
+    val openItems = ui.items.filter { it.open }
+    val openIds = openItems.map { it.se.id }
+    val closed = ui.items.filter { !it.open }
+    // The dropped order stays until Room has it, or the open exercises themselves change.
+    LaunchedEffect(openIds) { drag.order?.let { o -> if (drag.dragged == null && (o == openIds || o.toSet() != openIds.toSet())) drag.order = null } }
     val byId = ui.items.associateBy { it.se.id }
-    val shown = drag.order?.let { o -> o.mapNotNull(byId::get) + ui.items.filter { it.se.id !in o } } ?: ui.items
+    val shown = drag.order?.let { o -> o.mapNotNull(byId::get).filter { it.open } + openItems.filter { it.se.id !in o } } ?: openItems
+    var doneOpen by rememberSaveable { mutableStateOf(false) }
+    // The add-on label sits on its first open exercise.
+    val addOn = ui.addOn
+    val addOnAnchor = addOn?.let { a ->
+        val from = ui.items.indexOfFirst { it.se.id == a.firstItemId }
+        if (from < 0) null else ui.items.drop(from).firstOrNull { it.open }?.se?.id
+    }
     // The gesture outlives recompositions: it reads the latest rows and callback.
     val items by rememberUpdatedState(ui.items)
     val reorder by rememberUpdatedState(onReorder)
-    // Long-press 300 ms starts the drag (UX 11.4); Move up / down in the exercise menu is the accessible alternative.
+    // Long-press 300 ms starts the drag (UX 11.4).
     val base = LocalViewConfiguration.current
     val config = remember(base) { object : ViewConfiguration by base { override val longPressTimeoutMillis = 300L } }
     CompositionLocalProvider(LocalViewConfiguration provides config) {
@@ -496,8 +544,8 @@ private fun ExerciseList(
         modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fit.Tile).pointerInput(drag) {
             detectDragGesturesAfterLongPress(
                 onDragStart = { o ->
-                    val open = items.filter { it.open }.map { it.se.id }.toSet()
-                    if (drag.start(o.y, drag.order ?: items.map { it.se.id }) { it in open }) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    val open = items.filter { it.open }.map { it.se.id }
+                    if (drag.start(o.y, drag.order ?: open) { true }) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 },
                 onDrag = { change, d ->
                     if (drag.dragged != null) {
@@ -506,52 +554,48 @@ private fun ExerciseList(
                         if (scroll != 0f) scope.launch { list.scrollBy(scroll) }
                     }
                 },
-                onDragEnd = { drag.end()?.let { (o, id) -> reorder(o, id) } },
+                onDragEnd = {
+                    drag.end()?.let { (o, id) ->
+                        // Only open rows move: the closed ones keep their places in the session's order.
+                        val now = items
+                        if (o.size == now.count { it.open }) {
+                            val next = o.iterator()
+                            reorder(now.map { if (it.open) next.next() else it.se.id }, id)
+                        } else drag.order = null
+                    }
+                },
                 onDragCancel = drag::cancel,
             )
         },
         state = list, contentPadding = PaddingValues(6.dp),
     ) {
-        val addOn = ui.addOn
+        if (closed.isNotEmpty()) {
+            item(key = "done") {
+                Row(
+                    Modifier.animateItem().fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp))
+                        .clickable(role = Role.Button) { doneOpen = !doneOpen }.padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Check, null, tint = Fit.Accent, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("${closed.size} done", style = MaterialTheme.typography.bodyLarge, color = Fit.Muted, modifier = Modifier.weight(1f))
+                    Icon(if (doneOpen) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (doneOpen) "Hide done" else "Show done", tint = Fit.Muted)
+                }
+            }
+            if (doneOpen) items(closed, key = { it.se.id }) { item ->
+                ScheduleRow(item, current = false, Modifier.animateItem(), enabled = drag.dragged == null,
+                    onClick = if (item.se.status == "skipped") null else { { onFocus(item.se.id) } })
+            }
+        }
         items(shown, key = { it.se.id }) { item ->
-            if (addOn != null && item.se.id == addOn.firstItemId) AddOnHeader(addOn, onAddOnSkip, onAddOnFamily)
-            val current = item.se.id == ui.focusedId
-            val skipped = item.se.status == "skipped"
-            val done = item.se.status == "done"
             val dragging = item.se.id == drag.dragged
-            Row(
-                (if (dragging) Modifier.zIndex(1f).graphicsLayer { translationY = drag.shift(item.se.id) } else Modifier.animateItem())
-                    .fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).background(if (current || dragging) Fit.Raised else Fit.Tile)
+            Column(if (dragging) Modifier.zIndex(1f).graphicsLayer { translationY = drag.shift(item.se.id) } else Modifier.animateItem()) {
+                if (addOn != null && item.se.id == addOnAnchor) AddOnLabel(addOn, onAddOnSkip, onAddOnFamily)
+                ScheduleRow(
+                    item, current = item.se.id == ui.focusedId || dragging, Modifier,
                     // Disabled while dragging so lifting the finger after a long-press does not also jump to the row.
-                    .clickable(enabled = !skipped && drag.dragged == null) { onFocus(item.se.id) }.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                when {
-                    done -> Box(Modifier.size(22.dp).clip(CircleShape).background(Fit.Raised), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Check, "Done", tint = Fit.Accent, modifier = Modifier.size(14.dp))
-                    }
-                    current -> Box(Modifier.size(22.dp).clip(CircleShape).background(Fit.Accent), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(Fit.OnAccent))
-                    }
-                    else -> Box(Modifier.size(22.dp).padding(1.dp).border(2.dp, Fit.Line, CircleShape))
-                }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    item.ex.nameEn + if (item.unilateral) " (L/R)" else "",
-                    style = (if (current) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge).copy(
-                        textDecoration = if (skipped) TextDecoration.LineThrough else null,
-                    ),
-                    color = if (done || skipped) Fit.Muted else Fit.Ink,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    enabled = drag.dragged == null, onClick = { onFocus(item.se.id) },
                 )
-                val each = if (item.unilateral && !item.warmupItem) " each side" else ""
-                val tail = when {
-                    skipped -> "skipped"
-                    item.se.status == "deferred" -> "later · ${item.workingDone}/${item.planned}$each"
-                    else -> "${item.workingDone}/${maxOf(item.planned, item.workingDone)}$each"
-                }
-                Text(tail, style = MaterialTheme.typography.labelLarge, color = if (current) Fit.Ink else Fit.Muted, modifier = Modifier.padding(start = 8.dp))
             }
         }
         item(key = "add") {
@@ -568,26 +612,123 @@ private fun ExerciseList(
     }
 }
 
+/** One schedule row (D124): name on the left, one dot per set on the right ("3/8" past six sets). */
 @Composable
-private fun EmptyAction(ui: LiveUi, onAdd: () -> Unit, onFinish: () -> Unit) {
-    Tile(radius = 28.dp, padding = PaddingValues(18.dp), spacing = 12.dp) {
-        if (ui.items.isEmpty()) {
-            Text("Add your first exercise", style = MaterialTheme.typography.titleLarge)
-            PrimaryButton("Add exercise", onAdd, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add)
-        } else {
-            Text("All exercises done", style = MaterialTheme.typography.titleLarge)
-            PrimaryButton("Finish session", onFinish, Modifier.fillMaxWidth())
-            TonalButton("Add another exercise", onAdd, Modifier.fillMaxWidth())
+private fun ScheduleRow(item: ExerciseItem, current: Boolean, modifier: Modifier, enabled: Boolean, onClick: (() -> Unit)?) {
+    val skipped = item.se.status == "skipped"
+    val closed = !item.open
+    val total = maxOf(item.planned, item.workingDone)
+    val name = item.ex.nameEn + if (item.unilateral) " (L/R)" else ""
+    val state = when {
+        skipped -> "skipped"
+        closed -> "done"
+        current -> "current"
+        item.se.status == "deferred" -> "later"
+        else -> null
+    }
+    val each = if (item.unilateral && !item.warmupItem) " each side" else ""
+    val desc = listOfNotNull(name, state, if (skipped) null else "${item.workingDone} of $total sets done$each").joinToString(", ")
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) Fit.Raised else Fit.Tile)
+            .then(if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier)
+            .semantics(mergeDescendants = true) { contentDescription = desc }
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (closed && !skipped) {
+            Icon(Icons.Rounded.Check, null, tint = Fit.Muted, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(
+            name,
+            style = (if (current) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge).copy(
+                textDecoration = if (skipped) TextDecoration.LineThrough else null,
+            ),
+            color = if (closed) Fit.Muted else Fit.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+        )
+        if (item.se.status == "deferred") Text("later", style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.padding(horizontal = 8.dp))
+        when {
+            skipped -> Text("skipped", style = MaterialTheme.typography.labelLarge, color = Fit.Muted, modifier = Modifier.padding(start = 8.dp))
+            total == 0 -> {}
+            total > MAX_SET_DOTS -> Text("${item.workingDone}/$total", style = MaterialTheme.typography.labelLarge, color = if (current) Fit.Ink else Fit.Muted, modifier = Modifier.padding(start = 8.dp))
+            else -> Row(Modifier.padding(start = 8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                repeat(total) { i ->
+                    val dot = Modifier.size(10.dp).clip(CircleShape)
+                    when {
+                        i < item.workingDone -> Box(dot.background(if (closed) Fit.Muted else Fit.Accent))
+                        i == item.workingDone && current && !closed -> Box(dot.border(2.dp, Fit.Accent, CircleShape))
+                        else -> Box(dot.border(1.5.dp, Fit.Outline, CircleShape))
+                    }
+                }
+            }
         }
     }
 }
 
+/** More sets than this show as "3/8" instead of dots. */
+private const val MAX_SET_DOTS = 6
+
+/** The add-on block's label (D62, D124): muted text, with Skip and the family choice in its menu. */
+@Composable
+private fun AddOnLabel(a: AddOnUi, onSkip: () -> Unit, onFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        val family = a.family?.let { dev.fitnessapp.app.planning.SessionBuild.label(it) }
+        val text = if (a.working) "Add-on · building…" else listOfNotNull("Add-on", family, "~${a.estMin} min").joinToString(" · ")
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Fit.Muted, modifier = Modifier.weight(1f))
+        Box {
+            IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "Add-on menu", tint = Fit.Muted) }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                if (!a.working && a.choices.size > 1) a.choices.filter { it != a.family }.forEach { t ->
+                    DropdownMenuItem(text = { Text("Switch to " + dev.fitnessapp.app.planning.SessionBuild.label(t)) }, onClick = { menu = false; onFamily(t) })
+                }
+                DropdownMenuItem(text = { Text("Skip the add-on") }, onClick = { menu = false; onSkip() })
+            }
+        }
+    }
+}
+
+/** The view switch under the header (D124): Exercise · Schedule; on the schedule a running rest shows on Exercise. */
+@Composable
+private fun ViewSwitch(c: AppContainer, page: Int, rest: dev.fitnessapp.data.db.local.RestTimerEntity?, onSelect: (Int) -> Unit) {
+    val digits = rest?.takeIf { it.state == "running" }?.let { t -> (rememberRestDisplay(c, t) as? RestDisplay.Countdown)?.digits }
+    Row(Modifier.fillMaxWidth().clip(CircleShape).background(Fit.Tile).padding(2.dp).selectableGroup()) {
+        listOf("Exercise", "Schedule").forEachIndexed { i, label ->
+            val on = i == page
+            val shownDigits = digits?.takeIf { i == 0 && !on }
+            Box(
+                Modifier.weight(1f).heightIn(min = 48.dp).clip(CircleShape).background(if (on) Fit.Raised else Fit.Tile)
+                    .selectable(selected = on, role = Role.Tab, onClick = { onSelect(i) }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (shownDigits != null) "$label · $shownDigits" else label, style = MaterialTheme.typography.labelLarge,
+                    color = if (on || shownDigits != null) Fit.Accent else Fit.Muted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun rememberRestDisplay(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerEntity): RestDisplay? {
+    var display by remember(t.id) { mutableStateOf<RestDisplay?>(null) }
+    LaunchedEffect(t) {
+        while (true) {
+            display = RestTimerReducer.display(t, AppClock.nowMs(), c.device.elapsedRealtime(), c.device.bootCount())
+            delay(200)
+        }
+    }
+    return display
+}
+
 /**
- * UX 11.13.2: countdown in a depleting ring, -15 / Skip / +15 (500 ms input guard), next-set preview. In overtime the
- * card hides itself so the set card needs no Skip; the timer stays open until the next set closes it.
+ * UX 11.13.2 (D124): a compact row, the countdown in a 112 dp depleting ring beside -15 / Skip / +15 (500 ms input
+ * guard). The next set's card sits right under it, so there is no "Up next" box. In overtime the tile hides itself so
+ * the set card needs no Skip; the timer stays open until the next set closes it.
  */
 @Composable
-private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerEntity, ui: LiveUi, vm: LiveSessionViewModel) {
+private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerEntity, vm: LiveSessionViewModel) {
     var display by remember(t.id) { mutableStateOf<RestDisplay?>(null) }
     val haptic = LocalHapticFeedback.current
     var prewarned by remember(t.id) { mutableStateOf(false) }
@@ -609,35 +750,86 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
     val guard = { AppClock.nowMs() - shownAt > 500 }
     // An interval is the countdown of a timed warm-up item (D33): its name, and Done instead of Skip.
     val interval = t.purpose == "interval"
-    Tile(radius = 28.dp, padding = PaddingValues(16.dp), spacing = 12.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill(if (interval) t.label ?: "Interval" else "Rest")
-            Spacer(Modifier.weight(1f))
-            if (t.alarm_mode == "inexact") Text("Alarm may ring late", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
-        }
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            when (val d = display) {
-                is RestDisplay.Countdown -> RingTimer(d.barFraction.toFloat(), Modifier.size(196.dp)) {
-                    Text(d.digits, style = FitType.RestDigits, color = Fit.Ink)
+    val running = t.state == "running"
+    Tile(radius = 28.dp, padding = PaddingValues(12.dp), spacing = 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+                (display as? RestDisplay.Countdown)?.let { d ->
+                    RingTimer(d.barFraction.toFloat(), Modifier.size(112.dp), stroke = 8.dp) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(d.digits, style = FitType.RestDigits.copy(fontSize = 30.sp, lineHeight = 32.sp, letterSpacing = (-0.5).sp), color = Fit.Ink)
+                            Text(if (interval) t.label ?: "Interval" else "Rest", style = MaterialTheme.typography.labelMedium, color = Fit.Muted,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 14.dp))
+                        }
+                    }
                 }
-                else -> Box(Modifier.size(196.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Holding repeats in timer.longPressStepS steps (UX 11.13.6).
+                    TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 52.dp,
+                        onRepeat = { if (guard()) vm.adjustRest(-c.platformConfig.timerLongPressStepS) })
+                    TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 52.dp,
+                        onRepeat = { if (guard()) vm.adjustRest(c.platformConfig.timerLongPressStepS) })
+                }
+                TonalButton(if (interval) "Done" else "Skip", { if (guard()) vm.skipRest() }, Modifier.fillMaxWidth(), height = 52.dp)
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val running = t.state == "running"
-            // Holding repeats in timer.longPressStepS steps (UX 11.13.6).
-            TonalButton("−15 s", { if (guard()) vm.adjustRest(-c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp,
-                onRepeat = { if (guard()) vm.adjustRest(-c.platformConfig.timerLongPressStepS) })
-            TonalButton(if (interval) "Done" else "Skip", { if (guard()) vm.skipRest() }, Modifier.weight(1f), height = 64.dp)
-            TonalButton("+15 s", { if (guard()) vm.adjustRest(c.platformConfig.timerAdjustStepS) }, Modifier.weight(1f), enabled = running, height = 64.dp,
-                onRepeat = { if (guard()) vm.adjustRest(c.platformConfig.timerLongPressStepS) })
+        if (t.alarm_mode == "inexact") Text("Alarm may ring late", color = Fit.Advisory, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/**
+ * The set card's reason and flag line (D124, UX 11.6 item 6): "Why the change" (only when deviating) and "Flag"
+ * (only for exercises that define flags) open [ReasonFlagSheet]; a chosen reason or flag shows as a pill instead.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReasonFlagLine(card: Card, onOpen: () -> Unit) {
+    val chips = card.chips
+    // Without the flag the chosen reason already sets (D89).
+    val flagsShown = card.item.ex.flagsOffered.filter { it != card.impliedFlag }
+    if (chips == null && flagsShown.isEmpty()) return
+    val reasonLabel = card.reason?.let { r -> chips?.let { (it.visible + it.more).firstOrNull { ch -> ch.code == r }?.label } }
+    val chosenFlags = flagsShown.filter { it in card.flags }
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (chips != null) {
+            if (reasonLabel != null) ChipButton(reasonLabel, selected = true, onClick = onOpen) else LinkButton("Why the change", onOpen, color = Fit.Muted)
         }
-        ui.restNext?.takeIf { !interval }?.let {
-            Tile(color = Fit.Raised, radius = 18.dp, padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp), spacing = 2.dp) {
-                Text("Up next", style = MaterialTheme.typography.labelMedium, color = Fit.Muted)
-                ui.restNextTitle?.let { title -> Text(title, style = MaterialTheme.typography.titleMedium) }
-                Text(it, style = MaterialTheme.typography.bodyLarge)
+        if (flagsShown.isNotEmpty()) {
+            if (chosenFlags.isEmpty()) LinkButton("Flag", onOpen, color = Fit.Muted)
+            else chosenFlags.forEach { f -> ChipButton(flagLabel(f), selected = true, onClick = onOpen, role = Role.Button) }
+        }
+    }
+}
+
+/** The reasons and flags of the current set in a sheet (D124): optional, never blocking (UX 11.8, 11.9). */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun ReasonFlagSheet(card: Card, vm: LiveSessionViewModel, onDismiss: () -> Unit, onPain: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(SheetPadding).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            card.chips?.let { chips ->
+                Text("Why the change?", style = MaterialTheme.typography.titleLarge)
+                var more by remember { mutableStateOf(false) }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    (chips.visible + if (more) chips.more else emptyList()).forEach { chip ->
+                        ChipButton(chip.label, selected = card.reason == chip.code, onClick = {
+                            vm.chooseReason(chip.code, chip.position, chip.position >= chips.visible.size)
+                            if (chip.code == "pain") onPain()
+                        })
+                    }
+                    if (!more && chips.more.isNotEmpty()) LinkButton("More", { more = true })
+                }
             }
+            val flagsShown = card.item.ex.flagsOffered.filter { it != card.impliedFlag }
+            if (flagsShown.isNotEmpty()) {
+                Text("Flag something", style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    flagsShown.forEach { f -> ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox) }
+                }
+            }
+            TonalButton("Done", onDismiss, Modifier.fillMaxWidth())
         }
     }
 }
@@ -645,8 +837,8 @@ private fun RestCard(c: AppContainer, t: dev.fitnessapp.data.db.local.RestTimerE
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SetCard(
-    card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit, onPainReason: () -> Unit,
-    onWhy: () -> Unit, marker: WarnMarker? = null, reveal: suspend (LayoutCoordinates) -> Unit = {},
+    card: Card, vm: LiveSessionViewModel, intervalRunning: Boolean, onMenu: (String) -> Unit, onKeypad: () -> Unit,
+    onWhy: () -> Unit, onReasons: () -> Unit, marker: WarnMarker? = null, reveal: suspend (LayoutCoordinates) -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
     var menu by remember { mutableStateOf(false) }
@@ -742,34 +934,8 @@ private fun SetCard(
             }
         }
 
-        // Reason chips and flags are optional (D35): collapsed for each new set, open when one is already chosen.
-        key(card.slotKey) {
-            // Reason chips: optional, only when deviating (UX 11.8).
-            card.chips?.let { chips ->
-                MoreSection("Why the change?", initiallyOpen = card.reason != null) {
-                    var more by remember { mutableStateOf(false) }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        (chips.visible + if (more) chips.more else emptyList()).forEach { chip ->
-                            ChipButton(chip.label, selected = card.reason == chip.code, onClick = {
-                                vm.chooseReason(chip.code, chip.position, chip.position >= chips.visible.size)
-                                if (chip.code == "pain") onPainReason()
-                            })
-                        }
-                        if (!more && chips.more.isNotEmpty()) LinkButton("More", { more = true })
-                    }
-                }
-            }
-
-            // Flags offered by the exercise (C74, UX 11.9), without the one the chosen reason already sets (D89).
-            val flagsShown = item.ex.flagsOffered.filter { it != card.impliedFlag }
-            if (flagsShown.isNotEmpty()) MoreSection("Flag something", initiallyOpen = flagsShown.any { it in card.flags }) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    flagsShown.forEach { f ->
-                        ChipButton(flagLabel(f), selected = f in card.flags, onClick = { vm.toggleFlag(f) }, role = Role.Checkbox)
-                    }
-                }
-            }
-        }
+        // D124: one quiet line instead of two collapsed sections; its links open the reasons sheet, a choice shows as a pill.
+        ReasonFlagLine(card, onReasons)
 
     }
 }
@@ -1331,34 +1497,6 @@ internal val PAIN_KINDS = listOf(
     Triple("stiffness", emptyList(), "Stiffness"),
     Triple("swelling", emptyList(), "Swelling"),
 )
-
-/**
- * The add-on block's header (UX 11.4, D62): "ADD-ON · LEGS · ~15 min" with Skip, and the family chips while the block
- * has no logged set (changing one rebuilds the block). A skipped add-on shows its state only.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun AddOnHeader(a: AddOnUi, onSkip: () -> Unit, onFamily: (dev.fitnessapp.algo.planning.allocator.SessionType) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val family = a.family?.let { dev.fitnessapp.app.planning.SessionBuild.label(it).uppercase() }
-            val text = when {
-                a.status == "skipped" -> "ADD-ON · skipped"
-                a.working -> "ADD-ON · building…"
-                else -> listOfNotNull("ADD-ON", family, "~${a.estMin} min").joinToString(" · ")
-            }
-            Text(text, style = MaterialTheme.typography.labelLarge, color = Fit.Muted, modifier = Modifier.weight(1f))
-            if (a.status != "skipped") LinkButton("Skip", onSkip)
-        }
-        if (a.status != "skipped" && a.choices.size > 1) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                a.choices.forEach { t ->
-                    ChipButton(dev.fitnessapp.app.planning.SessionBuild.label(t), selected = t == a.family, onClick = { if (t != a.family) onFamily(t) }, enabled = !a.working)
-                }
-            }
-        }
-    }
-}
 
 /** The time chips again (UX 11.3): 45 / 60 / 75 / 90+, the current budget selected; a pick trims the rest of the session. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)

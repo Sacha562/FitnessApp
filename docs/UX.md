@@ -355,11 +355,12 @@ tested at font scale 1.0, 1.3 and 2.0 (section 4.8).
 | Mini-bar | 56 dp `raised` tile directly above the navigation bar |
 | Bottom sheet | `tile` colour, 28 dp top corners, drag handle 32 x 4 dp |
 
-The Live Session screen is split: the top area holds the exercise list in one tile, as tall as its rows
-but at most about 40 %, and scrolls; the rest holds the set tile or the rest tile. The log row (RIR chips,
-felt chips or the warm-up Done) is pinned below them in its own tile, so it is always in the thumb zone
-even on short screens (P3); it is hidden while a rest counts down and ignores taps for 500 ms after it
-appears for a new set (P5).
+The Live Session screen has two full-height views (D124): Exercise and Schedule, switched by a
+segmented control under the header or a horizontal swipe. The exercise view holds the set column (rest
+tile, suggestion, set tile) and, pinned below it in its own tile, the log row (RIR chips, felt chips or the
+warm-up Done), so the log row is always in the thumb zone even on short screens (P3); it is hidden while a
+rest counts down and ignores taps for 500 ms after it appears for a new set (P5). The schedule view holds
+the exercise list (11.4) in one tile.
 
 ### 4.4 Shape
 
@@ -1619,33 +1620,35 @@ data. This is the most-used screen; every rule in section 2 applies here most st
 ### 11.2 Screen structure
 
 ```
-+-------------------------------------+  -
-| v  Session A     32:10  Finish   :  |   | header 56 dp (passive + 2 actions)
-| =========------------  6 / 13 sets  |   | progress 8 dp
-| WARM-UP                       done  |   |
-| OAP · SESSION A                     |   | top area (about 40 %), scrolls:
-| v Assisted 1-arm (L/R)      3/3     |   | block headers + compact exercise
-| > Weighted pull-up          1/2     |   | list. Tap = jump; long-press =
-| o Top hold (L/R)          0/2 rnd   |   | drag to reorder
-| o 90-degree hold (L/R)      0/2     |   |
-| ADD-ON · LEGS  ~15 min       Skip   |   |
-| o Leg press                 0/2     |   |
-| + Add exercise                      |  -
-+-------------------------------------+  -
-| WEIGHTED PULL-UP   Set 2 of 2    :  |   |
-| Target BW + 22.5 kg x 4             |   |
-|   aim: 2 in reserve            (i)  |   |
-| Last  BW + 22.5 x 4 4 4 3 · 1 Oct   |   | action area (about 60 %), fixed:
-|                                     |   | current-set card, or rest card,
-|  ( - )     BW + 22.5 kg     ( + )   |   | or hold card, or block card
-|            20 + 2.5 on belt         |   |
-|  ( - )        4 reps        ( + )   |   |
-|                                     |   |
-| [ Grip slipped before last rep ]    |   |
-| Reps left in the tank?              |   |
-| [ 0 ][ 1 ][ 2 ][ 3 ][ 4 ][ 5+ ]     |   |
-+-------------------------------------+  -
+EXERCISE VIEW                            SCHEDULE VIEW
++-------------------------------------+  +-------------------------------------+
+| v  Session A          Finish     :  |  | v  Session A          Finish     :  |
+|    32:10 · 6 of 13 sets             |  |    33:40 · 7 of 13 sets             |
+| =========------------               |  | =========------------               |
+| [ Exercise ] [ Schedule ]           |  | [ Exercise 2:18 ] [ Schedule ]      |
+| WEIGHTED PULL-UP               :    |  | v 2 done                        v   |
+| ( Set 2 of 2 )                      |  | > Weighted pull-up          * * o   |
+| BW + 22.5 kg x 4 · 2 in reserve (i) |  |   Top hold (L/R)            o o o   |
+| Last  BW + 22.5 x 4 4 4 3 · 1 Oct   |  |   90-degree hold (L/R)        o o   |
+|                                     |  | Add-on · legs · ~15 min         :   |
+|  ( - )     BW + 22.5 kg     ( + )   |  |   Leg press                   o o   |
+|            20 + 2.5 on belt         |  |                                     |
+|  ( - )        4 reps        ( + )   |  |                                     |
+|        Why the change · Flag        |  |                                     |
+| Reps left in the tank?              |  |                                     |
+| [ 0 ][ 1 ][ 2 ][ 3 ][ 4 ][ 5+ ]     |  |          + Add exercise             |
++-------------------------------------+  +-------------------------------------+
 ```
+
+The two views sit side by side in a horizontal pager (D124). The segmented control "Exercise ·
+Schedule" under the progress bar switches with one tap, a horizontal swipe does the same. While a rest or
+interval counts down and the schedule is shown, the Exercise segment carries its digits. Swiping is off
+during a hold's lead-in and hold, so the "tap anywhere to stop" target never turns into a view change. The
+screen always opens on Exercise (restore, deep links, mini-bar, notification).
+
+Banners sit at the top of the exercise view. Safety banners stay in full; of the advisory banners
+(time-budget trim, rule notice, the warning banner) one shows at a time, the next after it is dismissed,
+and "N more notes" opens the notes sheet as before. The rule line with Undo (11.10) stays on its own.
 
 The navigation bar is hidden. Status bar stays visible (time, battery, the alarm icon during rest
 when `setAlarmClock` is used).
@@ -1674,25 +1677,32 @@ chips (9.4), so `time` can trim the rest of the session. It is shown once per se
 of sessions that still end more than 10 min over budget after the line was shown; a different margin
 needs a change of C63 first.
 
-### 11.4 Exercise list (top area)
+### 11.4 Exercise list (schedule view)
+
+The list is plain (D124, schedule S1): one row per exercise with the name on the left and, on the
+right, one dot per set: filled `accent` for a set done, an `accent` ring for the current set, an outline for
+a set to do. An exercise with more than six sets shows "3/8" instead of dots. There are no per-set lines
+and no hint text. Done, ended and skipped exercises fold into one "N done" row at the top, which expands
+in place.
 
 | Row state | Marker | Text | Tap |
 |---|---|---|---|
-| Done | `v` filled | name + "3/3" | expands to show the logged sets; tapping a set opens Set edit (16.14) |
-| Current | `>` primary | name + "1/2", bold | none (already current) |
-| Pending | `o` | name + "0/2" | makes it current (jump) |
-| Deferred | `o` + "later" tag | name | makes it current |
-| Skipped | strike-through, muted | name + reason ("occupied") | "Undo skip" |
-| Ended early | `v` muted | name + "2/3, pain" | expands |
-| Excluded by a rule | muted, lock icon | name + "skipped today: elbow trace" | Why (enforced safety rule, no override) |
+| Done | inside "N done"; check, muted | name + dots | makes it current |
+| Current | `raised` row | name + dots, bold | switches to the exercise view |
+| Pending | none | name + dots | makes it current and switches to the exercise view (jump) |
+| Deferred | "later" tag | name + dots | makes it current and switches |
+| Skipped | inside "N done"; strike-through, muted | name + "skipped" | none |
+| Ended early | inside "N done"; check, muted | name + dots | makes it current |
+| Excluded by a rule | inside "N done"; lock icon, muted | name + "skipped today: elbow trace" | Why (enforced safety rule, no override) |
 
-A unilateral item (name + " (L/R)") counts L+R pairs (C7), so its count reads "0/2 each side";
-a warm-up item does not carry the suffix.
+A unilateral item (name + " (L/R)") counts L+R pairs (C7), one dot per pair; a warm-up item does not
+carry the suffix.
 
-Block headers (C34): "WARM-UP", "OAP · SESSION A" (challenge block), "ADD-ON · LEGS · ~15 min"
-(general block built by `select` with the add-on capacity from `time`, the contract's allowed
-patterns and forbidden muscles). The add-on header has "Skip" (one-tap reason sheet, `no_time`
-first). A general session has a single block without a header.
+Block labels (C34) are small muted text, shown only when the session has more than one block:
+"Warm-up", "OAP · Session A" (challenge block), "Add-on · legs · ~15 min" (general block built by
+`select` with the add-on capacity from `time`, the contract's allowed patterns and forbidden muscles).
+The add-on label has a `:` menu with "Skip" (one-tap reason sheet, `no_time` first) and the family
+choices. A general session has a single block without a label.
 
 Long-press (300 ms) on a pending row starts drag-to-reorder with a `LONG_PRESS` haptic. Accessible
 alternative: "Move up" / "Move down" in the exercise's `:` menu. Moving an item of the challenge
@@ -1769,9 +1779,11 @@ From top to bottom:
 4. **Load stepper row** (if the load type has a load) and a secondary line (plate breakdown, assist
    kg, one-arm load).
 5. **Reps stepper row** (or the hold result row).
-6. **Reason chips** (only when deviating, 11.8).
-7. **Flag toggles** (only for exercises that define flags, 6.4).
-8. **Log row**: label + RIR chips (D9), or Felt chips for holds.
+6. **Reason and flag line** (D124): one muted line "Why the change · Flag", each link shown only when
+   it applies (reason chips only when deviating, 11.8; flags only for exercises that define them, 6.4).
+   A link opens a bottom sheet with the chips; a chosen reason or flag shows as a pill on the line, and
+   tapping it opens the sheet again.
+7. **Log row** (pinned below the card): label + RIR chips (D9), or Felt chips for holds.
 
 Values are prefilled by `ui.prefill` (section 19.2). A typical set therefore needs zero edits and one
 tap.
@@ -1967,7 +1979,8 @@ chips appear above the flags, ordered by `ui.reasonchips` (section 19.3):
 
 After a set is logged, a RIR at least 2 away from the target RIR also counts as a deviation; the
 optional chips then appear in the rest card for that logged set ("4 in reserve, aim 2. Why?").
-Untouched chips are logged as `none`. Chips never block logging.
+Untouched chips are logged as `none`. Chips never block logging. Since D124 the chips sit in a bottom
+sheet opened from the "Why the change" link of the card's reason and flag line (11.6 item 6), not inline.
 
 **Undo.** "Set 2 logged · Undo" for 6 s. Undo soft-deletes the row, cancels the rest timer it started,
 restores the card with the same values, and emits `set_undone`.
@@ -2153,27 +2166,23 @@ the menu offers **End exercise**: logged sets stay, remaining sets are marked sk
 
 ```
 +-------------------------------------+
-| REST · weighted pull-up   next: 2/2 |
-|                                     |
-|               2:18                  |
-| ======================--------      |
-|  [ -15 s ]   [  Skip  ]  [ +15 s ]  |
-|                                     |
-| Up next                             |
-| Weighted pull-up · 2/2              |
-| BW + 22.5 kg x 4                    |
-| Set 1: 4 reps · 2 in reserve   Undo |
-| (suggestion card, if any)           |
+|  .----.                             |
+| ( 2:18 )  [ -15 s ]    [ +15 s ]    |
+| ( Rest )  [       Skip        ]     |
+|  '----'                             |
 +-------------------------------------+
+| WEIGHTED PULL-UP   ( Set 2 of 2 ) : |   next set's card, adjustable
+| BW + 22.5 kg x 4 · 2 in reserve     |   during the rest
+| ...                                 |
 ```
 
-* Countdown in 72 sp tabular digits inside a depleting ring (an `accent` arc on a `raised` track,
-  216 dp; D31), "next: set 2 of 2" label.
-* Buttons 64 dp tall pills, tonal (not primary): -15 s, Skip, +15 s. They ignore input for 500 ms after the
-  rest card appears (input guard, P5), because they occupy the screen region where the RIR chip was
-  just tapped.
-* Next-set preview "Up next": the exercise and set count ("2/2", or "warm-up") as its title, the load and
-  reps below; last-set summary line with Undo while the snackbar window is open.
+* A compact row (D124): the countdown digits inside a 112 dp depleting ring (an `accent` arc on a
+  `raised` track), the -15 s / +15 s buttons beside it with Skip under them as 52 dp tonal pills (not primary), a
+  small "Rest" label (or the interval's name) inside the ring and the inexact-alarm note under the row. The buttons ignore
+  input for 500 ms after the tile appears (input guard, P5).
+* No "Up next" box: the next set's card sits directly under the tile (its exercise, set count, load and
+  reps), so the user can change the next set during the rest. The last-set summary with Undo is the undo
+  bar at the bottom while its window is open.
 * Slot for an engine suggestion card or a challenge "Rule: ... · Undo" line (11.10) and for post-log
   reason chips (11.8).
 * Tapping the countdown toggles **focus mode**: a full-screen dark rest view with the same digits and
