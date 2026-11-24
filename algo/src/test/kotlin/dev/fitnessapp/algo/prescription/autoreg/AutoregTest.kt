@@ -94,6 +94,15 @@ class AutoregTest {
         r.proposed.map { it.targetReps } shouldBe listOf(10, 8)
         r.proposed.map { it.rirPred } shouldBe listOf(2.16, 2.38)
         r.card shouldBe true
+        // D129: with the rest refit setting the reps, the same proposal shows no card.
+        val refit = Autoreg.evaluate(
+            AutoregInput(legInput.copy(estimate = RxEstimate(legInput.estimate!!.lPred, 0.0016)), plan,
+                Sse.prepare(listOf(legSet(1, 10, 5.0, lowerBound = true)), FACTS, RirCal.initial(params), params), restRefit = true),
+            params.fork(),
+        )
+        refit.kind shouldBe SuggestionKind.REPS
+        refit.card shouldBe false
+        ("autoreg.reps.refit" in refit.trace) shouldBe true
     }
 
     @Test
@@ -293,7 +302,8 @@ class AutoregTest {
     @Test
     fun `a short rest lowers the next target and the planned rest keeps it (D69)`() {
         val logged = legSet(1, 10, 2.0)
-        Autoreg.restTarget(restInput(logged), 60.0, params.fork())!!.let { it.targetReps shouldBe 8; it.rirPred shouldBe 0.86 }
+        // D129: after 60 s even 8 at 125 kg leaves 0.86 in reserve, below q* 2 - 1: the next lighter stack step instead.
+        Autoreg.restTarget(restInput(logged), 60.0, params.fork())!!.let { it.wSys shouldBe 120.0; it.targetReps shouldBe 9 }
         Autoreg.restTarget(restInput(logged), 150.0, params.fork()).shouldBeNull()
     }
 
@@ -305,5 +315,52 @@ class AutoregTest {
             it.rirPred shouldBe 2.9
         }
         Autoreg.restTarget(restInput(legSet(1, 12, 3.0), rule = true), 150.0, params.fork()).shouldBeNull()
+    }
+
+
+    /** Lateral raise of 2026-11-24 (D129): DOUBLE 24 kg x 7 / 10 / 10 / 10 (the mixed-load step), 8-10 at q* 1, M_use 29.19. */
+    private val lat24Input = latInput.copy(sets = 4, estimate = RxEstimate(Det.ln(29.19), 0.00122581126247))
+    private val lat24Plan = Rx.modelMode(lat24Input, params.fork()).let { m ->
+        m.copy(mode = RxMode.DOUBLE, sets = m.sets.mapIndexed { n, s -> s.copy(wSys = 24.0, targetReps = listOf(7, 10, 10, 10)[n]) })
+    }
+
+    private fun lat24(vararg sets: Triple<Double, Int, Double>) = AutoregInput(
+        lat24Input, lat24Plan,
+        Sse.prepare(sets.mapIndexed { n, (w, reps, rir) ->
+            set("t$n", "2026-11-24T20:3${2 + 4 * n}:00Z", w, reps, rir, exercise = lateral.exerciseId, loadMode = LoadMode.EXTERNAL,
+                restBeforeS = if (n > 0) 165.0 else null)
+        }, FACTS + (lateral.exerciseId to lateral), RirCal.initial(params), params),
+    )
+
+    @Test
+    fun `below the range the next set moves to the lighter load that reaches r_lo, without a card (D129)`() {
+        // 24 kg x 7 at RIR 0: at 24 kg even 8 reps would end 2.6 below the aim after the planned rest.
+        val next = Autoreg.restTarget(lat24(Triple(24.0, 7, 0.0)), 108.0, params.fork())!!
+        next.setIndex shouldBe 2
+        next.wSys shouldBe 20.0
+        (next.targetReps!! in 8..10) shouldBe true
+        next.rirPred!! shouldBe (1.0 plusOrMinus 0.5)
+        // The evaluation after the set still shows no card: the drop is the refit's, not a suggestion.
+        Autoreg.evaluate(lat24(Triple(24.0, 7, 0.0)), params.fork()).card shouldBe false
+    }
+
+    @Test
+    fun `a set that leaves the range reachable keeps the planned load (D129)`() {
+        // 24 kg x 9 at RIR 3 shows far more capacity: 8 or more at 24 kg still reach the aim, so the load stays.
+        val next = Autoreg.restTarget(lat24(Triple(24.0, 9, 3.0)), 180.0, params.fork())
+        (next == null || next.wSys == 24.0) shouldBe true
+    }
+
+    @Test
+    fun `a back-off set goes back up to the top load when the last set shows the range there, never above it (D129)`() {
+        // Plan 24 kg x 7, then back-off sets at 16 kg; 20 kg x 11 at RIR 2 shows 8 at 20 kg with more than q* in reserve.
+        val plan = lat24Plan.copy(sets = lat24Plan.sets.mapIndexed { n, s -> if (n == 0) s else s.copy(wSys = 16.0, targetReps = 10) })
+        val logged = Sse.prepare(listOf(set("u1", "2026-11-24T20:32:51Z", 24.0, 7, 0.0, exercise = lateral.exerciseId, loadMode = LoadMode.EXTERNAL),
+            set("u2", "2026-11-24T20:36:29Z", 20.0, 11, 2.0, exercise = lateral.exerciseId, loadMode = LoadMode.EXTERNAL, restBeforeS = 164.4)),
+            FACTS + (lateral.exerciseId to lateral), RirCal.initial(params), params)
+        val next = Autoreg.restTarget(AutoregInput(lat24Input, plan, logged), 168.5, params.fork())!!
+        next.setIndex shouldBe 3
+        next.wSys shouldBe 20.0
+        (next.targetReps!! in 8..10) shouldBe true
     }
 }

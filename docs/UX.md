@@ -1773,9 +1773,13 @@ From top to bottom:
    above the generic load-jump cap, D13 / C45). When a challenge in-session rule changed the remaining
    sets, a "Rule: ... · Undo" line sits directly under the target line (11.10). While the next working set of a
    general exercise waits untouched, its reps follow the last set and the rest so far (ALGORITHMS B13.7, D69) and the
-   line ends with "· for 3:30 rest"; the load never changes this way.
+   line ends with "· for 3:30 rest". The load never goes up this way; when even the bottom of the range would end more than
+   a rep under the aim at the planned load, the target moves to the next lighter load where it does not and the line ends with
+   "· lighter for 3:30 rest"; a set planned lighter than the first goes back up (never above the first set's load)
+   when the last set shows the range fits there, "· heavier for 3:30 rest" (D129).
 3. **Last line** (muted): the last performance of this exercise, same set index first:
-   "Last BW + 22.5 x 4 4 4 3 · Thu 1 Oct".
+   "Last BW + 22.5 x 4 4 4 3 · Thu 1 Oct"; when the load changed between sets each load is named,
+   "Last 12 x 6, 10 x 10 10 · Wed 18 Nov" (D129).
 4. **Load stepper row** (if the load type has a load) and a secondary line (plate breakdown, assist
    kg, one-arm load).
 5. **Reps stepper row** (or the hold result row).
@@ -2021,7 +2025,8 @@ for them and shows no suggestion card.
 Trigger and amount are the engine's (C16: first set |ΔRIR| >= 2, comparing the bias-corrected reported
 RIR with the model-predicted RIR (C57); two consecutive sets with the same sign >= 1; >= 2 reps short;
 TOO_EASY / TOO_HARD reason; clamp -8 % / +6 %; hysteresis 1.5 RIR; at most one suggestion per exercise
-per session, general items only, C46). The UI renders it inside the rest card:
+per session, general items only, C46). A proposal that changes only the reps shows no card: the rest refit already
+sets the next set's reps (B13.7, D129). The UI renders it inside the rest card:
 
 ```
 | SUGGESTION                      (i) |

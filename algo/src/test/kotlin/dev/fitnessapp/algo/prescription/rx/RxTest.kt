@@ -123,7 +123,10 @@ class RxTest {
         step(listOf(8, 8, 7), listOf(8, 8, 7)).double!!.targets shouldBe listOf(8, 8, 8)
         val adv = step(listOf(8, 8, 8), listOf(8, 8, 8))
         adv.sets.first().wSys shouldBe 55.0
-        adv.trace shouldBe listOf("rx.double.advance")
+        // D129: the start at 55 kg puts set 3 under the 6-8 range, so it stays at 50 kg; sets 1-2 climb at 55 kg.
+        adv.trace shouldBe listOf("rx.double.advance", "rx.backoff")
+        adv.sets.map { it.wSys to it.targetReps }.last() shouldBe (50.0 to 7)
+        adv.sets[1].wSys shouldBe 55.0
     }
 
     @Test
@@ -147,6 +150,30 @@ class RxTest {
         second.sets.first().wSys shouldBe 20.0
         second.double shouldBe DoubleState(listOf(9, 6, 5), 0)
         second.capsApplied.single().type shouldBe "double_one_step"
+    }
+
+    @Test
+    fun `D129 the ladder climbs on the sets at the top load and the later sets are planned lighter`() {
+        // 18 November: 24 kg x 6 (target 6), then 20 kg x 10 and 20 kg x 10 against targets 6 / 4 at 24 kg (lateral raise).
+        val s = scheme(SchemeKind.RANGE, 8, 10, 1.0, strength = false)
+        val pairs = (1..10).map { it * 2.0 } + (6..25).map { it * 4.0 }
+        fun rx(loads: List<Double>) = Rx.prescribe(
+            input(s, 4, 108.0, pairs, 29.19, 25.71, isolation = true,
+                last = RxLast(24.0, listOf(6, 10, 10), listOf(1.0, 2.0, 2.0), targets = listOf(6, 4), loads = loads),
+                flags = RxFlags(usedDoubleThisMeso = true)),
+            params,
+        )
+        val out = rx(listOf(24.0, 20.0, 20.0))
+        out.mode shouldBe RxMode.DOUBLE
+        out.trace shouldBe listOf("rx.double.top_sets", "rx.double.step", "rx.backoff")
+        // Set 1 climbs at 24 kg (6 -> 7); sets 2-4 cannot reach 8 there, so they go lighter, inside the range:
+        // 20 kg x 8, then 18 kg x 9 and x 8 as the model sees the fatigue.
+        out.sets.first().let { it.wSys shouldBe 24.0; it.targetReps shouldBe 7 }
+        out.sets.drop(1).map { it.wSys to it.targetReps } shouldBe listOf(20.0 to 8, 18.0 to 9, 18.0 to 8)
+        out.sets.drop(1).all { it.rirPred!! >= 0.0 } shouldBe true
+        // Before D129 the 20 kg sets read as 24 kg ones: 7 / 10 / 10 / 10 at 24 kg.
+        // A lighter first set leaves no set at the top load: the ladder starts again.
+        rx(listOf(20.0, 24.0, 20.0)).trace.first() shouldBe "rx.double.mixed_loads"
     }
 
     @Test

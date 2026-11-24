@@ -1504,6 +1504,9 @@ State: the previous `rx.prescription` output for this exercise and side holds `t
 ```
 valid exposure: not a deload or probe; all planned sets logged; no set with reason pain, grip_failure,
                 occupied, equipment_missing or no_time
+mixed (D129): planned sets of it below L_last (back-off sets). The ladder below then reads only the leading sets at
+                L_last (trace rx.double.top_sets), never advances, and the later sets take ladderStart(L_last)[j];
+                no leading set at L_last: ladderStart(L_last) (trace rx.double.mixed_loads)
                 (sets added with "Add a set", C63, have no planned target: they are estimator observations,
                  but the ladder and the fail counter look only at the planned sets j = 1..S; OI-A23)
 success_j = reps_j >= targets_j and q_true_j >= q* - rx.double_success_rir_tol (0.5)
@@ -1524,6 +1527,10 @@ ladderStart(L): with a model: t_j = clamp(roundHalfDown(cap_j - q*), 1, r_hi) vi
                 without a model: t_j = r_lo for all j
 ladderStep(a):  t = a capped at top; find the first j >= 2 with t_j < t_{j-1}: t_j += 1;
                 if none and t_1 < top: t_1 += 1
+back-off (D129, MODEL and DOUBLE, RANGE): for j >= 2 in order, a set under the range at its load (DOUBLE: t_j < r_lo;
+                MODEL: cap_j - r_lo < q* - autoreg.safety_drop_margin) moves to the heaviest lighter loadable with
+                cap_j(w) - r_lo >= q* - autoreg.safety_drop_margin, reps in [r_lo, r_hi] closest to q* (ties: fewer);
+                none: unchanged. FAT-1 carries each set's load and reps into the next (trace rx.backoff).
 ```
 
 Gravl's example with `r_hi = 8`: 8-7-6 -> 8-8-6 -> 8-8-7 -> 8-8-8 -> next load step (each step about 1-2 %
@@ -1975,7 +1982,10 @@ elif |rir_next(w_cur) - q*| >= autoreg.hysteresis_rir (1.5):   load change allow
 else:                                                          no load change; RANGE: each remaining set, in order,
                                                                takes the reps inside the range whose predicted RIR is
                                                                closest to q* (ties: closer to the current target), if
-                                                               that moves it toward q* by >= 0.5 (D69; was +/-1)
+                                                               that moves it toward q* by >= 0.5 (D69; was +/-1);
+                                                               D129: no card for a general item, whose rest refit
+                                                               (B13.7) sets the reps (trace autoreg.reps.refit);
+                                                               delta_ex and the shadow are kept
 bounds for a load change (relative to the planned load w_plan of the exercise):
    w_new <= w_plan * (1 + autoreg.delta_max)                          // +6 %
    w_new >= w_plan * (1 + autoreg.delta_min)                          // -8 %, except a safety drop
@@ -2030,7 +2040,8 @@ observed-capacity safety drop from the lateral raise of 2026-11-06).
 
 While the next working set of a general (non-challenge) RANGE item in mode MODEL or DOUBLE waits and the user has not
 touched its card, its reps follow the last logged set and the rest taken since. It is not a suggestion (no card, not
-counted toward the limit, C57) and never changes the load:
+counted toward the limit, C57) and never goes above the item's top planned load; it changes the load only below the
+range or back up from a back-off set (D129):
 
 ```
 cap_next = cap(w_next, m_obs, k) * (1 - F_next)
@@ -2039,11 +2050,21 @@ cap_next = cap(w_next, m_obs, k) * (1 - F_next)
   F_next = FAT-1 step from the last set's F with its reps and n_eff over the actual rest so far (B7.3)
 reps     = the reps inside [r_lo, r_hi] with cap_next - reps closest to q* (ties: closer to the current target, then
            fewer), kept unless that moves the predicted RIR toward q* by >= 0.5
+below the range (D129): if cap_next(w_next) - r_lo < q* - autoreg.safety_drop_margin (1.0)   // AUTO-1's safety line
+           w   = the heaviest loadable below w_next with cap_next(w) - r_lo >= q* - autoreg.safety_drop_margin
+           reps = the reps inside [r_lo, r_hi] with cap_next(w) - reps closest to q* (ties: fewer)
+           no such load: the rule above at w_next (AUTO-1's stop advice covers the rest, B13.4)
+back up (D129): if w_next < w_top (the heaviest planned load of the item today, i.e. w_next is RX-1's back-off):
+           w   = the heaviest loadable in (w_next, w_top] with cap_next(w) - r_lo >= q*, if any (checked first)
 ```
 
-The phone refits every 15 s; the card shows "for M:SS rest" after the aim while a refitted target is shown. The
+The lighter target is applied like any refit (no card); the card reads "· lighter for M:SS rest". The next refit
+starts again from the planned load, so a longer rest can bring the planned load back.
+
+The phone refits when the next set's card appears and then every 15 s; the card shows "for M:SS rest" after the aim while a refitted target is shown. The
 logged set keeps the target it was done against as `planned_reps`. A RULE item, a warm-up, the first working set and
-a touched card are never refitted. `AutoregTest` (stronger set after the planned rest, short rest, third set, RULE).
+a touched card are never refitted. `AutoregTest` (stronger set after the planned rest, short rest, third set, RULE,
+D129's lateral raise of 24 November: 24 kg x 7 at RIR 0 moves set 2 to 20 kg).
 
 <a id="stall-1"></a>
 ## B14. `stall` (STALL-1): stall, regression, tiers and the global deload trigger (C13, C15)

@@ -22,7 +22,8 @@ data class RxEstimate(val lPred: Double, val pLL: Double)
 
 /**
  * The last valid exposure of this exercise and side (B9.2; for a deload week, the last non-deload one). [wLast] is the
- * heaviest working `w_sys`; [targets] and [ext] the DOUBLE state of its prescription; [failed] per B9.7.
+ * heaviest working `w_sys`; [targets] and [ext] the DOUBLE state of its prescription; [failed] per B9.7; [loads] the
+ * `w_sys` per set in the order of [reps] (empty: unknown, read as all at [wLast]).
  */
 data class RxLast(
     val wLast: Double,
@@ -33,6 +34,7 @@ data class RxLast(
     val targets: List<Int>? = null,
     val ext: Int = 0,
     val failed: Boolean = false,
+    val loads: List<Double> = emptyList(),
 )
 
 /** A RULE item as materialised by the challenge (B9.11): per-set reps or seconds, its system load, RIR target, rest. */
@@ -193,13 +195,51 @@ object Rx : DeclaresParams {
         val model = model(input, input.scheme, input.sets, input.flags.delta, true, params)
         val w = model.sets.first().wSys!!
         val harder = input.loadables.filter { it > w + EPS }.minOrNull()
-        if (harder == null) return model.copy(trace = model.trace + "rx.top_of_equipment")
+        if (harder == null) return backoff(input, model.copy(trace = model.trace + "rx.top_of_equipment"), params)
         val cap1 = RepCurve.cap(w, model.mUse!!, input.k) * (1.0 - input.f1)
         val rps = Grid.rep(repsPerStep(w, harder, input.k, cap1))
         if (input.flags.usedDoubleThisMeso || rps > params.double("rx.coarse_reps_per_step")) {
-            return double(input, input.last?.wLast ?: w, rps, params)
+            return backoff(input, double(input, input.last?.wLast ?: w, rps, params), params)
         }
-        return model.copy(repsPerStep = rps)
+        return backoff(input, model.copy(repsPerStep = rps), params)
+    }
+
+    /**
+     * D129: a set after the first that falls under the range at its load (DOUBLE: its ladder target below `r_lo`; MODEL:
+     * `r_lo` predicted below `q* - autoreg.safety_drop_margin`, the line of AUTO-1's safety drop and of the rest refit,
+     * B13.7) moves to the heaviest lighter loadable where `r_lo` is predicted at or above that line,
+     * with the reps in the range closest to q* there; the first set keeps its load (DOUBLE's climbing set). RANGE
+     * items in MODEL or DOUBLE with a model only; FAT-1 carries each set's reps and capacity into the next.
+     */
+    private fun backoff(input: RxInput, out: RxOutput, params: ParamView): RxOutput {
+        val s = out.scheme
+        if (s.kind != SchemeKind.RANGE || out.sets.size < 2 || (out.mode != RxMode.MODEL && out.mode != RxMode.DOUBLE)) return out
+        val m = mPred(input, params) ?: return out
+        if (out.sets.any { it.wSys == null || it.targetReps == null }) return out
+        val margin = params.double("autoreg.safety_drop_margin")
+        val kc = Fatigue.constants(params)
+        var f = input.f1
+        var changed = false
+        val sets = out.sets.mapIndexed { j, set ->
+            val capAt = { w: Double -> RepCurve.cap(w, m, input.k) * (1.0 - f) }
+            val reaches = { w: Double -> capAt(w) - s.rLo >= s.qStar - margin - 1e-9 }
+            var w = set.wSys!!
+            var r = set.targetReps!!
+            // DOUBLE: the ladder's own target under r_lo (the model may lag the ladder's evidence); MODEL: the prediction.
+            val below = if (out.mode == RxMode.DOUBLE) r < s.rLo else !reaches(w)
+            if (j >= 1 && below) {
+                input.loadables.filter { it < w - EPS }.sortedDescending().firstOrNull(reaches)?.let { lighter ->
+                    val c = capAt(lighter)
+                    w = lighter
+                    r = (s.rLo..s.rHi).minWith(compareBy<Int> { Grid.rep(kotlin.math.abs(c - it - s.qStar)) }.thenBy { it })
+                    changed = true
+                }
+            }
+            val cap = capAt(w)
+            if (j < out.sets.size - 1) f = Fatigue.step(f, r.toDouble(), cap, rest(input.restsS, j), kc)
+            set.copy(wSys = Grid.kg(w), targetReps = r, rirPred = Grid.rep(cap - r))
+        }
+        return if (changed) out.copy(sets = sets, trace = out.trace + "rx.backoff") else out
     }
 
     /** MODEL alone (B9.5) with the cap band, without the mode selection of B9.4 (fixtures GF-RX-01 to 04). */
@@ -421,7 +461,11 @@ object Rx : DeclaresParams {
         var load = lLast
         var ext = last?.ext ?: 0
         val prevTargets = last?.targets
-        val validPrev = last != null && last.valid && !last.probe && prevTargets != null && kotlin.math.abs(last.wLast - lLast) < EPS
+        // D129: when planned sets of the last exposure were lighter than L_last (back-off sets), the ladder climbs on the
+        // leading sets done at L_last only and never advances; with none at L_last it starts again.
+        val mixed = last != null && prevTargets != null && last.loads.take(prevTargets.size).any { it < last.wLast - EPS }
+        val nTop = if (mixed) last!!.loads.take(prevTargets!!.size).takeWhile { it >= last.wLast - EPS }.size else prevTargets?.size ?: 0
+        val validPrev = last != null && last.valid && !last.probe && prevTargets != null && kotlin.math.abs(last.wLast - lLast) < EPS && nTop > 0
         var targets: List<Int>
         if (input.flags.failCounter >= params.int("stall.fail_threshold") && last != null) {
             val limit = last.wLast * (1.0 - params.double("stall.fail_load_cut"))
@@ -433,15 +477,17 @@ object Rx : DeclaresParams {
         } else if (!validPrev) {
             targets = ladderStart(input, load, s.rHi, params)
             ext = 0
-            trace += "rx.double.start"
+            trace += if (mixed) "rx.double.mixed_loads" else "rx.double.start"
         } else {
+            val prevT = prevTargets!!.take(nTop)
             val top = s.rHi + ext
             val success = last!!.reps.indices.map { j ->
-                j < prevTargets!!.size && last.reps[j] >= prevTargets[j] &&
+                j < prevT.size && last.reps[j] >= prevT[j] &&
                     (last.qTrue.getOrNull(j) ?: Double.NEGATIVE_INFINITY) >= s.qStar - params.double("rx.double_success_rir_tol")
             }
-            val planned = last.reps.take(prevTargets!!.size)
-            if (planned.size == prevTargets.size && planned.all { it >= top } && success.take(prevTargets.size).all { it }) {
+            val planned = last.reps.take(prevT.size)
+            if (mixed) trace += "rx.double.top_sets"
+            if (!mixed && planned.size == prevT.size && planned.all { it >= top } && success.take(prevT.size).all { it }) {
                 val next = input.loadables.filter { it > load + EPS }.minOrNull()
                 val start = next?.let { ladderStart(input, it, s.rHi, params) }
                 val entry = if (input.highRisk) s.rLo else s.rLo - params.int("rx.double_entry_below")
@@ -457,16 +503,19 @@ object Rx : DeclaresParams {
                     targets = ladderStep(planned, s.rHi + ext)
                     trace += "rx.double.extend"
                 } else {
-                    targets = prevTargets
+                    targets = prevT
                     trace += "rx.double.range_too_narrow"
                 }
-            } else if (success.take(prevTargets.size).all { it } && planned.size == prevTargets.size) {
+            } else if (success.take(prevT.size).all { it } && planned.size == prevT.size) {
                 targets = ladderStep(planned, top)
                 trace += "rx.double.step"
             } else {
-                targets = planned.ifEmpty { prevTargets }
+                targets = planned.ifEmpty { prevT }
                 trace += "rx.double.repeat"
             }
+            // D129: the sets after the top-load ones take the model's ladder start at this load (with fatigue), so a
+            // back-off set rejoins the top load once the model puts it in the range.
+            if (mixed && targets.size < input.sets) targets = targets + ladderStart(input, load, s.rHi, params).drop(targets.size)
         }
         targets = (targets + List(maxOf(0, input.sets - targets.size)) { targets.lastOrNull() ?: s.rLo }).take(input.sets)
         return RxOutput(

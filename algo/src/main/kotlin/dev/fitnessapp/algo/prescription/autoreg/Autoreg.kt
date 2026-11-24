@@ -38,6 +38,8 @@ data class AutoregInput(
     val cardsShown: Int = 0,
     val techniqueEvents: Int = 0,
     val ruleItem: Boolean = false,
+    /** D129: the phone refits this item's next set during the rest (B13.7), so a reps-only proposal shows no card. */
+    val restRefit: Boolean = false,
 )
 
 /**
@@ -297,17 +299,19 @@ object Autoreg : DeclaresParams {
         if (!changed) return keep.copy(trigger = trigger, rirNextCur = Grid.rep(rirCur.first()), hysteresis = hyst, trace = trace + "autoreg.keep")
         val rirNew = predicted(wCur, mNew, k, reps, fNext, remaining, kc)
         trace += "autoreg.reps"
+        if (i.restRefit) trace += "autoreg.reps.refit"
         val sets = remaining.mapIndexed { n, r -> r.copy(targetReps = reps[n], wSys = Grid.kg(wCur)) }
         return AutoregResult(deltaEx, deltas, trigger, SuggestionKind.REPS, null, sets.withPred(rirNew), wCur, Grid.kg(wCur),
-            Grid.rep(rirCur.first()), Grid.rep(rirNew.first()), hyst, !i.ruleItem, trace)
+            Grid.rep(rirCur.first()), Grid.rep(rirNew.first()), hyst, !i.ruleItem && !i.restRefit, trace)
     }
 
     /**
      * The next set's target from the last set and the rest taken so far (B13.7, D69): at the next set's planned load, the
      * reps inside the range whose predicted RIR is closest to q*. The capacity comes from the last logged set itself
      * (its fresh-equivalent reps `n_fresh` at its load, B6.3, through the rep curve), carried by FAT-1 over [restS]
-     * seconds of actual rest; without a usable last set, from `M_use * exp(delta_ex)`. Null when the target stays (no
-     * gain of at least MIN_GAIN) or the item is not a general RANGE prescription with a planned load.
+     * seconds of actual rest; without a usable last set, from `M_use * exp(delta_ex)`. When even `r_lo` at the planned load is
+     * predicted below `q* - autoreg.safety_drop_margin`, the heaviest lighter loadable where it is not (D129; never heavier). Null when the
+     * target stays (no gain of at least MIN_GAIN) or the item is not a general RANGE prescription with a planned load.
      */
     fun restTarget(i: AutoregInput, restS: Double, params: ParamView): RxSet? {
         val s = i.plan.scheme
@@ -326,7 +330,24 @@ object Autoreg : DeclaresParams {
         val m = if (wLast != null && nFresh != null && nFresh > 0.0) wLast * (1.0 + (nFresh - 1.0) / k)
         else mUse * Det.exp(evaluate(i.copy(cardsShown = Int.MAX_VALUE), params).deltaEx)
         val f = Fatigue.step(last.fatigueF, last.repsDone, q.nEff, restS, Fatigue.constants(params))
-        val cap = RepCurve.cap(w, m, k) * (1.0 - f)
+        val capAt = { wl: Double -> RepCurve.cap(wl, m, k) * (1.0 - f) }
+        val cap = capAt(w)
+        // D129: when even r_lo at the planned load is predicted below q* - autoreg.safety_drop_margin (AUTO-1's safety
+        // drop line), the heaviest lighter loadable where it is not, with the reps in the range closest to q* there.
+        val margin = params.double("autoreg.safety_drop_margin")
+        val reaches = { wl: Double -> capAt(wl) - s.rLo >= s.qStar - margin - 1e-9 }
+        // A set planned lighter than the session's top load (RX-1's back-off) goes back up, at most to that top load,
+        // when the last set shows r_lo there at q* itself (the margin is the hysteresis between going down and up).
+        val wTop = i.plan.sets.mapNotNull { it.wSys }.maxOrNull() ?: w
+        val heavier = if (w < wTop - EPS) {
+            i.rx.loadables.filter { it > w + EPS && it <= wTop + EPS }.sortedDescending().firstOrNull { capAt(it) - s.rLo >= s.qStar - 1e-9 }
+        } else null
+        val moved = heavier ?: if (!reaches(w)) i.rx.loadables.filter { it < w - EPS }.sortedDescending().firstOrNull(reaches) else null
+        if (moved != null) {
+            val c = capAt(moved)
+            val reps = (s.rLo..s.rHi).minWith(compareBy<Int> { Grid.rep(kotlin.math.abs(c - it - s.qStar)) }.thenBy { it })
+            return next.copy(targetReps = reps, wSys = Grid.kg(moved), rirPred = Grid.rep(c - reps))
+        }
         val current = next.targetReps ?: s.rHi
         val best = bestReps(current, s.rLo, s.rHi, s.qStar) { r -> cap - r }
         return if (best == current) null else next.copy(targetReps = best, rirPred = Grid.rep(cap - best))

@@ -180,7 +180,7 @@ object Prescribing {
         return RxLast(
             wLast = sets.maxOf { it.wSys!! }, reps = sets.map { it.reps }, qTrue = q, valid = valid(e, params),
             probe = prev?.probe ?: false, targets = prev?.targets ?: sets.mapNotNull { it.targetReps }.takeIf { it.size == sets.size },
-            ext = prev?.ext ?: 0, failed = failed(e),
+            ext = prev?.ext ?: 0, failed = failed(e), loads = sets.map { it.wSys!! },
         )
     }
 

@@ -168,6 +168,8 @@ data class Card(
     val calibration: Boolean = false,
     /** The rest the target was refitted for (B13.7, D69), in seconds; null while the target is the plan's. */
     val restFitS: Int? = null,
+    /** D129: the refitted load against the planned one: -1 lighter, +1 heavier (back to the top load), 0 the same. */
+    val restFitLoad: Int = 0,
     val calibRir: Int? = null,
     val calibExtra: Int = 0,
 ) {
@@ -309,7 +311,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     private val accepted = java.util.concurrent.ConcurrentHashMap<String, Map<Int, RxTarget>>()
 
     /** B13.7 (D69): the next set's target refitted to its last set and the rest so far, by "seId|side|workIndex". */
-    private val restFit = java.util.concurrent.ConcurrentHashMap<String, Pair<RxTarget, Int>>()
+    private val restFit = java.util.concurrent.ConcurrentHashMap<String, Pair<dev.fitnessapp.data.engine.RestFit, Int>>()
 
     /** AUTO-1's last verdict per session exercise; WE-S5 reads its next-set prediction. */
     private val verdicts = java.util.concurrent.ConcurrentHashMap<String, Suggestion>()
@@ -471,6 +473,10 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             )
         }
         updateNotification(snap.s, card)
+        // D129 (3): refit a new next working set at once instead of at the next 15 s tick.
+        if (card != null && card.slotKey != old?.slotKey && !card.warmup && card.workIndex >= 2) {
+            viewModelScope.launch { runCatching { refitForRest() } }
+        }
     }
 
     /** Keeps the draft while the slot is the same; otherwise builds a fresh prefilled card. */
@@ -522,9 +528,13 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val workIndex = item.working.count { it.side == side } + 1
         val adjusted = if (warmup) null else accepted["${item.se.id}|$side"]?.get(workIndex)
         val planTarget = if (warmup) null else adjusted ?: item.rx?.target(workIndex, side)
-        // B13.7 (D69): the reps refitted to the last set and the rest so far, at the same load.
-        val fit = planTarget?.let { t -> restFit["${item.se.id}|$side|$workIndex"]?.takeIf { it.first.wSys == t.wSys } }
-        val rxTarget = fit?.let { (f, _) -> planTarget.copy(targetReps = f.targetReps, rirPred = f.rirPred) } ?: planTarget
+        // B13.7 (D69): the reps refitted to the last set and the rest so far, from the planned load; D129: a lighter load
+        // when even the bottom of the range falls under the aim there.
+        val fit = planTarget?.let { t -> restFit["${item.se.id}|$side|$workIndex"]?.takeIf { it.first.plannedWSys == t.wSys } }
+        val rxTarget = fit?.let { (f, _) -> planTarget.copy(targetReps = f.set.targetReps, rirPred = f.set.rirPred, wSys = f.set.wSys) } ?: planTarget
+        val fitW = fit?.first?.set?.wSys
+        val planW = planTarget?.wSys
+        val fitLoad = if (fitW == null || planW == null) 0 else if (fitW < planW - LOAD_EPS_KG) -1 else if (fitW > planW + LOAD_EPS_KG) 1 else 0
         // D104 (3), (4): the next generated warm-up keeps its target also with the switch on.
         val warmupTarget = nextWarmupTarget(item, warmup)
         val engine = (rxTarget?.let { t -> SetValues(mode, t.wSys?.let { w -> nativeAt(points, mode, w) }, t.targetReps, null) }
@@ -595,6 +605,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
             rxTarget = rxTarget, warmupTarget = warmupTarget, workIndex = workIndex,
             calibration = !warmup && side == "both" && item.rx?.calibrationSet == workIndex,
             restFitS = fit?.second,
+            restFitLoad = fitLoad,
             probePickReps = rxTarget?.takeIf { item.rx?.probe == true && workIndex == 1 && it.wSys == null }?.let { t ->
                 (t.targetReps ?: 0) + Math.round(t.rir ?: 0.0).toInt()
             },
@@ -716,16 +727,19 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val sid = history.maxByOrNull { it.sessionStart }?.sessionId ?: return null
         val sets = history.filter { it.sessionId == sid }.sortedWith(compareBy({ it.setIndex }, { it.side }))
         val first = sets.first()
-        val load = when (mode) {
-            LoadMode.ASSISTED_MACHINE -> first.values.native?.let { "Pin " + Numbers.num(it) + " lb" }
+        fun load(s: HistorySet) = when (mode) {
+            LoadMode.ASSISTED_MACHINE -> s.values.native?.let { "Pin " + Numbers.num(it) + " lb" }
             LoadMode.BODYWEIGHT -> "BW"
-            LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> first.values.native?.let { "BW + " + Numbers.num(it) }
-            else -> first.values.native?.let { Numbers.num(it) }
+            LoadMode.BODYWEIGHT_PLUS_EXTERNAL -> s.values.native?.let { "BW + " + Numbers.num(it) }
+            else -> s.values.native?.let { Numbers.num(it) }
         }
-        val perf = sets.joinToString(" ") { s -> (if (s.side != "both") s.side else "") + (s.values.reps?.toString() ?: s.values.holdS?.let { Numbers.num(it, 1) + "s" } ?: "") }
+        fun perf(l: List<HistorySet>) = l.joinToString(" ") { s -> (if (s.side != "both") s.side else "") + (s.values.reps?.toString() ?: s.values.holdS?.let { Numbers.num(it, 1) + "s" } ?: "") }
+        // D129: consecutive sets at one load form a group; each group names its load ("12 × 6, 10 × 10 10").
+        val groups = ArrayList<MutableList<HistorySet>>()
+        for (s in sets) if (groups.isNotEmpty() && load(groups.last().last()) == load(s)) groups.last() += s else groups += mutableListOf(s)
         val date = first.sessionStart.atZone(java.time.ZoneId.of("Europe/Amsterdam")).toLocalDate()
             .format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.ENGLISH))
-        return "Last " + listOfNotNull(load, perf).joinToString(" × ") + " · " + date
+        return "Last " + groups.joinToString(", ") { g -> listOfNotNull(load(g.first()), perf(g)).joinToString(" × ") } + " · " + date
     }
 
     private fun emit(
@@ -1117,9 +1131,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         val slot = rxSlot(item) ?: return
         val key = "${item.se.id}|${card.side}|${card.workIndex}"
         val t = c.prescriptions.restTarget(slot, card.side, restS.toDouble())
-        val before = restFit[key]?.first?.targetReps
-        if (t == null) restFit.remove(key) else restFit[key] = RxTarget(t.setIndex, t.side, t.targetReps, t.rir, t.wSys, t.rirPred, t.restS) to restS
-        if (t?.targetReps != before) last?.let { rebuild(it) }
+        val before = restFit[key]?.first?.set?.let { it.targetReps to it.wSys }
+        if (t == null) restFit.remove(key) else restFit[key] = t to restS
+        if (t?.set?.let { it.targetReps to it.wSys } != before) last?.let { rebuild(it) }
     }
 
     /** AUTO-1 after a working set (B13, UI-06): both sides after an L+R pair; the first card that fires is shown. */
@@ -1872,7 +1886,7 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
         }
         val reps = t.targetReps?.let { "× $it" }
         val aim = t.rir?.let { " · aim: ${Numbers.num(it, 1)} in reserve" } ?: ""
-        val fit = card.restFitS?.let { " · for ${it / 60}:${"%02d".format(it % 60)} rest" } ?: ""
+        val fit = card.restFitS?.let { (when (card.restFitLoad) { -1 -> " · lighter for "; 1 -> " · heavier for "; else -> " · for " }) + "${it / 60}:${"%02d".format(it % 60)} rest" } ?: ""
         return "Target " + listOfNotNull(load, reps).joinToString(" ") + aim + fit
     }
 

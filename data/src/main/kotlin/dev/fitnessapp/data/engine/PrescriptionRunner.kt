@@ -109,6 +109,9 @@ data class Prescription(
         sets.firstOrNull { it.setIndex == setIndex && it.side == side } ?: sets.firstOrNull { it.setIndex == setIndex && it.side == "both" }
 }
 
+/** A rest refit (B13.7, D129): the refitted next set and the planned load it started from. */
+data class RestFit(val set: RxSet, val plannedWSys: Double?)
+
 /**
  * AUTO-1's verdict after a logged working set (B13): [result] with the stored `autoreg.suggestion` id when a card is
  * shown, and whether the exercise is `high_risk` (WE-S5 reads `rir_next_cur`).
@@ -282,7 +285,8 @@ class PrescriptionRunner(
         val cards = db.recommendations().byScope(AUTOREG_KIND, scope)
             .count { Json.parseToJsonElement(it.outputs).jsonObject["card"]?.jsonPrimitive?.booleanOrNull == true }
         val delta = deltaToday(session, se, sessionSets, feelingGood)
-        val input = base.copy(deltaStart = delta, cardsShown = cards)
+        // D129: a general item (no challenge item scheme) gets the rest refit, so its reps-only proposals show no card.
+        val input = base.copy(deltaStart = delta, cardsShown = cards, restRefit = slot.item == null)
         val r = Autoreg.evaluate(input, params.fork())
         val highRisk = ex.highRiskIn(se.load_mode)
         if (!r.card) return@withLock Suggestion(null, se.id, sideKey, r, highRisk)
@@ -305,17 +309,20 @@ class PrescriptionRunner(
 
     /**
      * The next set's target of [slot] on [side] after [restS] seconds of rest since its last logged set (B13.7, D69):
-     * the reps at the planned load from that set's own result, or null when the target stays. Not stored: the logged
-     * set keeps the target it was done against as its `planned_reps`.
+     * the reps at the planned load from that set's own result, or a lighter load when even `r_lo` falls under the aim
+     * there (D129), or null when the target stays. Not stored: the logged set keeps the target it was done against as
+     * its `planned_reps`.
      */
-    suspend fun restTarget(slot: RxSlot, side: String, restS: Double): RxSet? = mutex.withLock {
+    suspend fun restTarget(slot: RxSlot, side: String, restS: Double): RestFit? = mutex.withLock {
         val se = db.sessionExercises().get(slot.sessionExerciseId) ?: return@withLock null
         val session = db.sessions().get(se.session_id) ?: return@withLock null
         val ex = catalog.byId(se.exercise_id)?.takeIf(::eligible) ?: return@withLock null
         val sideKey = if (se.side_mode == "bilateral") "both" else side
         val sessionSets = sessionLogged(session)
         val base = autoregInput(session, se, ex, slot, sideKey, sessionSets) ?: return@withLock null
-        Autoreg.restTarget(base.copy(deltaStart = deltaToday(session, se, sessionSets, false)), restS, params.fork())
+        val t = Autoreg.restTarget(base.copy(deltaStart = deltaToday(session, se, sessionSets, false)), restS, params.fork())
+            ?: return@withLock null
+        RestFit(t, base.plan.sets.firstOrNull { it.setIndex == t.setIndex }?.wSys)
     }
 
     /** The session's logged sets as the estimators read them (every exercise, for FAT-1's carry-over). */
