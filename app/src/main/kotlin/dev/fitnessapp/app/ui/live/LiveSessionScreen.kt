@@ -1107,10 +1107,12 @@ private fun ExerciseMenu(open: Boolean, card: Card, vm: LiveSessionViewModel, be
     val se = card.item.se
     DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
         if (vm.canSwap(se.id)) DropdownMenuItem(text = { Text("Swap") }, onClick = { onDismiss(); onAction("swap") })
-        // D132: no warm-up switch, Remove (Skip covers it) or Move up / down (drag on the Schedule view).
+        // D132: no "Log working sets" (the warm-up card's Skip link does it), Remove (Skip covers it) or Move up / down
+        // (drag on the Schedule view).
         if (card.item.workingDone == 0) DropdownMenuItem(text = { Text("Skip exercise") }, onClick = { onAction("skip") })
         if (vm.canDoLater(se.id)) DropdownMenuItem(text = { Text("Do later") }, onClick = { onDismiss(); vm.doLater(se.id) })
         DropdownMenuItem(text = { Text("Add/remove sets") }, onClick = { onAction("sets") })
+        if (!card.warmup) DropdownMenuItem(text = { Text("Log a warm-up set") }, onClick = { onDismiss(); vm.setWarmup(true) })
         if (card.item.workingDone > 0) DropdownMenuItem(text = { Text("End exercise") }, onClick = { onAction("end") })
         card.item.ex.allowedLoadModes.map(LoadMode::of).filter { it != card.mode && it != LoadMode.ASSISTED_ORDINAL }.forEach { m ->
             val label = when (m) {

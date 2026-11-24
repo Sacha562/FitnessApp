@@ -1734,8 +1734,9 @@ working exercise appear as the first rows of that exercise's card ("Warm-up BW x
 specific warm-up sets (C34).
 
 The warm-up card has a "Skip warm-ups" link under Done (D104); while the rest before a warm-up counts down,
-the link shows in place of the hidden log row and leaves the rest running (D132). The set card's menu no longer
-switches between "Log working sets" and "Log a warm-up set" (D132). "Skip warm-ups"
+the link shows in place of the hidden log row and leaves the rest running (D132). The set card's menu has no
+"Log working sets" since D132; on a working-set card it offers "Log a warm-up set", which adds one warm-up: once
+it is logged the card goes back to the generated warm-ups left, else to the working sets (D104). "Skip warm-ups"
 holds for that exercise for the rest of the session, also after leaving the screen or a restart: it is written
 as `warmup_switched` and read back when the live screen opens (D81). Another exercise
 still starts with its own warm-ups.
@@ -1761,7 +1762,7 @@ From top to bottom:
 
 1. **Title row**: exercise name (Title L, wraps to 2 lines rather than truncating), "Set 2 of 4"
    ("Set 2 of 4 each side" for unilateral work, where an L+R pair is one set, C7), side badge for
-   unilateral work, `:` exercise menu (D132: Swap · Skip exercise · Do later · Add/remove sets (C63) · End
+   unilateral work, `:` exercise menu (D132: Swap · Skip exercise · Do later · Add/remove sets (C63) · Log a warm-up set (working-set cards) · End
    exercise · load-mode switches · Stack setup (machines with a kg or
    lb stack, D43: unit, step, lightest and heaviest of this machine; the card rebuilds on the new
    stack, and an exercise on that machine without a working set is prescribed again on it, D80) · Note ·
@@ -4334,7 +4335,7 @@ sent as null.
 | `hold_count_aloud_toggled`, `hold_ecc_pacing_started` | compact timer modes (19.9) | session_exercise | `on` / `lead_in_s` |
 | `warmup_item_done` | Done on a warm-up block item or specific warm-up set | block or set | `item_key`, `block_id` |
 | `warmup_load_mode` | "Bodyweight only" / "+ Add weight" on a warm-up card (11.5, D104) | session_exercise | `to` |
-| `warmup_switched` | "Skip warm-ups" on the warm-up card or during the rest before it (11.5, D81, D104, D132) | session_exercise | `on`, `auto` |
+| `warmup_switched` | "Skip warm-ups" on the warm-up card or during the rest before it, "Log a warm-up set" in the set card's menu (11.5, D81, D104, D132) | session_exercise | `on`, `auto` |
 | `exercise_skipped` | a reason tap in the Skip sheet | session_exercise | `reason_code`, `chip_position`, `sets_done` |
 | `exercise_deferred` | Do later | session_exercise | `defer_count`, `from_position`, `to_position` |
 | `swap_sheet_shown` | Swap sheet opened | session_exercise | `from_exercise_id`, `candidates[{exercise_id, score}]`, `trigger_reason` (occupied, equipment_missing, user) |
