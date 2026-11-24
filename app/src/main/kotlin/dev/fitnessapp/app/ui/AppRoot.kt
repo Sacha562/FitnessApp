@@ -52,7 +52,6 @@ import dev.fitnessapp.app.ui.exercises.ExerciseDetailRoute
 import dev.fitnessapp.app.ui.exercises.ExercisesRoute
 import dev.fitnessapp.app.ui.history.HistoryRoute
 import dev.fitnessapp.app.ui.history.SessionDetailRoute
-import dev.fitnessapp.app.notify.Channels
 import dev.fitnessapp.app.session.SessionService
 import dev.fitnessapp.app.ui.common.FitNavBar
 import dev.fitnessapp.app.ui.common.NavItem
@@ -111,10 +110,6 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
         val active = c.sessionRepository.observeActiveOnce()
         when (pending) {
             Routes.Target.DataSync -> push(AppKey.DataSync)
-            Routes.Target.DataSyncExport -> {
-                push(AppKey.DataSyncExport)
-                c.fgsEvent("notification_action", mapOf("notification_id" to "N-EXPORT", "channel" to Channels.APP_STATUS, "action" to "export"))
-            }
             Routes.Target.CurrentSession, null -> active?.let { a ->
                 val key = sessionKey(a)
                 if (key !in backStack) {
@@ -224,7 +219,6 @@ private fun MainNav(c: AppContainer, appVm: AppViewModel, route: MutableStateFlo
             }
             entry<AppKey.Summary> { k -> SummaryRoute(c, k.sessionId, onDone = { pop() }) }
             entry<AppKey.DataSync> { DataSyncRoute(c, onBack = { pop() }, onSignIn = { openSignIn() }) }
-            entry<AppKey.DataSyncExport> { DataSyncRoute(c, onBack = { pop() }, autoExport = true, onSignIn = { openSignIn() }) }
             entry<AppKey.SignIn> {
                 val s by appVm.state.collectAsState()
                 // Leaving the form mid-code (back) drops the half-finished aal1 session (D116).
@@ -303,7 +297,7 @@ private fun screenName(k: AppKey?, tab: Tab): String = when (k) {
     AppKey.Challenges -> "challenges"
     is AppKey.LiveSession -> "session.live"
     is AppKey.Summary -> "session.summary"
-    AppKey.DataSync, AppKey.DataSyncExport -> "you.data"
+    AppKey.DataSync -> "you.data"
     AppKey.Equipment -> "you.equipment"
     AppKey.Reliability -> "you.rest"
     AppKey.Calendars -> "you.calendars"

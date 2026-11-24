@@ -27,9 +27,6 @@ sealed interface AppKey {
     /** Create a custom exercise (UX 13.5, M3.6); [name] prefills step 4 from an empty search. */
     data class CustomExercise(val name: String) : AppKey
 
-    /** Data and sync opened from the N-EXPORT reminder: starts the monthly export right away (UX 18). */
-    data object DataSyncExport : AppKey
-
     /** Settings → Challenges: the challenges library (UX 14.1, D114). */
     data object Challenges : AppKey
 
@@ -62,7 +59,6 @@ sealed interface AppKey {
             is SessionDetail -> "session_detail:" + k.sessionId
             is ExerciseDetail -> "exercise:" + k.from + ":" + k.exerciseId
             is CustomExercise -> "custom_exercise:" + k.name
-            DataSyncExport -> "data_sync_export"
             Challenges -> "challenges"
             is ChallengeDashboard -> "challenge:" + k.enrollmentId
             is ChallengeSetup -> "challenge_setup:" + k.definitionId
@@ -85,7 +81,7 @@ sealed interface AppKey {
             s.startsWith("session_detail:") -> SessionDetail(s.removePrefix("session_detail:"))
             s.startsWith("custom_exercise:") -> CustomExercise(s.removePrefix("custom_exercise:"))
             s.startsWith("exercise:") -> s.removePrefix("exercise:").split(':', limit = 2).takeIf { it.size == 2 }?.let { ExerciseDetail(it[1], it[0]) }
-            s == "data_sync_export" -> DataSyncExport
+            s == "data_sync_export" -> DataSync // a back stack saved before D128 removed the export reminder
             s == "sign_in" -> SignIn
             s == "challenges" -> Challenges
             s.startsWith("challenge:") -> ChallengeDashboard(s.removePrefix("challenge:"))
@@ -105,7 +101,6 @@ object Routes {
         data object CurrentSession : Target
         data object Today : Target
         data object DataSync : Target
-        data object DataSyncExport : Target
 
         /** N-UPDATE (D98): check for the release and open the update prompt. */
         data object Update : Target
@@ -118,8 +113,8 @@ object Routes {
 
     fun parse(route: String?): Target = when (route) {
         "fitapp://session/current", "fitapp://session/current/rest" -> Target.CurrentSession
-        "fitapp://you/data" -> Target.DataSync
-        "fitapp://you/data/export" -> Target.DataSyncExport
+        // An N-EXPORT reminder still on screen from before D128 opens Data and sync without starting an export.
+        "fitapp://you/data", "fitapp://you/data/export" -> Target.DataSync
         "fitapp://update" -> Target.Update
         else -> route?.removePrefix("fitapp://habit/")?.takeIf { it != route && HABIT_ID.matches(it) }?.let(Target::Habit) ?: Target.Today
     }

@@ -15,10 +15,9 @@ import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 /**
- * `daily-maintenance` (ANDROID.md 7.8) as far as M1b needs it: the monthly export reminder N-EXPORT when the last
- * full export is older than `export.reminderDays` (F4), and N-SYNC when rows were rejected or changes have waited
- * for upload longer than `sync.staleNoticeDays`. Each reminder is posted at most once per day; a late or skipped
- * run is harmless. Challenge tick synthesis runs first (7.8, CHALLENGE_ENGINE 4.6); the calendar and habit
+ * `daily-maintenance` (ANDROID.md 7.8) as far as M1b needs it: N-SYNC when rows were rejected or changes have waited
+ * for upload longer than `sync.staleNoticeDays`, at most once per day; a late or skipped run is harmless. The monthly
+ * export reminder N-EXPORT was removed (D128). Challenge tick synthesis runs first (7.8, CHALLENGE_ENGINE 4.6); the calendar and habit
  * reminders join this job later in M2b.
  */
 class MaintenanceWorker(context: Context, params: WorkerParameters, private val c: AppContainer) : CoroutineWorker(context, params) {
@@ -36,21 +35,13 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
         // ANDROID 16.4: the 05:00 run reads the calendar and writes the (possibly new) current and next week.
         runCatching { c.calendar.refresh("maintenance") }
         val today = LocalDate.now(ZONE).toString()
-        val decision = Maintenance.decide(
+        val syncText = Maintenance.syncText(
             nowMs = nowMs,
-            reminderEnabled = c.settings.exportReminderEnabled,
-            lastExportMs = c.exports.lastFull()?.period_end,
-            firstSessionMs = c.db.sessions().firstStartedAt(),
-            reminderDays = c.platformConfig.exportReminderDays,
             deadLetters = c.db.deadLetters().all().size,
             oldestOutboxMs = c.db.outbox().oldestEnqueuedAt(),
             staleDays = c.platformConfig.syncStaleNoticeDays,
         )
-        if (decision.export && c.settings.lastExportReminderDate != today) {
-            c.settings.lastExportReminderDate = today
-            if (c.notifications.postExportReminder()) c.fgsEvent("notification_posted", mapOf("notification_id" to "N-EXPORT", "channel" to Channels.APP_STATUS))
-        }
-        decision.syncText?.let { text ->
+        syncText?.let { text ->
             if (c.settings.lastSyncNoticeDate != today) {
                 c.settings.lastSyncNoticeDate = today
                 if (c.notifications.postSyncNotice(text)) c.fgsEvent("notification_posted", mapOf("notification_id" to "N-SYNC", "channel" to Channels.APP_STATUS))
@@ -75,29 +66,14 @@ class MaintenanceWorker(context: Context, params: WorkerParameters, private val 
     }
 }
 
-/** The reminder rules of [MaintenanceWorker], pure for tests. */
+/** The reminder rule of [MaintenanceWorker], pure for tests: the N-SYNC text, or null when nothing is wrong. */
 object Maintenance {
-    data class Decision(val export: Boolean, val syncText: String?)
-
-    fun decide(
-        nowMs: Long,
-        reminderEnabled: Boolean,
-        lastExportMs: Long?,
-        firstSessionMs: Long?,
-        reminderDays: Int,
-        deadLetters: Int,
-        oldestOutboxMs: Long?,
-        staleDays: Int,
-    ): Decision {
+    fun syncText(nowMs: Long, deadLetters: Int, oldestOutboxMs: Long?, staleDays: Int): String? {
         val dayMs = 86_400_000L
-        // Without any export, the reminder counts from the first logged session (nothing to back up before it).
-        val since = lastExportMs ?: firstSessionMs
-        val export = reminderEnabled && since != null && nowMs - since >= reminderDays * dayMs
-        val syncText = when {
+        return when {
             deadLetters > 0 -> "$deadLetters change${if (deadLetters == 1) "" else "s"} could not be uploaded"
             oldestOutboxMs != null && nowMs - oldestOutboxMs >= staleDays * dayMs -> "Changes have not been uploaded for ${(nowMs - oldestOutboxMs) / dayMs} days"
             else -> null
         }
-        return Decision(export, syncText)
     }
 }

@@ -59,6 +59,7 @@ class FitnessApplication : Application(), Configuration.Provider {
         step("clock_guard") { container.startClockGuard() } // D108
         step("periodic_sync") { container.syncScheduler.ensurePeriodic() }
         step("maintenance") { MaintenanceWorker.ensureScheduled(this) }
+        step("export_reminder_retired") { container.notifications.cancelRetiredExportReminder() }
         // D98 (2): the daily background update check, release build only.
         step("update_check") { if (container.updates.automatic) UpdateWorker.ensureScheduled(this) }
         container.appScope.launch {

@@ -5,31 +5,20 @@ import dev.fitnessapp.app.ui.reliability.Level
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
-/** N-EXPORT / N-SYNC rules (F4, UX 18) and the Reliability latency statistics (ANDROID.md 15.5). */
+/** The N-SYNC rule (UX 18) and the Reliability latency statistics (ANDROID.md 15.5). */
 class MaintenanceTest {
     private val day = 86_400_000L
     private val now = 1_800_000_000_000L
 
-    private fun decide(lastExport: Long? = null, first: Long? = null, enabled: Boolean = true, dead: Int = 0, oldest: Long? = null) =
-        Maintenance.decide(now, enabled, lastExport, first, 30, dead, oldest, 7)
-
-    @Test
-    fun `export reminder after 30 days, counted from the first session without any export`() {
-        decide(lastExport = now - 29 * day).export shouldBe false
-        decide(lastExport = now - 30 * day).export shouldBe true
-        decide(first = now - 31 * day).export shouldBe true
-        decide(first = now - 3 * day).export shouldBe false
-        decide().export shouldBe false
-        decide(lastExport = now - 40 * day, enabled = false).export shouldBe false
-    }
+    private fun syncText(dead: Int = 0, oldest: Long? = null) = Maintenance.syncText(now, dead, oldest, 7)
 
     @Test
     fun `sync notice for dead letters or a week-old outbox`() {
-        decide().syncText shouldBe null
-        decide(dead = 3).syncText shouldBe "3 changes could not be uploaded"
-        decide(dead = 1).syncText shouldBe "1 change could not be uploaded"
-        decide(oldest = now - 6 * day).syncText shouldBe null
-        decide(oldest = now - 8 * day).syncText shouldBe "Changes have not been uploaded for 8 days"
+        syncText() shouldBe null
+        syncText(dead = 3) shouldBe "3 changes could not be uploaded"
+        syncText(dead = 1) shouldBe "1 change could not be uploaded"
+        syncText(oldest = now - 6 * day) shouldBe null
+        syncText(oldest = now - 8 * day) shouldBe "Changes have not been uploaded for 8 days"
     }
 
     @Test

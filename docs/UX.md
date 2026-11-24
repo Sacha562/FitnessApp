@@ -230,7 +230,7 @@ a persistent mini-bar sits directly above the navigation bar on every tab:
   | `fitapp://today` | Today |
   | `fitapp://habit/<habit_id>` | the home mini-session screen of that habit (`HabitSessionKey`); the `kind = home` session starts when the user taps Start there |
   | `fitapp://challenge/<enrollment_id>/test` | the test-day wizard |
-  | `fitapp://you/data` | You > Data and sync (sync problems, export reminder) |
+  | `fitapp://you/data` | You > Data and sync (sync problems) |
   | `fitapp://challenge/<enrollment_id>` | the Challenges dashboard (`ChallengeDetailKey`), used by N-PROGRAM, N-SAFETY and N-CELEBRATE (section 18) |
 * Process death: the session, every logged set and the rest timer's absolute end time are persisted
   on every change. On relaunch with a session in progress, the app opens straight into Live Session
@@ -3114,13 +3114,13 @@ setting. Reduced motion follows the system setting (information line).
 ### 15.11 Data and sync (`you.data`)
 
 Sync state (7.1), outbox depth, last push and pull times, dead-letter rows with details, "Sync now";
-the monthly data export (F4) with the last export date and a monthly reminder (default on); "Export
+the data export (F4) with the last export date, no reminder (D128); "Export
 all data" (one gzip-compressed JSON file, `.json.gz`, C40); storage used on the phone; "Re-push all
 data" (user-triggered recovery after the server lost data, for example a restored or reset project: it
 queues every local row of every synced table again in dependency order; the action of ANDROID open issue
 OI-25 for DATA_MODEL restore scenario R1, shown with one line that explains when to use it); "Delete local
 data and sign out" (blocked while the outbox is not empty, then a confirmation dialog). Emits
-`sync_now_tapped`, `export_completed {export_id, kind: manual_full | monthly_full, rows, bytes}`.
+`sync_now_tapped`, `export_completed {export_id, kind: manual_full, rows, bytes}` (`monthly_full` only on exports before D128).
 
 Android Auto Backup is off (D16, F21): the app's data are never in the phone's Google backup. The
 screen says where the copies are instead: "Your data are on this phone and uploaded to your server
@@ -3451,7 +3451,7 @@ do not create it.
 | `N-PROGRAM` | `challenge` (DEFAULT) | after a rule changes future loads outside a session (test recalculation, protocol exit), deduplicated per message per day (C21) | "New loads from Monday after your test" | Open | Challenges dashboard, History tab (`fitapp://challenge/<enrollment_id>`) |
 | `N-SAFETY` | `safety` (HIGH) | rule notifications of kind `stop` or `warn` (protocol day 14 exit or extension) | "Elbow protocol: 3 pain-free days needed before you go back. See a physio if it persists. Not medical advice." | Open | Challenges dashboard (`fitapp://challenge/<enrollment_id>`) |
 | `N-CELEBRATE` | `challenge` (DEFAULT) | phase gate passed | "Phase 2 unlocked: less help" | Open | Challenges dashboard (`fitapp://challenge/<enrollment_id>`) |
-| `N-EXPORT` | `app_status` (LOW) | monthly, if no export in 30 days (`export.reminderDays`, F4) | "Monthly backup: export your data" | Export | You > Data and sync (`fitapp://you/data`) |
+| `N-EXPORT` | removed (D128) | never; one left on screen by an older version is cleared at app start | | | |
 | `N-SYNC` | `app_status` (LOW) | dead-letter rows, or no sync for 7 days | "3 changes could not be uploaded" | Open | You > Data and sync (`fitapp://you/data`) |
 | `N-UPDATE` | `app_status` (LOW) | release build, daily background check finds a newer GitHub release not yet notified or shown (D98, 15.13) | "Update available" · "FitnessApp 0.0.170 is ready to install" | none | update prompt (`fitapp://update`) |
 
@@ -4510,7 +4510,7 @@ UI-triggered:
 | event_type | Category | Emitted when | Payload |
 |---|---|---|---|
 | `sync_now_tapped` | sync | "Sync now" (15.11) | `outbox_depth` |
-| `export_completed` | export | "Export all data", the monthly export (F4) or "Export review bundle" (15.10) | `export_id`, `kind` (monthly_full, manual_full, review_bundle), `rows`, `bytes`, `from?`, `to?`, `notes_included?` (the last three for review bundles) |
+| `export_completed` | export | "Export all data" (F4) or "Export review bundle" (15.10) | `export_id`, `kind` (monthly_full, manual_full, review_bundle), `rows`, `bytes`, `from?`, `to?`, `notes_included?` (the last three for review bundles) |
 
 Emitted by the platform layer (triggers and payloads in ANDROID.md, names and keys in the DATA_MODEL
 section 9.8.1 registry; listed so the catalogue is complete): `sync_run`, `sync_conflict`, `sync_error`,
@@ -4623,7 +4623,7 @@ screen sections and in section 20.
 | N-WEIGH | `bodyweight` (staleness), ui.prompts |
 | N-TEST-DAY | `challenge.plan` |
 | N-PROGRAM, N-SAFETY, N-CELEBRATE | `challenge.eca` rule notifications (deduplicated per message per day, C21), `safety` |
-| N-EXPORT, N-SYNC | `:data` (export dates, outbox, dead letters) |
+| N-SYNC | `:data` (outbox, dead letters) |
 | N-UPDATE | `:app` UpdateManager / UpdateWorker (GitHub releases, D98) |
 
 ---

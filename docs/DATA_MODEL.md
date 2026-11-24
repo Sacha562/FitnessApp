@@ -3557,7 +3557,7 @@ P2 is the same pattern on `session_events` with `payload = '{"pruned": true}'::j
 |-------|------|------|-------|-------|
 | L1 Phone database | Room `fitness.db` (authoritative) plus pre-migration copies (ANDROID.md 8.5: newest 3 kept) | Continuous | Phone, app-private storage | App |
 | L2 Supabase replica | Every synced table (section 9) | Continuous via sync | Supabase (no backups, no PITR on Free) | App |
-| L3 Full export | Gzip-compressed JSON (`.json.gz`, C40) of every synced table and the local-only tables listed in 15.5 | Monthly reminder after `export.reminderDays` = 30 days (F4; ANDROID.md 25.3) and on demand | A location the user chooses through the system file picker (no automatic upload) | User |
+| L3 Full export | Gzip-compressed JSON (`.json.gz`, C40) of every synced table and the local-only tables listed in 15.5 | On demand (F4; the monthly reminder was removed, D128) | A location the user chooses through the system file picker (no automatic upload) | User |
 | L4 Pre-migration dump | `supabase db dump --db-url "$FITNESS_DB_URL" --schema fitness --data-only -f <dir>/fitness-data-<yyyyMMdd-HHmm>.sql` (F3); if the CLI cannot run its container, the equivalent `pg_dump "$FITNESS_DB_URL" --data-only --schema=fitness --no-owner --no-privileges -f ...` | Before every migration once real data exists | The user's machine outside the repository (default `%USERPROFILE%\FitnessBackups\`); the newest 10 dumps are kept | Claude Code runs the command; the user provides `FITNESS_DB_URL` as an environment variable, so the database password never appears in the repository, a command line in the transcript, or chat |
 | L5 Android Auto Backup | **Off** (D16, F21): `android:allowBackup="false"` and data-extraction rules that exclude everything (ANDROID.md 20.3) | n/a | n/a | No training or health data goes to the user's Google backup, and a reinstall never restores a stale database that would conflict with sync; L2 and L3 are the backups (open issue 17, resolved) |
 
@@ -3965,7 +3965,7 @@ This register lists every numeric constant that this document introduces or reli
 | Calendar write horizon | 2 | 1-4 | ISO weeks | Profile `calendar_write_weeks` | user decision | D11 | User setting |
 | Max gym visits per week | 4 | 1-7 | visits | Profile | user decision | D5 | User setting |
 | Default session length / changeover | 75 / 5 | 20-240 / 0-60 | min | Profile `default_session_min` / `changeover_min` | default | F11 as revised by C49 (budget = calendar event duration - 5 min; without an event 75 min) | User setting |
-| Export reminder | 30 | 7-90 | days | ANDROID.md 25.3 `export.reminderDays` | default | F4 | User setting |
+| Export reminder | removed | | days | ANDROID.md 25.3 `export.reminderDays` | | F4, D128 | removed |
 | Pre-migration dumps kept | 10 | 3-50 | files | Review | expert-opinion | 15.4 | Disk space |
 | Server retention before P1/P2 pruning | 730 | 365-3650 | days | Review | expert-opinion | research S2/S7 | Review replay depth, size pressure |
 | Size guard levels | 350 / 425 / 150 / 15 per 30 d | see 15.2 | MB | Review, `v_db_size_summary` | expert-opinion | 15.2 | `v_db_size_summary` history |

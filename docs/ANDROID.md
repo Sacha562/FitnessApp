@@ -877,7 +877,7 @@ In this order, each step idempotent and guarded by try/catch with a `session_eve
 | `sync` | WorkManager unique one-time, `ExistingWorkPolicy.KEEP` | Every outbox enqueue (initial delay `sync.debounceS`), app `ON_START`, network regained, manual "Sync now" | `NetworkType.CONNECTED`; exponential backoff (section 9.4) | Push then pull (section 9). |
 | `sync-expedited` | WorkManager one-time, `setExpedited(RUN_AS_NON_EXPEDITED_WORK_REQUEST)` | Session finish | `CONNECTED` | Get the finished session to the server quickly. |
 | `sync-periodic` | WorkManager periodic, `ExistingPeriodicWorkPolicy.UPDATE` | Every `sync.periodicH` (6 h), flex 1 h | `CONNECTED` | Catch stragglers; pull params and definitions. |
-| `daily-maintenance` | WorkManager periodic 24 h, initial delay to the next 05:00 profile-zone time | Daily | none | Challenge tick synthesis first (`challenge.enrollment.synthesizeTicks` for every active or paused enrollment, so that `week.closed` happens on Monday even when the app is not opened; CHALLENGE_ENGINE 4.6, CE-OI-19; a late or skipped run is acceptable, because catch-up at the next app start, session finish, planning call or job run is idempotent and ordered by boundary `occurred_at`), then calendar refresh and write plan (16), reminder horizon (17), export reminder (20.4), pre-migration backup pruning (8.5), dead-letter summary. |
+| `daily-maintenance` | WorkManager periodic 24 h, initial delay to the next 05:00 profile-zone time | Daily | none | Challenge tick synthesis first (`challenge.enrollment.synthesizeTicks` for every active or paused enrollment, so that `week.closed` happens on Monday even when the app is not opened; CHALLENGE_ENGINE 4.6, CE-OI-19; a late or skipped run is acceptable, because catch-up at the next app start, session finish, planning call or job run is idempotent and ordered by boundary `occurred_at`), then calendar refresh and write plan (16), reminder horizon (17), pre-migration backup pruning (8.5), dead-letter summary (the export reminder was removed, D128). |
 | Rest end alarm | `AlarmManager.setAlarmClock` | Each rest start / adjust | — | Section 12. |
 | Rest overtime reminder | `AlarmManager.setAlarmClock` | When the rest-end alarm fires | — | One reminder buzz (12.4). |
 | Habit reminders | `AlarmManager.setExactAndAllowWhileIdle(RTC_WAKEUP)` | Rolling 48 h horizon | — | Section 17. |
@@ -1649,7 +1649,7 @@ wall clock is taken as it is.
 | `habit_reminders` | "Reminders" | DEFAULT | system default | system default | PRIVATE | Home-habit reminders (`N-HABIT`, section 17) and the weigh-in reminder (`N-WEIGH`). |
 | `challenge` | "Challenge updates" | DEFAULT | system default | system default | PRIVATE | Test-day morning (`N-TEST-DAY`), program changes outside a session (`N-PROGRAM`), phase unlocked (`N-CELEBRATE`). |
 | `safety` | "Safety alerts" | HIGH | system default | system default | PRIVATE | Challenge rule notifications of kind stop/warn, such as a pain-protocol exit or extension (`N-SAFETY`). |
-| `app_status` | "App status" | LOW | none | none | PRIVATE | Sync problems (`N-SYNC`), export reminder (`N-EXPORT`), calendar write problems, session idle prompt (11.5), update available (`N-UPDATE`, D98). |
+| `app_status` | "App status" | LOW | none | none | PRIVATE | Sync problems (`N-SYNC`), calendar write problems, session idle prompt (11.5), update available (`N-UPDATE`, D98). |
 
 The channel ids, importances and the assignment of each `N-…` notification to a channel above are final
 and authoritative (C54); UX §18 uses exactly these six ids and this assignment (`N-WEIGH` on
@@ -2348,8 +2348,8 @@ manifest declares `<queries>` for the OEM security-centre packages of 15.3 only.
 - "Export review bundle" (F19 trace export) writes recommendations, session_events and the related facts
   for a chosen date range (content per DATA_MODEL §15.5), in the same `.json.gz` container, for Claude Code
   reviews and `:sim` replay.
-- Monthly reminder: `daily-maintenance` posts an `app_status` notification when the last export is older
-  than `export.reminderDays` (30, F4).
+- No reminder: the monthly export reminder (`N-EXPORT`, `export.reminderDays`) was removed (D128); the
+  export is on demand only.
 - Import ("Restore from file") is a later milestone; until then the full pull from Supabase is the restore
   path.
 
@@ -2633,7 +2633,7 @@ ids and importances (13.1) and notification ids (13.2) are part of the same auth
 | `reminders.preLeadMin` | 15 min | 11–30 | measured on OxygenOS (exact alarms deferred up to 1 h) | — | Yes: `notification_posted.latency_ms` of N-HABIT |
 | `clock.jumpToleranceS` | 120 s | 30–600 | assumption (NTP corrections are seconds; a manual date change is hours) | D108 | Yes: `clock_jump_detected.offset_ms` |
 | `reminders.inexactWindowMin` | 10 min | 5–30 | assumption | — | Yes: `latency_ms` of reminder `notification_posted` events |
-| `export.reminderDays` | 30 | 7–90 | DEFAULT | F4 | No: the reminder itself is a local on/off setting (UX 15.11, default on) |
+| `export.reminderDays` | removed | | | F4 | Removed with the export reminder (D128) |
 | `db.preMigrationBackupsKept` | 3 | 1–10 | assumption | — | No data needed |
 
 ### 25.4 Sync

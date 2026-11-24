@@ -184,20 +184,8 @@ class NotificationPresenter(
 
     fun cancelIdle() = NotificationManagerCompat.from(context).cancel(Channels.ID_IDLE)
 
-    /** N-EXPORT (F4, UX 18): the monthly backup reminder; "Export" opens Data and sync and starts the export. */
-    fun postExportReminder(): Boolean = notify(
-        Channels.ID_EXPORT,
-        NotificationCompat.Builder(context, Channels.APP_STATUS)
-            .setSmallIcon(R.drawable.ic_stat_session)
-            .setContentTitle("Monthly backup")
-            .setContentText("Export your data")
-            .setAutoCancel(true)
-            .setContentIntent(openIntent("fitapp://you/data", "N-EXPORT", Channels.APP_STATUS, Channels.ID_EXPORT))
-            .addAction(
-                NotificationCompat.Action.Builder(0, "Export", openIntent("fitapp://you/data/export", "N-EXPORT", Channels.APP_STATUS, Channels.RC_EXPORT_ACTION)).build(),
-            )
-            .build(),
-    )
+    /** Clears an N-EXPORT reminder an older version posted (the reminder was removed, D128). */
+    fun cancelRetiredExportReminder() = NotificationManagerCompat.from(context).cancel(Channels.ID_EXPORT_RETIRED)
 
     /** N-SYNC (UX 18): rows the server rejected, or changes not uploaded for 7 days. */
     fun postSyncNotice(text: String): Boolean = notify(

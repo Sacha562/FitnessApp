@@ -22,14 +22,15 @@ object Channels {
     const val RC_REST_END = 1201
     const val RC_OVERTIME = 1202
     const val ID_SYNC = 3001
-    const val ID_EXPORT = 3002
+    /** The removed N-EXPORT reminder (D128): kept only to clear one still on screen; do not reuse. */
+    const val ID_EXPORT_RETIRED = 3002
     const val ID_IDLE = 3003
     /** N-UPDATE (D98); 3004 is the weigh-in reminder. */
     const val ID_UPDATE = 3005
 
     /** Request codes of PendingIntents that are not notification ids (added to ANDROID.md 13.2 in M1b). */
     const val RC_SESSION_DISMISSED = 1003
-    const val RC_EXPORT_ACTION = 3102
+    /** 3102 was N-EXPORT's Export action (removed, D128); do not reuse. */
     const val RC_IDLE_ALARM = 3103
     const val RC_IDLE_FINISH = 3113
     const val RC_IDLE_KEEP = 3123

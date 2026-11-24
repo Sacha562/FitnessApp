@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -194,16 +193,15 @@ private fun SubScreen(title: String, onBack: () -> Unit, bottom: (@Composable ()
     }
 }
 
-/** You > Data and sync (UX 15.11, ANDROID.md 9.7 and 20.4, D17). [autoExport]: opened from N-EXPORT, starts the monthly export. */
+/** You > Data and sync (UX 15.11, ANDROID.md 9.7 and 20.4, D17); the export is on demand only (D128). */
 @Composable
-fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = false, onSignIn: () -> Unit = {}) {
+fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, onSignIn: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val lastExport by remember { c.exports.observeLastFull() }.collectAsState(initial = null)
-    var exportKind by remember { mutableStateOf(if (autoExport) "monthly_full" else "manual_full") }
+    var exportKind by remember { mutableStateOf("manual_full") }
     var exporting by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
-    var reminder by remember { mutableStateOf(c.settings.exportReminderEnabled) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/gzip")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         exporting = true
@@ -223,7 +221,6 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
         exportKind = kind
         launcher.launch(ExportRepository.fileName(LocalDate.now(ZoneId.of("Europe/Amsterdam")).toString()))
     }
-    LaunchedEffect(autoExport) { if (autoExport) startExport("monthly_full") }
     val state by c.sync.state.collectAsState()
     val outbox by c.sync.observeOutbox().collectAsState(initial = 0 to null)
     val dead by c.sync.observeDeadLetters().collectAsState(initial = 0)
@@ -258,18 +255,6 @@ fun DataSyncRoute(c: AppContainer, onBack: () -> Unit, autoExport: Boolean = fal
             )
             TonalButton(if (exporting) "Exporting..." else "Export all data", { startExport("manual_full") }, Modifier.fillMaxWidth(), enabled = !exporting)
             exportMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text("Monthly reminder", style = MaterialTheme.typography.titleMedium)
-                    Text("A notification when the last export is over ${c.platformConfig.exportReminderDays} days old.", style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
-                }
-                Switch(checked = reminder, onCheckedChange = { on ->
-                    val from = reminder
-                    reminder = on
-                    c.settings.exportReminderEnabled = on
-                    scope.launch { c.fgsEvent("settings_changed", mapOf("key" to "export_reminder", "from" to from, "to" to on)) }
-                })
-            }
             Text("Storage on this phone: " + phoneStorage(context), style = MaterialTheme.typography.bodySmall, color = Fit.Muted)
         }
         Tile(spacing = 8.dp) {

@@ -35,8 +35,6 @@ data class PlatformConfig(
     val holdBeepEveryS: Int = 5,
     val holdMaxHoldS: Int = 300,
     val holdStopGuardMs: Long = 500,
-    /** F4: the monthly export reminder (ANDROID.md 25.3); the switch itself is a local setting. */
-    val exportReminderDays: Int = 30,
     /** UX 18 N-SYNC: changes waiting for upload this long post the notice. */
     val syncStaleNoticeDays: Int = 7,
     /** ANDROID.md 17: habit reminders scheduled ahead, and the N-HABIT snooze. */
@@ -75,7 +73,6 @@ data class PlatformConfig(
             "hold.beepEveryS" to JsonPrimitive(holdBeepEveryS),
             "hold.maxHoldS" to JsonPrimitive(holdMaxHoldS),
             "hold.stopGuardMs" to JsonPrimitive(holdStopGuardMs),
-            "export.reminderDays" to JsonPrimitive(exportReminderDays),
             "sync.staleNoticeDays" to JsonPrimitive(syncStaleNoticeDays),
             "reminders.horizonH" to JsonPrimitive(remindersHorizonH),
             "reminders.snoozeMin" to JsonPrimitive(remindersSnoozeMin),
