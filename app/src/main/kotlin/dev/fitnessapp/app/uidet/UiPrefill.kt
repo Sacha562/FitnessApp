@@ -294,6 +294,12 @@ object UiPrefill {
      * hold below `hold_short_frac` x the target (ranges judged against their lower bound). [loadStepKg] is the
      * gap to the neighbouring loadable option at the target.
      */
+    /**
+     * Whether the card's load is a target the user can deviate from (D127): not when it is only the default placeholder
+     * (no target and no history) or when the card asks the user to pick a weight (a probe set without a system load).
+     */
+    fun loadIsTarget(source: PrefillSource, probePick: Boolean): Boolean = source != PrefillSource.DEFAULT && !probePick
+
     fun deviation(draft: SetDraft, target: SetTarget, loadStepKg: Double?, params: ParamView, sideRuleLeftReps: Int? = null): Deviation {
         val fields = ArrayList<FieldDeviation>()
         val tl = target.load

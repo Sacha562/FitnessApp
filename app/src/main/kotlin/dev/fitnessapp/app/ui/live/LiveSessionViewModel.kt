@@ -878,7 +878,9 @@ class LiveSessionViewModel(private val c: AppContainer, private val sessionId: S
     /** The deviation test of UI-04 against the prefilled values, and the reason chips of UI-05. */
     private fun withDeviation(card: Card): Card {
         if (card.warmup) return card.copy(deviation = Deviation.NONE, chips = null)
-        val targetPoint = card.target.native?.let { n -> card.points.firstOrNull { nativeOf(it, card.mode) == n } }
+        // D127: a default placeholder or a "pick a weight" load is no target, so a chosen load is no change.
+        val targetPoint = card.target.native?.takeIf { UiPrefill.loadIsTarget(card.prefillSource, card.probePickReps != null) }
+            ?.let { n -> card.points.firstOrNull { nativeOf(it, card.mode) == n } }
         val step = targetPoint?.let { tp -> Rounding.nextHarder(card.points, tp.scaleKg, params)?.let { it.scaleKg - tp.scaleKg } }
             ?: targetPoint?.let { tp -> Rounding.nextEasier(card.points, tp.scaleKg, params)?.let { tp.scaleKg - it.scaleKg } }
         val dev = UiPrefill.deviation(

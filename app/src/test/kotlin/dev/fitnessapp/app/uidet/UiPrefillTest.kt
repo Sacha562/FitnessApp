@@ -220,4 +220,12 @@ class UiPrefillTest {
         UiPrefill.longPressMultiplier(8, params) shouldBe 1
         UiPrefill.longPressMultiplier(9, params) shouldBe 5
     }
+
+    @Test
+    fun `a default or pick-a-weight load is no target to deviate from (D127)`() {
+        UiPrefill.loadIsTarget(PrefillSource.DEFAULT, probePick = false) shouldBe false
+        UiPrefill.loadIsTarget(PrefillSource.LAST_SAME_INDEX, probePick = true) shouldBe false
+        UiPrefill.loadIsTarget(PrefillSource.ENGINE_TARGET, probePick = false) shouldBe true
+        UiPrefill.loadIsTarget(PrefillSource.LAST_PREV_INDEX, probePick = false) shouldBe true
+    }
 }

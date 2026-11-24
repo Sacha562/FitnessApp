@@ -1969,7 +1969,9 @@ the `set_logged` event, C23/C24):
 
 **Deviation detection** is computed by `ui.prefill` (`deviation(set)`, section 19.2): the load is at
 least half a step away from the target, reps outside the target (or the range), a hold below 80 % of
-the target, or the side rule broken. When the user changes a value so that the set deviates, reason
+the target, or the side rule broken. A load that is only the default placeholder (no target, no
+history) or that the card asks the user to pick (a probe set without a system load) is no target, so
+choosing a weight there is not a deviation (D127). When the user changes a value so that the set deviates, reason
 chips appear above the flags, ordered by `ui.reasonchips` (section 19.3):
 
 ```
