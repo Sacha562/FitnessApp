@@ -30,7 +30,11 @@ class UiWarnDisplayTest {
         // An enforced SAFETY (the engine clamped its own output) needs no action: list and dot only.
         show(listOf(w("WE-S2", Severity.SAFETY, 0.2, enforced = true))).safety.shouldBeEmpty()
         // Acknowledged notices leave the safety slot.
-        show(listOf(w("WE-S1", Severity.SAFETY, 1.0)), ack = setOf("WE-S1|e")).safety.shouldBeEmpty()
+        show(listOf(w("WE-S1", Severity.SAFETY, 1.0)), ack = setOf("WE-S1|e")).let { r ->
+            r.safety.shouldBeEmpty()
+            r.notes.shouldBeEmpty() // D126: the OK took it off the list too
+            r.markers["e"] shouldBe WarnMarker.MUTED_DOT
+        }
     }
 
     @Test
@@ -44,11 +48,27 @@ class UiWarnDisplayTest {
     @Test
     fun snoozeAndResurface() {
         val d = mapOf("WE-P2|e" to Dismissal(now.minusSeconds(86_400), 0.4))
-        show(listOf(w("WE-P2", Severity.WARN, 0.45)), d).banner.shouldBeNull()
+        show(listOf(w("WE-P2", Severity.WARN, 0.45)), d).let { r ->
+            r.banner.shouldBeNull()
+            r.notes.shouldBeEmpty() // D126: snoozed out of the list as well
+            r.moreNotes shouldBe 0
+            r.markers["e"] shouldBe WarnMarker.AMBER_DOT
+        }
         show(listOf(w("WE-P2", Severity.WARN, 0.55)), d).banner!!.magnitude shouldBe 0.55
         // After the snooze the banner returns at the old magnitude.
         val old = mapOf("WE-P2|e" to Dismissal(now.minusSeconds(29L * 86_400), 0.4))
         show(listOf(w("WE-P2", Severity.WARN, 0.4)), old).banner!!.ruleId shouldBe "WE-P2"
+    }
+
+    @Test
+    fun `Dismiss in the notes list removes an INFO or small note until the snooze ends (D126)`() {
+        val d = mapOf("WE-P4|e" to Dismissal(now.minusSeconds(60), 0.9), "WE-P6|f" to Dismissal(now.minusSeconds(60), 0.1))
+        val r = show(listOf(w("WE-P4", Severity.INFO, 0.9), w("WE-P6", Severity.WARN, 0.1, entity = "f")), d)
+        r.notes.shouldBeEmpty()
+        r.moreNotes shouldBe 0
+        r.markers["e"] shouldBe WarnMarker.MUTED_DOT
+        val old = mapOf("WE-P4|e" to Dismissal(now.minusSeconds(29L * 86_400), 0.9))
+        show(listOf(w("WE-P4", Severity.INFO, 0.9)), old).notes.single().ruleId shouldBe "WE-P4"
     }
 
     @Test

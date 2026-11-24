@@ -3362,7 +3362,8 @@ See 10.9.
 ### 16.12 Warnings list sheet (`sheet.notes`)
 
 All current warnings for the screen's scope, sorted like `ui.warndisplay`; each row expands to its
-Why; "Dismiss" per row (snooze rules in 19.6). Opened from the "N more notes" row.
+Why; "Dismiss" per row (enforced SAFETY rows have none). A dismissed row leaves the list for the snooze
+period of 19.6 (D126). Opened from the "N more notes" row.
 
 ### 16.13 Finish sheet (`sheet.finish`)
 
@@ -5480,11 +5481,11 @@ tap, not budgeted).
 | v2 | `targets.improve_low` | STRONG | `group:chest` | 0.83 | none | **banner** with "Use suggested" |
 | v3 | `warn.session_cap` | INFO | `group:chest` | 0.10 | none | list only; chest keeps the advisory dot (stronger marker wins) |
 | v4 | `targets.improve_low` | WARN | `group:triceps` | 0.15 | none | list, advisory dot (below `ui.warndisplay.min_magnitude`) |
-| v5 | `targets.improve_low` | WARN | `group:hamstrings` | 0.40 | 2026-09-20 at 0.35 | list only, snoozed (17 days < 28; 0.40 < 0.4375) |
+| v5 | `targets.improve_low` | WARN | `group:hamstrings` | 0.40 | 2026-09-20 at 0.35 | advisory dot only, snoozed out of banner and list (17 days < 28; 0.40 < 0.4375; D126) |
 | v6 | `targets.improve_low` | WARN | `group:glutes` | 0.60 | 2026-09-20 at 0.40 | list, resurfaced (0.60 >= 0.50) |
 | v7 | `rep.range_high` | WARN | `pref:leg_press` | 0.70 | use mine anyway | "your choice" marker, not listed |
 
-Expected: banner v2; list order v2, v6, v1, v5, v4, v3; "5 more notes".
+Expected: banner v2; list order v2, v6, v1, v4, v3; "4 more notes".
 
 **GF-UX-13 Volume bars, Wednesday 7 October (deload week, Balanced preset, lats covered by the
 challenge).**

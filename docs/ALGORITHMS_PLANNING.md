@@ -2938,13 +2938,16 @@ scope. **Output.** At most one banner, the "N more notes" count, inline markers 
 ```
 visible = []; listOnly = []
 for v in violations within the screen's scope:
-  if v.severity == SAFETY: visible += v; continue                          // persistent until acknowledged
+  if v.severity == SAFETY:                                                 // persistent until acknowledged
+    if v.enforced: dot(entity, muted); listOnly += v
+    elif acknowledged(v): dot(entity, muted)                               // D126: off the list too
+    else: visible += v
+    continue
   if useMineAnyway(v.ruleId, v.entity): marker(entity, "your choice"); continue
-  if v.severity == INFO: dot(entity, muted); listOnly += v; continue       // never a banner
-  dot(entity, amber)
-  if v.magnitude < MIN_MAGNITUDE: listOnly += v; continue
+  dot(entity, muted if v.severity == INFO else amber)
   d = dismissal(v.ruleId, v.entity)
-  if d and now − d.at < SNOOZE_D days and v.magnitude < d.magnitude · (1 + WORSEN_FACTOR): listOnly += v; continue
+  if d and now − d.at < SNOOZE_D days and v.magnitude < d.magnitude · (1 + WORSEN_FACTOR): continue  // D126: snoozed, not listed
+  if v.severity == INFO or v.magnitude < MIN_MAGNITUDE: listOnly += v; continue   // INFO is never a banner
   visible += v
 sort visible by (severity SAFETY > STRONG > WARN, magnitude desc, ruleId)
 banner = first non-SAFETY visible (the safety banner has its own slot above it, UX 7.3)
@@ -2955,7 +2958,8 @@ Constants (§23.19): `MIN_MAGNITUDE 0.2`, `SNOOZE_D 28`, `WORSEN_FACTOR 0.25`, `
 layered explanations (Tintarev & Masthoff 2012; Laato 2022, moderate); D10 keeps the user's preference and offers "use
 suggested". Logged: `warning_shown`, `warning_dismissed`, `warning_use_mine_toggled`, `warning_use_suggested`,
 `warning_why_opened` (DATA_MODEL §9.8.1), plus outcomes in the following weeks. Tests: `safetyAlwaysShown`, `infoNeverBanner`,
-`snoozeAndResurface` (dismissed at magnitude 0.4; 0.45 stays hidden, 0.55 resurfaces), `useMineMarker`.
+`snoozeAndResurface` (dismissed at magnitude 0.4; 0.45 stays hidden and unlisted, 0.55 resurfaces), `useMineMarker`, and the
+D126 case (a dismissed INFO or small note leaves the list until the snooze ends).
 
 ### 19.6 `ui.progress` (UI-11)
 
