@@ -309,6 +309,26 @@ class SessionRepositoryTest {
     }
 
     @Test
+    fun `an added exercise gets the default set count, not last session's (D125)`() = blocking {
+        setUpGym()
+        val press = catalog.bySlug("machine_chest_press")!!
+        val first = sessions.start(params)
+        val seId = sessions.addExercise(first, press)
+        now += 60_000
+        sessions.logSet(
+            LogSetCommand(
+                first, seId, catalog.idOf(press), 1, "both", "working", null, reps = 10, durationS = null, rir = 2.0,
+                rirLowerBound = false, holdReserveS = null, holdReserveLowerBound = false, flags = emptyList(),
+                deviationReason = null, planned = null, rest = null, startedAtMs = null, completedAtMs = now, telemetry = emptyMap(),
+            ),
+        )
+        sessions.finish(first, null)
+        now += 2 * 86_400_000L
+        val next = sessions.start(params)
+        db.sessionExercises().get(sessions.addExercise(next, press))!!.planned_sets shouldBe SessionRepository.DEFAULT_SETS
+    }
+
+    @Test
     fun `a load-mode switch or a stack change re-plans an exercise without working sets (D80)`() = blocking {
         setUpGym()
         val sid = sessions.start(params)

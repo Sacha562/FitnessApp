@@ -3293,7 +3293,7 @@ first, then liked exercises, then the rest, each by the match rank of 13.2, then
 list is the Swap sheet's "Search catalog". Each result shows availability and, if a hard
 rule forbids it today, a red "Not today" label with the reason (adding needs "Add anyway", logged as
 `rule_override`). Added exercises join the end of the general block, or "after the current exercise"
-by a toggle. Emits `exercise_added {exercise_id, source, position, block_kind, rule_override}`.
+by a toggle, with 3 sets or the user's sets preference (D125). Emits `exercise_added {exercise_id, source, position, block_kind, rule_override}`.
 
 ### 16.7 Keypad sheet (`sheet.keypad`)
 

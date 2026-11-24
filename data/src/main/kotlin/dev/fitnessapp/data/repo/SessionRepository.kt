@@ -550,17 +550,16 @@ class SessionRepository(
 
     // ------------------------------------------------------------------------------------------ exercises
 
-    /** Adds a catalog exercise at the end (UX 16.6); planned sets = last time's working sets, else 3. */
+    /**
+     * Adds a catalog exercise at the end (UX 16.6) with [DEFAULT_SETS] planned sets (D125); RX-1 replaces them with
+     * the user's sets preference where one applies (B9.3).
+     */
     suspend fun addExercise(sessionId: String, e: CatalogExercise, modeOrNull: LoadMode? = null): String {
         val mode = modeOrNull ?: plannedMode(e, sessionId)
         val uid = ctx.requireUser()
         val now = ctx.nowMs()
         val exerciseId = catalog.idOf(e)
         val resolved = equipment.resolve(e, mode)
-        val lastSets = history(exerciseId, sessionId).let { h ->
-            val last = h.firstOrNull()?.set?.session_id
-            h.filter { it.set.session_id == last && it.set.set_kind != "warmup" }.map { it.set.set_index }.distinct().size
-        }
         lateinit var id: String
         db.withTransaction {
             // D111 (UX 16.6): the end of the last general block; a challenge session without one gets a user-built block.
@@ -584,7 +583,7 @@ class SessionRepository(
                 side_order = if (e.laterality == "bilateral") null else "LR",
                 equipment_id = resolved.row?.id, progression_mode = "none",
                 rep_scheme = when (e.measure) { "duration" -> "hold"; "attempt" -> "attempt"; else -> "range" },
-                planned_sets = if (lastSets > 0) lastSets else DEFAULT_SETS,
+                planned_sets = DEFAULT_SETS,
             )
             db.sessionExercises().upsert(row)
             outbox.enqueue("session_exercises", id, now)
